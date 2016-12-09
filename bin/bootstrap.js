@@ -2,6 +2,7 @@
 const fs = require('fs');
 const crypto = require('crypto');
 const options = require('commander');
+const packageJson = require('../package.json');
 
 /**
  * load config.json as object
@@ -22,7 +23,7 @@ function loadConfig(file) {
 
 module.exports = function (Hub) {
   options
-    .version('1.0.0')
+    .version(packageJson.version)
     .usage('[options] [...]')
     .option('-c, --config <file>', 'a json file for configuration')
     .option('--ciphers', 'show all supported ciphers on the current platform')
