@@ -6,6 +6,7 @@ node_modules/
 
 # logs
 logs/
+debug/
 npm-debug.log*
 yarn-error.log
 
