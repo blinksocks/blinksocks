@@ -1,0 +1,59 @@
+{
+  "name": "blinksocks",
+  "version": "1.0.0",
+  "description": "Yet another socks5 proxy, designed for speed.",
+  "main": "lib/index.js",
+  "bin": {
+    "blinksocks": "bin/cli.js"
+  },
+  "scripts": {
+    "test": "npm run lint && npm run test:coverage",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src",
+    "compile": "babel src --out-dir lib --minified",
+    "server:dev": "babel-node bin/bootstrap.js --config bin/server.config.json",
+    "client:dev": "babel-node bin/bootstrap.js --config bin/client.config.json",
+    "server:prod": "node bin/cli.js --config bin/server.config.json",
+    "client:prod": "node bin/cli.js --config bin/client.config.json",
+    "percommit": "npm run lint && npm run test"
+  },
+  "jest": {
+    "testPathIgnorePatterns": [
+      "<rootDir>/lib/"
+    ]
+  },
+  "dependencies": {
+    "commander": "^2.9.0",
+    "log4js": "^1.0.1"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.18.0",
+    "babel-eslint": "^7.1.1",
+    "babel-jest": "^17.0.2",
+    "babel-plugin-transform-class-properties": "^6.19.0",
+    "babel-plugin-transform-object-rest-spread": "^6.20.2",
+    "babel-preset-latest": "^6.16.0",
+    "babel-register": "^6.18.0",
+    "benchmark": "^2.1.2",
+    "eslint": "^3.11.1",
+    "eslint-config-babel": "^3.0.0",
+    "eslint-plugin-babel": "^4.0.0",
+    "eslint-plugin-flowtype": "^2.29.1",
+    "husky": "^0.11.9",
+    "jest": "^17.0.3"
+  },
+  "repository": {
+    "url": "https://github.com/blinksocks/blinksocks",
+    "type": "git"
+  },
+  "keywords": [
+    "security",
+    "socks5",
+    "proxy"
+  ],
+  "author": "Micooz <micooz@hotmail.com>",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">= 6.9.0"
+  }
+}
