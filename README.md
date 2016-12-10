@@ -145,6 +145,7 @@ Next major version(**v2.0.0**):
 * [ ] encrypt/decrypt blocks with iv
 * [ ] streaming data send/receive
 * [ ] UDP relay
+* [ ] DNS cache
 * [ ] more command line options
 
 Further versions:
