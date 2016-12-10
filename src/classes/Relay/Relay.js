@@ -115,45 +115,65 @@ export class Relay {
   }
 
   /**
-   * send data backward via this._lsocket.write()
+   * backward data via this._lsocket.write()
    * @param buffer
    */
   onReceived(buffer) {
     if (Config.isServer) {
-      const encrypted = Crypto.encrypt(Encapsulator.pack(new Connection(), buffer).toBuffer());
-      Logger.info(`[${this._id}] <-- ${encrypted.length} bytes (+header,encrypted,hash=${hash(encrypted)}) <-- ${buffer.length} bytes(origin,hash=${hash(buffer)})`);
-      this._lsocket.write(encrypted);
-      // Tracer.dump(`Relay_${this._id}_en`, encrypted);
+      this.backwardToClient(buffer);
     } else {
-      const decrypted = Crypto.decrypt(buffer);
-      const frame = Encapsulator.unpack(decrypted);
-      if (frame === null) {
-        Logger.warn(`[${this._id}] <-x- dropped unidentified packet ${buffer.length} bytes`);
-        return;
-      }
-      const payload = frame.PAYLOAD;
-      if (this._lsocket.destroyed) {
-        Logger.warn(`[${this._id}] <-x- ${payload.length} bytes (-header,decrypted) <-- ${buffer.length} bytes`);
-      } else {
-        Logger.info(`[${this._id}] <-- ${payload.length} bytes (-header,hash=${hash(payload)}) <-- ${buffer.length} bytes(encrypted,hash=${hash(buffer)})`);
-        this._lsocket.write(payload);
-      }
+      this.backwardToApplication(buffer);
     }
   }
 
   /**
-   * send data forward via this._socket.write()
+   * backward data to out client
    * @param buffer
    */
-  send(buffer) {
-    if (Config.isServer) {
-      this.sendFromServer(buffer);
+  backwardToClient(buffer) {
+    const encrypted = Crypto.encrypt(Encapsulator.pack(new Connection(), buffer).toBuffer());
+    Logger.info(`[${this._id}] <-- ${encrypted.length} bytes (+header,encrypted,hash=${hash(encrypted)}) <-- ${buffer.length} bytes(origin,hash=${hash(buffer)})`);
+    this._lsocket.write(encrypted);
+    // Tracer.dump(`Relay_${this._id}_en`, encrypted);
+  }
+
+  /**
+   * backward data to applications
+   * @param buffer
+   */
+  backwardToApplication(buffer) {
+    const decrypted = Crypto.decrypt(buffer);
+    const frame = Encapsulator.unpack(decrypted);
+    if (frame === null) {
+      Logger.warn(`[${this._id}] <-x- dropped unidentified packet ${buffer.length} bytes`);
+      return;
+    }
+    const payload = frame.PAYLOAD;
+    if (this._lsocket.destroyed) {
+      Logger.warn(`[${this._id}] <-x- ${payload.length} bytes (-header,decrypted) <-- ${buffer.length} bytes`);
     } else {
-      this.sendFromClient(buffer);
+      Logger.info(`[${this._id}] <-- ${payload.length} bytes (-header,hash=${hash(payload)}) <-- ${buffer.length} bytes(encrypted,hash=${hash(buffer)})`);
+      this._lsocket.write(payload);
     }
   }
 
-  sendFromServer(buffer) {
+  /**
+   * forward data via this._socket.write()
+   * @param buffer
+   */
+  forward(buffer) {
+    if (Config.isServer) {
+      this.forwardToDst(buffer);
+    } else {
+      this.forwardToServer(buffer);
+    }
+  }
+
+  /**
+   * forward data to real server
+   * @param buffer
+   */
+  forwardToDst(buffer) {
     const decrypted = Crypto.decrypt(buffer);
     const frame = Encapsulator.unpack(decrypted);
     if (frame === null) {
@@ -188,7 +208,11 @@ export class Relay {
     _send(payload);
   }
 
-  sendFromClient(buffer) {
+  /**
+   * forward data to our server
+   * @param buffer
+   */
+  forwardToServer(buffer) {
     const encrypted = Crypto.encrypt(Encapsulator.pack(this._connection, buffer).toBuffer());
     const _send = (data) => {
       Logger.info(`[${this._id}] --> ${buffer.length} bytes(origin,hash=${hash(buffer)}) --> ${data.length} bytes (+header,encrypted,hash=${hash(data)})`);

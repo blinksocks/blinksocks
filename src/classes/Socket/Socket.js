@@ -38,7 +38,6 @@ export class Socket {
     Logger.setLevel(Config.log_level);
     this._id = id;
     this._socket = socket;
-    // TODO: create Relay when Socks5 handshake was done
     this._relay = new Relay({
       id: this._id,
       socket: socket
@@ -68,7 +67,7 @@ export class Socket {
   }
 
   onReceived(buffer) {
-    this._relay.send(buffer);
+    this._relay.forward(buffer);
   }
 
   onError(socket, err) {
