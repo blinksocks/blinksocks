@@ -23,7 +23,7 @@ You can get pre-compiled library(including executable) of blinksocks from **yarn
 If you know [yarn](https://yarnpkg.com/), this way is recommended:
 
 ```
-$ yarn add -g blinksocks
+$ yarn global add blinksocks
 ```
 
 ### -> via npm
