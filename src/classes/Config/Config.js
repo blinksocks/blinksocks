@@ -63,7 +63,7 @@ export class Config {
     this.log_level = this.setUpLogger(json.log_level || DEFAULT_LOG_LEVEL);
     if (json.cipher === '') {
       this.cipher = '';
-      console.warn('you did not set a cipher, this shall be used only in development');
+      console.warn('you haven\'t specify a cipher, this shall only be used in development or special cases.');
     } else {
       this.cipher = Config.obtainCipher(json.cipher);
     }
@@ -123,13 +123,11 @@ export class Config {
     // configure log4js globally
     log4js.configure({
       appenders: [{
-        type: 'console',
-        level: _level
+        type: 'console'
       }, {
         type: 'dateFile',
         filename: 'logs/blinksocks.log',
-        pattern: '-yyyy-MM-dd',
-        level: _level
+        pattern: '-yyyy-MM-dd'
       }]
     });
 
