@@ -135,14 +135,22 @@ check this out: [docs](https://github.com/micooz/blinksocks/tree/master/docs).
 
 ## Roadmap
 
-* [x] non-encryption mode for debugging
+Done:
+
+* [x] non-encryption mode for debugging and non-security scenarios.
+
+Next major version(**v2.0.0**):
+
 * [ ] encrypt/decrypt blocks with iv
 * [ ] streaming data send/receive
-* [ ] multiple servers
 * [ ] UDP relay
+* [ ] more command line options
+
+Further versions:
+
+* [ ] multiple servers
 * [ ] ip ban
 * [ ] add daemon
-* [ ] more command line options
 * [ ] more tests
 * [ ] more docs
 * [ ] ...
