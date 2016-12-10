@@ -20,7 +20,9 @@
   "jest": {
     "testPathIgnorePatterns": [
       "<rootDir>/lib/"
-    ]
+    ],
+    "coverageDirectory": "./coverage/",
+    "collectCoverage": true
   },
   "dependencies": {
     "commander": "^2.9.0",

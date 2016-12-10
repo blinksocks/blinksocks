@@ -6,6 +6,7 @@
 [![devDependencies](https://img.shields.io/david/dev/micooz/blinksocks.svg?maxAge=2592000?style=flat-square)](https://www.npmjs.com/package/blinksocks)
 
 [![Travis](https://img.shields.io/travis/micooz/blinksocks.svg)](https://travis-ci.org/micooz/blinksocks)
+[![Coverage](https://img.shields.io/codecov/c/github/micooz/blinksocks/master.svg)](https://codecov.io/gh/micooz/blinksocks)
 [![%e2%9d%a4](https://img.shields.io/badge/made%20with-%e2%9d%a4-ff69b4.svg?style=flat-square)](https://github.com/micooz/blinksocks)
 
 Yet another socks5 proxy, designed for speed :zap:.
