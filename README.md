@@ -1,9 +1,10 @@
 # blinksocks
 
 [![npm](https://img.shields.io/npm/v/blinksocks.svg?maxAge=2592000?style=flat-square)](https://www.npmjs.com/package/blinksocks)
-[![npm](https://img.shields.io/npm/l/blinksocks.svg?maxAge=2592000?style=flat-square)](https://github.com/micooz/blinksocks/blob/master/LICENSE)
-[![David](https://img.shields.io/david/micooz/blinksocks.svg?maxAge=2592000?style=flat-square)](https://www.npmjs.com/package/blinksocks)
-[![David](https://img.shields.io/david/dev/micooz/blinksocks.svg?maxAge=2592000?style=flat-square)](https://www.npmjs.com/package/blinksocks)
+[![license](https://img.shields.io/npm/l/blinksocks.svg?maxAge=2592000?style=flat-square)](https://github.com/micooz/blinksocks/blob/master/LICENSE)
+[![dependencies](https://img.shields.io/david/micooz/blinksocks.svg?maxAge=2592000?style=flat-square)](https://www.npmjs.com/package/blinksocks)
+[![devDependencies](https://img.shields.io/david/dev/micooz/blinksocks.svg?maxAge=2592000?style=flat-square)](https://www.npmjs.com/package/blinksocks)
+
 [![Travis](https://img.shields.io/travis/micooz/blinksocks.svg)](https://travis-ci.org/micooz/blinksocks)
 [![%e2%9d%a4](https://img.shields.io/badge/made%20with-%e2%9d%a4-ff69b4.svg?style=flat-square)](https://github.com/micooz/blinksocks)
 
