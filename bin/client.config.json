@@ -1,9 +1,0 @@
-{
-  "host": "localhost",
-  "port": 6666,
-  "server_host": "micooz.com",
-  "server_port": 7777,
-  "password": "my secret password",
-  "cipher": "aes-256-cfb",
-  "log_level": "error"
-}

@@ -15,3 +15,6 @@ coverage/
 
 # tar
 *.tgz
+
+# others
+*.config.json
