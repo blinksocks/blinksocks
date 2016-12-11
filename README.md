@@ -10,7 +10,7 @@
 [![Coverage](https://img.shields.io/codecov/c/github/micooz/blinksocks/master.svg)](https://codecov.io/gh/micooz/blinksocks)
 [![%e2%9d%a4](https://img.shields.io/badge/made%20with-%e2%9d%a4-ff69b4.svg)](https://github.com/micooz/blinksocks)
 
-Yet another socks5 proxy, designed for speed :zap:.
+Yet another socks5 proxy, designed for speed :zap:. Inspired by [Shadowsocks](https://shadowsocks.org/en/index.html).
 
 > Across the Great Wall we can reach every corner in the world.
 
@@ -87,10 +87,14 @@ For **Server**, the file looks like(without `server_host` and `server_port`):
 }
 ```
 
-`log_level` should take a value from Loggin Level of
-[Log4js.Level](http://stritti.github.io/log4js/docu/users-guide.html#configuration).
-
-The levels are case-insensitive and cumulative.
+* `host`: Typically **localhost**.
+* `port`: Typically **1080**.
+* `server_host`: Typically **0.0.0.0**.
+* `server_port`: Any available number.
+* `password`: For data encryption, please keep it secret!
+* `cipher`: Encryption method. You can enable non-encryption mode by set it to empty string.
+* `log_level`: should take a value from Logging Level of
+[Log4js.Level](http://stritti.github.io/log4js/docu/users-guide.html#configuration). The levels are case-insensitive and cumulative.
 
 ## Examples
 
@@ -140,14 +144,14 @@ check this out: [docs](https://github.com/micooz/blinksocks/tree/master/docs).
 
 Done:
 
-* [x] non-encryption mode for debugging and non-security scenarios.
+* [x] non-encryption mode for debugging and non-security scenarios
 
 Next major version(**v2.0.0**):
 
+* [x] streaming data send/receive
 * [ ] encrypt/decrypt blocks with iv
-* [ ] streaming data send/receive
-* [ ] UDP relay
 * [ ] DNS cache
+* [ ] UDP relay
 * [ ] more command line options
 
 Further versions:
