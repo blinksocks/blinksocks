@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 const fs = require('fs');
-const crypto = require('crypto');
 const options = require('commander');
 const packageJson = require('../package.json');
 
@@ -21,7 +20,7 @@ function loadConfig(file) {
   return config;
 }
 
-module.exports = function (Hub) {
+module.exports = function ({Hub, Crypto}) {
   options
     .version(packageJson.version)
     .usage('[options] [...]')
@@ -31,7 +30,7 @@ module.exports = function (Hub) {
 
   // --ciphers
   if (options.ciphers) {
-    console.log(crypto.getCiphers());
+    console.log(Crypto.getCiphers().join('\n'));
     process.exit(0);
   }
 
