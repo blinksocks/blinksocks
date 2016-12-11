@@ -3,6 +3,7 @@ import log4js from 'log4js';
 import {Crypto} from '../Crypto';
 
 export const DEFAULT_CIPHER = 'aes-256-cfb';
+export const DEFAULT_KEY = 'my secret password';
 export const DEFAULT_LOG_LEVEL = 'ERROR';
 
 export class Config {
@@ -18,6 +19,8 @@ export class Config {
   static key;
 
   static cipher;
+
+  static use_iv;
 
   static log_level;
 
@@ -47,26 +50,47 @@ export class Config {
       Config.isServer = false;
     }
 
-    if (typeof json.password !== 'string' || json.password === '') {
-      throw Error('\'password\' must be provided and is not empty');
+    if (typeof json.password !== 'string') {
+      throw Error('\'password\' must be a string and is not empty');
     }
 
     if (typeof json.cipher !== 'string') {
-      throw Error('\'cipher\' must be provided, use --ciphers to display all supported ciphers');
+      throw Error('\'cipher\' must be a string');
+    }
+
+    if (json.cipher !== '') {
+      if (!Crypto.isAvailable(json.cipher)) {
+        throw Error('\'cipher\' is not supported, use --ciphers to display all supported ciphers');
+      }
+      if (typeof json.use_iv !== 'boolean') {
+        throw Error('\'use_iv\' must be true or false');
+      }
+      if (json.password === '' || json.password === DEFAULT_KEY) {
+        throw Error(`\'password\' must not be empty or \'${DEFAULT_KEY}\'`);
+      }
+      this.cipher = Config.obtainCipher(json.cipher);
+      this.key = this.getKey(this.cipher, json.password);
+      this.use_iv = json.use_iv;
+    } else {
+      this.cipher = '';
+      this.key = '';
+      this.use_iv = false;
+      console.warn('you haven\'t specify a cipher, this shall only be used in development or special cases.');
     }
 
     this.host = json.host;
     this.port = json.port;
     this.server_host = json.server_host;
     this.server_port = json.server_port;
-    this.key = Crypto.hash(Crypto.hash(json.password));
     this.log_level = this.setUpLogger(json.log_level || DEFAULT_LOG_LEVEL);
-    if (json.cipher === '') {
-      this.cipher = '';
-      console.warn('you haven\'t specify a cipher, this shall only be used in development or special cases.');
-    } else {
-      this.cipher = Config.obtainCipher(json.cipher);
-    }
+  }
+
+  /**
+   * generate key from config.password
+   */
+  static getKey(cipher, password) {
+    const keyLen = Crypto.getKeySize(cipher);
+    return Crypto.hash(Crypto.hash(password)).substr(0, keyLen);
   }
 
   /**
@@ -83,7 +107,7 @@ export class Config {
         console.warn(`unsupported cipher: '${cipher}', fallback to: '${DEFAULT_CIPHER}'`);
         cipher = DEFAULT_CIPHER;
       } else {
-        console.error('crypto support is disabled, please re-build your Node.js with [crypto] module.');
+        console.error('crypto module is unavailable, please re-build your Node.js with [crypto] module.');
         process.exit(-1);
       }
     }

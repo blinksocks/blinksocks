@@ -15,7 +15,7 @@ import {
 const Logger = log4js.getLogger('Frame');
 
 // +------+------+----------+----------+----------+
-// | LEN  | ATYP | DST.ADDR | DST.PORT | PAYLOAD  |
+// | LEN  | ATYP | DST.ADDR | DST.PORT |   DATA   |
 // +------+------+----------+----------+----------+
 // |  2   |  1   | Variable |    2     | Variable |
 // +------+------+----------+----------+----------+
@@ -30,7 +30,7 @@ export class Frame extends Message {
 
   DSTPORT;
 
-  PAYLOAD;
+  DATA;
 
   constructor(options = {}) {
     super();
@@ -39,14 +39,14 @@ export class Frame extends Message {
       ATYP: ATYP_V4,
       DSTADDR: [NOOP, NOOP, NOOP, NOOP],
       DSTPORT: [NOOP, NOOP],
-      PAYLOAD: [],
+      DATA: [],
       ...options
     };
     this.LEN = fields.LEN;
     this.ATYP = fields.ATYP;
     this.DSTADDR = fields.DSTADDR;
     this.DSTPORT = fields.DSTPORT;
-    this.PAYLOAD = fields.PAYLOAD;
+    this.DATA = fields.DATA;
   }
 
   // TODO: strict check the received buffer, for security
@@ -102,12 +102,12 @@ export class Frame extends Message {
       ATYP: _buffer[2],
       DSTADDR,
       DSTPORT,
-      PAYLOAD: _buffer.slice(DSTADDR.length + (_buffer[2] === ATYP_DOMAIN ? 6 : 5))
+      DATA: _buffer.slice(DSTADDR.length + (_buffer[2] === ATYP_DOMAIN ? 6 : 5))
     });
   }
 
   toBuffer() {
-    return Buffer.from([...this.LEN, this.ATYP, ...this.DSTADDR, ...this.DSTPORT, ...this.PAYLOAD]);
+    return Buffer.from([...this.LEN, this.ATYP, ...this.DSTADDR, ...this.DSTPORT, ...this.DATA]);
   }
 
 }

@@ -6,6 +6,19 @@ const HASH_SALT = 'blinksocks';
 const CRYPTO_TYPE_CIPHER = 0;
 const CRYPTO_TYPE_DECIPHER = 1;
 const CRYPTO_TYPE_NONE = 3;
+export const CRYPTO_IV_LEN = 16;
+
+/**
+ * supported ciphers, key length and IV length
+ */
+const cipherKeyIVLens = {
+  'aes-128-ctr': [16, 16],
+  'aes-192-ctr': [24, 16],
+  'aes-256-ctr': [32, 16],
+  'aes-128-cfb': [16, 16],
+  'aes-192-cfb': [24, 16],
+  'aes-256-cfb': [32, 16],
+};
 
 class FakeStream {
 
@@ -32,17 +45,19 @@ class FakeStream {
  */
 export class Crypto {
 
-  static _create(type, collector) {
+  static _create(type, collector, iv) {
     const [cipher, key] = [Config.cipher, Config.key];
 
     let stream = null;
     const _type = cipher === '' ? CRYPTO_TYPE_NONE : type;
+    const _iv = (typeof iv === 'undefined') ? null : iv;
+
     switch (_type) {
       case CRYPTO_TYPE_CIPHER:
-        stream = crypto.createCipher(cipher, key);
+        stream = _iv === null ? crypto.createCipher(cipher, key) : crypto.createCipheriv(cipher, key, iv);
         break;
       case CRYPTO_TYPE_DECIPHER:
-        stream = crypto.createDecipher(cipher, key);
+        stream = _iv === null ? crypto.createDecipher(cipher, key) : crypto.createDecipheriv(cipher, key, iv);
         break;
       case CRYPTO_TYPE_NONE:
         stream = FakeStream.create(collector);
@@ -68,12 +83,12 @@ export class Crypto {
     return stream;
   }
 
-  static createCipher(collector) {
-    return Crypto._create(CRYPTO_TYPE_CIPHER, collector);
+  static createCipher(collector, iv) {
+    return Crypto._create(CRYPTO_TYPE_CIPHER, collector, iv);
   }
 
-  static createDecipher(collector) {
-    return Crypto._create(CRYPTO_TYPE_DECIPHER, collector);
+  static createDecipher(collector, iv) {
+    return Crypto._create(CRYPTO_TYPE_DECIPHER, collector, iv);
   }
 
   static hash(text) {
@@ -83,6 +98,22 @@ export class Crypto {
       Buffer.from(HASH_SALT)
     ]));
     return hash.digest('hex');
+  }
+
+  static generateIV() {
+    return crypto.randomBytes(CRYPTO_IV_LEN);
+  }
+
+  static isAvailable(cipher) {
+    return !(typeof cipherKeyIVLens[cipher] === 'undefined');
+  }
+
+  static getCiphers() {
+    return Object.keys(cipherKeyIVLens);
+  }
+
+  static getKeySize(cipher) {
+    return cipherKeyIVLens[cipher][0];
   }
 
 }

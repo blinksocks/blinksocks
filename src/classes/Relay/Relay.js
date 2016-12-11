@@ -29,6 +29,8 @@ export class Relay {
 
   _socket = null; // forward net.Socket
 
+  _iv = null;
+
   _cipher = null;
 
   _decipher = null;
@@ -47,14 +49,13 @@ export class Relay {
     this._socket = net.connect({host, port}, () => {
       Logger.info(`[${this._id}] ==> ${host}:${port}`);
       this._isConnected = true;
+      this.updateCiphers();
       if (typeof callback !== 'undefined') {
         callback(this._socket);
       }
     });
     this._socket.on('error', (err) => this.onError({host, port}, err));
     this._socket.on('data', (buffer) => this.onReceiving(buffer));
-    this._cipher = Crypto.createCipher((buffer) => this.onReceived(buffer));
-    this._decipher = Crypto.createDecipher((buffer) => this.onReceived(buffer));
   }
 
   connect(conn, callback) {
@@ -119,12 +120,11 @@ export class Relay {
   backwardToClient(encrypted) {
     // NOTE:
     //   It is not necessary encapsulate a header when backward data to client,
-    //   because client only need the payload.
+    //   because client only need the application data.
     if (Logger.isInfoEnabled()) {
       const logs = [
         `[${this._id}]`,
         `${encrypted.length} bytes(encrypted,${hash(encrypted)})`
-        // `${payload.length} bytes(origin,${hash(payload)})`
       ];
       Logger.info(logs.join(' <-- '));
     }
@@ -134,14 +134,14 @@ export class Relay {
 
   /**
    * backward data to applications
-   * @param payload
+   * @param data
    */
-  backwardToApplication(payload) {
+  backwardToApplication(data) {
     if (this._lsocket.destroyed) {
       if (Logger.isWarnEnabled()) {
         const logs = [
           `[${this._id}] <-x- `,
-          `${payload.length} bytes(decrypted,${hash(payload)})`,
+          `${data.length} bytes(decrypted,${hash(data)})`,
           // `${buffer.length} bytes(encrypted,${hash(buffer)})`
         ];
         Logger.warn(logs.join(''));
@@ -150,12 +150,12 @@ export class Relay {
       if (Logger.isInfoEnabled()) {
         const logs = [
           `[${this._id}]`,
-          `${payload.length} bytes(decrypted,${hash(payload)})`,
+          `${data.length} bytes(decrypted,${hash(data)})`,
           // `${buffer.length} bytes(encrypted,${hash(buffer)})`
         ];
         Logger.info(logs.join(' <-- '));
       }
-      this._lsocket.write(payload);
+      this._lsocket.write(data);
     }
   }
 
@@ -200,14 +200,14 @@ export class Relay {
       return;
     }
 
-    const payload = frame.PAYLOAD;
-    const _send = (data) => {
+    const data = frame.DATA;
+    const _send = (_data) => {
       if (this._socket.destroyed) {
         if (Logger.isWarnEnabled()) {
           const logs = [
             `[${this._id}] -x-> `,
             `${decrypted.length} bytes(decrypted,${hash(decrypted)}) -x-> `,
-            `${data.length} bytes(-header,${hash(data)})`
+            `${_data.length} bytes(-header,${hash(_data)})`
           ];
           Logger.warn(logs.join(''));
         }
@@ -217,11 +217,11 @@ export class Relay {
           const logs = [
             `[${this._id}]`,
             `${decrypted.length} bytes(decrypted,${hash(decrypted)})`,
-            `${data.length} bytes(-header,${hash(data)})`
+            `${_data.length} bytes(-header,${hash(_data)})`
           ];
           Logger.info(logs.join(' --> '));
         }
-        this._socket.write(data);
+        this._socket.write(_data);
       }
     };
 
@@ -233,12 +233,29 @@ export class Relay {
         DSTPORT: frame.DSTPORT
       });
       this.connect(conn, () => {
-        // send payload of frame
-        _send(payload);
+        _send(data);
       });
       return;
     }
-    _send(payload);
+    _send(data);
+  }
+
+  /**
+   * update _cipher and _decipher, with iv if necessary
+   */
+  updateCiphers() {
+    const collector = (buffer) => this.onReceived(buffer);
+    const iv = this.iv === null ? undefined : this._iv;
+    this._cipher = Crypto.createCipher(collector, iv);
+    this._decipher = Crypto.createDecipher(collector, iv);
+  }
+
+  /**
+   * set initialization vector
+   * @param iv
+   */
+  setIV(iv) {
+    this._iv = iv;
   }
 
   /**

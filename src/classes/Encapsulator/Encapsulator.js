@@ -1,4 +1,4 @@
-import {Frame} from './Frame';
+import {Frame} from '../Frame';
 import {
   ATYP_DOMAIN
 } from '../../socks5/Constants';
@@ -29,10 +29,10 @@ export class Encapsulator {
     return arr.reverse();
   }
 
-  static pack(connection, payload) {
+  static pack(connection, data) {
     const {ATYP, DSTADDR, DSTPORT} = connection;
 
-    let len = 3 + DSTADDR.length + DSTPORT.length + payload.length;
+    let len = 3 + DSTADDR.length + DSTPORT.length + data.length;
     let addr = null;
     if (ATYP === ATYP_DOMAIN) {
       len += 1;
@@ -46,7 +46,7 @@ export class Encapsulator {
       ATYP,
       DSTADDR: addr,
       DSTPORT,
-      PAYLOAD: payload
+      DATA: data
     });
   }
 
