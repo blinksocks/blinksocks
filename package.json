@@ -11,11 +11,11 @@
     "test:coverage": "jest --coverage",
     "lint": "eslint src",
     "compile": "babel src --out-dir lib --minified",
-    "server:dev": "babel-node bin/bootstrap.js --config bin/server.config.json",
-    "client:dev": "babel-node bin/bootstrap.js --config bin/client.config.json",
-    "server:prod": "node bin/cli.js --config bin/server.config.json",
-    "client:prod": "node bin/cli.js --config bin/client.config.json",
-    "percommit": "npm run lint && npm run test"
+    "server:dev": "babel-node bin/bootstrap.js --config server.config.json",
+    "client:dev": "babel-node bin/bootstrap.js --config client.config.json",
+    "server:prod": "node bin/cli.js --config server.config.json",
+    "client:prod": "node bin/cli.js --config client.config.json",
+    "percommit": "npm run test"
   },
   "jest": {
     "testPathIgnorePatterns": [
