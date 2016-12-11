@@ -1,4 +1,4 @@
-import {Frame} from '../Encapsulator';
+import {Frame} from '../Frame';
 
 describe('Frame#constructor', function () {
 

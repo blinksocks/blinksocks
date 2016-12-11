@@ -1,6 +1,11 @@
 jest.mock('fs');
 
-import {Config, DEFAULT_CIPHER, DEFAULT_LOG_LEVEL} from '../Config';
+import {
+  Config,
+  DEFAULT_KEY,
+  DEFAULT_CIPHER,
+  DEFAULT_LOG_LEVEL
+} from '../Config';
 
 beforeEach(function () {
   const fs = require('fs');
@@ -35,38 +40,79 @@ describe('Config#init', function () {
     expect(() => Config.init({host: 'localhost', port: 1080, server_host: 'localhost', server_port: 1.1})).toThrow();
   });
 
-  it('should throw when password is not provided', function () {
+  it('should throw when password is not string', function () {
     expect(function () {
       Config.init({
         host: 'localhost',
         port: 1080,
         server_host: 'localhost',
         server_port: 1080,
-        password: ''
+        password: null
       });
     }).toThrow();
   });
 
-  it('should throw when cipher is not provided', function () {
-    Config.init({
-      host: 'localhost',
-      port: 1080,
-      server_host: 'localhost',
-      server_port: 1080,
-      password: '123',
-      cipher: ''
-    });
-    expect(Config.cipher).toBe('');
-  });
-
-  it('should throw when cipher is not provided', function () {
+  it('should throw when cipher is not string', function () {
     expect(function () {
       Config.init({
         host: 'localhost',
         port: 1080,
         server_host: 'localhost',
         server_port: 1080,
-        password: '123'
+        password: '123',
+        cipher: null
+      });
+    }).toThrow();
+  });
+
+  it('should throw when cipher is not available', function () {
+    expect(function () {
+      Config.init({
+        host: 'localhost',
+        port: 1080,
+        server_host: 'localhost',
+        server_port: 1080,
+        password: '123',
+        cipher: 'abc'
+      });
+    }).toThrow();
+  });
+
+  it('should throw when use_iv is not boolean', function () {
+    expect(function () {
+      Config.init({
+        host: 'localhost',
+        port: 1080,
+        server_host: 'localhost',
+        server_port: 1080,
+        password: '123',
+        cipher: 'aes-256-cfb',
+        use_iv: null
+      });
+    }).toThrow();
+  });
+
+  it('should throw when password is empty or DEFAULT_KEY', function () {
+    expect(function () {
+      Config.init({
+        host: 'localhost',
+        port: 1080,
+        server_host: 'localhost',
+        server_port: 1080,
+        cipher: 'aes-256-cfb',
+        use_iv: true,
+        password: ''
+      });
+    }).toThrow();
+    expect(function () {
+      Config.init({
+        host: 'localhost',
+        port: 1080,
+        server_host: 'localhost',
+        server_port: 1080,
+        cipher: 'aes-256-cfb',
+        use_iv: true,
+        password: DEFAULT_KEY
       });
     }).toThrow();
   });
@@ -78,9 +124,33 @@ describe('Config#init', function () {
       server_host: 'localhost',
       server_port: 1080,
       password: '123',
-      cipher: 'aes-256-cfb'
+      cipher: 'aes-256-cfb',
+      use_iv: false
     });
     expect(Config.isServer).toBe(false);
+  });
+
+  it('should be non-encryption mode', function () {
+    Config.init({
+      host: 'localhost',
+      port: 1080,
+      server_host: 'localhost',
+      server_port: 1080,
+      password: '123',
+      cipher: '',
+      use_iv: true
+    });
+    expect(Config.cipher).toBe('');
+    expect(Config.key).toBe('');
+    expect(Config.use_iv).toBe(false);
+  });
+
+});
+
+describe('Config#getKey', function () {
+
+  it('should return a correct key', function () {
+    expect(Config.getKey(DEFAULT_CIPHER, 'password')).toBe('b45a44fcde0670bf6c56e5a1e0bf2c46');
   });
 
 });

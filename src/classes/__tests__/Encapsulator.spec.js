@@ -1,4 +1,5 @@
-import {Encapsulator, Frame} from '../Encapsulator';
+import {Encapsulator} from '../Encapsulator';
+import {Frame} from '../Frame';
 import {Connection} from '../Connection';
 import {
   ATYP_DOMAIN
@@ -22,7 +23,7 @@ describe('Encapsulator#pack', function () {
     expect(frame2.ATYP).toBe(ATYP_DOMAIN);
     expect(frame2.DSTADDR).toEqual([4, 0, 0, 0, 0]);
     expect(frame2.DSTPORT).toEqual([0, 0]);
-    expect(frame2.PAYLOAD).toEqual([0xff, 0xff]);
+    expect(frame2.DATA).toEqual([0xff, 0xff]);
   });
 });
 
