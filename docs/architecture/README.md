@@ -31,12 +31,16 @@ deliver them to the `Relay`.
 
 ### Data Backward (client <- server)
 
+Data backward is simpler than data forward:
+
 * On the server side
 
-`Relay` receives data from the real receivers, packs with our header, 
+`Relay` receives data from the real receivers, ~~packs with our header~~, 
 encrypts then backward data to the client.
 
 * On the client side
 
-`Relay` retrieves encrypted data from the server, decrypts, unpacks then 
+`Relay` retrieves encrypted data from the server, decrypts, ~~unpacks~~ then 
 backwards data to the `Application`.
+
+> NOTE: For TCP relay, backward data(encrypted) does not contain extra header anymore. It's more efficient and secure.
