@@ -71,6 +71,7 @@ For **Client**, the file looks like:
   "server_port": 7777,
   "password": "my secret password",
   "cipher": "aes-256-cfb",
+  "use_iv": true,
   "log_level": "error"
 }
 ```
@@ -83,6 +84,7 @@ For **Server**, the file looks like(without `server_host` and `server_port`):
   "port": 7777,
   "password": "my secret password",
   "cipher": "aes-256-cfb",
+  "use_iv": true,
   "log_level": "error"
 }
 ```
@@ -93,6 +95,7 @@ For **Server**, the file looks like(without `server_host` and `server_port`):
 * `server_port`: Any available number.
 * `password`: For data encryption, please keep it secret!
 * `cipher`: Encryption method. You can enable non-encryption mode by set it to empty string.
+* `use_iv`: Whether encrypt/decrypt with initialization vector or not.
 * `log_level`: should take a value from Logging Level of
 [Log4js.Level](http://stritti.github.io/log4js/docu/users-guide.html#configuration). The levels are case-insensitive and cumulative.
 
@@ -149,7 +152,7 @@ Done:
 Next major version(**v2.0.0**):
 
 * [x] streaming data send/receive
-* [ ] encrypt/decrypt blocks with iv
+* [x] encrypt/decrypt with initialization vector
 * [ ] DNS cache
 * [ ] UDP relay
 * [ ] more command line options
@@ -161,6 +164,7 @@ Further versions:
 * [ ] add daemon
 * [ ] more tests
 * [ ] more docs
+* [ ] more cipher support
 * [ ] ...
 
 ## Contributors
