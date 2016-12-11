@@ -1,9 +1,9 @@
 import log4js from 'log4js';
-import {AdvancedBuffer} from '../AdvancedBuffer';
 import {Connection} from '../Connection';
 import {Relay} from '../Relay';
 import {Crypto} from '../Crypto';
 import {Config} from '../Config';
+import {Encapsulator} from '../Encapsulator';
 
 import {
   IdentifierMessage,
@@ -28,11 +28,11 @@ export class Socket {
 
   _socksReady = false;
 
-  _buffer = new AdvancedBuffer({
-    getPacketLength: function (bytes) {
-      return Crypto.decrypt(bytes).readUIntBE(0, bytes.length);
-    }
-  });
+  _connection = null;
+
+  _decipher = null;
+
+  _cipher = null;
 
   constructor({id, socket}) {
     Logger.setLevel(Config.log_level);
@@ -43,31 +43,34 @@ export class Socket {
       socket: socket
     });
     // events
-    this._buffer.on('data', (buffer) => this.onReceived(buffer));
-    socket.on('data', (buffer) => this.onReceiving(socket, buffer));
     socket.on('error', (err) => this.onError(socket, err));
     socket.on('close', (had_error) => this.onClose(socket, had_error));
+    socket.on('data', (buffer) => this.onReceiving(socket, buffer));
+    this._decipher = Crypto.createDecipher((buffer) => this.onReceived(buffer));
+    this._cipher = Crypto.createCipher((buffer) => this.onReceived(buffer));
 
     Logger.info(`client[${this._id}] connected`);
   }
 
   onReceiving(socket, buffer) {
     if (!this._socksReady && !Config.isServer) {
-      // only client side should do socks5 handle shake
-      this.socksHandShake(socket, buffer);
+      // only client side should do socks5 handshake
+      this.onSocksHandshake(socket, buffer);
       return;
     }
     if (Config.isServer) {
-      // NOTE: We should take advantages of AdvancedBuffer to get a complete packet.
-      //       DO NOT decrypt the buffer(chunk) at once it was received, or AES will fail.
-      this._buffer.put(buffer);
+      this._decipher.write(buffer);
     } else {
-      this.onReceived(buffer);
+      this._cipher.write(Encapsulator.pack(this._connection, buffer).toBuffer());
     }
   }
 
   onReceived(buffer) {
-    this._relay.forward(buffer);
+    if (Config.isServer) {
+      this._relay.forwardToDst(buffer);
+    } else {
+      this._relay.forwardToServer(buffer);
+    }
   }
 
   onError(socket, err) {
@@ -93,7 +96,7 @@ export class Socket {
     this._relay.close();
   }
 
-  socksHandShake(socket, buffer) {
+  onSocksHandshake(socket, buffer) {
     // 1. IDENTIFY
     const identifier = IdentifierMessage.parse(buffer);
     if (identifier !== null) {
@@ -105,12 +108,11 @@ export class Socket {
     // 2. REQUEST
     const request = RequestMessage.parse(buffer);
     if (request && request.CMD === REQUEST_COMMAND_CONNECT) {
-      const connection = new Connection({
+      this._connection = new Connection({
         ATYP: request.ATYP,
         DSTADDR: request.DSTADDR,
         DSTPORT: request.DSTPORT
       });
-      this._relay.setConnection(connection);
 
       // ACK
       const message = new ReplyMessage({REP: REPLY_SUCCEEDED});

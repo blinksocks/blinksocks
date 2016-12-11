@@ -4,8 +4,6 @@ import {Config} from '../Config';
 import {Connection} from '../Connection';
 import {Crypto} from '../Crypto';
 import {Encapsulator} from '../Encapsulator';
-import {AdvancedBuffer} from '../AdvancedBuffer';
-// import {Tracer} from '../Tracer';
 
 const Logger = log4js.getLogger('Relay');
 
@@ -31,13 +29,9 @@ export class Relay {
 
   _socket = null; // forward net.Socket
 
-  _connection = null; // only available on client-side, will be packed in every out packet
+  _cipher = null;
 
-  _buffer = new AdvancedBuffer({
-    getPacketLength: function (bytes) {
-      return Crypto.decrypt(bytes).readUIntBE(0, bytes.length);
-    }
-  });
+  _decipher = null;
 
   _isConnected = false;
 
@@ -45,10 +39,6 @@ export class Relay {
     Logger.setLevel(Config.log_level);
     this._id = options.id;
     this._lsocket = options.socket;
-  }
-
-  setConnection(connection) {
-    this._connection = connection;
   }
 
   // private
@@ -61,16 +51,15 @@ export class Relay {
         callback(this._socket);
       }
     });
-    this._socket.on('error', (err) => {
-      this.onError({host, port}, err);
-      // callback(null);
-    });
+    this._socket.on('error', (err) => this.onError({host, port}, err));
     this._socket.on('data', (buffer) => this.onReceiving(buffer));
-    this._buffer.on('data', (buffer) => this.onReceived(buffer));
+    this._cipher = Crypto.createCipher((buffer) => this.onReceived(buffer));
+    this._decipher = Crypto.createDecipher((buffer) => this.onReceived(buffer));
   }
 
   connect(conn, callback) {
     const [host, port] = conn.getEndPoint();
+    // TODO: cache DNS result for domain host to speed up connecting
     this._connect(host, port, callback);
   }
 
@@ -105,12 +94,9 @@ export class Relay {
 
   onReceiving(buffer) {
     if (Config.isServer) {
-      this.onReceived(buffer);
+      this._cipher.write(buffer);
     } else {
-      // Tracer.dump(`Relay_${this._id}_en`, buffer);
-
-      // NOTE: DO NOT decrypt the buffer(chunk) at once, or AES decryption will fail.
-      this._buffer.put(buffer);
+      this._decipher.write(buffer);
     }
   }
 
@@ -128,67 +114,114 @@ export class Relay {
 
   /**
    * backward data to out client
-   * @param buffer
+   * @param encrypted
    */
-  backwardToClient(buffer) {
-    const encrypted = Crypto.encrypt(Encapsulator.pack(new Connection(), buffer).toBuffer());
-    Logger.info(`[${this._id}] <-- ${encrypted.length} bytes (+header,encrypted,hash=${hash(encrypted)}) <-- ${buffer.length} bytes(origin,hash=${hash(buffer)})`);
+  backwardToClient(encrypted) {
+    // NOTE:
+    //   It is not necessary encapsulate a header when backward data to client,
+    //   because client only need the payload.
+    if (Logger.isInfoEnabled()) {
+      const logs = [
+        `[${this._id}]`,
+        `${encrypted.length} bytes(encrypted,${hash(encrypted)})`
+        // `${payload.length} bytes(origin,${hash(payload)})`
+      ];
+      Logger.info(logs.join(' <-- '));
+    }
+
     this._lsocket.write(encrypted);
-    // Tracer.dump(`Relay_${this._id}_en`, encrypted);
   }
 
   /**
    * backward data to applications
-   * @param buffer
+   * @param payload
    */
-  backwardToApplication(buffer) {
-    const decrypted = Crypto.decrypt(buffer);
-    const frame = Encapsulator.unpack(decrypted);
-    if (frame === null) {
-      Logger.warn(`[${this._id}] <-x- dropped unidentified packet ${buffer.length} bytes`);
-      return;
-    }
-    const payload = frame.PAYLOAD;
+  backwardToApplication(payload) {
     if (this._lsocket.destroyed) {
-      Logger.warn(`[${this._id}] <-x- ${payload.length} bytes (-header,decrypted) <-- ${buffer.length} bytes`);
+      if (Logger.isWarnEnabled()) {
+        const logs = [
+          `[${this._id}] <-x- `,
+          `${payload.length} bytes(decrypted,${hash(payload)})`,
+          // `${buffer.length} bytes(encrypted,${hash(buffer)})`
+        ];
+        Logger.warn(logs.join(''));
+      }
     } else {
-      Logger.info(`[${this._id}] <-- ${payload.length} bytes (-header,hash=${hash(payload)}) <-- ${buffer.length} bytes(encrypted,hash=${hash(buffer)})`);
+      if (Logger.isInfoEnabled()) {
+        const logs = [
+          `[${this._id}]`,
+          `${payload.length} bytes(decrypted,${hash(payload)})`,
+          // `${buffer.length} bytes(encrypted,${hash(buffer)})`
+        ];
+        Logger.info(logs.join(' <-- '));
+      }
       this._lsocket.write(payload);
     }
   }
 
   /**
-   * forward data via this._socket.write()
-   * @param buffer
+   * forward data to our server
+   * @param encrypted
    */
-  forward(buffer) {
-    if (Config.isServer) {
-      this.forwardToDst(buffer);
-    } else {
-      this.forwardToServer(buffer);
+  forwardToServer(encrypted) {
+    const _send = (data) => {
+      if (Logger.isInfoEnabled()) {
+        const logs = [
+          `[${this._id}]`,
+          // `${buffer.length} bytes(origin,${hash(buffer)})`,
+          `${data.length} bytes (+header,encrypted,${hash(data)})`
+        ];
+        Logger.info(logs.join(' --> '));
+      }
+      this._socket.write(data);
+    };
+
+    // connect to our server if not connected yet
+    if (!this._isConnected) {
+      // TODO: cache DNS result for domain host to speed up connecting
+      this._connect(Config.server_host, Config.server_port, () => {
+        _send(encrypted);
+      });
+      return;
     }
+    _send(encrypted);
   }
 
   /**
    * forward data to real server
-   * @param buffer
+   * @param decrypted
    */
-  forwardToDst(buffer) {
-    const decrypted = Crypto.decrypt(buffer);
+  forwardToDst(decrypted) {
     const frame = Encapsulator.unpack(decrypted);
     if (frame === null) {
-      Logger.warn(`[${this._id}] -x-> dropped unidentified packet ${buffer.length} bytes`);
+      if (Logger.isWarnEnabled()) {
+        Logger.warn(`[${this._id}] -x-> dropped unidentified packet ${decrypted.length} bytes`);
+      }
       return;
     }
 
     const payload = frame.PAYLOAD;
     const _send = (data) => {
-      if (!this._socket.destroyed) {
-        Logger.info(`[${this._id}] --> ${buffer.length} bytes(encrypted,hash=${hash(buffer)}) --> ${data.length} bytes (-header,hash=${hash(data)})`);
-        this._socket.write(data);
-      } else {
-        Logger.warn(`[${this._id}] -x-> ${buffer.length} bytes -x-> ${data.length} bytes (-header,decrypted)`);
+      if (this._socket.destroyed) {
+        if (Logger.isWarnEnabled()) {
+          const logs = [
+            `[${this._id}] -x-> `,
+            `${decrypted.length} bytes(decrypted,${hash(decrypted)}) -x-> `,
+            `${data.length} bytes(-header,${hash(data)})`
+          ];
+          Logger.warn(logs.join(''));
+        }
         this._lsocket.end();
+      } else {
+        if (Logger.isInfoEnabled()) {
+          const logs = [
+            `[${this._id}]`,
+            `${decrypted.length} bytes(decrypted,${hash(decrypted)})`,
+            `${data.length} bytes(-header,${hash(data)})`
+          ];
+          Logger.info(logs.join(' --> '));
+        }
+        this._socket.write(data);
       }
     };
 
@@ -209,26 +242,8 @@ export class Relay {
   }
 
   /**
-   * forward data to our server
-   * @param buffer
+   * send FIN to the other end
    */
-  forwardToServer(buffer) {
-    const encrypted = Crypto.encrypt(Encapsulator.pack(this._connection, buffer).toBuffer());
-    const _send = (data) => {
-      Logger.info(`[${this._id}] --> ${buffer.length} bytes(origin,hash=${hash(buffer)}) --> ${data.length} bytes (+header,encrypted,hash=${hash(data)})`);
-      this._socket.write(data);
-    };
-
-    // connect to our server if not connected yet
-    if (!this._isConnected) {
-      this._connect(Config.server_host, Config.server_port, () => {
-        _send(encrypted);
-      });
-      return;
-    }
-    _send(encrypted);
-  }
-
   close() {
     if (this._socket !== null && !this._socket.destroyed) {
       this._socket.end();
