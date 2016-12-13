@@ -3,9 +3,11 @@ import log4js from 'log4js';
 import {Config} from '../Config';
 import {Connection} from '../Connection';
 import {Crypto} from '../Crypto';
+import {DNSCache} from '../DNSCache';
 import {Encapsulator} from '../Encapsulator';
 
 const Logger = log4js.getLogger('Relay');
+const dnsCache = DNSCache.create();
 
 /**
  * return 6 length hash string of a buffer, for debugging
@@ -47,7 +49,6 @@ export class Relay {
 
   _connect(host, port, callback) {
     this._socket = net.connect({host, port}, () => {
-      Logger.info(`[${this._id}] ==> ${host}:${port}`);
       this._isConnected = true;
       this.updateCiphers();
       if (typeof callback !== 'undefined') {
@@ -58,10 +59,13 @@ export class Relay {
     this._socket.on('data', (buffer) => this.onReceiving(buffer));
   }
 
-  connect(conn, callback) {
+  async connect(conn, callback) {
     const [host, port] = conn.getEndPoint();
-    // TODO: cache DNS result for domain host to speed up connecting
-    this._connect(host, port, callback);
+    const ip = await dnsCache.get(host);
+    this._connect(ip, port, callback);
+    if (Logger.isInfoEnabled()) {
+      Logger.info(`[${this._id}] ==> ${host}(${ip}:${port})`);
+    }
   }
 
   onError({host, port}, err) {
@@ -178,10 +182,16 @@ export class Relay {
 
     // connect to our server if not connected yet
     if (!this._isConnected) {
-      // TODO: cache DNS result for domain host to speed up connecting
-      this._connect(Config.server_host, Config.server_port, () => {
-        _send(encrypted);
-      });
+      (async() => {
+        const [host, port] = [Config.server_host, Config.server_port];
+        const ip = await dnsCache.get(host);
+        this._connect(ip, port, () => {
+          _send(encrypted);
+        });
+        if (Logger.isInfoEnabled()) {
+          Logger.info(`[${this._id}] ==> ${host}(${ip}:${port})`);
+        }
+      })();
       return;
     }
     _send(encrypted);

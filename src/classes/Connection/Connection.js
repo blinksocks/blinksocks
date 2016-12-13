@@ -33,8 +33,8 @@ export class Connection {
       throw Error('DSTADDR.length must be 4');
     }
 
-    if (fields.ATYP === ATYP_V6 && fields.DSTADDR.length !== 8) {
-      throw Error('DSTADDR.length must be 8');
+    if (fields.ATYP === ATYP_V6 && fields.DSTADDR.length !== 16) {
+      throw Error('DSTADDR.length must be 16');
     }
 
     if (!Array.isArray(fields.DSTPORT) && !(fields.DSTPORT instanceof Buffer)) {
@@ -63,6 +63,7 @@ export class Connection {
         host = DSTADDR.join('.');
         break;
       case ATYP_V6:
+        // TODO: fix here
         host = `[${DSTADDR.map((u) => u.toString(16)).join(':')}]`;
         break;
       case ATYP_DOMAIN:
@@ -71,7 +72,7 @@ export class Connection {
       default:
         throw Error(`unknown ATYP: ${ATYP}`);
     }
-    const port = DSTPORT.reduce((prev, next) => (prev << 8) + next);
+    const port = Buffer.from(DSTPORT).readUInt16BE(0);
     return [host, port];
   }
 
