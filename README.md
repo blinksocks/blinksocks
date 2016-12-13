@@ -153,7 +153,7 @@ Next major version(**v2.0.0**):
 
 * [x] streaming data send/receive
 * [x] encrypt/decrypt with initialization vector
-* [ ] DNS cache
+* [x] DNS cache
 * [ ] UDP relay
 * [ ] more command line options
 

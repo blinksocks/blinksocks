@@ -44,3 +44,9 @@ encrypts then backward data to the client.
 backwards data to the `Application`.
 
 > NOTE: For TCP relay, backward data(encrypted) does not contain extra header anymore. It's more efficient and secure.
+
+## DNS Cache
+
+Blinksocks use `dns.lookup` which uses operating system facility to resolve 
+a hostname to an ip, then cache it in memory for a period of time. Aimed at 
+speeding up the transition process.
