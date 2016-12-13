@@ -50,9 +50,12 @@ describe('Connection#toString', function () {
   it('should return ipv6 address', function () {
     const conn = new Connection({
       ATYP: ATYP_V6,
-      DSTADDR: [0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff]
+      DSTADDR: [
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+      ]
     });
-    expect(conn.toString()).toBe('[ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]:0');
+    expect(conn.toString()).toBe('ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff:0');
   });
 
   it('should return domain address', function () {

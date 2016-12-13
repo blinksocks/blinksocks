@@ -62,10 +62,14 @@ export class Connection {
       case ATYP_V4:
         host = DSTADDR.join('.');
         break;
-      case ATYP_V6:
-        // TODO: fix here
-        host = `[${DSTADDR.map((u) => u.toString(16)).join(':')}]`;
+      case ATYP_V6: {
+        const array = [];
+        for (let i = 0; i < 8; ++i) {
+          array.push(DSTADDR[i].toString(16) + DSTADDR[i + 1].toString(16));
+        }
+        host = array.join(':');
         break;
+      }
       case ATYP_DOMAIN:
         host = DSTADDR.toString();
         break;
