@@ -1,3 +1,4 @@
+import padStart from 'lodash.padstart';
 import {
   NOOP,
   ATYP_V4,
@@ -64,8 +65,11 @@ export class Connection {
         break;
       case ATYP_V6: {
         const array = [];
-        for (let i = 0; i < 8; ++i) {
-          array.push(DSTADDR[i].toString(16) + DSTADDR[i + 1].toString(16));
+        for (let i = 0; i < 16; i += 2) {
+          array.push(
+            padStart(DSTADDR[i].toString(16), 2, '0') +
+            padStart(DSTADDR[i + 1].toString(16), 2, '0')
+          );
         }
         host = array.join(':');
         break;
