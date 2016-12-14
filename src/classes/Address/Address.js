@@ -6,7 +6,7 @@ import {
   ATYP_V6
 } from '../../socks5/Constants';
 
-export class Connection {
+export class Address {
 
   ATYP;
 

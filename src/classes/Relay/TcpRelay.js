@@ -237,12 +237,12 @@ export class Relay {
 
     // connect to real server if not connected yet
     if (!this._isConnected) {
-      const conn = new Connection({
+      const addr = new Address({
         ATYP: frame.ATYP,
         DSTADDR: frame.DSTADDR,
         DSTPORT: frame.DSTPORT
       });
-      this.connect(conn, () => {
+      this.connect(addr, () => {
         _send(data);
       });
       return;

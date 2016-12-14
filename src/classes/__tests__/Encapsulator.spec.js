@@ -1,6 +1,6 @@
 import {Encapsulator} from '../Encapsulator';
 import {Frame} from '../Frame';
-import {Connection} from '../Connection';
+import {Address} from '../Address';
 import {
   ATYP_DOMAIN
 } from '../../socks5/Constants';
@@ -13,10 +13,10 @@ describe('Encapsulator#numberToArray', function () {
 
 describe('Encapsulator#pack', function () {
   it('should return the expected frame', function () {
-    const frame = Encapsulator.pack(new Connection(), [0xff, 0xff]);
+    const frame = Encapsulator.pack(new Address(), [0xff, 0xff]);
     expect(frame).toBeInstanceOf(Frame);
 
-    const frame2 = Encapsulator.pack(new Connection({ATYP: ATYP_DOMAIN}), [0xff, 0xff]);
+    const frame2 = Encapsulator.pack(new Address({ATYP: ATYP_DOMAIN}), [0xff, 0xff]);
     expect(frame2).toBeInstanceOf(Frame);
 
     expect(frame2.LEN).toEqual([0, 12]);

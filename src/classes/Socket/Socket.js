@@ -1,6 +1,6 @@
 import log4js from 'log4js';
-import {Connection} from '../Connection';
 import {Relay} from '../Relay';
+import {Address} from '../Address';
 import {Crypto, CRYPTO_IV_LEN} from '../Crypto';
 import {Config} from '../Config';
 import {Encapsulator} from '../Encapsulator';

@@ -29,8 +29,8 @@ export class Encapsulator {
     return arr.reverse();
   }
 
-  static pack(connection, data) {
-    const {ATYP, DSTADDR, DSTPORT} = connection;
+  static pack(address, data) {
+    const {ATYP, DSTADDR, DSTPORT} = address;
 
     let len = 3 + DSTADDR.length + DSTPORT.length + data.length;
     let addr = null;
