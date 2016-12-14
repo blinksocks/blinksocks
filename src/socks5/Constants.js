@@ -17,6 +17,6 @@ export const REPLY_SUCCEEDED = 0x00;
 // export const REPLY_HOST_UNREACHABLE = 0x04;
 // export const REPLY_CONNECION_REFUSED = 0x05;
 // export const REPLY_TTL_EXXPIRED = 0x06;
-// export const REPLY_COMMAND_NOT_SUPPORTED = 0x07;
+export const REPLY_COMMAND_NOT_SUPPORTED = 0x07;
 // export const REPLY_ADDRESS_TYPE_NOT_SUPPORTED = 0x08;
 export const REPLY_UNASSIGNED = 0xff;
