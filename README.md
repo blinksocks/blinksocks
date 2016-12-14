@@ -14,6 +14,15 @@ Yet another socks5 proxy, designed for speed :zap:. Inspired by [Shadowsocks](ht
 
 > Across the Great Wall we can reach every corner in the world.
 
+## Features
+
+* SOCKS5 support
+* TCP & UDP support
+* Universal server and client
+* Full data strong encryption
+* Ultra fast
+* Easy to use
+
 ## Installation
 
 You can get pre-compiled library(including executable) of blinksocks from **yarn** or **npm**. Both approach requires your system have had [Node.js](https://nodejs.org) installed.
@@ -94,7 +103,7 @@ For **Server**, the file looks like(without `server_host` and `server_port`):
 * `server_host`: Typically **0.0.0.0**.
 * `server_port`: Any available number.
 * `password`: For data encryption, please keep it secret!
-* `cipher`: Encryption method. You can enable non-encryption mode by set it to empty string.
+* `cipher`: Encryption method. You can enable **non-encryption mode** by set it to empty string.
 * `use_iv`: Whether encrypt/decrypt with initialization vector or not.
 * `log_level`: should take a value from Logging Level of
 [Log4js.Level](http://stritti.github.io/log4js/docu/users-guide.html#configuration). The levels are case-insensitive and cumulative.
@@ -139,9 +148,8 @@ For FireFox, you can configure proxy at `Settings - Advanced - Network - Proxy`.
 
 ## Documentation
 
-If you are interesting in `Principle` or `Architecture` of blinksocks, please
-
-check this out: [docs](https://github.com/micooz/blinksocks/tree/master/docs).
+If you are interesting in `Principle`, `Architecture` or `Spec` of blinksocks, please
+check out: [docs](https://github.com/micooz/blinksocks/tree/master/docs).
 
 ## Roadmap
 
@@ -154,7 +162,7 @@ Next major version(**v2.0.0**):
 * [x] streaming data send/receive
 * [x] encrypt/decrypt with initialization vector
 * [x] DNS cache
-* [ ] UDP relay
+* [x] UDP relay(need test!)
 * [ ] more command line options
 
 Further versions:
