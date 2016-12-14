@@ -1,54 +1,54 @@
-import {Connection} from '../Connection';
+import {Address} from '../Address';
 import {ATYP_V4, ATYP_V6, ATYP_DOMAIN} from '../../socks5/Constants';
 
-describe('Connection#constructor', function () {
+describe('Address#constructor', function () {
   it('should throw when ATYP is not v4, v6 or domain', function () {
-    expect(() => new Connection({ATYP: null})).toThrow();
+    expect(() => new Address({ATYP: null})).toThrow();
   });
 
   it('should throw when DSTADDR is not Array or Buffer', function () {
-    expect(() => new Connection({DSTADDR: null})).toThrow();
+    expect(() => new Address({DSTADDR: null})).toThrow();
   });
 
   it('should throw when v4 DSTADDR.length is not 4', function () {
-    expect(() => new Connection({ATYP: ATYP_V4, DSTADDR: []})).toThrow();
+    expect(() => new Address({ATYP: ATYP_V4, DSTADDR: []})).toThrow();
   });
 
   it('should throw when v6 DSTADDR.length is not 16', function () {
-    expect(() => new Connection({ATYP: ATYP_V6, DSTADDR: []})).toThrow();
+    expect(() => new Address({ATYP: ATYP_V6, DSTADDR: []})).toThrow();
   });
 
   it('should throw when ATYP is not v4, v6 or domain', function () {
-    expect(() => new Connection({ATYP: null})).toThrow();
+    expect(() => new Address({ATYP: null})).toThrow();
   });
 
   it('should throw when DSTPORT is not Array or Buffer', function () {
-    expect(() => new Connection({DSTPORT: null})).toThrow();
+    expect(() => new Address({DSTPORT: null})).toThrow();
   });
 
   it('should throw when DSTADDR.length is not 2', function () {
-    expect(() => new Connection({DSTPORT: [1, 2, 3]})).toThrow();
+    expect(() => new Address({DSTPORT: [1, 2, 3]})).toThrow();
   });
 });
 
-describe('Connection#getEndPoint', function () {
+describe('Address#getEndPoint', function () {
   it('should throw when ATYP is invalid', function () {
     expect(() => {
-      const conn = new Connection();
+      const conn = new Address();
       conn.ATYP = null;
       conn.getEndPoint();
     }).toThrow();
   });
 });
 
-describe('Connection#toString', function () {
+describe('Address#toString', function () {
   it('should return ipv4 address', function () {
-    const conn = new Connection();
+    const conn = new Address();
     expect(conn.toString()).toBe('0.0.0.0:0');
   });
 
   it('should return ipv6 address', function () {
-    const conn = new Connection({
+    const conn = new Address({
       ATYP: ATYP_V6,
       DSTADDR: [
         0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
@@ -59,7 +59,7 @@ describe('Connection#toString', function () {
   });
 
   it('should return domain address', function () {
-    const conn = new Connection({
+    const conn = new Address({
       ATYP: ATYP_DOMAIN,
       DSTADDR: Buffer.from([97, 98, 99, 46, 99, 111, 109]),
       DSTPORT: [0x00, 0x50]

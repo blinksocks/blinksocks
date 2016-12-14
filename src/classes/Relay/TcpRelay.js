@@ -1,12 +1,12 @@
 import net from 'net';
 import log4js from 'log4js';
+import {Address} from '../Address';
 import {Config} from '../Config';
-import {Connection} from '../Connection';
 import {Crypto} from '../Crypto';
 import {DNSCache} from '../DNSCache';
 import {Encapsulator} from '../Encapsulator';
 
-const Logger = log4js.getLogger('Relay');
+const Logger = log4js.getLogger('TcpRelay');
 const dnsCache = DNSCache.create();
 
 /**
@@ -23,7 +23,7 @@ function hash(buffer) {
  *  | this._lsocket |  Relay  | this._socket |
  *  +----------------------------------------+
  */
-export class Relay {
+export class TcpRelay {
 
   _id = null;
 
@@ -59,8 +59,8 @@ export class Relay {
     this._socket.on('data', (buffer) => this.onReceiving(buffer));
   }
 
-  async connect(conn, callback) {
-    const [host, port] = conn.getEndPoint();
+  async connect(addr, callback) {
+    const [host, port] = addr.getEndPoint();
     const ip = await dnsCache.get(host);
     this._connect(ip, port, callback);
     if (Logger.isInfoEnabled()) {
@@ -167,7 +167,7 @@ export class Relay {
    * forward data to our server
    * @param encrypted
    */
-  forwardToServer(encrypted) {
+  async forwardToServer(encrypted) {
     const _send = (data) => {
       if (Logger.isInfoEnabled()) {
         const logs = [
@@ -182,16 +182,14 @@ export class Relay {
 
     // connect to our server if not connected yet
     if (!this._isConnected) {
-      (async() => {
-        const [host, port] = [Config.server_host, Config.server_port];
-        const ip = await dnsCache.get(host);
-        this._connect(ip, port, () => {
-          _send(encrypted);
-        });
-        if (Logger.isInfoEnabled()) {
-          Logger.info(`[${this._id}] ==> ${host}(${ip}:${port})`);
-        }
-      })();
+      const [host, port] = [Config.server_host, Config.server_port];
+      const ip = await dnsCache.get(host);
+      this._connect(ip, port, () => {
+        _send(encrypted);
+      });
+      if (Logger.isInfoEnabled()) {
+        Logger.info(`[${this._id}] ==> ${host}(${ip}:${port})`);
+      }
       return;
     }
     _send(encrypted);
@@ -237,12 +235,12 @@ export class Relay {
 
     // connect to real server if not connected yet
     if (!this._isConnected) {
-      const conn = new Connection({
+      const addr = new Address({
         ATYP: frame.ATYP,
         DSTADDR: frame.DSTADDR,
         DSTPORT: frame.DSTPORT
       });
-      this.connect(conn, () => {
+      this.connect(addr, () => {
         _send(data);
       });
       return;
@@ -255,7 +253,7 @@ export class Relay {
    */
   updateCiphers() {
     const collector = (buffer) => this.onReceived(buffer);
-    const iv = this.iv === null ? undefined : this._iv;
+    const iv = this._iv === null ? undefined : this._iv;
     this._cipher = Crypto.createCipher(collector, iv);
     this._decipher = Crypto.createDecipher(collector, iv);
   }

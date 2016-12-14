@@ -1,1 +1,2 @@
-export * from './Relay';
+export * from './TcpRelay';
+export * from './UdpRelay';

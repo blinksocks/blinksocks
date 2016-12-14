@@ -29,14 +29,14 @@ Where:
 
 ### IV request
 
-The first packet sent from client contains an IV base on the normal request frame:
+The **first packet** sent from client contains an IV base on the normal request frame:
 
 ```
-+----------------+------+
-|    PAYLOAD     |  IV  |
-+----------------+------+
-|    Variable    |  16  |
-+----------------+------+
++----------------+-------+
+|    PAYLOAD     |  IV   |
++----------------+-------+
+|    Variable    | Fixed |
++----------------+-------+
 ```
 
 IV is optional and used for more secure encryption.
@@ -63,8 +63,21 @@ Where:
 
 # Encryption
 
-All data transferred between client and server should be encrypted using a 
-specified cipher and a pre-shared key.
+All data transferred between client and server shall be encrypted using:
+
+1. specified cipher - defined in config.json
+2. a pre-shared key - defined in config.json
+3. initialization vector(IV) - auto-generate
+
+All of them are **optional**. `IV` is always generated for each connection 
+no matter it's **TCP** or **UDP**.
+
+## Non-Encryption mode
+
+For **development** or **special cases**, you can turn on non-encryption mode by setting 
+`cipher` option to an empty string.
+
+## Supported Ciphers
 
 The length of cipher key must be satisfied with IV Length:
 
