@@ -43,7 +43,7 @@
     "eslint-config-babel": "^3.0.0",
     "eslint-plugin-babel": "^4.0.0",
     "eslint-plugin-flowtype": "^2.29.1",
-    "husky": "^0.11.9",
+    "husky": "^0.12.0",
     "jest": "^17.0.3"
   },
   "repository": {
