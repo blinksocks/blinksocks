@@ -163,13 +163,17 @@ Next major version(**v2.0.0**):
 * [x] encrypt/decrypt with initialization vector
 * [x] DNS cache
 * [x] UDP relay(need test!)
+* [ ] docker deploy scripts
 * [ ] more command line options
+
+**v2.1.0**:
+
+* [ ] daemon mode
+* [ ] cluster processes
 
 Further versions:
 
-* [ ] multiple servers
 * [ ] ip ban
-* [ ] add daemon
 * [ ] more tests
 * [ ] more docs
 * [ ] more cipher support
