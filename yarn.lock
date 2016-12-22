@@ -2252,9 +2252,9 @@ lodash@^4.0.0, lodash@^4.15.0, lodash@^4.16.4, lodash@^4.2.0, lodash@^4.3.0:
   version "4.17.2"
   resolved "http://registry.npm.taobao.org/lodash/download/lodash-4.17.2.tgz#34a3055babe04ce42467b607d700072c7ff6bf42"
 
-log4js@^1.0.1:
-  version "1.0.1"
-  resolved "http://registry.npm.taobao.org/log4js/download/log4js-1.0.1.tgz#faf64c1056b6352a5fbbf0a93b61a9979a8422cc"
+log4js@^1.1.0:
+  version "1.1.0"
+  resolved "http://registry.npm.taobao.org/log4js/download/log4js-1.1.0.tgz#c7d2b616d91bbf47cc65fb79d6fe04581c8096fa"
   dependencies:
     debug "^2.2.0"
     semver "^5.3.0"
