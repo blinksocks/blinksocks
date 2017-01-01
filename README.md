@@ -19,9 +19,10 @@ Yet another socks5 proxy, designed for speed :zap:. Inspired by [Shadowsocks](ht
 * SOCKS5 support
 * TCP & UDP support
 * Universal server and client
-* Full data strong encryption
+* Full encryption
 * Ultra fast
 * Easy to use
+* Docker integration
 
 ## Installation
 
@@ -138,6 +139,34 @@ For example:
 $ curl --socks5-hostname localhost:1080 https://www.google.com
 ```
 
+## Deploy
+
+We use Docker to auto-deploy a blinksocks server.
+
+### Get image
+
+You can build an image manually or pull it from docker hub:
+
+* Build an image
+
+```
+$ docker build --tags blinksocks:latest .
+```
+
+* Pull from docker hub
+
+```
+$ docker pull blinksocks:latest
+```
+
+### Run in a container
+
+Container will expose `1080` port, so you must bind a host port to `1080` via `-p`.
+
+```
+$ docker run -d -p 7777:1080 blinksocks:latest
+```
+
 ## For Firefox/Google Chrome and more...
 
 A common usage of blinksocks is used it on **browsers**, so I give an advise here.
@@ -163,11 +192,12 @@ Next major version(**v2.0.0**):
 * [x] encrypt/decrypt with initialization vector
 * [x] DNS cache
 * [x] UDP relay(need test!)
-* [ ] docker deploy scripts
+* [x] docker deploy scripts
 * [ ] more command line options
 
 **v2.1.0**:
 
+* [ ] http proxy
 * [ ] daemon mode
 * [ ] cluster processes
 
