@@ -152,7 +152,8 @@ export class Config {
         type: 'dateFile',
         filename: 'logs/blinksocks.log',
         pattern: '-yyyy-MM-dd'
-      }]
+      }],
+      replaceConsole: true
     });
 
     return _level;
