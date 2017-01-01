@@ -145,16 +145,41 @@ export class Config {
     }
 
     // configure log4js globally
-    log4js.configure({
-      appenders: [{
-        type: 'console'
-      }, {
-        type: 'dateFile',
-        filename: 'logs/blinksocks.log',
-        pattern: '-yyyy-MM-dd'
-      }],
-      replaceConsole: true
-    });
+    if (process.env.NODE_ENV !== 'test') {
+      log4js.configure({
+        'appenders': [
+          {
+            'type': 'console',
+            'category': 'console'
+          },
+          {
+            'type': 'dateFile',
+            'category': 'dateFile',
+            'filename': 'logs/blinksocks.log',
+            'pattern': '-yyyy-MM-dd',
+            'alwaysIncludePattern': false
+          }
+        ],
+        'replaceConsole': true,
+        'levels': {
+          'console': _level,
+          'dateFile': _level
+        }
+      });
+    } else {
+      log4js.configure({
+        'appenders': [
+          {
+            'type': 'console',
+            'category': 'console'
+          }
+        ],
+        'replaceConsole': true,
+        'levels': {
+          'console': _level
+        }
+      });
+    }
 
     return _level;
   }
