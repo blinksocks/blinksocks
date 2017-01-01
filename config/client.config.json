@@ -1,0 +1,10 @@
+{
+  "host": "localhost",
+  "port": 1080,
+  "server_host": "example.com",
+  "server_port": 6666,
+  "password": "my secret password",
+  "cipher": "aes-256-cfb",
+  "use_iv": true,
+  "log_level": "error"
+}
