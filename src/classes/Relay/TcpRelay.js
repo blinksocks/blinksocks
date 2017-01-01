@@ -1,4 +1,5 @@
 import net from 'net';
+import path from 'path';
 import log4js from 'log4js';
 import {Address} from '../Address';
 import {Config} from '../Config';
@@ -6,7 +7,7 @@ import {Crypto} from '../Crypto';
 import {DNSCache} from '../DNSCache';
 import {Encapsulator} from '../Encapsulator';
 
-const Logger = log4js.getLogger('TcpRelay');
+const Logger = log4js.getLogger(path.basename(__filename, '.js'));
 const dnsCache = DNSCache.create();
 
 /**

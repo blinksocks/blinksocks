@@ -1,3 +1,4 @@
+import path from 'path';
 import log4js from 'log4js';
 import {Address} from '../Address';
 import {Crypto, CRYPTO_IV_LEN} from '../Crypto';
@@ -20,7 +21,7 @@ import {
   REPLY_COMMAND_NOT_SUPPORTED
 } from '../../socks5/Constants';
 
-const Logger = log4js.getLogger('Socket');
+const Logger = log4js.getLogger(path.basename(__filename, '.js'));
 
 export class Socket {
 

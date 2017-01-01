@@ -1,3 +1,4 @@
+import path from 'path';
 import log4js from 'log4js';
 import {Config} from '../Config';
 
@@ -12,7 +13,7 @@ import {
   Message
 } from '../../socks5/Message';
 
-const Logger = log4js.getLogger('Frame');
+const Logger = log4js.getLogger(path.basename(__filename, '.js'));
 
 // +------+------+----------+----------+----------+
 // | LEN  | ATYP | DST.ADDR | DST.PORT |   DATA   |

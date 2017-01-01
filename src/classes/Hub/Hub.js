@@ -1,9 +1,10 @@
 import net from 'net';
+import path from 'path';
 import log4js from 'log4js';
 import {Config} from '../Config';
 import {Socket} from '../Socket';
 
-const Logger = log4js.getLogger('Hub');
+const Logger = log4js.getLogger(path.basename(__filename, '.js'));
 
 const nextId = (function () {
   let i = 0;

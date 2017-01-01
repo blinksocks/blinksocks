@@ -3,7 +3,7 @@ import path from 'path';
 import log4js from 'log4js';
 import {Config} from '../Config';
 
-const Logger = log4js.getLogger('Tracer');
+const Logger = log4js.getLogger(path.basename(__filename, '.js'));
 
 function root(dir) {
   if (Config.isServer) {

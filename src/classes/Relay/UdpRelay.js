@@ -1,3 +1,4 @@
+import path from 'path';
 import dgram from 'dgram';
 import log4js from 'log4js';
 import {Address} from '../Address';
@@ -6,7 +7,7 @@ import {Crypto} from '../Crypto';
 import {DNSCache} from '../DNSCache';
 import {Encapsulator} from '../Encapsulator';
 
-const Logger = log4js.getLogger('UdpRelay');
+const Logger = log4js.getLogger(path.basename(__filename, '.js'));
 const dnsCache = DNSCache.create();
 
 /**
