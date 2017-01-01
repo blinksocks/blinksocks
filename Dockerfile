@@ -8,9 +8,6 @@ ENV NODE_ENV production
 RUN apt-get --yes update
 RUN apt-get install --yes pwgen
 
-# copy
-COPY ./server.config.json.example /blinksocks/server.config.json
-
 # install blinksocks
 RUN npm install --global blinksocks
 
