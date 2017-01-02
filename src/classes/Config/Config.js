@@ -60,7 +60,7 @@ export class Config {
 
     if (json.cipher !== '') {
       if (!Crypto.isAvailable(json.cipher)) {
-        throw Error('\'cipher\' is not supported, use --ciphers to display all supported ciphers');
+        throw Error(`cipher \'${json.cipher}\' is not supported, use --ciphers to display all supported ciphers`);
       }
       if (typeof json.use_iv !== 'boolean') {
         throw Error('\'use_iv\' must be true or false');
@@ -75,7 +75,7 @@ export class Config {
       this.cipher = '';
       this.key = '';
       this.use_iv = false;
-      console.warn('you haven\'t specify a cipher, this shall only be used in development or special cases.');
+      console.warn('You haven\'t specify a cipher, this shall only be used in development or special cases.');
     }
 
     this.host = json.host;

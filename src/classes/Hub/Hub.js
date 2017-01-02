@@ -18,12 +18,7 @@ export class Hub {
   _sockets = []; // instances of class Socket
 
   constructor(config) {
-    try {
-      Config.init(config);
-    } catch (err) {
-      Logger.fatal(err);
-      process.exit(-1);
-    }
+    Config.init(config);
     Logger.setLevel(Config.log_level);
     this._hub = net.createServer();
     this._hub.on('error', this.onError.bind(this));
@@ -61,6 +56,7 @@ export class Hub {
       backlog: 511
     };
     this._hub.listen(options, () => {
+      Logger.info(`blinksocks is running as '${Config.isServer ? 'Server' : 'Client'}'`);
       Logger.info('opened hub on:', this._hub.address());
     });
   }
