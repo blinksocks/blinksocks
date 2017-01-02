@@ -48,30 +48,44 @@ Once installed, you can access blinksocks from command line directly:
 
 ```
 $ blinksocks --help
-```
 
-### Options
-
-The options are quite simple at present:
-
-```
-
-  Usage: blinksocks [options] [...]
+  Usage: cli [options] [...]
 
   Options:
 
-    -h, --help           output usage information
-    -V, --version        output the version number
-    -c, --config <file>  a json file for configuration
-    --ciphers            show all supported ciphers on the current platform
+    -h, --help                  output usage information
+    -V, --version               output the version number
+    -c, --config [file]         a json file for configuration, if specified, ignore other options
+    --host <host>               an ip address or a hostname to bind
+    --port <port>               where to listen on
+    --password <password>       a password for encryption and decryption
+    --server-host [serverHost]  an ip address or a hostname to connect
+    --server-port [serverPort]  where is the server listen on
+    --cipher [cipher]           a method for encryption or decryption, leave it empty to enbaled non-encryption mode
+    --use-iv                    if use initialization vector for encryption
+    --log-level [logLevel]      log4js log level
+    -q, --quiet                 limit log level to 'error'
+    --ciphers                   show all supported ciphers
+
+  Examples:
+
+  As simple as possible:
+    $ blinksocks -c config.json
+
+  To start a server:
+    $ blinksocks --host 0.0.0.0 --port 7777 --password password --cipher "aes-256-cfb"
+
+  To start a client:
+    $ blinksocks --host localhost --port 1080 --password password --server-host example.com --server-port 7777 --cipher "aes-256-cfb"
 
 ```
 
 ## Configuration
 
-To start a server/client, you must specify a configuration json file(`config.json` for example) via `--config` or `-c`.
+To start a server or client, you can prepare a configuration json file(`config.json` for example)
+via `--config` or `-c` as follows:
 
-For **Client**, the file looks like:
+### Client
 
 ```
 {
@@ -86,7 +100,9 @@ For **Client**, the file looks like:
 }
 ```
 
-For **Server**, the file looks like(without `server_host` and `server_port`):
+### Server
+
+Just without `server_host` and `server_port`:
 
 ```
 {
@@ -99,25 +115,19 @@ For **Server**, the file looks like(without `server_host` and `server_port`):
 }
 ```
 
-* `host`: Typically **localhost**.
-* `port`: Typically **1080**.
-* `server_host`: Typically **0.0.0.0**.
-* `server_port`: Any available number.
-* `password`: For data encryption, please keep it secret!
-* `cipher`: Encryption method. You can enable **non-encryption mode** by set it to empty string.
-* `use_iv`: Whether encrypt/decrypt with initialization vector or not.
-* `log_level`: should take a value from Logging Level of
+Or you can provide all pf them via command line.
+
+* `host(--host)`: Typically **localhost**.
+* `port(--port)`: Typically **1080**.
+* `server_host(--server-host)`: Typically **0.0.0.0**.
+* `server_port(--server-port)`: Any available number.
+* `password(--password)`: For data encryption, please keep it secret!
+* `cipher(--cipher)`: Encryption method. You can enable **non-encryption mode** by set it to empty string.
+* `use_iv(--use-iv)`: Whether encrypt/decrypt with initialization vector or not.
+* `log_level(--log-level)`: should take a value from Logging Level of
 [Log4js.Level](http://stritti.github.io/log4js/docu/users-guide.html#configuration). The levels are case-insensitive and cumulative.
 
-## Examples
-
-Once prepared the `config.json`, you can start a service by a simple command:
-
-```
-$ blinksocks -c config.json
-```
-
-## Compile
+## Compile for production
 
 For production use, we are running our code under `lib` not `src`, so compilation is necessary.
 
@@ -141,7 +151,7 @@ $ curl --socks5-hostname localhost:1080 https://www.google.com
 
 ## Deploy
 
-We use Docker to auto-deploy a blinksocks server.
+We use Docker to auto-deploy a blinksocks **server**.
 
 ### Get image
 
@@ -193,7 +203,7 @@ Next major version(**v2.0.0**):
 * [x] DNS cache
 * [x] UDP relay(need test!)
 * [x] docker deploy scripts
-* [ ] more command line options
+* [x] more command line options
 
 **v2.1.0**:
 
