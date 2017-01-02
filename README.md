@@ -195,15 +195,14 @@ check out: [docs](https://github.com/micooz/blinksocks/tree/master/docs).
 Done:
 
 * [x] non-encryption mode for debugging and non-security scenarios
-
-Next major version(**v2.0.0**):
-
 * [x] streaming data send/receive
 * [x] encrypt/decrypt with initialization vector
 * [x] DNS cache
 * [x] UDP relay(need test!)
 * [x] docker deploy scripts
 * [x] more command line options
+
+Next minor version:
 
 **v2.1.0**:
 
