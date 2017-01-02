@@ -8,6 +8,8 @@ DEFAULT_CIPHER="aes-256-cfb"
 USE_IV="true"
 LOG_LEVEL="error"
 
+mkdir -p /blinksocks && touch ${CONFIG_FILE}
+
 echo ">>> Generated random password..."
 cat <<-EOF > ${CONFIG_FILE}
 {
