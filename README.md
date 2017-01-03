@@ -49,7 +49,7 @@ Once installed, you can access blinksocks from command line directly:
 ```
 $ blinksocks --help
 
-  Usage: cli [options] [...]
+  Usage: blinksocks [options] [...]
 
   Options:
 
