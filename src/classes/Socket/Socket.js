@@ -5,6 +5,7 @@ import {Crypto, CRYPTO_IV_LEN} from '../Crypto';
 import {Config} from '../Config';
 import {Encapsulator} from '../Encapsulator';
 import {TcpRelay, UdpRelay} from '../Relay';
+import {Utils} from '../Utils';
 
 import {
   IdentifierMessage,
@@ -13,6 +14,11 @@ import {
   ReplyMessage,
   UdpRequestMessage
 } from '../../socks5';
+
+import {
+  RequestMessage as HttpRequestMessage,
+  ConnectReplyMessage
+} from '../../http';
 
 import {
   REQUEST_COMMAND_CONNECT,
@@ -36,6 +42,8 @@ export class Socket {
   _socksTcpReady = false;
 
   _socksUdpReady = false;
+
+  _httpReady = false;
 
   _targetAddress = null;
 
@@ -76,7 +84,7 @@ export class Socket {
 
   getRelay() {
     // return tcp relay
-    if (this._socksTcpReady || Config.isServer) {
+    if (this._socksTcpReady || this._httpReady || Config.isServer) {
       return this._tcpRelay = this._tcpRelay ||
         new TcpRelay({
           id: this._id,
@@ -98,39 +106,39 @@ export class Socket {
     if (Config.isServer) {
       this._decipher.write(buffer);
     } else {
-      // socks5 handshake, client only
-      if (!this._socksTcpReady && !this._socksUdpReady) {
-        this.onSocksHandshake(socket, buffer);
-        return;
-      }
+      if (this._socksTcpReady || this._socksUdpReady || this._httpReady) {
+        let _buffer = buffer;
 
-      let _buffer = buffer;
-      if (this._socksUdpReady) {
-        const request = UdpRequestMessage.parse(buffer);
-        if (request !== null) {
-          // just drop RSV and FRAG
-          _buffer = request.DATA;
-        } else {
-          if (Logger.isWarnEnabled()) {
-            Logger.warn(`[${this._id}] -x-> dropped unidentified packet ${buffer.length} bytes`);
+        if (this._socksUdpReady) {
+          const request = UdpRequestMessage.parse(buffer);
+          if (request !== null) {
+            // just drop RSV and FRAG
+            _buffer = request.DATA;
+          } else {
+            if (Logger.isWarnEnabled()) {
+              Logger.warn(`[${this._id}] -x-> dropped unidentified packet ${buffer.length} bytes`);
+            }
+            return;
           }
-          return;
         }
-      }
 
-      // send with iv, if needed
-      if (this._iv === null && Config.use_iv) {
-        // 1. generate iv for each connection
-        this._iv = Crypto.generateIV();
-        // 2. pack then send out
-        this._cipher.write(Encapsulator.pack(this._targetAddress, Buffer.concat([_buffer, this._iv])).toBuffer());
-        // 3. update socket ciphers
-        this.updateCiphers();
-        // 4. update relay ciphers
-        this.getRelay().setIV(this._iv);
+        // send with iv, if needed
+        if (this._iv === null && Config.use_iv) {
+          // 1. generate iv for each connection
+          this._iv = Crypto.generateIV();
+          // 2. pack then send out
+          this._cipher.write(Encapsulator.pack(this._targetAddress, Buffer.concat([_buffer, this._iv])).toBuffer());
+          // 3. update socket ciphers
+          this.updateCiphers();
+          // 4. update relay ciphers
+          this.getRelay().setIV(this._iv);
+        } else {
+          // send without iv
+          this._cipher.write(Encapsulator.pack(this._targetAddress, _buffer).toBuffer());
+        }
       } else {
-        // send without iv
-        this._cipher.write(Encapsulator.pack(this._targetAddress, _buffer).toBuffer());
+        // socks5/http handshake, client only
+        this.onHandshake(socket, buffer);
       }
     }
   }
@@ -148,7 +156,7 @@ export class Socket {
         }
         // TODO(refactor): simplify the post-process to buffer
         const buf = buffer.slice(0, buffer.length - CRYPTO_IV_LEN);
-        const newLen = Encapsulator.numberToArray(buf.readUInt16BE(0) - CRYPTO_IV_LEN);
+        const newLen = Utils.numberToArray(buf.readUInt16BE(0) - CRYPTO_IV_LEN);
         buf[0] = newLen[0];
         buf[1] = newLen[1];
         relay.setIV(this._iv);
@@ -187,7 +195,12 @@ export class Socket {
     }
   }
 
-  onSocksHandshake(socket, buffer) {
+  onHandshake(socket, buffer) {
+    this.trySocksHandshake(socket, buffer);
+    this.tryHttpHandshake(socket, buffer);
+  }
+
+  trySocksHandshake(socket, buffer) {
     // 1. IDENTIFY
     const identifier = IdentifierMessage.parse(buffer);
     if (identifier !== null) {
@@ -225,6 +238,24 @@ export class Socket {
           socket.write(message.toBuffer());
           break;
         }
+      }
+    }
+  }
+
+  tryHttpHandshake(socket, buffer) {
+    const request = HttpRequestMessage.parse(buffer);
+    if (request !== null) {
+      const {METHOD, HOST} = request;
+
+      this._targetAddress = Utils.hostToAddress(HOST.toString());
+      this._httpReady = true;
+
+      if (METHOD.toString() === 'CONNECT') {
+        const message = new ConnectReplyMessage();
+        socket.write(message.toBuffer());
+      } else {
+        // for clients who haven't sent CONNECT, should relay buffer directly
+        this.onReceiving(socket, buffer);
       }
     }
   }
