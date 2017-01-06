@@ -5,12 +5,6 @@ import {
   ATYP_DOMAIN
 } from '../../socks5/Constants';
 
-describe('Encapsulator#numberToArray', function () {
-  it('should return [0x01, 0x01] when pass 257', function () {
-    expect(Encapsulator.numberToArray(257)).toEqual([0x01, 0x01]);
-  });
-});
-
 describe('Encapsulator#pack', function () {
   it('should return the expected frame', function () {
     const frame = Encapsulator.pack(new Address(), [0xff, 0xff]);

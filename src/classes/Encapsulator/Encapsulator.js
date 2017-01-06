@@ -1,33 +1,10 @@
+import {Utils} from '../Utils';
 import {Frame} from '../Frame';
 import {
   ATYP_DOMAIN
 } from '../../socks5/Constants';
 
 export class Encapsulator {
-
-  /**
-   * convert a number to byte array
-   * @example
-   *   numberToArray(257); // [0x01, 0x01]
-   * @param num
-   * @param minSize
-   * @returns {Array.<*>}
-   */
-  static numberToArray(num, minSize = 2) {
-    let arr = [];
-    do {
-      arr.push(num & 0xff);
-      num >>= 8;
-    } while (num > 0);
-    if (arr.length < minSize) {
-      const padding = [];
-      for (let i = 0, len = minSize - arr.length; i < len; ++i) {
-        padding.push(0x00);
-      }
-      arr = [...arr, ...padding];
-    }
-    return arr.reverse();
-  }
 
   static pack(address, data) {
     const {ATYP, DSTADDR, DSTPORT} = address;
@@ -42,7 +19,7 @@ export class Encapsulator {
     }
 
     return new Frame({
-      LEN: Encapsulator.numberToArray(len),
+      LEN: Utils.numberToArray(len),
       ATYP,
       DSTADDR: addr,
       DSTPORT,
