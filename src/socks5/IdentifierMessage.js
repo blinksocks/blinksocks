@@ -1,4 +1,4 @@
-import {Message} from './Message';
+import {Message} from '../common';
 import {SOCKS_VERSION_V5, METHOD_NO_AUTH} from './Constants';
 
 // +----+----------+----------+
