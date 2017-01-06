@@ -10,18 +10,17 @@
 [![Coverage](https://img.shields.io/codecov/c/github/micooz/blinksocks/master.svg)](https://codecov.io/gh/micooz/blinksocks)
 [![%e2%9d%a4](https://img.shields.io/badge/made%20with-%e2%9d%a4-ff69b4.svg)](https://github.com/micooz/blinksocks)
 
-Yet another socks5 proxy, designed for speed :zap:. Inspired by [Shadowsocks](https://shadowsocks.org/en/index.html).
+Yet another Socks5 proxy, designed for speed :zap:. Inspired by [Shadowsocks](https://shadowsocks.org/en/index.html).
 
 > Across the Great Wall we can reach every corner in the world.
 
 ## Features
 
-* SOCKS5 support
-* TCP & UDP support
+* Http and Socks5 proxy
+* TCP and UDP relay
+* IPv4 and IPv6 support
 * Universal server and client
-* Full encryption
-* Ultra fast
-* Easy to use
+* Fully encryption
 * Docker integration
 
 ## Installation
@@ -146,7 +145,11 @@ Any application who supports socks5 protocol([RFC 1928](https://tools.ietf.org/h
 For example:
 
 ```
+# Socks5
 $ curl --socks5-hostname localhost:1080 https://www.google.com
+
+# Http
+$ curl -x http://localhost:1080 https://www.google.com
 ```
 
 ## Deploy
@@ -206,7 +209,7 @@ Next minor version:
 
 **v2.1.0**:
 
-* [ ] http proxy
+* [x] http proxy
 * [ ] daemon mode
 * [ ] cluster processes
 
