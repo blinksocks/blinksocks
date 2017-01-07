@@ -1,10 +1,18 @@
+import path from 'path';
 import dns from 'dns';
+import log4js from 'log4js';
+import {Config} from '../Config';
 
+const Logger = log4js.getLogger(path.basename(__filename, '.js'));
 const DNS_SURVIVAL_TIME = 3600000;
 
 export class DNSCache {
 
   _pool = {};
+
+  constructor() {
+    Logger.setLevel(Config.log_level);
+  }
 
   static create() {
     return new DNSCache();
@@ -45,7 +53,7 @@ export class DNSCache {
         address = addr;
       }
     } catch (err) {
-      console.error(err);
+      Logger.error(err);
       return null;
     }
     return address;
