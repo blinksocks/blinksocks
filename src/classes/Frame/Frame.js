@@ -11,7 +11,7 @@ import {
 
 import {
   Message
-} from '../../socks5/Message';
+} from '../../common';
 
 const Logger = log4js.getLogger(path.basename(__filename, '.js'));
 

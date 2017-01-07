@@ -1,4 +1,4 @@
-import {Message} from './Message';
+import {Message} from '../common';
 import {
   NOOP,
   ATYP_V4,

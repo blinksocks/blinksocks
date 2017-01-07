@@ -1,4 +1,4 @@
-import {Message} from './Message';
+import {Message} from '../common';
 import {
   NOOP,
   SOCKS_VERSION_V5,
