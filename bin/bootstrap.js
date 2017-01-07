@@ -85,14 +85,14 @@ module.exports = function ({Hub, Crypto}) {
       const app = new Hub(config);
       app.run();
 
-      let quitCount = 2;
+      // let quitCount = 2;
       process.on('SIGINT', () => {
-        if (--quitCount > 0) {
-          console.log('Gracefully shutting down from SIGINT (Ctrl+C)');
-          app.stop().then(() => process.exit());
-        } else {
-          process.exit(0);
-        }
+        // if (--quitCount > 0) {
+        // console.log('Gracefully shutting down from SIGINT (Ctrl+C)');
+        // process.exit(0);
+        // } else {
+        process.exit(0);
+        // }
       });
     } catch (err) {
       console.error(err.message);

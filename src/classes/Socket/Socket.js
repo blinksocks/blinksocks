@@ -59,8 +59,8 @@ export class Socket {
     this._socket = socket;
     this.updateCiphers();
     // events
-    socket.on('error', (err) => this.onError(socket, err));
-    socket.on('close', (had_error) => this.onClose(socket, had_error));
+    socket.on('error', (err) => this.onError(err));
+    socket.on('close', (had_error) => this.onClose(had_error));
     socket.on('data', (buffer) => this.onReceiving(socket, buffer));
     Logger.info(`client[${this._id}] connected`);
   }
@@ -170,7 +170,7 @@ export class Socket {
     }
   }
 
-  onError(socket, err) {
+  onError(err) {
     switch (err.code) {
       case 'ECONNRESET':
         Logger.warn(`client[${this._id}] ${err.message}`);
@@ -182,9 +182,10 @@ export class Socket {
         Logger.error(err);
         break;
     }
+    this.onClose(true);
   }
 
-  onClose(socket, had_error) {
+  onClose(had_error) {
     if (had_error) {
       Logger.warn(`client[${this._id}] closed due to a transmission error`);
     } else {
@@ -192,6 +193,14 @@ export class Socket {
     }
     if (this._tcpRelay !== null) {
       this._tcpRelay.close();
+      this._tcpRelay = null;
+    }
+    if (this._udpRelay !== null) {
+      this._udpRelay = null;
+    }
+    if (this._socket !== null && !this._socket.destroyed) {
+      this._socket.end();
+      this._socket = null;
     }
   }
 

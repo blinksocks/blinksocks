@@ -15,8 +15,6 @@ export class Hub {
 
   _hub = null; // instance of class net.Server
 
-  _sockets = []; // instances of class Socket
-
   constructor(config) {
     Config.init(config);
     Logger.setLevel(Config.log_level);
@@ -28,24 +26,15 @@ export class Hub {
 
   onError(err) {
     Logger.error(err);
+    this._hub.close();
   }
 
   onClose() {
     Logger.info('server shutdown');
-    this.cleanUp();
   }
 
   onConnect(socket) {
-    const _socket = new Socket({id: nextId(), socket});
-    this._sockets.push(_socket);
-  }
-
-  cleanUp() {
-    for (const socket of this._sockets) {
-      if (!socket.destroy && typeof socket.end === 'function') {
-        socket.end();
-      }
-    }
+    new Socket({id: nextId(), socket});
   }
 
   run() {
@@ -58,12 +47,6 @@ export class Hub {
     this._hub.listen(options, () => {
       Logger.info(`blinksocks is running as '${Config.isServer ? 'Server' : 'Client'}'`);
       Logger.info('opened hub on:', this._hub.address());
-    });
-  }
-
-  stop() {
-    return new Promise((resolve) => {
-      this._hub.close(resolve);
     });
   }
 

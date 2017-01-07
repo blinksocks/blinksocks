@@ -57,6 +57,7 @@ export class TcpRelay {
       }
     });
     this._socket.on('error', (err) => this.onError({host, port}, err));
+    this._socket.on('close', (had_error) => this.onClose(had_error));
     this._socket.on('data', (buffer) => this.onReceiving(buffer));
   }
 
@@ -74,15 +75,11 @@ export class TcpRelay {
       case 'ECONNREFUSED':
         Logger.warn(`[${this._id}] =x=> ${host}:${port}`);
         break;
+      case 'EADDRNOTAVAIL':
+      case 'ENETDOWN':
       case 'ECONNRESET':
-        Logger.warn(`[${this._id}] ${err.message}`);
-        break;
       case 'ETIMEDOUT':
-        Logger.warn(`[${this._id}] ${err.message}`);
-        break;
       case 'EAI_AGAIN':
-        Logger.warn(`[${this._id}] ${err.message}`);
-        break;
       case 'EPIPE':
         Logger.warn(`[${this._id}] ${err.message}`);
         return;
@@ -90,11 +87,22 @@ export class TcpRelay {
         Logger.error(err);
         break;
     }
+    this.onClose(true);
+  }
+
+  onClose(had_error) {
+    if (had_error) {
+      Logger.warn(`client[${this._id}] closed due to a transmission error`);
+    } else {
+      Logger.info(`client[${this._id}] closed normally`);
+    }
     if (!this._socket.destroyed) {
       this._socket.end();
+      this._socket = null;
     }
     if (!this._lsocket.destroyed) {
       this._lsocket.end();
+      this._lsocket = null;
     }
   }
 
