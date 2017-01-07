@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 CONFIG_FILE=/blinksocks/server.config.json
-BIND_HOST="0.0.0.0"
+BIND_HOST="localhost"
 BIND_PORT=1080
 RANDOM_PASSWORD=`pwgen -cyn -1 16`
 DEFAULT_CIPHER="aes-256-cfb"
