@@ -33,13 +33,18 @@ export class RequestMessage extends Message {
     }
     const str = buffer.toString();
     const lines = str.split('\r\n');
+
+    if (lines.length < 2) {
+      return null;
+    }
+
     const [method, uri, version] = lines[0].split(' ');
-    const host = lines[1].split(' ')[1];
     const methods = [
       'OPTIONS', 'GET', 'HEAD', 'POST',
       'PUT', 'DELETE', 'TRACE', 'CONNECT'
     ];
     if (methods.includes(method)) {
+      const host = lines[1].split(' ')[1];
       return new RequestMessage({
         METHOD: Buffer.from(method),
         URI: Buffer.from(uri),
