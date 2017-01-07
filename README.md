@@ -210,6 +210,7 @@ Next minor version:
 **v2.1.0**:
 
 * [x] http proxy
+* [ ] Socks4 proxy
 * [ ] daemon mode
 * [ ] cluster processes
 

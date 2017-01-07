@@ -8,6 +8,11 @@ To take over data send and receive of applications, we must find a widely
 supported proxy protocol. Socks5 is an ideal one, it only works on the client
 side, so don't worry about being attacked.
 
+## HTTP
+
+Blinksocks `v2.1` also support http proxy, you can switch between Socks5 and HTTP smoothly,
+without restarting the application.
+
 ## Hub, Socket & Relay
 
 ### Data Forward (client -> server)
