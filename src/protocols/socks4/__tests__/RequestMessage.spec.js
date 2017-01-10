@@ -25,7 +25,21 @@ describe('RequestMessage#parse', function () {
     ])).toBe(null);
   });
 
-  it('should return an instance', function () {
+  it('should return null if it is Socks4a but has invalid fields', function () {
+    expect(RequestMessage.parse([
+      SOCKS_VERSION_V4,
+      REQUEST_COMMAND_CONNECT, 0, 0, 0, 0, 0, 0x01, 0
+    ])).toBe(null);
+  });
+
+  it('should return an Socks4a instance', function () {
+    expect(RequestMessage.parse([
+      SOCKS_VERSION_V4,
+      REQUEST_COMMAND_CONNECT, 0, 0, 0, 0, 0, 0x01, 0x00, 0xff, 0xff, 0xff, 0x00
+    ])).not.toBe(null);
+  });
+
+  it('should return an Socks4 instance', function () {
     expect(RequestMessage.parse([
       SOCKS_VERSION_V4,
       REQUEST_COMMAND_CONNECT, 0, 0, 0, 0, 0, 0, 0

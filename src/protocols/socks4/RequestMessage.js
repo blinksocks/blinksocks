@@ -6,12 +6,20 @@ import {
   REQUEST_COMMAND_BIND
 } from '../common';
 
+// Socks4 version
 // +----+-----+----------+--------+----------+--------+
 // |VER | CMD | DST.PORT | DST.IP | USER.ID  |  NULL  |
 // +----+-----+----------+--------+----------+--------+
 // | 1  |  1  |    2     |    4   | Variable |  X'00' |
 // +----+-----+----------+--------+----------+--------+
 
+// Socks4a version
+// +----+-----+----------+--------+----------+--------+------------+--------+
+// |VER | CMD | DST.PORT | DST.IP | USER.ID  |  NULL  |  DST.ADDR  |  NULL  |
+// +----+-----+----------+--------+----------+--------+------------+--------+
+// | 1  |  1  |    2     |   4    | Variable |  X'00' |  Variable  |  X'00' |
+// +----+-----+----------+--------+----------+--------+------------+--------+
+//                        0.0.0.!0
 export class RequestMessage extends Message {
 
   VER;
@@ -24,7 +32,7 @@ export class RequestMessage extends Message {
 
   USERID;
 
-  NULL;
+  DSTADDR;
 
   constructor(options) {
     super();
@@ -34,7 +42,7 @@ export class RequestMessage extends Message {
       DSTPORT: [NOOP, NOOP],
       DSTIP: [NOOP, NOOP, NOOP, NOOP],
       USERID: [NOOP],
-      NULL: NOOP,
+      DSTADDR: [NOOP],
       ...options
     };
     this.VER = fields.VER;
@@ -42,7 +50,7 @@ export class RequestMessage extends Message {
     this.DSTPORT = fields.DSTPORT;
     this.DSTIP = fields.DSTIP;
     this.USERID = fields.USERID;
-    this.NULL = fields.NULL;
+    this.DSTADDR = fields.DSTADDR;
   }
 
   static parse(buffer) {
@@ -67,13 +75,37 @@ export class RequestMessage extends Message {
       return null;
     }
 
+    const DSTIP = buffer.slice(4, 8);
+    let USERID = [];
+    let DSTADDR = [];
+
+    // Socks4a
+    if (DSTIP[0] === NOOP && DSTIP[1] === NOOP && DSTIP[2] === NOOP && DSTIP[3] !== NOOP) {
+      const rest = buffer.slice(8);
+      const fields = [];
+      let field = [];
+      for (const byte of rest) {
+        if (byte === NOOP) {
+          fields.push(field);
+          field = [];
+        } else {
+          field.push(byte);
+        }
+      }
+      if (fields.length !== 2 || fields[1].length < 1) {
+        return null;
+      }
+      USERID = fields[0];
+      DSTADDR = fields[1];
+    }
+
     return new RequestMessage({
       VER: buffer[0],
       CMD: buffer[1],
       DSTPORT: buffer.slice(2, 4),
-      DSTIP: buffer.slice(4, 8),
-      USERID: buffer.slice(8, buffer.length - 1),
-      NULL: NOOP
+      DSTIP,
+      USERID,
+      DSTADDR
     });
   }
 
