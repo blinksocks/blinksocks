@@ -2,10 +2,10 @@
 
 ![architecture](architecture.png)
 
-## Socks5
+## Socks5/Socks4/Socks4a
 
 To take over data send and receive of applications, we must find a widely
-supported proxy protocol. Socks5 is an ideal one, it only works on the client
+supported proxy protocol. SOCKS is an ideal one, it only works on the client
 side, so don't worry about being attacked.
 
 ## HTTP
