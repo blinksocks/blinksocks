@@ -27,6 +27,7 @@ import {
 
 import {
   ATYP_V4,
+  ATYP_DOMAIN,
   REQUEST_COMMAND_CONNECT,
   REQUEST_COMMAND_UDP,
   REPLY_GRANTED,
@@ -234,12 +235,12 @@ export class Socket {
   trySocks4Handshake(socket, buffer) {
     const request = Socks4RequestMessage.parse(buffer);
     if (request !== null) {
-      const type = request.CMD;
-      if (type === REQUEST_COMMAND_CONNECT) {
+      const {CMD, DSTIP, DSTADDR, DSTPORT} = request;
+      if (CMD === REQUEST_COMMAND_CONNECT) {
         this._targetAddress = new Address({
-          ATYP: ATYP_V4,
-          DSTADDR: request.DSTIP,
-          DSTPORT: request.DSTPORT
+          ATYP: DSTADDR.length > 0 ? ATYP_DOMAIN : ATYP_V4,
+          DSTADDR: DSTADDR.length > 0 ? DSTADDR : DSTIP,
+          DSTPORT
         });
 
         // reply success

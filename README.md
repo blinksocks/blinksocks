@@ -146,9 +146,16 @@ For example:
 
 ```
 # Socks5
+$ curl --socks5 localhost:1080 https://www.google.com
 $ curl --socks5-hostname localhost:1080 https://www.google.com
 
-# Http
+# Socks4
+$ curl --socks4 localhost:1080 https://www.google.com
+
+# Socks4a
+$ curl --socks4a localhost:1080 https://www.google.com
+
+# HTTP
 $ curl -x http://localhost:1080 https://www.google.com
 ```
 
@@ -211,7 +218,7 @@ Next minor version:
 
 * [x] http proxy
 * [x] Socks4 proxy
-* [ ] Socks4a proxy
+* [x] Socks4a proxy
 * [ ] daemon mode
 * [ ] cluster processes
 
