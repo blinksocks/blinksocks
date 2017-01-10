@@ -1,4 +1,5 @@
 export const NOOP = 0x00;
+export const SOCKS_VERSION_V4 = 0x04;
 export const SOCKS_VERSION_V5 = 0x05;
 export const METHOD_NO_AUTH = 0x00;
 
@@ -10,6 +11,7 @@ export const ATYP_V4 = 0x01;
 export const ATYP_DOMAIN = 0x03;
 export const ATYP_V6 = 0x04;
 
+export const REPLY_GRANTED = 0x5a; // 90
 export const REPLY_SUCCEEDED = 0x00;
 // export const REPLY_FAILURE = 0x01;
 // export const REPLY_NOT_ALLOWED = 0x02;

@@ -1,9 +1,7 @@
 import {Encapsulator} from '../Encapsulator';
 import {Frame} from '../Frame';
 import {Address} from '../Address';
-import {
-  ATYP_DOMAIN
-} from '../../protocols';
+import {ATYP_DOMAIN} from '../../protocols/common';
 
 describe('Encapsulator#pack', function () {
   it('should return the expected frame', function () {

@@ -7,7 +7,7 @@ import {
   ATYP_V4,
   ATYP_V6,
   ATYP_DOMAIN
-} from '../../protocols';
+} from '../../protocols/common';
 
 import {
   Message

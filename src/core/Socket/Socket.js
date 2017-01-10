@@ -10,10 +10,15 @@ import {Utils} from '../Utils';
 import {
   IdentifierMessage,
   SelectMessage,
-  RequestMessage,
-  ReplyMessage,
+  RequestMessage as Socks5RequestMessage,
+  ReplyMessage as Socks5ReplyMessage,
   UdpRequestMessage
 } from '../../protocols/socks5';
+
+import {
+  RequestMessage as Socks4RequestMessage,
+  ReplyMessage as Socks4ReplyMessage
+} from '../../protocols/socks4';
 
 import {
   HttpRequestMessage,
@@ -21,11 +26,13 @@ import {
 } from '../../protocols/http';
 
 import {
+  ATYP_V4,
   REQUEST_COMMAND_CONNECT,
   REQUEST_COMMAND_UDP,
+  REPLY_GRANTED,
   REPLY_SUCCEEDED,
   REPLY_COMMAND_NOT_SUPPORTED
-} from '../../protocols';
+} from '../../protocols/common';
 
 const Logger = log4js.getLogger(path.basename(__filename, '.js'));
 
@@ -102,11 +109,15 @@ export class Socket {
     return null;
   }
 
+  isHandshakeDone() {
+    return [this._socksTcpReady, this._socksUdpReady, this._httpReady].some((v) => !!v);
+  }
+
   onReceiving(socket, buffer) {
     if (Config.isServer) {
       this._decipher.write(buffer);
     } else {
-      if (this._socksTcpReady || this._socksUdpReady || this._httpReady) {
+      if (this.isHandshakeDone()) {
         let _buffer = buffer;
 
         if (this._socksUdpReady) {
@@ -206,10 +217,40 @@ export class Socket {
 
   onHandshake(socket, buffer) {
     this.trySocksHandshake(socket, buffer);
-    this.tryHttpHandshake(socket, buffer);
+    if (!this.isHandshakeDone()) {
+      this.tryHttpHandshake(socket, buffer);
+    }
   }
 
   trySocksHandshake(socket, buffer) {
+    if (!this.isHandshakeDone()) {
+      this.trySocks5Handshake(socket, buffer);
+    }
+    if (!this.isHandshakeDone()) {
+      this.trySocks4Handshake(socket, buffer);
+    }
+  }
+
+  trySocks4Handshake(socket, buffer) {
+    const request = Socks4RequestMessage.parse(buffer);
+    if (request !== null) {
+      const type = request.CMD;
+      if (type === REQUEST_COMMAND_CONNECT) {
+        this._targetAddress = new Address({
+          ATYP: ATYP_V4,
+          DSTADDR: request.DSTIP,
+          DSTPORT: request.DSTPORT
+        });
+
+        // reply success
+        const message = new Socks4ReplyMessage({CMD: REPLY_GRANTED});
+        socket.write(message.toBuffer());
+        this._socksTcpReady = true;
+      }
+    }
+  }
+
+  trySocks5Handshake(socket, buffer) {
     // 1. IDENTIFY
     const identifier = IdentifierMessage.parse(buffer);
     if (identifier !== null) {
@@ -219,7 +260,7 @@ export class Socket {
     }
 
     // 2. REQUEST
-    const request = RequestMessage.parse(buffer);
+    const request = Socks5RequestMessage.parse(buffer);
     if (request !== null) {
       const type = request.CMD;
       switch (type) {
@@ -232,7 +273,7 @@ export class Socket {
           });
 
           // reply success
-          const message = new ReplyMessage({REP: REPLY_SUCCEEDED});
+          const message = new Socks5ReplyMessage({REP: REPLY_SUCCEEDED});
           socket.write(message.toBuffer());
 
           if (type === REQUEST_COMMAND_CONNECT) {
@@ -243,7 +284,7 @@ export class Socket {
           break;
         }
         default: {
-          const message = new ReplyMessage({REP: REPLY_COMMAND_NOT_SUPPORTED});
+          const message = new Socks5ReplyMessage({REP: REPLY_COMMAND_NOT_SUPPORTED});
           socket.write(message.toBuffer());
           break;
         }
