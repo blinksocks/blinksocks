@@ -16,7 +16,7 @@ Yet another Socks5 proxy, designed for speed :zap:. Inspired by [Shadowsocks](ht
 
 ## Features
 
-* Http and Socks5 proxy
+* Http/Socks5/Socks4/Socks4a compatible
 * TCP and UDP relay
 * IPv4 and IPv6 support
 * Universal server and client
@@ -210,7 +210,8 @@ Next minor version:
 **v2.1.0**:
 
 * [x] http proxy
-* [ ] Socks4 proxy
+* [x] Socks4 proxy
+* [ ] Socks4a proxy
 * [ ] daemon mode
 * [ ] cluster processes
 
@@ -221,6 +222,15 @@ Further versions:
 * [ ] more docs
 * [ ] more cipher support
 * [ ] ...
+
+## References
+
+RFC:
+
+* [SOCKS4](http://www.openssh.com/txt/socks4.protocol)
+* [SOCKS4a](http://www.openssh.com/txt/socks4a.protocol)
+* [SOCKS5 RFC-1928](https://tools.ietf.org/rfc/rfc1928.txt)
+* [HTTP/1.1 RFC-2616](https://tools.ietf.org/rfc/rfc2616.txt)
 
 ## Contributors
 
