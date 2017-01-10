@@ -1,5 +1,5 @@
 import {Address} from '../Address';
-import {ATYP_V4, ATYP_V6, ATYP_DOMAIN} from '../../protocols';
+import {ATYP_V4, ATYP_V6, ATYP_DOMAIN} from '../../protocols/common';
 
 describe('Address#constructor', function () {
   it('should throw when ATYP is not v4, v6 or domain', function () {

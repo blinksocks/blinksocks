@@ -2,12 +2,7 @@ import {
   Message,
   NOOP,
   SOCKS_VERSION_V5,
-  REQUEST_COMMAND_CONNECT,
-  REQUEST_COMMAND_BIND,
-  REQUEST_COMMAND_UDP,
   ATYP_V4,
-  ATYP_DOMAIN,
-  ATYP_V6,
   REPLY_UNASSIGNED
 } from '../common';
 
@@ -48,49 +43,6 @@ export class ReplyMessage extends Message {
     this.ATYP = fields.ATYP;
     this.BNDADDR = fields.BNDADDR;
     this.BNDPORT = fields.BNDPORT;
-  }
-
-  static parse(buffer) {
-    if (buffer.length < 9) {
-      return null;
-    }
-
-    if (buffer[0] !== SOCKS_VERSION_V5) {
-      return null;
-    }
-
-    const reqTypes = [
-      REQUEST_COMMAND_CONNECT,
-      REQUEST_COMMAND_BIND,
-      REQUEST_COMMAND_UDP
-    ];
-
-    if (!reqTypes.includes(buffer[1])) {
-      return null;
-    }
-
-    if (buffer[2] !== NOOP) {
-      return null;
-    }
-
-    const addrTypes = [
-      ATYP_V4,
-      ATYP_DOMAIN,
-      ATYP_V6
-    ];
-
-    if (!addrTypes.includes(buffer[3])) {
-      return null;
-    }
-
-    return new ReplyMessage({
-      VER: buffer[0],
-      REP: buffer[1],
-      RSV: buffer[2],
-      ATYP: buffer[3],
-      BNDADDR: buffer.slice(5, 5 + buffer[4]),
-      BNDPORT: buffer.slice(-2)
-    });
   }
 
   toBuffer() {

@@ -4,7 +4,7 @@ import {
   ATYP_V4,
   ATYP_DOMAIN,
   ATYP_V6
-} from '../../protocols';
+} from '../../protocols/common';
 
 export class Address {
 
