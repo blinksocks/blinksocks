@@ -140,9 +140,9 @@ This will compile `src` to `lib`.
 
 ## Test
 
-Any application who supports socks5 protocol([RFC 1928](https://tools.ietf.org/html/rfc1928)) can be used for testing.
+Application which support Socks5/Socks4/Socks4a/HTTP can be used for testing.
 
-For example:
+For example(use curl):
 
 ```
 # Socks5
