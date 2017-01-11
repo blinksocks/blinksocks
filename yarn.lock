@@ -1165,9 +1165,9 @@ escope@^3.6.0:
     esrecurse "^4.1.0"
     estraverse "^4.1.1"
 
-eslint-config-babel@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/eslint-config-babel/-/eslint-config-babel-3.0.0.tgz#19210e1b46747e7e58d9f477dd00544f5762bf95"
+eslint-config-babel@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/eslint-config-babel/-/eslint-config-babel-4.0.1.tgz#79647e62d82aff64872e5013d6b24f8cfe9b503b"
 
 eslint-plugin-babel@^4.0.0:
   version "4.0.0"
@@ -1179,9 +1179,9 @@ eslint-plugin-flowtype@^2.29.2:
   dependencies:
     lodash "^4.15.0"
 
-eslint@^3.13.0:
-  version "3.13.0"
-  resolved "https://registry.yarnpkg.com/eslint/-/eslint-3.13.0.tgz#636925fd163c9babe2e8be7ae43caf518d469577"
+eslint@^3.13.1:
+  version "3.13.1"
+  resolved "https://registry.yarnpkg.com/eslint/-/eslint-3.13.1.tgz#564d2646b5efded85df96985332edd91a23bff25"
   dependencies:
     babel-code-frame "^6.16.0"
     chalk "^1.1.3"
