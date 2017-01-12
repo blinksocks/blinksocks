@@ -18,7 +18,7 @@ Yet another Socks5 proxy, designed for speed :zap:. Inspired by [Shadowsocks](ht
 
 ## Features
 
-* Http/Socks5/Socks4/Socks4a compatible
+* HTTP/Socks5/Socks4/Socks4a compatible
 * TCP and UDP relay
 * IPv4 and IPv6 support
 * Universal server and client
@@ -140,7 +140,7 @@ $ npm run compile
 
 This will compile `src` to `lib`.
 
-## Test
+## Test for development
 
 Application which support Socks5/Socks4/Socks4a/HTTP can be used for testing.
 
@@ -159,6 +159,24 @@ $ curl --socks4a localhost:1080 https://www.google.com
 
 # HTTP
 $ curl -x http://localhost:1080 https://www.google.com
+```
+
+## Run in production
+
+Blinksocks can take advantages of [pm2](https://github.com/unitech/pm2) to run in the production.
+
+Install `pm2` before running blinksocks in the production.
+
+### Daemon mode
+
+```
+$ pm2 start blinksocks -- -c config.json
+```
+
+### Cluster mode
+
+```
+$ pm2 start blinksocks -i 3 -- -c config.json
 ```
 
 ## Deploy
@@ -221,12 +239,11 @@ Next minor version:
 * [x] http proxy
 * [x] Socks4 proxy
 * [x] Socks4a proxy
-* [ ] daemon mode
-* [ ] cluster processes
+* [ ] Performance Testing & Report
 
 Further versions:
 
-* [ ] ip ban
+* [ ] fail2ban
 * [ ] more tests
 * [ ] more docs
 * [ ] more cipher support
