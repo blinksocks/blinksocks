@@ -9,7 +9,7 @@ RUN apt-get --yes update
 RUN apt-get install --yes pwgen
 
 # install blinksocks
-RUN npm install --global blinksocks
+RUN npm install --global blinksocks pm2
 
 # expose ports
 EXPOSE 1080

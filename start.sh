@@ -26,4 +26,4 @@ echo ">>> Using ${CONFIG_FILE}..."
 cat ${CONFIG_FILE}
 
 echo ">>> Running blinksocks with ${CONFIG_FILE}"
-blinksocks --config ${CONFIG_FILE}
+pm2 start blinksocks -i 3 --config ${CONFIG_FILE}
