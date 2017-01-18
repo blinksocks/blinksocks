@@ -239,6 +239,8 @@ Next minor version:
 * [x] http proxy
 * [x] Socks4 proxy
 * [x] Socks4a proxy
+* [ ] Plugin System
+* [ ] Message Authentication Code
 * [ ] Performance Testing & Report
 
 Further versions:
