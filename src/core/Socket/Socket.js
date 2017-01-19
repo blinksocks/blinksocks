@@ -13,17 +13,17 @@ import {
   RequestMessage as Socks5RequestMessage,
   ReplyMessage as Socks5ReplyMessage,
   UdpRequestMessage
-} from '../../protocols/socks5';
+} from '../../proxies/socks5';
 
 import {
   RequestMessage as Socks4RequestMessage,
   ReplyMessage as Socks4ReplyMessage
-} from '../../protocols/socks4';
+} from '../../proxies/socks4';
 
 import {
   HttpRequestMessage,
   ConnectReplyMessage
-} from '../../protocols/http';
+} from '../../proxies/http';
 
 import {
   ATYP_V4,
@@ -33,7 +33,7 @@ import {
   REPLY_GRANTED,
   REPLY_SUCCEEDED,
   REPLY_COMMAND_NOT_SUPPORTED
-} from '../../protocols/common';
+} from '../../proxies/common';
 
 const Logger = log4js.getLogger(path.basename(__filename, '.js'));
 

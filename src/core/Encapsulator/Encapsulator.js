@@ -1,6 +1,6 @@
 import {Utils} from '../Utils';
 import {Frame} from '../Frame';
-import {ATYP_DOMAIN} from '../../protocols/common';
+import {ATYP_DOMAIN} from '../../proxies/common';
 
 export class Encapsulator {
 
