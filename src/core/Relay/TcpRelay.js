@@ -96,11 +96,11 @@ export class TcpRelay {
     } else {
       Logger.info(`client[${this._id}] closed normally`);
     }
-    if (!this._socket.destroyed) {
+    if (this._socket && !this._socket.destroyed) {
       this._socket.end();
       this._socket = null;
     }
-    if (!this._lsocket.destroyed) {
+    if (this._socket && !this._lsocket.destroyed) {
       this._lsocket.end();
       this._lsocket = null;
     }
