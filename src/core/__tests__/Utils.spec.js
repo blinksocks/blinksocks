@@ -1,4 +1,4 @@
-import {Utils} from '../Utils';
+import {Utils} from '../../utils';
 
 describe('Utils#numberToArray', function () {
 

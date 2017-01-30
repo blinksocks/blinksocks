@@ -5,7 +5,7 @@ import {Crypto, CRYPTO_IV_LEN} from '../Crypto';
 import {Config} from '../Config';
 import {Encapsulator} from '../Encapsulator';
 import {TcpRelay, UdpRelay} from '../Relay';
-import {Utils} from '../Utils';
+import {Utils} from '../../utils';
 
 import {
   IdentifierMessage,
