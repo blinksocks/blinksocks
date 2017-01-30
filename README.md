@@ -12,7 +12,8 @@
 
 [![micooz/blinksocks](http://dockeri.co/image/micooz/blinksocks)](https://hub.docker.com/r/micooz/blinksocks/)
 
-Yet another Socks5 proxy, designed for speed :zap:. Inspired by [Shadowsocks](https://shadowsocks.org/en/index.html).
+Yet another Socks5 proxy, designed for speed :zap:. Inspired by [Shadowsocks](https://shadowsocks.org/en/index.html),
+And [ShadowsocksR](https://github.com/shadowsocksr/shadowsocksr/tree/manyuser).
 
 > Across the Great Wall we can reach every corner in the world.
 

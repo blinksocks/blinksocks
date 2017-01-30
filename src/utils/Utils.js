@@ -1,8 +1,8 @@
 import net from 'net';
 import url from 'url';
 import ip from 'ip';
-import {Address} from '../Address';
-import {ATYP_DOMAIN, ATYP_V4, ATYP_V6} from '../../proxies/common';
+import {Address} from '../core';
+import {ATYP_DOMAIN, ATYP_V4, ATYP_V6} from '../proxies/common';
 
 export class Utils {
 
