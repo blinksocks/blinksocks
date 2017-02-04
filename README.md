@@ -44,6 +44,12 @@ $ yarn global add blinksocks
 $ npm install -g blinksocks
 ```
 
+## Upgrade
+
+```
+$ npm update -g blinksocks
+```
+
 ## Usage
 
 Once installed, you can access blinksocks from command line directly:
