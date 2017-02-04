@@ -1,10 +1,8 @@
 import net from 'net';
-import path from 'path';
-import log4js from 'log4js';
 import {Config} from '../Config';
 import {Socket} from '../Socket';
 
-const Logger = log4js.getLogger(path.basename(__filename, '.js'));
+const Logger = require('../../utils/logger')(__filename);
 
 const nextId = (function () {
   let i = 0;
@@ -16,8 +14,9 @@ export class Hub {
   _hub = null; // instance of class net.Server
 
   constructor(config) {
+    // parse config json
     Config.init(config);
-    Logger.setLevel(Config.log_level);
+    Logger.setLevel(__LOG_LEVEL__);
     this._hub = net.createServer();
     this._hub.on('error', this.onError.bind(this));
     this._hub.on('close', this.onClose.bind(this));
