@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import crypto from 'crypto';
 import {AdvancedBuffer} from '../AdvancedBuffer';
 

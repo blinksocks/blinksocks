@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import {
   MIDDLEWARE_DIRECTION_UPWARD,
   MIDDLEWARE_DIRECTION_DOWNWARD,

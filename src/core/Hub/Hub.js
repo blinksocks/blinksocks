@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import net from 'net';
 import {Config} from '../Config';
 import {Socket} from '../Socket';

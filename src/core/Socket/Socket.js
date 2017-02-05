@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import net from 'net';
 import {Address} from '../Address';
 import {DNSCache} from '../DNSCache';
