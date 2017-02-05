@@ -1,11 +1,22 @@
-import path from 'path';
-import log4js from 'log4js';
+import net from 'net';
 import {Address} from '../Address';
-import {Crypto, CRYPTO_IV_LEN} from '../Crypto';
-import {Config} from '../Config';
-import {Encapsulator} from '../Encapsulator';
-import {TcpRelay, UdpRelay} from '../Relay';
+import {DNSCache} from '../DNSCache';
+import {Pipe} from '../Pipe';
+import {
+  MIDDLEWARE_DIRECTION_UPWARD,
+  MIDDLEWARE_DIRECTION_DOWNWARD,
+  FrameMiddleware,
+  CryptoMiddleware,
+  ProtocolMiddleware,
+  ObfsMiddleware
+} from '../Middlewares';
+
 import {Utils} from '../../utils';
+import {
+  SOCKET_CONNECT_TO_DST,
+  CRYPTO_SET_IV,
+  CRYPTO_SET_IV_AFTER
+} from '../../constants';
 
 import {
   IdentifierMessage,
@@ -13,6 +24,7 @@ import {
   RequestMessage as Socks5RequestMessage,
   ReplyMessage as Socks5ReplyMessage,
   UdpRequestMessage
+  // UdpRequestMessage
 } from '../../proxies/socks5';
 
 import {
@@ -35,17 +47,16 @@ import {
   REPLY_COMMAND_NOT_SUPPORTED
 } from '../../proxies/common';
 
-const Logger = log4js.getLogger(path.basename(__filename, '.js'));
+const Logger = require('../../utils/logger')(__filename);
+const dnsCache = DNSCache.create();
 
 export class Socket {
 
   _id = null;
 
-  _socket = null;
+  _bsocket = null;
 
-  _tcpRelay = null;
-
-  _udpRelay = null;
+  _fsocket = null;
 
   _socksTcpReady = false;
 
@@ -55,140 +66,71 @@ export class Socket {
 
   _targetAddress = null;
 
-  _decipher = null;
+  _pipeForward = null;
 
-  _cipher = null;
-
-  _iv = null;
+  _pipeBackward = null;
 
   constructor({id, socket}) {
-    Logger.setLevel(Config.log_level);
+    Logger.setLevel(__LOG_LEVEL__);
     this._id = id;
-    this._socket = socket;
-    this.updateCiphers();
-    // events
-    socket.on('error', (err) => this.onError(err));
-    socket.on('close', (had_error) => this.onClose(had_error));
-    socket.on('data', (buffer) => this.onReceiving(socket, buffer));
-    Logger.info(`client[${this._id}] connected`);
-  }
-
-  obtainIV(buffer) {
-    if (buffer.length < CRYPTO_IV_LEN + 9) {
-      if (Logger.isFatalEnabled()) {
-        Logger.fatal(`cannot obtain iv from client, packet is too small (${buffer.length}bytes)`);
-      }
-      return null;
+    this._bsocket = socket;
+    // handle events
+    this._bsocket.on('error', (err) => this.onError(err));
+    this._bsocket.on('close', (had_error) => this.onClose(had_error));
+    this._bsocket.on('data', (buffer) => this.onForward(buffer));
+    if (__IS_SERVER__) {
+      this.createPipes();
     }
-    return buffer.slice(-CRYPTO_IV_LEN);
-  }
-
-  updateCiphers() {
-    const collector = (buffer) => this.onReceived(buffer);
-    const iv = this._iv === null ? undefined : this._iv;
-    this._cipher = Crypto.createCipher(collector, iv);
-    this._decipher = Crypto.createDecipher(collector, iv);
-  }
-
-  getRelay() {
-    // return tcp relay
-    if (this._socksTcpReady || this._httpReady || Config.isServer) {
-      return this._tcpRelay = this._tcpRelay ||
-        new TcpRelay({
-          id: this._id,
-          socket: this._socket
-        });
-    }
-    // return udp relay
-    if (this._socksUdpReady || Config.isServer) {
-      return this._udpRelay = this._udpRelay ||
-        new UdpRelay({
-          id: this._id,
-          socket: this._socket
-        });
-    }
-    return null;
   }
 
   isHandshakeDone() {
     return [this._socksTcpReady, this._socksUdpReady, this._httpReady].some((v) => !!v);
   }
 
-  onReceiving(socket, buffer) {
-    if (Config.isServer) {
-      this._decipher.write(buffer);
-    } else {
-      if (this.isHandshakeDone()) {
-        let _buffer = buffer;
-
-        if (this._socksUdpReady) {
-          const request = UdpRequestMessage.parse(buffer);
-          if (request !== null) {
-            // just drop RSV and FRAG
-            _buffer = request.DATA;
-          } else {
-            if (Logger.isWarnEnabled()) {
-              Logger.warn(`[${this._id}] -x-> dropped unidentified packet ${buffer.length} bytes`);
-            }
-            return;
-          }
-        }
-
-        // send with iv, if needed
-        if (this._iv === null && Config.use_iv) {
-          // 1. generate iv for each connection
-          this._iv = Crypto.generateIV();
-          // 2. pack then send out
-          this._cipher.write(Encapsulator.pack(this._targetAddress, Buffer.concat([_buffer, this._iv])).toBuffer());
-          // 3. update socket ciphers
-          this.updateCiphers();
-          // 4. update relay ciphers
-          this.getRelay().setIV(this._iv);
-        } else {
-          // send without iv
-          this._cipher.write(Encapsulator.pack(this._targetAddress, _buffer).toBuffer());
-        }
-      } else {
-        // socks5/http handshake, client only
-        this.onHandshake(socket, buffer);
-      }
+  onForward(buffer) {
+    if (__IS_CLIENT__ && !this.isHandshakeDone()) {
+      // client handshake(multiple-protocols), client only
+      this.onHandshake(buffer);
+      return;
     }
-  }
 
-  onReceived(buffer) {
-    const relay = this.getRelay();
-    if (Config.isServer) {
-      // obtain iv from the first packet if needed
-      if (this._iv === null && Config.use_iv) {
-        this._iv = this.obtainIV(buffer);
-        if (this._iv === null) {
-          this._socket.end();
-          this._socket.destroy();
-          return;
+    let _buffer = buffer;
+
+    // udp compatible
+    if (__IS_CLIENT__ && this._socksUdpReady) {
+      const request = UdpRequestMessage.parse(buffer);
+      if (request !== null) {
+        // just drop RSV and FRAG
+        _buffer = request.DATA;
+      } else {
+        if (Logger.isWarnEnabled()) {
+          Logger.warn(`[${this._id}] -x-> dropped unidentified packet ${buffer.length} bytes`);
         }
-        // TODO(refactor): simplify the post-process to buffer
-        const buf = buffer.slice(0, buffer.length - CRYPTO_IV_LEN);
-        const newLen = Utils.numberToArray(buf.readUInt16BE(0) - CRYPTO_IV_LEN);
-        buf[0] = newLen[0];
-        buf[1] = newLen[1];
-        relay.setIV(this._iv);
-        relay.forwardToDst(buf);
-        this.updateCiphers();
         return;
       }
-      relay.forwardToDst(buffer);
-    } else {
-      relay.forwardToServer(buffer);
     }
+
+    this._pipeForward.feed(_buffer)
+      .then((buf) => this._fsocket.write(buf))
+      .catch((err) => Logger.error(err.message));
+  }
+
+  onBackward(buffer) {
+    this._pipeBackward.feed(buffer)
+      .then((buf) => this._bsocket.write(buf))
+      .catch((err) => Logger.error(err));
   }
 
   onError(err) {
     switch (err.code) {
+      case 'ECONNREFUSED':
+      case 'EADDRNOTAVAIL':
+      case 'ENETDOWN':
       case 'ECONNRESET':
-        Logger.warn(`client[${this._id}] ${err.message}`);
-        return;
+      case 'ETIMEDOUT':
+      case 'EAI_AGAIN':
       case 'EPIPE':
-        Logger.warn(`client[${this._id}] ${err.message}`);
+        Logger.warn(`[${this._id}] ${err.message}`);
         return;
       default:
         Logger.error(err);
@@ -203,24 +145,145 @@ export class Socket {
     } else {
       Logger.info(`client[${this._id}] closed normally`);
     }
-    if (this._tcpRelay !== null) {
-      this._tcpRelay.close();
-      this._tcpRelay = null;
+    if (this._bsocket !== null && !this._bsocket.destroyed) {
+      this._bsocket.end();
+      this._bsocket = null;
     }
-    if (this._udpRelay !== null) {
-      this._udpRelay = null;
-    }
-    if (this._socket !== null && !this._socket.destroyed) {
-      this._socket.end();
-      this._socket = null;
+    if (this._fsocket !== null && !this._fsocket.destroyed) {
+      this._fsocket.end();
+      this._fsocket = null;
     }
   }
 
-  onHandshake(socket, buffer) {
-    this.trySocksHandshake(socket, buffer);
-    if (!this.isHandshakeDone()) {
-      this.tryHttpHandshake(socket, buffer);
+  /**
+   * TODO(refactor): too redundant
+   * create pipes for both data forward and backward
+   */
+  createPipes() {
+    if (__IS_CLIENT__) {
+      // forward
+      const props_1 = {direction: MIDDLEWARE_DIRECTION_UPWARD};
+      const props_2 = {direction: MIDDLEWARE_DIRECTION_DOWNWARD};
+      const fcrypto = new CryptoMiddleware(props_1);
+      const bcrypto = new CryptoMiddleware(props_2);
+      this._pipeForward = new Pipe({
+        onNotify: (action) => {
+          switch (action.type) {
+            case CRYPTO_SET_IV_AFTER: {
+              const iv = action.payload;
+              fcrypto.deferUpdateCiphers(iv);
+              bcrypto.updateCiphers(iv);
+              break;
+            }
+            default:
+              return false;
+          }
+          return true;
+        }
+      });
+
+      this._pipeForward
+        .pipe(new FrameMiddleware({...props_1, address: this._targetAddress}))
+        .pipe(new ProtocolMiddleware(props_1))
+        .pipe(fcrypto)
+        .pipe(new ObfsMiddleware(props_1));
+
+      // backward
+      this._pipeBackward = new Pipe();
+      this._pipeBackward
+        .pipe(new ObfsMiddleware(props_2))
+        .pipe(bcrypto)
+        .pipe(new ProtocolMiddleware(props_2))
+        .pipe(new FrameMiddleware(props_2));
     }
+
+    if (__IS_SERVER__) {
+      // forward
+      const props_1 = {direction: MIDDLEWARE_DIRECTION_DOWNWARD};
+      const props_2 = {direction: MIDDLEWARE_DIRECTION_UPWARD};
+      const fcrypto = new CryptoMiddleware(props_1);
+      const bcrypto = new CryptoMiddleware(props_2);
+
+      this._pipeForward = new Pipe({
+        onNotify: (action) => {
+          switch (action.type) {
+            case CRYPTO_SET_IV: {
+              const iv = action.payload;
+              fcrypto.updateCiphers(iv);
+              bcrypto.updateCiphers(iv);
+              break;
+            }
+            case SOCKET_CONNECT_TO_DST:
+              this.connectToDst(...action.payload);
+              break;
+            default:
+              return false;
+          }
+          return true;
+        }
+      });
+      this._pipeForward
+        .pipe(new ObfsMiddleware(props_1))
+        .pipe(fcrypto)
+        .pipe(new ProtocolMiddleware(props_1))
+        .pipe(new FrameMiddleware(props_1));
+
+      // backward
+      this._pipeBackward = new Pipe();
+      this._pipeBackward
+        .pipe(new FrameMiddleware(props_2))
+        .pipe(new ProtocolMiddleware(props_2))
+        .pipe(bcrypto)
+        .pipe(new ObfsMiddleware(props_2));
+    }
+  }
+
+  /**
+   * connect to blinksocks server
+   * @returns {Promise}
+   */
+  connectToServer() {
+    return new Promise((resolve, reject) => {
+      this._fsocket = net.connect({
+        host: __SERVER_HOST__,
+        port: __SERVER_PORT__
+      });
+      this._fsocket.on('connect', () => {
+        this.createPipes();
+        resolve();
+      });
+      this._fsocket.on('error', (err) => reject(err));
+      this._fsocket.on('close', (had_error) => this.onClose(had_error));
+      this._fsocket.on('data', (buffer) => this.onBackward(buffer));
+    });
+  }
+
+  /**
+   * connect to the real server, server side only
+   * @param address
+   * @param callback
+   * @returns {Promise.<void>}
+   */
+  async connectToDst(address, callback) {
+    const [host, port] = address.getEndPoint();
+    const ip = await dnsCache.get(host);
+    this._fsocket = net.connect({host: ip, port}, callback);
+    this._fsocket.on('error', (err) => this.onError(err));
+    this._fsocket.on('close', (had_error) => this.onClose(had_error));
+    this._fsocket.on('data', (buffer) => this.onBackward(buffer));
+  }
+
+  /*** client handshake, multiple protocols ***/
+
+  onHandshake(buffer) {
+    this.trySocksHandshake(this._bsocket, buffer);
+    if (!this.isHandshakeDone()) {
+      this.tryHttpHandshake(this._bsocket, buffer);
+    }
+  }
+
+  onHandshakeDone(callback) {
+    this.connectToServer().then(callback).catch(this.onError.bind(this));
   }
 
   trySocksHandshake(socket, buffer) {
@@ -242,11 +305,12 @@ export class Socket {
           DSTADDR: DSTADDR.length > 0 ? DSTADDR : DSTIP,
           DSTPORT
         });
-
-        // reply success
-        const message = new Socks4ReplyMessage({CMD: REPLY_GRANTED});
-        socket.write(message.toBuffer());
-        this._socksTcpReady = true;
+        this.onHandshakeDone(() => {
+          // reply success
+          const message = new Socks4ReplyMessage({CMD: REPLY_GRANTED});
+          socket.write(message.toBuffer());
+          this._socksTcpReady = true;
+        });
       }
     }
   }
@@ -272,16 +336,17 @@ export class Socket {
             DSTADDR: request.DSTADDR,
             DSTPORT: request.DSTPORT
           });
+          this.onHandshakeDone(() => {
+            // reply success
+            const message = new Socks5ReplyMessage({REP: REPLY_SUCCEEDED});
+            socket.write(message.toBuffer());
 
-          // reply success
-          const message = new Socks5ReplyMessage({REP: REPLY_SUCCEEDED});
-          socket.write(message.toBuffer());
-
-          if (type === REQUEST_COMMAND_CONNECT) {
-            this._socksTcpReady = true;
-          } else {
-            this._socksUdpReady = true;
-          }
+            if (type === REQUEST_COMMAND_CONNECT) {
+              this._socksTcpReady = true;
+            } else {
+              this._socksUdpReady = true;
+            }
+          });
           break;
         }
         default: {
@@ -302,10 +367,12 @@ export class Socket {
       this._httpReady = true;
 
       if (METHOD.toString() === 'CONNECT') {
-        const message = new ConnectReplyMessage();
-        socket.write(message.toBuffer());
+        this.onHandshakeDone(() => {
+          const message = new ConnectReplyMessage();
+          socket.write(message.toBuffer());
+        });
       } else {
-        // for clients who haven't sent CONNECT, should relay buffer directly
+        // for clients who haven't sent CONNECT, should begin to relay immediately
         this.onReceiving(socket, buffer);
       }
     }
