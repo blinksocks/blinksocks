@@ -33,18 +33,18 @@ export class Hub {
   }
 
   onConnect(socket) {
-    new Socket({id: nextId(), socket});
+    const id = nextId();
+    new Socket({id, socket});
+    Logger.info(`client[${id}] connected`);
   }
 
   run() {
-    const [host, port] = [Config.host, Config.port];
     const options = {
-      host,
-      port,
-      backlog: 511
+      host: __LOCAL_HOST__,
+      port: __LOCAL_PORT__
     };
     this._hub.listen(options, () => {
-      Logger.info(`blinksocks is running as '${Config.isServer ? 'Server' : 'Client'}'`);
+      Logger.info(`blinksocks is running as '${__IS_SERVER__ ? 'Server' : 'Client'}'`);
       Logger.info('opened hub on:', this._hub.address());
     });
   }

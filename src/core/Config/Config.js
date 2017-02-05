@@ -2,7 +2,6 @@ import fs from 'fs';
 import log4js from 'log4js';
 import {Crypto} from '../Crypto';
 
-export const DEFAULT_CIPHER = 'aes-256-cfb';
 export const DEFAULT_KEY = 'my secret password';
 export const DEFAULT_LOG_LEVEL = 'ERROR';
 
@@ -20,24 +19,44 @@ export class Config {
 
   static cipher;
 
-  static use_iv;
+  static protocol;
+
+  static protocol_params;
+
+  static obfs;
+
+  static obfs_params;
 
   static log_level;
 
-  static isServer = true;
+  static _is_server;
 
+  /**
+   * parse config.json
+   * @param json
+   */
   static init(json) {
     if (typeof json !== 'object' || Array.isArray(json)) {
       throw Error('Invalid configuration file');
     }
 
+    // host
+
     if (typeof json.host !== 'string' || json.host === '') {
       throw Error('\'host\' must be provided and is not empty');
     }
 
+    this.host = json.host;
+
+    // port
+
     if (!Number.isSafeInteger(json.port) || json.port <= 0) {
       throw Error('\'port\' must be a natural number');
     }
+
+    this.port = json.port;
+
+    // server_host & server_port
 
     if (typeof json.server_host === 'string') {
       if (json.server_host === '') {
@@ -47,11 +66,18 @@ export class Config {
       if (!Number.isSafeInteger(json.server_port) || json.server_port <= 0) {
         throw Error('\'server_port\' must be a natural number');
       }
-      Config.isServer = false;
+      this._is_server = false;
+    } else {
+      this._is_server = true;
     }
 
-    if (typeof json.password !== 'string') {
-      throw Error('\'password\' must be a string and is not empty');
+    this.server_host = json.server_host;
+    this.server_port = json.server_port;
+
+    // key & cipher
+
+    if (typeof json.key !== 'string') {
+      throw Error('\'key\' must be a string and is not empty');
     }
 
     if (typeof json.cipher !== 'string') {
@@ -62,60 +88,53 @@ export class Config {
       if (!Crypto.isAvailable(json.cipher)) {
         throw Error(`cipher \'${json.cipher}\' is not supported, use --ciphers to display all supported ciphers`);
       }
-      if (typeof json.use_iv !== 'boolean') {
-        throw Error('\'use_iv\' must be true or false');
-      }
-      if (json.password === '' || json.password === DEFAULT_KEY) {
+      if (json.key === '' || json.key === DEFAULT_KEY) {
         throw Error(`\'password\' must not be empty or \'${DEFAULT_KEY}\'`);
       }
-      this.cipher = Config.obtainCipher(json.cipher);
-      this.key = this.getKey(this.cipher, json.password);
-      this.use_iv = json.use_iv;
+      this.cipher = Crypto.getCipher(json.cipher);
+      this.key = Crypto.getStrongKey(json.cipher, json.key);
     } else {
       this.cipher = '';
       this.key = '';
-      this.use_iv = false;
       console.warn('You haven\'t specify a cipher, this shall only be used in development or special cases.');
     }
 
-    this.host = json.host;
-    this.port = json.port;
-    this.server_host = json.server_host;
-    this.server_port = json.server_port;
-    this.log_level = this.setUpLogger(json.log_level || DEFAULT_LOG_LEVEL);
+    // protocol & protocol_params
+
+    this.protocol = json.protocol;
+    this.protocol_params = json.protocol_params;
+
+    // obfs & obfs_params
+
+    this.obfs = json.obfs;
+    this.obfs_params = json.obfs_params;
+
+    // log_level
+    this.setUpLogger(json.log_level || DEFAULT_LOG_LEVEL);
+
+    this.setGlobals();
   }
 
   /**
-   * generate key from config.password
+   * make global constants
    */
-  static getKey(cipher, password) {
-    const keyLen = Crypto.getKeySize(cipher);
-    return Crypto.hash(Crypto.hash(password)).substr(0, keyLen);
-  }
-
-  /**
-   * check if crypto module is available
-   * @returns {boolean}
-   */
-  static obtainCipher(tryCipher) {
-    let cipher = tryCipher;
-    try {
-      const crypto = require('crypto');
-      crypto.createCipher(cipher, '');
-    } catch (err) {
-      if (err.message.indexOf('cipher') !== -1) {
-        console.warn(`unsupported cipher: '${cipher}', fallback to: '${DEFAULT_CIPHER}'`);
-        cipher = DEFAULT_CIPHER;
-      } else {
-        console.error('crypto module is unavailable, please re-build your Node.js with [crypto] module.');
-        process.exit(-1);
-      }
-    }
-    return cipher;
+  static setGlobals() {
+    global.__IS_SERVER__ = this._is_server;
+    global.__IS_CLIENT__ = !this._is_server;
+    global.__LOCAL_HOST__ = this.host;
+    global.__LOCAL_PORT__ = this.port;
+    global.__SERVER_HOST__ = this.server_host;
+    global.__SERVER_PORT__ = this.server_port;
+    global.__LOG_LEVEL__ = this.log_level;
+    global.__PROTOCOL__ = this.protocol;
+    global.__OBFS__ = this.obfs;
+    global.__CIPHER__ = this.cipher;
+    global.__KEY__ = this.key;
   }
 
   /**
    * configure log4js
+   * @param level
    */
   static setUpLogger(level = '') {
     // create logs directory
@@ -145,36 +164,37 @@ export class Config {
     }
 
     // configure log4js globally
+    const log4jsCommon = {
+      'appenders': [
+        {
+          'type': 'console'
+        }
+      ],
+      'replaceConsole': true
+    };
     if (process.env.NODE_ENV !== 'test') {
       log4js.configure({
+        ...log4jsCommon,
         'appenders': [
-          {
-            'type': 'console'
-          },
+          ...log4jsCommon.appenders,
           {
             'type': 'dateFile',
             'filename': 'logs/blinksocks.log',
             'pattern': '-yyyy-MM-dd',
             'alwaysIncludePattern': false
           }
-        ],
-        'replaceConsole': true
+        ]
       });
     } else {
       log4js.configure({
-        'appenders': [
-          {
-            'type': 'console'
-          }
-        ],
-        'replaceConsole': true,
+        ...log4jsCommon,
         'levels': {
           'console': _level
         }
       });
     }
 
-    return _level;
+    this.log_level = _level;
   }
 
 }

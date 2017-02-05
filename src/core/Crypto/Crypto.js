@@ -1,11 +1,11 @@
 import crypto from 'crypto';
-import {Config} from '../Config';
 import {AdvancedBuffer} from '../AdvancedBuffer';
 
 const HASH_SALT = 'blinksocks';
 const CRYPTO_TYPE_CIPHER = 0;
 const CRYPTO_TYPE_DECIPHER = 1;
 const CRYPTO_TYPE_NONE = 3;
+const CRYPTO_DEFAULT_CIPHER = 'aes-256-cfb';
 export const CRYPTO_IV_LEN = 16;
 
 /**
@@ -46,7 +46,7 @@ class FakeStream {
 export class Crypto {
 
   static _create(type, collector, iv) {
-    const [cipher, key] = [Config.cipher, Config.key];
+    const [cipher, key] = [__CIPHER__, __KEY__];
 
     let stream = null;
     const _type = cipher === '' ? CRYPTO_TYPE_NONE : type;
@@ -72,7 +72,7 @@ export class Crypto {
     stream.on('readable', () => {
       const data = stream.read();
       if (data !== null) {
-        if (Config.isServer && _type === CRYPTO_TYPE_DECIPHER) {
+        if (__IS_SERVER__ && _type === CRYPTO_TYPE_DECIPHER) {
           _buffer.put(data);
         } else {
           collector(data);
@@ -100,10 +100,6 @@ export class Crypto {
     return hash.digest('hex');
   }
 
-  static generateIV() {
-    return crypto.randomBytes(CRYPTO_IV_LEN);
-  }
-
   static isAvailable(cipher) {
     return !(typeof cipherKeyIVLens[cipher] === 'undefined');
   }
@@ -112,8 +108,40 @@ export class Crypto {
     return Object.keys(cipherKeyIVLens);
   }
 
+  /**
+   * generate key from config.key
+   * @param cipher
+   * @param key
+   * @returns {string}
+   */
+  static getStrongKey(cipher, key) {
+    const keyLen = this.getKeySize(cipher);
+    return this.hash(key).substr(0, keyLen);
+  }
+
   static getKeySize(cipher) {
     return cipherKeyIVLens[cipher][0];
+  }
+
+  /**
+   * pick a valid cipher if is available on the current platform
+   * @returns {boolean}
+   */
+  static getCipher(tryCipher) {
+    let cipher = tryCipher;
+    try {
+      const crypto = require('crypto');
+      crypto.createCipher(cipher, '');
+    } catch (err) {
+      if (err.message.indexOf('cipher') !== -1) {
+        console.warn(`unsupported cipher: '${cipher}', fallback to: '${CRYPTO_DEFAULT_CIPHER}'`);
+        cipher = CRYPTO_DEFAULT_CIPHER;
+      } else {
+        console.error('crypto module is unavailable, please re-build your Node.js with [crypto] module.');
+        process.exit(-1);
+      }
+    }
+    return cipher;
   }
 
 }

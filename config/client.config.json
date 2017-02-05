@@ -3,8 +3,11 @@
   "port": 1080,
   "server_host": "example.com",
   "server_port": 6666,
-  "password": "my secret password",
+  "key": "my secret password",
   "cipher": "aes-256-cfb",
-  "use_iv": true,
+  "protocol": "basic",
+  "protocol_params": "none",
+  "obfs": "none",
+  "obfs_params": "",
   "log_level": "error"
 }
