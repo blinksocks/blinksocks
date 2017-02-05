@@ -1,10 +1,21 @@
 import {
   MIDDLEWARE_DIRECTION_UPWARD,
   MIDDLEWARE_DIRECTION_DOWNWARD,
-  IMiddleware
+  IMiddleware,
+  checkMiddleware
 } from '../Interface';
+import {Utils} from '../../../utils';
 
 const Logger = require('../../../utils/logger')(__filename);
+
+// NOTE: This middleware will add two bytes (indicates the total length of the packet)
+// at the beginning of payload when upstream.
+//
+// +-----+----------------+
+// | LEN |    PAYLOAD     |
+// +-----+----------------+
+// |  2  |    Variable    |
+// +-----+----------------+
 
 export class ProtocolMiddleware extends IMiddleware {
 
@@ -20,26 +31,13 @@ export class ProtocolMiddleware extends IMiddleware {
     try {
       const ProtocolImplClass = require(`../../../presets/protocols/${__PROTOCOL__}`).default;
       const impl = new ProtocolImplClass();
-      if (this.checkMiddleware(impl)) {
+      if (checkMiddleware(__PROTOCOL__, impl)) {
         this._impl = impl;
       }
     } catch (err) {
       Logger.fatal(err.message);
       process.exit(-1);
     }
-  }
-
-  checkMiddleware(impl) {
-    const requiredMethods = [
-      'forwardToServer',
-      'forwardToDst',
-      'backwardToClient',
-      'backwardToApplication'
-    ];
-    if (requiredMethods.some((method) => typeof impl[method] !== 'function')) {
-      throw Error(`all methods [${requiredMethods.toString()}] in ${__PROTOCOL__} must be implemented`);
-    }
-    return true;
   }
 
   subscribe(notifier) {
@@ -59,6 +57,7 @@ export class ProtocolMiddleware extends IMiddleware {
       }
 
       if (__IS_CLIENT__ && direction === MIDDLEWARE_DIRECTION_DOWNWARD) {
+        args[0] = args[0].slice(2);
         ret = this._impl.backwardToApplication(...args);
       }
 
@@ -67,11 +66,19 @@ export class ProtocolMiddleware extends IMiddleware {
       }
 
       if (__IS_SERVER__ && direction === MIDDLEWARE_DIRECTION_DOWNWARD) {
+        args[0] = args[0].slice(2);
         ret = this._impl.forwardToDst(...args);
       }
 
       if (ret !== null && typeof ret !== 'undefined') {
-        next(ret);
+        if (direction === MIDDLEWARE_DIRECTION_UPWARD) {
+          next(Buffer.concat([
+            /* LEN: */Buffer.from(Utils.numberToArray(2 + ret.length)),
+            ret
+          ]));
+        } else {
+          next(ret);
+        }
       }
     });
   }

@@ -57,6 +57,10 @@ export class FrameMiddleware extends IMiddleware {
       if (direction === MIDDLEWARE_DIRECTION_DOWNWARD) {
         const frame = this.unpack(buffer);
 
+        if (frame === null && Logger.isWarnEnabled()) {
+          throw Error(`-x-> dropped unidentified packet ${buffer.length} bytes @FrameMiddleware`);
+        }
+
         if (__IS_SERVER__ && !this._is_connected) {
           // connect to the real server
           const addr = new Address({
