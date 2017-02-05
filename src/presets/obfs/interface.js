@@ -1,4 +1,4 @@
-export class IProtocol {
+export class IObfs {
 
   forwardToServer(/* buffer, next, notify */) {
 

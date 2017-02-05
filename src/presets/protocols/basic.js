@@ -3,37 +3,33 @@ import {
   CRYPTO_SET_IV_AFTER,
   CRYPTO_SET_IV
 } from '../../constants';
-import {Utils} from '../../utils';
-import {IProtocolMiddleware} from './interface';
+import {IProtocol} from './interface';
 
 const IV_LEN = 16;
 
 // Handshake packet:
 //
-// +-----+-------+----------------+
-// | LEN |  IV   |    PAYLOAD     |
-// +-----+-------+----------------+ = packet(encrypted without IV)
-// |  2  | Fixed |    Variable    |
-// +-----+-------+----------------+
+// +-------+----------------+
+// |  IV   |    PAYLOAD     |
+// +-------+----------------+ = packet(encrypted without IV)
+// | Fixed |    Variable    |
+// +-------+----------------+
 //
 // Following packets:
 //
-// +-----+----------------+
-// | LEN |    PAYLOAD     |
-// +-----+----------------+ (encrypted with IV)
-// |  2  |    Variable    |
-// +-----+----------------+
+// +----------------+
+// |    PAYLOAD     |
+// +----------------+ (encrypted with IV)
+// |    Variable    |
+// +----------------+
 //
-export default class BasicProtocolMiddleware extends IProtocolMiddleware {
+export default class BasicProtocol extends IProtocol {
 
   _isHandshakeDone = false;
 
   forwardToServer(payload, next, notify) {
     if (this._isHandshakeDone) {
-      return Buffer.concat([
-        Buffer.from(Utils.numberToArray(2 + payload.length)),
-        payload
-      ]);
+      return payload;
     } else {
       const iv = crypto.randomBytes(IV_LEN);
       notify({
@@ -42,7 +38,6 @@ export default class BasicProtocolMiddleware extends IProtocolMiddleware {
       });
       this._isHandshakeDone = true;
       return Buffer.concat([
-        Buffer.from(Utils.numberToArray(2 + iv.length + payload.length)),
         iv,
         payload
       ]);
@@ -51,15 +46,15 @@ export default class BasicProtocolMiddleware extends IProtocolMiddleware {
 
   forwardToDst(packet, next, notify) {
     if (this._isHandshakeDone) {
-      return packet.slice(2);
+      return packet;
     } else {
-      const iv = packet.slice(2, 2 + IV_LEN);
+      const iv = packet.slice(0, IV_LEN);
       notify({
         type: CRYPTO_SET_IV,
         payload: iv
       });
       this._isHandshakeDone = true;
-      return packet.slice(2 + IV_LEN);
+      return packet.slice(IV_LEN);
     }
   }
 

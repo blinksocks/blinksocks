@@ -1,4 +1,4 @@
-import {IProtocolMiddleware} from './interface';
+import {IProtocol} from './interface';
 
 // +----------------+
 // |    PAYLOAD     |
@@ -6,7 +6,7 @@ import {IProtocolMiddleware} from './interface';
 // |    Variable    |
 // +----------------+
 
-export default class NoneProtocolMiddleware extends IProtocolMiddleware {
+export default class NoneProtocol extends IProtocol {
 
   forwardToServer(buffer) {
     return buffer;
