@@ -128,6 +128,7 @@ export class Config {
     global.__LOG_LEVEL__ = this.log_level;
     global.__PROTOCOL__ = this.protocol;
     global.__OBFS__ = this.obfs;
+    global.__OBFS_PARAMS__ = this.obfs_params;
     global.__CIPHER__ = this.cipher;
     global.__KEY__ = this.key;
   }

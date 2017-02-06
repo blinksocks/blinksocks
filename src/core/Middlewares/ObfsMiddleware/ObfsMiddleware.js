@@ -21,7 +21,7 @@ export class ObfsMiddleware extends IMiddleware {
     this._direction = props.direction;
     try {
       const ObfsImplClass = require(`../../../presets/obfs/${__OBFS__}`).default;
-      const impl = new ObfsImplClass();
+      const impl = new ObfsImplClass({obfs_params: __OBFS_PARAMS__});
       if (checkMiddleware(__OBFS__, impl)) {
         this._impl = impl;
       }

@@ -5,16 +5,10 @@ Accept: */*
 ----------------------
 HTTP/1.1 200 OK
 Content-Type: text/plain
-Content-Length: 3
-
-abc
 ======================
 POST /login HTTP/1.1
 Host: login.live.com
 Content-type: application/json
-Content-Length: 31
-
-{"email":"example@example.com"}
 ----------------------
 HTTP/1.1 200 OK
 ======================
