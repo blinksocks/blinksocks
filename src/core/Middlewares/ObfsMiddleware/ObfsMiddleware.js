@@ -12,13 +12,8 @@ export class ObfsMiddleware extends IMiddleware {
 
   _impl = null;
 
-  _direction = null;
-
-  _onNotify = null;
-
   constructor(props) {
     super(props);
-    this._direction = props.direction;
     try {
       const ObfsImplClass = require(`../../../presets/obfs/${__OBFS__}`).default;
       const impl = new ObfsImplClass({obfs_params: __OBFS_PARAMS__});
@@ -31,15 +26,10 @@ export class ObfsMiddleware extends IMiddleware {
     }
   }
 
-  subscribe(notifier) {
-    this._onNotify = notifier;
-  }
-
-  write(buffer) {
+  write(direction, buffer) {
     return new Promise((next) => {
-      const direction = this._direction;
-      const onNotify = this._onNotify;
-      const args = [buffer, next, onNotify];
+      const broadcast = this.broadcast;
+      const args = [buffer, next, broadcast];
 
       let ret = null;
 

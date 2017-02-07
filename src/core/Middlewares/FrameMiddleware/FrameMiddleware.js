@@ -27,26 +27,15 @@ export class FrameMiddleware extends IMiddleware {
 
   _target_address = null;
 
-  _direction = null;
-
-  _onNotify = null;
-
   _is_connected = false;
 
-  constructor(props) {
+  constructor(props = {}) {
     super(props);
     this._target_address = props.address;
-    this._direction = props.direction;
   }
 
-  subscribe(notifier) {
-    this._onNotify = notifier;
-  }
-
-  write(buffer) {
+  write(direction, buffer) {
     return new Promise((next) => {
-      const direction = this._direction;
-
       if (direction === MIDDLEWARE_DIRECTION_UPWARD) {
         if (__IS_SERVER__) {
           next(this.pack(new Address(), buffer));
@@ -73,7 +62,7 @@ export class FrameMiddleware extends IMiddleware {
             next(frame.DATA);
             this._is_connected = true;
           };
-          this._onNotify({
+          this.broadcast({
             type: SOCKET_CONNECT_TO_DST,
             payload: [addr, onConnected]
           });

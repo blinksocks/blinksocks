@@ -22,13 +22,8 @@ export class ProtocolMiddleware extends IMiddleware {
 
   _impl = null;
 
-  _direction = null;
-
-  _onNotify = null;
-
   constructor(props) {
     super(props);
-    this._direction = props.direction;
     try {
       const ProtocolImplClass = require(`../../../presets/protocols/${__PROTOCOL__}`).default;
       const impl = new ProtocolImplClass();
@@ -41,15 +36,10 @@ export class ProtocolMiddleware extends IMiddleware {
     }
   }
 
-  subscribe(notifier) {
-    this._onNotify = notifier;
-  }
-
-  write(buffer) {
+  write(direction, buffer) {
     return new Promise((next) => {
-      const direction = this._direction;
-      const onNotify = this._onNotify;
-      const args = [buffer, next, onNotify];
+      const broadcast = this.broadcast;
+      const args = [buffer, next, broadcast];
 
       let ret = null;
 

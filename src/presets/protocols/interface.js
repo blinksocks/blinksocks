@@ -1,18 +1,18 @@
 export class IProtocol {
 
-  forwardToServer(/* buffer, next, notify */) {
+  forwardToServer(/* buffer, next, broadcast */) {
 
   }
 
-  forwardToDst(/* buffer, next, notify */) {
+  forwardToDst(/* buffer, next, broadcast */) {
 
   }
 
-  backwardToClient(/* buffer, next, notify */) {
+  backwardToClient(/* buffer, next, broadcast */) {
 
   }
 
-  backwardToApplication(/* buffer, next, notify */) {
+  backwardToApplication(/* buffer, next, broadcast */) {
 
   }
 

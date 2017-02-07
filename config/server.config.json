@@ -4,7 +4,7 @@
   "key": "my secret password",
   "cipher": "aes-256-cfb",
   "protocol": "basic",
-  "protocol_params": "none",
+  "protocol_params": "",
   "obfs": "none",
   "obfs_params": "",
   "log_level": "error"

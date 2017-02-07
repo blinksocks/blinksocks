@@ -27,12 +27,12 @@ export default class BasicProtocol extends IProtocol {
 
   _isHandshakeDone = false;
 
-  forwardToServer(payload, next, notify) {
+  forwardToServer(payload, next, broadcast) {
     if (this._isHandshakeDone) {
       return payload;
     } else {
       const iv = crypto.randomBytes(IV_LEN);
-      notify({
+      broadcast({
         type: CRYPTO_SET_IV_AFTER,
         payload: iv
       });
@@ -44,12 +44,12 @@ export default class BasicProtocol extends IProtocol {
     }
   }
 
-  forwardToDst(packet, next, notify) {
+  forwardToDst(packet, next, broadcast) {
     if (this._isHandshakeDone) {
       return packet;
     } else {
       const iv = packet.slice(0, IV_LEN);
-      notify({
+      broadcast({
         type: CRYPTO_SET_IV,
         payload: iv
       });

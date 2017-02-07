@@ -14,9 +14,7 @@ import {
 
 import {Utils} from '../../utils';
 import {
-  SOCKET_CONNECT_TO_DST,
-  CRYPTO_SET_IV,
-  CRYPTO_SET_IV_AFTER
+  SOCKET_CONNECT_TO_DST
 } from '../../constants';
 
 import {
@@ -67,9 +65,7 @@ export class Socket {
 
   _targetAddress = null;
 
-  _pipeForward = null;
-
-  _pipeBackward = null;
+  _pipe = null;
 
   constructor({id, socket}) {
     Logger.setLevel(__LOG_LEVEL__);
@@ -111,13 +107,23 @@ export class Socket {
       }
     }
 
-    this._pipeForward.feed(_buffer)
+    this._pipe.feed(
+      __IS_CLIENT__
+        ? MIDDLEWARE_DIRECTION_UPWARD
+        : MIDDLEWARE_DIRECTION_DOWNWARD,
+      _buffer
+    )
       .then((buf) => this._fsocket.write(buf))
-      .catch((err) => Logger.error(err.message));
+      .catch((err) => Logger.error(err));
   }
 
   onBackward(buffer) {
-    this._pipeBackward.feed(buffer)
+    this._pipe.feed(
+      __IS_CLIENT__
+        ? MIDDLEWARE_DIRECTION_DOWNWARD
+        : MIDDLEWARE_DIRECTION_UPWARD,
+      buffer
+    )
       .then((buf) => this._bsocket.write(buf))
       .catch((err) => Logger.error(err));
   }
@@ -157,85 +163,35 @@ export class Socket {
   }
 
   /**
-   * TODO(refactor): too redundant
    * create pipes for both data forward and backward
    */
   createPipes() {
     if (__IS_CLIENT__) {
-      // forward
-      const props_1 = {direction: MIDDLEWARE_DIRECTION_UPWARD};
-      const props_2 = {direction: MIDDLEWARE_DIRECTION_DOWNWARD};
-      const fcrypto = new CryptoMiddleware(props_1);
-      const bcrypto = new CryptoMiddleware(props_2);
-      this._pipeForward = new Pipe({
-        onNotify: (action) => {
-          switch (action.type) {
-            case CRYPTO_SET_IV_AFTER: {
-              const iv = action.payload;
-              fcrypto.deferUpdateCiphers(iv);
-              bcrypto.updateCiphers(iv);
-              break;
-            }
-            default:
-              return false;
-          }
-          return true;
+      this._pipe = new Pipe();
+      this._pipe.setMiddlewares(MIDDLEWARE_DIRECTION_UPWARD, [
+        new FrameMiddleware({address: this._targetAddress}),
+        new ProtocolMiddleware(),
+        new CryptoMiddleware(),
+        new ObfsMiddleware()
+      ]);
+    } else {
+      const onNotified = (action) => {
+        switch (action.type) {
+          case SOCKET_CONNECT_TO_DST:
+            this.connectToDst(...action.payload);
+            break;
+          default:
+            return false;
         }
-      });
-
-      this._pipeForward
-        .pipe(new FrameMiddleware({...props_1, address: this._targetAddress}))
-        .pipe(new ProtocolMiddleware(props_1))
-        .pipe(fcrypto)
-        .pipe(new ObfsMiddleware(props_1));
-
-      // backward
-      this._pipeBackward = new Pipe();
-      this._pipeBackward
-        .pipe(new ObfsMiddleware(props_2))
-        .pipe(bcrypto)
-        .pipe(new ProtocolMiddleware(props_2))
-        .pipe(new FrameMiddleware(props_2));
-    }
-
-    if (__IS_SERVER__) {
-      // forward
-      const props_1 = {direction: MIDDLEWARE_DIRECTION_DOWNWARD};
-      const props_2 = {direction: MIDDLEWARE_DIRECTION_UPWARD};
-      const fcrypto = new CryptoMiddleware(props_1);
-      const bcrypto = new CryptoMiddleware(props_2);
-
-      this._pipeForward = new Pipe({
-        onNotify: (action) => {
-          switch (action.type) {
-            case CRYPTO_SET_IV: {
-              const iv = action.payload;
-              fcrypto.updateCiphers(iv);
-              bcrypto.updateCiphers(iv);
-              break;
-            }
-            case SOCKET_CONNECT_TO_DST:
-              this.connectToDst(...action.payload);
-              break;
-            default:
-              return false;
-          }
-          return true;
-        }
-      });
-      this._pipeForward
-        .pipe(new ObfsMiddleware(props_1))
-        .pipe(fcrypto)
-        .pipe(new ProtocolMiddleware(props_1))
-        .pipe(new FrameMiddleware(props_1));
-
-      // backward
-      this._pipeBackward = new Pipe();
-      this._pipeBackward
-        .pipe(new FrameMiddleware(props_2))
-        .pipe(new ProtocolMiddleware(props_2))
-        .pipe(bcrypto)
-        .pipe(new ObfsMiddleware(props_2));
+        return true;
+      };
+      this._pipe = new Pipe({onNotified});
+      this._pipe.setMiddlewares(MIDDLEWARE_DIRECTION_DOWNWARD, [
+        new ObfsMiddleware(),
+        new CryptoMiddleware(),
+        new ProtocolMiddleware(),
+        new FrameMiddleware()
+      ]);
     }
   }
 

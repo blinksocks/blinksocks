@@ -22,12 +22,14 @@ export function checkMiddleware(name, impl) {
 
 export class IMiddleware {
 
-  onUpdate(/* action */) {
-    return false;
+  broadcast = null;
+
+  subscribe(direction, receiver) {
+    this.broadcast = (action) => receiver(direction, action);
   }
 
-  subscribe(/* notifier */) {
-
+  onNotified(/* action */) {
+    return false;
   }
 
   write() {
