@@ -100,7 +100,8 @@ export default class HttpObfs extends IObfs {
   }
 
   forwardToServer(buffer, next) {
-    if (this._times < 0 || this._times-- > 0) {
+    if (this._times < 0 || this._times > 0) {
+      this._times--;
       Faker.get(this._file, (fakes) => {
         const index = crypto.randomBytes(1)[0] % fakes.length;
         const {request} = fakes[index];
@@ -112,7 +113,8 @@ export default class HttpObfs extends IObfs {
   }
 
   forwardToDst(buffer, next) {
-    if (this._times < 0 || this._times-- > 0) {
+    if (this._times < 0 || this._times > 0) {
+      this._times--;
       Faker.get(this._file, (fakes) => {
         const found = fakes.find(
           ({request}) => buffer.indexOf(request) === 0
@@ -130,7 +132,8 @@ export default class HttpObfs extends IObfs {
   }
 
   backwardToClient(buffer) {
-    if (this._times < 0 || this._times-- > 0) {
+    if (this._times < 0 || this._times > 0) {
+      this._times--;
       return Buffer.concat([this._response, buffer]);
     } else {
       return buffer;
@@ -138,7 +141,8 @@ export default class HttpObfs extends IObfs {
   }
 
   backwardToApplication(buffer, next) {
-    if (this._times < 0 || this._times-- > 0) {
+    if (this._times < 0 || this._times > 0) {
+      this._times--;
       Faker.get(this._file, (fakes) => {
         const found = fakes.find(
           ({response}) => buffer.indexOf(response) === 0
