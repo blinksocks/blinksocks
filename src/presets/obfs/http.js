@@ -3,11 +3,6 @@ import readline from 'readline';
 import crypto from 'crypto';
 import {IObfs} from './interface';
 
-const HTTP_OBFS_PARAMS_LEN = 2;
-const HTTP_OBFS_MODE_ONE_OFF = 'one-off';
-const HTTP_OBFS_MODE_PERSIST = 'persist';
-const HTTP_OBFS_MODES = [HTTP_OBFS_MODE_ONE_OFF, HTTP_OBFS_MODE_PERSIST];
-
 class Faker {
 
   static _fakes = [
@@ -65,66 +60,98 @@ class Faker {
 
 }
 
+/**
+ * @description
+ *   wrap packet with pre-shared HTTP header
+ *
+ * @params
+ *   file (String): A text file which contains several HTTP header paris.
+ *   [times = 0] (Number): Times that the obfs takes effect. If negative number was given, means always.
+ *
+ * @examples
+ *   "obfs_params": "http-fake.txt"      // never
+ *   "obfs_params": "http-fake.txt,0"    // never
+ *   "obfs_params": "http-fake.txt,1"    // one-off per socket
+ *   "obfs_params": "http-fake.txt,10"   // 10 times per socket
+ *   "obfs_params": "http-fake.txt,-1"   // always per socket
+ */
 export default class HttpObfs extends IObfs {
 
   _file = null;
 
-  _mode = null;
+  _times = 0;
 
   _response = null;
 
   constructor(props) {
     super(props);
     const params = props.obfs_params.split(',').filter((param) => param.length > 0);
-    if (params.length !== HTTP_OBFS_PARAMS_LEN) {
-      throw Error(`'obfs_params' requires two params, but ${params.length} was/were given.`);
+    if (params.length < 1) {
+      throw Error(`'obfs_params' requires at least one parameter.`);
     }
-    const [file, mode] = params;
-    // mode
-    if (!HTTP_OBFS_MODES.includes(mode)) {
-      throw Error(`the second param must be one of ${HTTP_OBFS_MODES}, but ${mode} was given.`);
+    if (params.length > 1) {
+      const times = parseInt(params[1], 10);
+      if (!Number.isSafeInteger(times)) {
+        throw Error('the second parameter must be a number.');
+      }
+      this._times = times;
     }
-    this._file = file;
-    this._mode = mode;
+    this._file = params[0];
   }
 
   forwardToServer(buffer, next) {
-    Faker.get(this._file, (fakes) => {
-      const index = crypto.randomBytes(1)[0] % fakes.length;
-      const {request} = fakes[index];
-      next(Buffer.concat([request, buffer]));
-    });
+    if (this._times < 0 || this._times-- > 0) {
+      Faker.get(this._file, (fakes) => {
+        const index = crypto.randomBytes(1)[0] % fakes.length;
+        const {request} = fakes[index];
+        next(Buffer.concat([request, buffer]));
+      });
+    } else {
+      return buffer;
+    }
   }
 
   forwardToDst(buffer, next) {
-    Faker.get(this._file, (fakes) => {
-      const found = fakes.find(
-        ({request}) => buffer.indexOf(request) === 0
-      );
-      if (typeof found !== 'undefined') {
-        this._response = found.response;
-        next(buffer.slice(found.request.length));
-      } else {
-        throw Error(`unrecognized obfs header: '${buffer.slice(0, 100).toString()}...'`);
-      }
-    });
+    if (this._times < 0 || this._times-- > 0) {
+      Faker.get(this._file, (fakes) => {
+        const found = fakes.find(
+          ({request}) => buffer.indexOf(request) === 0
+        );
+        if (typeof found !== 'undefined') {
+          this._response = found.response;
+          next(buffer.slice(found.request.length));
+        } else {
+          throw Error(`unrecognized obfs header: '${buffer.slice(0, 100).toString()}...'`);
+        }
+      });
+    } else {
+      return buffer;
+    }
   }
 
   backwardToClient(buffer) {
-    return Buffer.concat([this._response, buffer]);
+    if (this._times < 0 || this._times-- > 0) {
+      return Buffer.concat([this._response, buffer]);
+    } else {
+      return buffer;
+    }
   }
 
   backwardToApplication(buffer, next) {
-    Faker.get(this._file, (fakes) => {
-      const found = fakes.find(
-        ({response}) => buffer.indexOf(response) === 0
-      );
-      if (typeof found !== 'undefined') {
-        next(buffer.slice(found.response.length));
-      } else {
-        throw Error(`unrecognized obfs header: '${buffer.slice(0, 100).toString()}'`);
-      }
-    });
+    if (this._times < 0 || this._times-- > 0) {
+      Faker.get(this._file, (fakes) => {
+        const found = fakes.find(
+          ({response}) => buffer.indexOf(response) === 0
+        );
+        if (typeof found !== 'undefined') {
+          next(buffer.slice(found.response.length));
+        } else {
+          throw Error(`unrecognized obfs header: '${buffer.slice(0, 100).toString()}'`);
+        }
+      });
+    } else {
+      return buffer;
+    }
   }
 
 }
