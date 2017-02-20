@@ -1,4 +1,4 @@
-FROM node:6.9.4-slim
+FROM node:6.9.5-slim
 MAINTAINER Micooz<micooz@hotmail.com>
 
 # environment varibles
