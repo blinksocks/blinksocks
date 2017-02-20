@@ -52,7 +52,10 @@
     "type": "git"
   },
   "keywords": [
-    "security",
+    "fast",
+    "http",
+    "socks4",
+    "socks4a",
     "socks5",
     "proxy"
   ],
