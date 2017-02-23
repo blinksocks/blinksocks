@@ -1,6 +1,6 @@
 import {IPreset} from '../interface';
 
-export default class NoneObfs extends IPreset {
+export default class NoneCrypto extends IPreset {
 
   clientOut({buffer}) {
     return buffer;

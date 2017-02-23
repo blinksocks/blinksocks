@@ -1,7 +1,7 @@
 import fs from 'fs';
 import readline from 'readline';
 import crypto from 'crypto';
-import {IObfs} from './interface';
+import {IPreset} from '../interface';
 
 class Faker {
 
@@ -66,55 +66,58 @@ class Faker {
  *
  * @params
  *   file (String): A text file which contains several HTTP header paris.
- *   [times = 0] (Number): Times that the obfs takes effect. If negative number was given, means always.
  *
  * @examples
- *   "obfs_params": "http-fake.txt"      // never
- *   "obfs_params": "http-fake.txt,0"    // never
- *   "obfs_params": "http-fake.txt,1"    // one-off per socket
- *   "obfs_params": "http-fake.txt,10"   // 10 times per socket
- *   "obfs_params": "http-fake.txt,-1"   // always per socket
+ *   "obfs_params": "http-fake.txt"
+ *
+ * @protocol
+ *
+ *   # TCP handshake
+ *   +-----------+----------------------------+
+ *   | obfs.DATA |          PAYLOAD           |
+ *   +-----------+----------------------------+
+ *   | Variable  |         Variable           |
+ *   +-----------+----------------------------+
+ *
+ *   # TCP chunk
+ *   +----------------------------+
+ *   |          PAYLOAD           |
+ *   +----------------------------+
+ *   |         Variable           |
+ *   +----------------------------+
  */
-export default class HttpObfs extends IObfs {
+export default class HttpObfs extends IPreset {
+
+  _isHandshakeDone = false;
 
   _file = null;
 
-  _times = 0;
-
   _response = null;
 
-  constructor(props) {
-    super(props);
-    const params = props.obfs_params.split(',').filter((param) => param.length > 0);
-    if (params.length < 1) {
-      throw Error(`'obfs_params' requires at least one parameter.`);
+  constructor(file) {
+    super();
+    if (typeof file === 'undefined') {
+      throw Error('\'obfs_params\' requires at least one parameter.');
     }
-    if (params.length > 1) {
-      const times = parseInt(params[1], 10);
-      if (!Number.isSafeInteger(times)) {
-        throw Error('the second parameter must be a number.');
-      }
-      this._times = times;
-    }
-    this._file = params[0];
+    this._file = file;
   }
 
-  forwardToServer(buffer, next) {
-    if (this._times < 0 || this._times > 0) {
-      this._times--;
+  clientOut({buffer, next}) {
+    if (this._isHandshakeDone) {
+      return buffer;
+    } else {
       Faker.get(this._file, (fakes) => {
         const index = crypto.randomBytes(1)[0] % fakes.length;
         const {request} = fakes[index];
         next(Buffer.concat([request, buffer]));
       });
-    } else {
-      return buffer;
     }
   }
 
-  forwardToDst(buffer, next) {
-    if (this._times < 0 || this._times > 0) {
-      this._times--;
+  serverIn({buffer, next}) {
+    if (this._isHandshakeDone) {
+      return buffer;
+    } else {
       Faker.get(this._file, (fakes) => {
         const found = fakes.find(
           ({request}) => buffer.indexOf(request) === 0
@@ -123,26 +126,25 @@ export default class HttpObfs extends IObfs {
           this._response = found.response;
           next(buffer.slice(found.request.length));
         } else {
-          throw Error(`unrecognized obfs header: '${buffer.slice(0, 100).toString()}...'`);
+          throw Error(`dropped unrecognized obfs header: '${buffer.slice(0, 100).toString()}...'`);
         }
       });
-    } else {
-      return buffer;
     }
   }
 
-  backwardToClient(buffer) {
-    if (this._times < 0 || this._times > 0) {
-      this._times--;
+  serverOut({buffer}) {
+    if (this._isHandshakeDone) {
+      return buffer;
+    } else {
+      this._isHandshakeDone = true;
       return Buffer.concat([this._response, buffer]);
-    } else {
-      return buffer;
     }
   }
 
-  backwardToApplication(buffer, next) {
-    if (this._times < 0 || this._times > 0) {
-      this._times--;
+  clientIn({buffer, next}) {
+    if (this._isHandshakeDone) {
+      return buffer;
+    } else {
       Faker.get(this._file, (fakes) => {
         const found = fakes.find(
           ({response}) => buffer.indexOf(response) === 0
@@ -150,11 +152,10 @@ export default class HttpObfs extends IObfs {
         if (typeof found !== 'undefined') {
           next(buffer.slice(found.response.length));
         } else {
-          throw Error(`unrecognized obfs header: '${buffer.slice(0, 100).toString()}'`);
+          throw Error(`dropped unrecognized obfs header: '${buffer.slice(0, 100).toString()}...'`);
         }
       });
-    } else {
-      return buffer;
+      this._isHandshakeDone = true;
     }
   }
 

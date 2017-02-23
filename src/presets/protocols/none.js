@@ -1,26 +1,20 @@
-import {IProtocol} from './interface';
+import {IPreset} from '../interface';
 
-// +----------------+
-// |    PAYLOAD     |
-// +----------------+
-// |    Variable    |
-// +----------------+
+export default class NoneProtocol extends IPreset {
 
-export default class NoneProtocol extends IProtocol {
-
-  forwardToServer(buffer) {
+  clientOut({buffer}) {
     return buffer;
   }
 
-  forwardToDst(buffer) {
+  serverIn({buffer}) {
     return buffer;
   }
 
-  backwardToClient(buffer) {
+  serverOut({buffer}) {
     return buffer;
   }
 
-  backwardToApplication(buffer) {
+  clientIn({buffer}) {
     return buffer;
   }
 
