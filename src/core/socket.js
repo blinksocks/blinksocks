@@ -1,8 +1,7 @@
-/* eslint-disable no-undef */
 import net from 'net';
-import {Address} from '../Address';
-import {DNSCache} from '../DNSCache';
-import {Pipe} from '../Pipe';
+import {Address} from './address';
+import {DNSCache} from './dns-cache';
+import {Pipe} from './pipe';
 import {
   MIDDLEWARE_DIRECTION_UPWARD,
   MIDDLEWARE_DIRECTION_DOWNWARD,
@@ -10,12 +9,12 @@ import {
   CryptoMiddleware,
   ProtocolMiddleware,
   ObfsMiddleware
-} from '../Middlewares';
+} from '../middlewares';
 
-import {Utils} from '../../utils';
+import {Utils} from '../utils';
 import {
   SOCKET_CONNECT_TO_DST
-} from '../../constants';
+} from '../presets/actions';
 
 import {
   IdentifierMessage,
@@ -24,17 +23,17 @@ import {
   ReplyMessage as Socks5ReplyMessage,
   UdpRequestMessage
   // UdpRequestMessage
-} from '../../proxies/socks5';
+} from '../proxies/socks5';
 
 import {
   RequestMessage as Socks4RequestMessage,
   ReplyMessage as Socks4ReplyMessage
-} from '../../proxies/socks4';
+} from '../proxies/socks4';
 
 import {
   HttpRequestMessage,
   ConnectReplyMessage
-} from '../../proxies/http';
+} from '../proxies/http';
 
 import {
   ATYP_V4,
@@ -44,9 +43,9 @@ import {
   REPLY_GRANTED,
   REPLY_SUCCEEDED,
   REPLY_COMMAND_NOT_SUPPORTED
-} from '../../proxies/common';
+} from '../proxies/common';
 
-const Logger = require('../../utils/logger')(__filename);
+const Logger = require('../utils/logger')(__filename);
 const dnsCache = DNSCache.create();
 
 export class Socket {
@@ -76,7 +75,7 @@ export class Socket {
     this._bsocket.on('close', (had_error) => this.onClose(had_error));
     this._bsocket.on('data', (buffer) => this.onForward(buffer));
     if (__IS_SERVER__) {
-      this.createPipes();
+      this.createPipe();
     }
   }
 
@@ -107,25 +106,29 @@ export class Socket {
       }
     }
 
-    this._pipe.feed(
-      __IS_CLIENT__
-        ? MIDDLEWARE_DIRECTION_UPWARD
-        : MIDDLEWARE_DIRECTION_DOWNWARD,
-      _buffer
-    )
-      .then((buf) => this._fsocket.write(buf))
-      .catch((err) => Logger.error(err));
+    try {
+      this._pipe.feed(
+        __IS_CLIENT__
+          ? MIDDLEWARE_DIRECTION_UPWARD
+          : MIDDLEWARE_DIRECTION_DOWNWARD,
+        _buffer
+      );
+    } catch (err) {
+      Logger.error(`[${this._id}]`, err);
+    }
   }
 
   onBackward(buffer) {
-    this._pipe.feed(
-      __IS_CLIENT__
-        ? MIDDLEWARE_DIRECTION_DOWNWARD
-        : MIDDLEWARE_DIRECTION_UPWARD,
-      buffer
-    )
-      .then((buf) => this._bsocket.write(buf))
-      .catch((err) => Logger.error(err));
+    try {
+      this._pipe.feed(
+        __IS_CLIENT__
+          ? MIDDLEWARE_DIRECTION_DOWNWARD
+          : MIDDLEWARE_DIRECTION_UPWARD,
+        buffer
+      );
+    } catch (err) {
+      Logger.error(`[${this._id}]`, err);
+    }
   }
 
   onError(err) {
@@ -165,34 +168,42 @@ export class Socket {
   /**
    * create pipes for both data forward and backward
    */
-  createPipes() {
+  createPipe() {
+    const onNotified = (action) => {
+      switch (action.type) {
+        case SOCKET_CONNECT_TO_DST:
+          this.connectToDst(...action.payload);
+          break;
+        default:
+          break;
+      }
+    };
     if (__IS_CLIENT__) {
-      this._pipe = new Pipe();
+      this._pipe = new Pipe({onNotified});
       this._pipe.setMiddlewares(MIDDLEWARE_DIRECTION_UPWARD, [
         new FrameMiddleware({address: this._targetAddress}),
-        new ProtocolMiddleware(),
         new CryptoMiddleware(),
+        new ProtocolMiddleware(),
         new ObfsMiddleware()
       ]);
     } else {
-      const onNotified = (action) => {
-        switch (action.type) {
-          case SOCKET_CONNECT_TO_DST:
-            this.connectToDst(...action.payload);
-            break;
-          default:
-            return false;
-        }
-        return true;
-      };
       this._pipe = new Pipe({onNotified});
       this._pipe.setMiddlewares(MIDDLEWARE_DIRECTION_DOWNWARD, [
         new ObfsMiddleware(),
-        new CryptoMiddleware(),
         new ProtocolMiddleware(),
+        new CryptoMiddleware(),
         new FrameMiddleware()
       ]);
     }
+    const write = (buffer, flag) => {
+      if (flag) {
+        this._fsocket && this._fsocket.write(buffer);
+      } else {
+        this._bsocket && this._bsocket.write(buffer);
+      }
+    };
+    this._pipe.on(`next_${MIDDLEWARE_DIRECTION_UPWARD}`, (buf) => write(buf, __IS_CLIENT__));
+    this._pipe.on(`next_${MIDDLEWARE_DIRECTION_DOWNWARD}`, (buf) => write(buf, __IS_SERVER__));
   }
 
   /**
@@ -206,7 +217,7 @@ export class Socket {
         port: __SERVER_PORT__
       });
       this._fsocket.on('connect', () => {
-        this.createPipes();
+        this.createPipe();
         resolve();
       });
       this._fsocket.on('error', (err) => reject(err));

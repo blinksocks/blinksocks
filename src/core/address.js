@@ -4,7 +4,7 @@ import {
   ATYP_V4,
   ATYP_DOMAIN,
   ATYP_V6
-} from '../../proxies/common';
+} from '../proxies/common';
 
 export class Address {
 

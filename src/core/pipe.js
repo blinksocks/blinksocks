@@ -1,9 +1,30 @@
+import EventEmitter from 'events';
 import {
   MIDDLEWARE_DIRECTION_UPWARD,
   MIDDLEWARE_DIRECTION_DOWNWARD
-} from '../Middlewares';
+} from '../middlewares';
 
-export class Pipe {
+/**
+ * split buffer into chunks
+ * @param buffer
+ * @param threshold
+ * @returns {Array}
+ */
+export function getChunks(buffer, threshold) {
+  const buffers = [];
+  let _buffer = buffer;
+  let len = _buffer.length;
+  do {
+    buffers.push(_buffer.slice(0, threshold));
+    len -= threshold;
+  } while (len > threshold && (_buffer = _buffer.slice(threshold)));
+  if (len > 0) {
+    buffers.push(_buffer.slice(0, len));
+  }
+  return buffers;
+}
+
+export class Pipe extends EventEmitter {
 
   _upstream_middlewares = [];
 
@@ -12,6 +33,7 @@ export class Pipe {
   _onNotified = () => 0;
 
   constructor(props = {}) {
+    super();
     this._onNotified = typeof props.onNotified === 'undefined' ? () => 0 : props.onNotified;
     this.onBroadcast = this.onBroadcast.bind(this);
   }
@@ -30,7 +52,8 @@ export class Pipe {
 
   setMiddlewares(direction, middlewares) {
     for (const middleware of middlewares) {
-      middleware.subscribe(direction, this.onBroadcast);
+      middleware.setMaxListeners(2);
+      middleware.subscribe((action) => this.onBroadcast(direction, action));
     }
     if (direction === MIDDLEWARE_DIRECTION_UPWARD) {
       this._upstream_middlewares = middlewares;
@@ -42,11 +65,25 @@ export class Pipe {
   }
 
   feed(direction, buffer) {
+    const eventName = `next_${direction}`;
+    const chunks = getChunks(buffer, 9999999); // TODO: split buffer into smaller chunks
     const middlewares = this._getMiddlewares(direction);
-    return middlewares.reduce(
-      (prev, next) => prev.then((buf) => next.write(direction, buf)),
-      Promise.resolve(buffer)
-    );
+
+    // create event chain among middlewares
+    const last = middlewares.reduce((prev, next) => {
+      if (prev.listenerCount(eventName) < 1) {
+        prev.on(eventName, (buf) => next.write(direction, buf));
+      }
+      return next;
+    });
+    if (last.listenerCount(eventName) < 1) {
+      last.on(eventName, (buf) => this.emit(eventName, buf));
+    }
+
+    // begin pipe
+    for (const chunk of chunks) {
+      middlewares[0].write(direction, chunk);
+    }
   }
 
   _getMiddlewares(direction) {

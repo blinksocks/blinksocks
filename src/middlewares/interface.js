@@ -1,3 +1,5 @@
+import EventEmitter from 'events';
+
 export const MIDDLEWARE_DIRECTION_UPWARD = 0;
 export const MIDDLEWARE_DIRECTION_DOWNWARD = 1;
 
@@ -9,10 +11,10 @@ export const MIDDLEWARE_DIRECTION_DOWNWARD = 1;
  */
 export function checkMiddleware(name, impl) {
   const requiredMethods = [
-    'forwardToServer',
-    'forwardToDst',
-    'backwardToClient',
-    'backwardToApplication'
+    'clientOut',
+    'serverIn',
+    'serverOut',
+    'clientIn'
   ];
   if (requiredMethods.some((method) => typeof impl[method] !== 'function')) {
     throw Error(`all methods [${requiredMethods.toString()}] in ${name} must be implemented`);
@@ -20,12 +22,12 @@ export function checkMiddleware(name, impl) {
   return true;
 }
 
-export class IMiddleware {
+export class IMiddleware extends EventEmitter {
 
-  broadcast = null;
+  next = (direction, buffer) => this.emit(`next_${direction}`, buffer);
 
-  subscribe(direction, receiver) {
-    this.broadcast = (action) => receiver(direction, action);
+  subscribe(receiver) {
+    this.broadcast = receiver;
   }
 
   onNotified(/* action */) {

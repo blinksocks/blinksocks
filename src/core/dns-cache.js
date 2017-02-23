@@ -1,7 +1,7 @@
 import dns from 'dns';
 
-const Logger = require('../../utils/logger')(__filename);
-const DNS_SURVIVAL_TIME = 3600000;
+const Logger = require('../utils/logger')(__filename);
+export const DNS_SURVIVAL_TIME = 3600000;
 
 export class DNSCache {
 

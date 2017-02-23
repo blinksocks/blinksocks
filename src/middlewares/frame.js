@@ -1,28 +1,41 @@
-/* eslint-disable no-undef */
 import {
   MIDDLEWARE_DIRECTION_UPWARD,
-  MIDDLEWARE_DIRECTION_DOWNWARD,
   IMiddleware
-} from '../Interface';
+} from './interface';
 
-import {Address} from '../../Address';
+import {Address} from '../core/address';
 
-import {SOCKET_CONNECT_TO_DST} from '../../../constants';
+import {SOCKET_CONNECT_TO_DST} from '../presets/actions';
 
 import {
   ATYP_V4,
   // ATYP_V6,
   ATYP_DOMAIN
-} from '../../../proxies/common';
+} from '../proxies/common';
 
-const Logger = require('../../../utils/logger')(__filename);
+const Logger = require('../utils/logger')(__filename);
 
-// +------+----------+----------+----------+
-// | ATYP | DST.ADDR | DST.PORT |   DATA   |
-// +------+----------+----------+----------+
-// |  1   | Variable |    2     | Variable |
-// +------+----------+----------+----------+
-
+/**
+ * @description
+ *
+ *
+ * @protocol
+ *
+ *   # TCP handshake
+ *   +------+----------+----------+----------+
+ *   | ATYP | DST.ADDR | DST.PORT |   DATA   |
+ *   +------+----------+----------+----------+
+ *   |  1   | Variable |    2     | Variable |
+ *   +------+----------+----------+----------+
+ *
+ *   # TCP chunk
+ *   +----------+
+ *   |   DATA   |
+ *   +----------+
+ *   | Variable |
+ *   +----------+
+ *
+ */
 export class FrameMiddleware extends IMiddleware {
 
   _target_address = null;
@@ -35,42 +48,35 @@ export class FrameMiddleware extends IMiddleware {
   }
 
   write(direction, buffer) {
-    return new Promise((next) => {
-      if (direction === MIDDLEWARE_DIRECTION_UPWARD) {
-        if (__IS_SERVER__) {
-          next(this.pack(new Address(), buffer));
-        } else {
-          next(this.pack(this._target_address, buffer));
-        }
-      }
+    const next = (buf) => this.next(direction, buf);
 
-      if (direction === MIDDLEWARE_DIRECTION_DOWNWARD) {
+    if (direction === MIDDLEWARE_DIRECTION_UPWARD) {
+      if (__IS_CLIENT__ && !this._is_connected) {
+        this._is_connected = true;
+        next(this.pack(this._target_address, buffer));
+      } else {
+        next(buffer);
+      }
+    } else {
+      if (__IS_SERVER__ && !this._is_connected) {
         const frame = this.unpack(buffer);
-
         if (frame === null && Logger.isWarnEnabled()) {
-          throw Error(`-x-> dropped unidentified packet ${buffer.length} bytes @FrameMiddleware`);
+          throw Error(`dropped unidentified packet ${buffer.length} bytes - @FrameMiddleware`);
         }
-
-        if (__IS_SERVER__ && !this._is_connected) {
-          // connect to the real server
-          const addr = new Address({
-            ATYP: frame.ATYP,
-            DSTADDR: frame.DSTADDR,
-            DSTPORT: frame.DSTPORT
-          });
-          const onConnected = () => {
-            next(frame.DATA);
+        const {ATYP, DSTADDR, DSTPORT, DATA} = frame;
+        // notify to connect to the real server
+        const addr = new Address({ATYP, DSTADDR, DSTPORT});
+        this.broadcast({
+          type: SOCKET_CONNECT_TO_DST,
+          payload: [addr, (function onConnected() {
+            next(DATA);
             this._is_connected = true;
-          };
-          this.broadcast({
-            type: SOCKET_CONNECT_TO_DST,
-            payload: [addr, onConnected]
-          });
-        } else {
-          next(frame.DATA);
-        }
+          }).bind(this)]
+        });
+      } else {
+        next(buffer);
       }
-    });
+    }
   }
 
   pack(address, data) {

@@ -1,9 +1,9 @@
 /* eslint-disable no-undef */
 import net from 'net';
-import {Config} from '../Config';
-import {Socket} from '../Socket';
+import {Config} from './config';
+import {Socket} from './socket';
 
-const Logger = require('../../utils/logger')(__filename);
+const Logger = require('../utils/logger')(__filename);
 
 const nextId = (function () {
   let i = 0;

@@ -1,6 +1,5 @@
 import fs from 'fs';
 import log4js from 'log4js';
-import {Crypto} from '../Crypto';
 
 export const DEFAULT_KEY = 'my secret password';
 export const DEFAULT_LOG_LEVEL = 'ERROR';
@@ -17,7 +16,9 @@ export class Config {
 
   static key;
 
-  static cipher;
+  static crypto;
+
+  static crypto_params;
 
   static protocol;
 
@@ -74,39 +75,59 @@ export class Config {
     this.server_host = json.server_host;
     this.server_port = json.server_port;
 
-    // key & cipher
+    // key
 
     if (typeof json.key !== 'string') {
-      throw Error('\'key\' must be a string and is not empty');
+      throw Error('\'key\' must be a string');
     }
 
-    if (typeof json.cipher !== 'string') {
-      throw Error('\'cipher\' must be a string');
+    if (json.key === '') {
+      throw Error('\'key\' cannot be empty');
     }
 
-    if (json.cipher !== '') {
-      if (!Crypto.isAvailable(json.cipher)) {
-        throw Error(`cipher \'${json.cipher}\' is not supported, use --ciphers to display all supported ciphers`);
-      }
-      if (json.key === '' || json.key === DEFAULT_KEY) {
-        throw Error(`\'password\' must not be empty or \'${DEFAULT_KEY}\'`);
-      }
-      this.cipher = Crypto.getCipher(json.cipher);
-      this.key = Crypto.getStrongKey(json.cipher, json.key);
-    } else {
-      this.cipher = '';
-      this.key = '';
-      console.warn('You haven\'t specify a cipher, this shall only be used in development or special cases.');
+    if (json.key === DEFAULT_KEY) {
+      throw Error(`'key' cannot be '${DEFAULT_KEY}'`);
     }
+
+    this.key = json.key;
+
+    // crypto & crypto_params
+
+    if (typeof json.crypto !== 'string') {
+      throw Error('\'crypto\' must be a string');
+    }
+
+    if (typeof json.crypto_params !== 'string') {
+      throw Error('\'crypto_params\' must be a string');
+    }
+
+    this.crypto = json.crypto || 'none';
+    this.crypto_params = json.crypto_params;
 
     // protocol & protocol_params
 
-    this.protocol = json.protocol;
+    if (typeof json.protocol !== 'string') {
+      throw Error('\'protocol\' must be a string');
+    }
+
+    if (typeof json.protocol_params !== 'string') {
+      throw Error('\'protocol_params\' must be a string');
+    }
+
+    this.protocol = json.protocol || 'none';
     this.protocol_params = json.protocol_params;
 
     // obfs & obfs_params
 
-    this.obfs = json.obfs;
+    if (typeof json.obfs !== 'string') {
+      throw Error('\'obfs\' must be a string');
+    }
+
+    if (typeof json.obfs_params !== 'string') {
+      throw Error('\'obfs_params\' must be a string');
+    }
+
+    this.obfs = json.obfs || 'none';
     this.obfs_params = json.obfs_params;
 
     // log_level
@@ -125,12 +146,14 @@ export class Config {
     global.__LOCAL_PORT__ = this.port;
     global.__SERVER_HOST__ = this.server_host;
     global.__SERVER_PORT__ = this.server_port;
-    global.__LOG_LEVEL__ = this.log_level;
+    global.__KEY__ = this.key;
     global.__PROTOCOL__ = this.protocol;
+    global.__PROTOCOL_PARAMS__ = this.protocol_params;
     global.__OBFS__ = this.obfs;
     global.__OBFS_PARAMS__ = this.obfs_params;
-    global.__CIPHER__ = this.cipher;
-    global.__KEY__ = this.key;
+    global.__CRYPTO__ = this.crypto;
+    global.__CRYPTO_PARAMS__ = this.crypto_params;
+    global.__LOG_LEVEL__ = this.log_level;
   }
 
   /**
