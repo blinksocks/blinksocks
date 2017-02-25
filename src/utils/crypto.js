@@ -24,8 +24,6 @@ const cipherKeyIVLens = {
  * supported message digest algorithm
  */
 const hmacLens = {
-  'md5': 16,
-  'sha': 20,
   'sha1': 20,
   'sha256': 32,
   'sha512': 64
