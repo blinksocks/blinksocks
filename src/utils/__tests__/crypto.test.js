@@ -107,3 +107,21 @@ describe('Crypto#generateIV', function () {
   });
 
 });
+
+describe('Crypto#getAvailableCiphers', function () {
+
+  it('should return an array', function () {
+    const ciphers = Crypto.getAvailableCiphers();
+    expect(ciphers).toBeInstanceOf(Array);
+  });
+
+});
+
+describe('Crypto#getAvailableHashes', function () {
+
+  it('should return an array', function () {
+    const hashes = Crypto.getAvailableHashes();
+    expect(hashes).toBeInstanceOf(Array);
+  });
+
+});

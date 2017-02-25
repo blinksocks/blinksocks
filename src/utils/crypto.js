@@ -141,4 +141,20 @@ export class Crypto {
     return crypto.randomBytes(this.getIVLength(cipher));
   }
 
+  /**
+   * return supported ciphers
+   * @returns {Array}
+   */
+  static getAvailableCiphers() {
+    return Object.keys(cipherKeyIVLens);
+  }
+
+  /**
+   * return supported hashes
+   * @returns {Array}
+   */
+  static getAvailableHashes() {
+    return Object.keys(hmacLens);
+  }
+
 }
