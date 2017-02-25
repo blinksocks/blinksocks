@@ -17,9 +17,13 @@ describe('DNSCache#get', function () {
     expect(net.isIP(await dns.get('localhost'))).toBe(4);
   });
 
-  it('should return null if fail to resolve', async function () {
+  it('should throw if fail to resolve', async function () {
     const dns = DNSCache.create();
-    expect(await dns.get('xxx')).toBe(null);
+    try {
+      await dns.get('xxx');
+    } catch (err) {
+      expect(err.message).toEqual('getaddrinfo ENOTFOUND xxx');
+    }
   });
 
   it('should remove from this._poll if expire', async function () {

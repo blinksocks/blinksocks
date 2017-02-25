@@ -1,6 +1,5 @@
 import dns from 'dns';
 
-const Logger = require('../utils/logger')(__filename);
 export const DNS_SURVIVAL_TIME = 3600000;
 
 export class DNSCache {
@@ -34,20 +33,15 @@ export class DNSCache {
 
   async get(hostname) {
     let address = null;
-    try {
-      if (typeof this._pool[hostname] === 'undefined') {
-        address = await this._lookup(hostname);
-        this._put(hostname, address);
-      } else {
-        const [addr, expire] = this._pool[hostname];
-        if (this._now() >= expire) {
-          delete this._pool[hostname];
-        }
-        address = addr;
+    if (typeof this._pool[hostname] === 'undefined') {
+      address = await this._lookup(hostname);
+      this._put(hostname, address);
+    } else {
+      const [addr, expire] = this._pool[hostname];
+      if (this._now() >= expire) {
+        delete this._pool[hostname];
       }
-    } catch (err) {
-      Logger.error(err);
-      return null;
+      address = addr;
     }
     return address;
   }

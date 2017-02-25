@@ -234,11 +234,15 @@ export class Socket {
    */
   async connectToDst(address, callback) {
     const [host, port] = address.getEndPoint();
-    const ip = await dnsCache.get(host);
-    this._fsocket = net.connect({host: ip, port}, callback);
-    this._fsocket.on('error', (err) => this.onError(err));
-    this._fsocket.on('close', (had_error) => this.onClose(had_error));
-    this._fsocket.on('data', (buffer) => this.onBackward(buffer));
+    try {
+      const ip = await dnsCache.get(host);
+      this._fsocket = net.connect({host: ip, port}, callback);
+      this._fsocket.on('error', (err) => this.onError(err));
+      this._fsocket.on('close', (had_error) => this.onClose(had_error));
+      this._fsocket.on('data', (buffer) => this.onBackward(buffer));
+    } catch (err) {
+      Logger.error(err.message);
+    }
   }
 
   /*** client handshake, multiple protocols ***/
