@@ -1,11 +1,12 @@
 {
   "host": "0.0.0.0",
-  "port": 6666,
-  "key": "my secret password",
-  "cipher": "aes-256-cfb",
-  "protocol": "basic",
-  "protocol_params": "",
-  "obfs": "none",
-  "obfs_params": "",
+  "port": 7777,
+  "key": "secret",
+  "crypto": "openssl",
+  "crypto_params": "aes-128-ofb",
+  "protocol": "aead",
+  "protocol_params": "aes-256-cbc,sha256",
+  "obfs": "http",
+  "obfs_params": "config/http-fake.txt",
   "log_level": "error"
 }
