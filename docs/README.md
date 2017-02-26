@@ -6,4 +6,6 @@
 
 3. [Architecture](architecture)
 
-4. [Spec](spec)
+4. [Middlewares](middlewares)
+
+5. [Spec](spec)
