@@ -1,4 +1,5 @@
 import net from 'net';
+import logger from 'winston';
 import {Address} from './address';
 import {DNSCache} from './dns-cache';
 import {Pipe} from './pipe';
@@ -46,7 +47,6 @@ import {
   REPLY_COMMAND_NOT_SUPPORTED
 } from '../proxies/common';
 
-const Logger = require('../utils/logger')(__filename);
 const dnsCache = DNSCache.create();
 
 export class Socket {
@@ -68,7 +68,6 @@ export class Socket {
   _pipe = null;
 
   constructor({id, socket}) {
-    Logger.setLevel(__LOG_LEVEL__);
     this._id = id;
     this._bsocket = socket;
     // handle events
@@ -100,9 +99,7 @@ export class Socket {
         // just drop RSV and FRAG
         _buffer = request.DATA;
       } else {
-        if (Logger.isWarnEnabled()) {
-          Logger.warn(`[${this._id}] -x-> dropped unidentified packet ${buffer.length} bytes`);
-        }
+        logger.warn(`[${this._id}] -x-> dropped unidentified packet ${buffer.length} bytes`);
         return;
       }
     }
@@ -115,7 +112,7 @@ export class Socket {
         _buffer
       );
     } catch (err) {
-      Logger.error(`[${this._id}]`, err);
+      logger.error(`[${this._id}]`, err);
     }
   }
 
@@ -128,7 +125,7 @@ export class Socket {
         buffer
       );
     } catch (err) {
-      Logger.error(`[${this._id}]`, err);
+      logger.error(`[${this._id}]`, err);
     }
   }
 
@@ -141,10 +138,10 @@ export class Socket {
       case 'ETIMEDOUT':
       case 'EAI_AGAIN':
       case 'EPIPE':
-        Logger.warn(`[${this._id}] ${err.message}`);
+        logger.warn(`[${this._id}] ${err.message}`);
         return;
       default:
-        Logger.error(err);
+        logger.error(err);
         break;
     }
     this.onClose(true);
@@ -152,9 +149,9 @@ export class Socket {
 
   onClose(had_error) {
     if (had_error) {
-      Logger.warn(`client[${this._id}] closed due to a transmission error`);
+      logger.warn(`client[${this._id}] closed due to a transmission error`);
     } else {
-      Logger.info(`client[${this._id}] closed normally`);
+      logger.info(`client[${this._id}] closed normally`);
     }
     if (this._bsocket !== null && !this._bsocket.destroyed) {
       this._bsocket.end();
@@ -205,11 +202,13 @@ export class Socket {
    */
   connectToServer() {
     return new Promise((resolve, reject) => {
-      this._fsocket = net.connect({
+      const ep = {
         host: __SERVER_HOST__,
         port: __SERVER_PORT__
-      });
+      };
+      this._fsocket = net.connect(ep);
       this._fsocket.on('connect', () => {
+        logger.info(`[${this._id}] connected to:`, ep);
         this.createPipe();
         resolve();
       });
@@ -229,12 +228,15 @@ export class Socket {
     const [host, port] = address.getEndPoint();
     try {
       const ip = await dnsCache.get(host);
-      this._fsocket = net.connect({host: ip, port}, callback);
+      this._fsocket = net.connect({host: ip, port}, () => {
+        logger.info(`[${this._id}] connected to:`, {host, port});
+        callback();
+      });
       this._fsocket.on('error', (err) => this.onError(err));
       this._fsocket.on('close', (had_error) => this.onClose(had_error));
       this._fsocket.on('data', (buffer) => this.onBackward(buffer));
     } catch (err) {
-      Logger.error(err.message);
+      logger.error(err.message);
     }
   }
 

@@ -11,6 +11,6 @@
   "protocol": "aead",
   "protocol_params": "aes-256-cbc,sha256",
   "obfs": "http",
-  "obfs_params": "config/http-fake.txt",
+  "obfs_params": "http-fake.txt",
   "log_level": "error"
 }

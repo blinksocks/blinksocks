@@ -1,6 +1,7 @@
 import fs from 'fs';
 import readline from 'readline';
 import crypto from 'crypto';
+import logger from 'winston';
 import {IPreset} from '../interface';
 
 class Faker {
@@ -18,40 +19,36 @@ class Faker {
       callback(this._fakes);
       return;
     }
-    try {
-      const parts = [];
-      let part = '';
-      const rl = readline.createInterface({input: fs.createReadStream(file)});
-      rl.on('line', function (line) {
-        switch (line[0]) {
-          case '=':
-          case '-':
-            if (part !== '') {
-              part += '\r\n';
-              parts.push(part);
-              part = '';
-            }
-            break;
-          default:
-            part += line;
+    const parts = [];
+    let part = '';
+    const rl = readline.createInterface({input: fs.createReadStream(file)});
+    rl.on('line', function (line) {
+      switch (line[0]) {
+        case '=':
+        case '-':
+          if (part !== '') {
             part += '\r\n';
-            break;
-        }
-      });
-      rl.on('close', () => {
-        for (let i = 0; i < parts.length; i += 2) {
-          const prev = parts[i];
-          const next = parts[i + 1];
-          this._fakes.push({
-            request: Buffer.from(prev),
-            response: Buffer.from(next)
-          });
-        }
-        callback(this._fakes);
-      });
-    } catch (err) {
-      throw err;
-    }
+            parts.push(part);
+            part = '';
+          }
+          break;
+        default:
+          part += line;
+          part += '\r\n';
+          break;
+      }
+    });
+    rl.on('close', () => {
+      for (let i = 0; i < parts.length; i += 2) {
+        const prev = parts[i];
+        const next = parts[i + 1];
+        this._fakes.push({
+          request: Buffer.from(prev),
+          response: Buffer.from(next)
+        });
+      }
+      callback(this._fakes);
+    });
   }
 
   static get(file, callback) {
@@ -62,7 +59,7 @@ class Faker {
 
 /**
  * @description
- *   wrap packet with pre-shared HTTP header
+ *   Wrap packet with pre-shared HTTP header.
  *
  * @params
  *   file (String): A text file which contains several HTTP header paris.
@@ -127,7 +124,8 @@ export default class HttpObfs extends IPreset {
           this._response = found.response;
           next(buffer.slice(found.request.length));
         } else {
-          throw Error(`dropped unrecognized obfs header: '${buffer.slice(0, 100).toString()}...'`);
+          logger.error(`dropped unrecognized obfs header: '${buffer.slice(0, 100).toString()}...'`);
+          // wait for timeout
         }
       });
     }
@@ -153,7 +151,8 @@ export default class HttpObfs extends IPreset {
         if (typeof found !== 'undefined') {
           next(buffer.slice(found.response.length));
         } else {
-          throw Error(`dropped unrecognized obfs header: '${buffer.slice(0, 100).toString()}...'`);
+          logger.error(`dropped unrecognized obfs header: '${buffer.slice(0, 100).toString()}...'`);
+          // wait for timeout
         }
       });
       this._isHandshakeDone = true;

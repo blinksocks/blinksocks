@@ -1,8 +1,8 @@
 import fs from 'fs';
-import log4js from 'log4js';
+import winston from 'winston';
 
 export const DEFAULT_KEY = 'my secret password';
-export const DEFAULT_LOG_LEVEL = 'ERROR';
+export const DEFAULT_LOG_LEVEL = 'error';
 
 export class Config {
 
@@ -147,10 +147,11 @@ export class Config {
     this.obfs = json.obfs || 'none';
     this.obfs_params = json.obfs_params;
 
+    // globals
+    this.setGlobals();
+
     // log_level
     this.setUpLogger(json.log_level || DEFAULT_LOG_LEVEL);
-
-    this.setGlobals();
   }
 
   /**
@@ -184,7 +185,7 @@ export class Config {
   }
 
   /**
-   * configure log4js
+   * configure logger
    * @param level
    */
   static setUpLogger(level = '') {
@@ -197,53 +198,36 @@ export class Config {
       }
     }
 
-    // determine log level of log4js
-    let _level = level.toUpperCase();
+    // determine log level
+    let _level = level.toLowerCase();
     switch (_level) {
-      case 'OFF':
-      case 'FATAL':
-      case 'ERROR':
-      case 'WARN':
-      case 'INFO':
-      case 'DEBUG':
-      case 'TRACE':
-      case 'ALL':
+      case 'silly':
+      case 'debug':
+      case 'verbose':
+      case 'info':
+      case 'warn':
+      case 'error':
         break;
       default:
         _level = DEFAULT_LOG_LEVEL;
         break;
     }
 
-    // configure log4js globally
-    const log4jsCommon = {
-      'appenders': [
-        {
-          'type': 'console'
-        }
-      ],
-      'replaceConsole': true
-    };
-    if (process.env.NODE_ENV !== 'test') {
-      log4js.configure({
-        ...log4jsCommon,
-        'appenders': [
-          ...log4jsCommon.appenders,
-          {
-            'type': 'dateFile',
-            'filename': 'logs/blinksocks.log',
-            'pattern': '-yyyy-MM-dd',
-            'alwaysIncludePattern': false
-          }
-        ]
-      });
-    } else {
-      log4js.configure({
-        ...log4jsCommon,
-        'levels': {
-          'console': _level
-        }
-      });
-    }
+    // configure transports
+    winston.configure({
+      level: _level,
+      transports: [
+        new (winston.transports.Console)({
+          colorize: true,
+          prettyPrint: true
+        }),
+        new (winston.transports.File)({
+          filename: `logs/blinksocks-${__IS_CLIENT__ ? 'client' : 'server'}.log`,
+          maxsize: 2 * 1024 * 1024, // 2MB
+          silent: ['test', 'debug'].includes(process.env.NODE_ENV)
+        })
+      ]
+    });
 
     this.log_level = _level;
   }
