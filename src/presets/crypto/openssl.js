@@ -6,7 +6,7 @@ import {Crypto} from '../../utils';
  *   Perform encrypt/decrypt using NodeJS 'crypto' module(OpenSSL wrappers).
  *
  * @params
- *    cipher (String): Which cipher is picked from OpenSSL library.
+ *   cipher (String): Which cipher is picked from OpenSSL library.
  *
  * @examples
  *   "crypto": "openssl"

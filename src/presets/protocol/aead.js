@@ -160,7 +160,8 @@ export default class AeadProtocol extends IPreset {
       const expHmacA = this.createHmac(buffer.slice(0, index));
       const hmacA = buffer.slice(index, index + this._hmacLen);
       if (!hmacA.equals(expHmacA)) {
-        throw Error(`dropped unexpected packet (${buffer.length} bytes) received from client: wrong HMAC-A`);
+        logger.error(`dropped unexpected packet (${buffer.length} bytes) received from client: wrong HMAC-A`);
+        return -1;
       }
       // safely decrypt
       const decrypted = this.decrypt(buffer.slice(0, index));
@@ -171,7 +172,8 @@ export default class AeadProtocol extends IPreset {
       const expHmacA = this.createHmac(encLen);
       const hmacA = buffer.slice(16, 16 + this._hmacLen);
       if (!hmacA.equals(expHmacA)) {
-        throw Error(`dropped unexpected packet (${buffer.length} bytes) received from server: wrong HMAC-A`);
+        logger.error(`dropped unexpected packet (${buffer.length} bytes) received from server: wrong HMAC-A`);
+        return -1;
       }
       // safely decrypt then get length
       return this.decrypt(encLen).readUInt16BE(PADDING_LEN);
@@ -192,7 +194,9 @@ export default class AeadProtocol extends IPreset {
     const hmacB = _packet.slice(-this._hmacLen);
     const expHmacB = this.createHmac(_packet.slice(0, -this._hmacLen));
     if (!hmacB.equals(expHmacB)) {
-      throw Error(`dropped unexpected packet (${packet.length} bytes) received from ${__IS_CLIENT__ ? 'server' : 'client'}: wrong HMAC-B`);
+      logger.error(`dropped unexpected packet (${packet.length} bytes) received from ${__IS_CLIENT__ ? 'server' : 'client'}: wrong HMAC-B`);
+      // TODO: maybe notify to disconnect rather than timeout?
+      return;
     }
     const next = __IS_CLIENT__ ? this._bNext : this._fNext;
     next(_packet.slice(0, -this._hmacLen));
