@@ -2,7 +2,7 @@ import fs from 'fs';
 import winston from 'winston';
 
 export const DEFAULT_KEY = 'my secret password';
-export const DEFAULT_LOG_LEVEL = 'ERROR';
+export const DEFAULT_LOG_LEVEL = 'error';
 
 export class Config {
 

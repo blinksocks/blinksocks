@@ -271,9 +271,9 @@ describe('Config#setUpLogger', function () {
     expect(Config.log_level).toBe(DEFAULT_LOG_LEVEL);
   });
 
-  it('should set log level to ALL', function () {
-    Config.setUpLogger('all');
-    expect(Config.log_level).toBe('ALL');
+  it('should set log level to silly', function () {
+    Config.setUpLogger('silly');
+    expect(Config.log_level).toBe('silly');
   });
 
 });
