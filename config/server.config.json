@@ -2,6 +2,8 @@
   "host": "0.0.0.0",
   "port": 7777,
   "key": "secret",
+  "frame": "origin",
+  "frame_params": "",
   "crypto": "openssl",
   "crypto_params": "aes-128-ofb",
   "protocol": "aead",

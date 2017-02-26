@@ -77,6 +77,33 @@ describe('Config#init', function () {
     }).toThrow();
   });
 
+  it('should throw when frame is not string', function () {
+    expect(function () {
+      Config.init({
+        host: 'localhost',
+        port: 1080,
+        server_host: 'localhost',
+        server_port: 1080,
+        key: '123',
+        frame: null
+      });
+    }).toThrow();
+  });
+
+  it('should throw when frame_params is not string', function () {
+    expect(function () {
+      Config.init({
+        host: 'localhost',
+        port: 1080,
+        server_host: 'localhost',
+        server_port: 1080,
+        key: '123',
+        frame: 'xxx',
+        frame_params: [1, 2]
+      });
+    }).toThrow();
+  });
+
   it('should throw when crypto is not string', function () {
     expect(function () {
       Config.init({
@@ -85,6 +112,8 @@ describe('Config#init', function () {
         server_host: 'localhost',
         server_port: 1080,
         key: '123',
+        frame: 'xxx',
+        frame_params: '',
         crypto: null
       });
     }).toThrow();
@@ -98,6 +127,8 @@ describe('Config#init', function () {
         server_host: 'localhost',
         server_port: 1080,
         key: '123',
+        frame: 'xxx',
+        frame_params: '',
         crypto: 'xxx',
         crypto_params: [1, 2]
       });
@@ -112,6 +143,8 @@ describe('Config#init', function () {
         server_host: 'localhost',
         server_port: 1080,
         key: '123',
+        frame: 'xxx',
+        frame_params: '',
         crypto: 'xxx',
         crypto_params: '1,2',
         protocol: null
@@ -127,6 +160,8 @@ describe('Config#init', function () {
         server_host: 'localhost',
         server_port: 1080,
         key: '123',
+        frame: 'xxx',
+        frame_params: '',
         crypto: 'xxx',
         crypto_params: '1,2',
         protocol: 'basic',
@@ -143,6 +178,8 @@ describe('Config#init', function () {
         server_host: 'localhost',
         server_port: 1080,
         key: '123',
+        frame: 'xxx',
+        frame_params: '',
         crypto: 'xxx',
         crypto_params: '1,2',
         protocol: 'basic',
@@ -160,6 +197,8 @@ describe('Config#init', function () {
         server_host: 'localhost',
         server_port: 1080,
         key: '123',
+        frame: 'xxx',
+        frame_params: '',
         crypto: 'xxx',
         crypto_params: '1,2',
         protocol: 'basic',
@@ -177,6 +216,8 @@ describe('Config#init', function () {
       host: 'localhost',
       port: 1080,
       key: '123',
+      frame: 'xxx',
+      frame_params: '',
       crypto: 'xxx',
       crypto_params: '1,2',
       protocol: 'basic',
@@ -196,6 +237,8 @@ describe('Config#setGlobals', function () {
       host: 'localhost',
       port: 1080,
       key: '123',
+      frame: 'origin',
+      frame_params: '',
       crypto: 'xxx',
       crypto_params: '1,2',
       protocol: 'basic',
@@ -208,6 +251,8 @@ describe('Config#setGlobals', function () {
     expect(__LOCAL_HOST__).toBe('localhost');
     expect(__LOCAL_PORT__).toBe(1080);
     expect(__KEY__).toBe('123');
+    expect(__FRAME__).toBe('origin');
+    expect(__FRAME_PARAMS__).toBe('');
     expect(__PROTOCOL__).toBe('basic');
     expect(__PROTOCOL_PARAMS__).toBe('1,2');
     expect(__OBFS__).toBe('none');

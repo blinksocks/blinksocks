@@ -16,6 +16,10 @@ export class Config {
 
   static key;
 
+  static frame;
+
+  static frame_params;
+
   static crypto;
 
   static crypto_params;
@@ -91,6 +95,19 @@ export class Config {
 
     this.key = json.key;
 
+    // frame & frame_params
+
+    if (typeof json.frame !== 'string') {
+      throw Error('\'frame\' must be a string');
+    }
+
+    if (typeof json.frame_params !== 'string') {
+      throw Error('\'frame_params\' must be a string');
+    }
+
+    this.frame = json.frame || 'origin';
+    this.frame_params = json.frame_params;
+
     // crypto & crypto_params
 
     if (typeof json.crypto !== 'string') {
@@ -142,17 +159,27 @@ export class Config {
   static setGlobals() {
     global.__IS_SERVER__ = this._is_server;
     global.__IS_CLIENT__ = !this._is_server;
+
     global.__LOCAL_HOST__ = this.host;
     global.__LOCAL_PORT__ = this.port;
+
     global.__SERVER_HOST__ = this.server_host;
     global.__SERVER_PORT__ = this.server_port;
+
     global.__KEY__ = this.key;
-    global.__PROTOCOL__ = this.protocol;
-    global.__PROTOCOL_PARAMS__ = this.protocol_params;
-    global.__OBFS__ = this.obfs;
-    global.__OBFS_PARAMS__ = this.obfs_params;
+
+    global.__FRAME__ = this.frame;
+    global.__FRAME_PARAMS__ = this.frame_params;
+
     global.__CRYPTO__ = this.crypto;
     global.__CRYPTO_PARAMS__ = this.crypto_params;
+
+    global.__PROTOCOL__ = this.protocol;
+    global.__PROTOCOL_PARAMS__ = this.protocol_params;
+
+    global.__OBFS__ = this.obfs;
+    global.__OBFS_PARAMS__ = this.obfs_params;
+
     global.__LOG_LEVEL__ = this.log_level;
   }
 
