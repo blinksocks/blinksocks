@@ -2,15 +2,15 @@
 
 [![version](https://img.shields.io/npm/v/blinksocks.svg)](https://www.npmjs.com/package/blinksocks)
 [![downloads](https://img.shields.io/npm/dt/blinksocks.svg)](https://www.npmjs.com/package/blinksocks)
-[![license](https://img.shields.io/npm/l/blinksocks.svg)](https://github.com/micooz/blinksocks/blob/master/LICENSE)
-[![dependencies](https://img.shields.io/david/micooz/blinksocks.svg)](https://www.npmjs.com/package/blinksocks)
-[![devDependencies](https://img.shields.io/david/dev/micooz/blinksocks.svg)](https://www.npmjs.com/package/blinksocks)
+[![license](https://img.shields.io/npm/l/blinksocks.svg)](https://github.com/blinksocks/blinksocks/blob/master/LICENSE)
+[![dependencies](https://img.shields.io/david/blinksocks/blinksocks.svg)](https://www.npmjs.com/package/blinksocks)
+[![devDependencies](https://img.shields.io/david/dev/blinksocks/blinksocks.svg)](https://www.npmjs.com/package/blinksocks)
 
-[![Travis](https://img.shields.io/travis/micooz/blinksocks.svg)](https://travis-ci.org/micooz/blinksocks)
-[![Coverage](https://img.shields.io/codecov/c/github/micooz/blinksocks/master.svg)](https://codecov.io/gh/micooz/blinksocks)
-[![%e2%9d%a4](https://img.shields.io/badge/made%20with-%e2%9d%a4-ff69b4.svg)](https://github.com/micooz/blinksocks)
+[![Travis](https://img.shields.io/travis/blinksocks/blinksocks.svg)](https://travis-ci.org/blinksocks/blinksocks)
+[![Coverage](https://img.shields.io/codecov/c/github/blinksocks/blinksocks/master.svg)](https://codecov.io/gh/blinksocks/blinksocks)
+[![%e2%9d%a4](https://img.shields.io/badge/made%20with-%e2%9d%a4-ff69b4.svg)](https://github.com/blinksocks/blinksocks)
 
-[![micooz/blinksocks](http://dockeri.co/image/micooz/blinksocks)](https://hub.docker.com/r/micooz/blinksocks/)
+[![blinksocks/blinksocks](http://dockeri.co/image/blinksocks/blinksocks)](https://hub.docker.com/r/blinksocks/blinksocks/)
 
 Yet another Socks5 proxy, designed for speed :zap:. Inspired by [Shadowsocks](https://shadowsocks.org/en/index.html),
 And [ShadowsocksR](https://github.com/shadowsocksr/shadowsocksr/tree/manyuser).
@@ -229,38 +229,13 @@ check out: [docs](https://github.com/micooz/blinksocks/tree/master/docs).
 
 ## Roadmap
 
-Done:
+**v2.2.0**:
 
-* [x] non-encryption mode for debugging and non-security scenarios
-* [x] streaming data send/receive
-* [x] encrypt/decrypt with initialization vector
-* [x] DNS cache
-* [x] UDP relay(need test!)
-* [x] docker deploy scripts
-* [x] more command line options
-
-Next minor version:
-
-**v2.1.0**:
-
-* [x] http proxy
-* [x] Socks4 proxy
-* [x] Socks4a proxy
-* [ ] Plugin System
-* [ ] Message Authentication Code
+* [x] Middleware System
+* [x] AEAD
 * [ ] Performance Testing & Report
 
-Further versions:
-
-* [ ] fail2ban
-* [ ] more tests
-* [ ] more docs
-* [ ] more cipher support
-* [ ] ...
-
 ## References
-
-RFC:
 
 * [SOCKS4](http://www.openssh.com/txt/socks4.protocol)
 * [SOCKS4a](http://www.openssh.com/txt/socks4a.protocol)
