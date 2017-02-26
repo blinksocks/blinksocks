@@ -1,9 +1,9 @@
 import {Utils} from '../../utils';
 
-describe('Utils#numberToArray', function () {
+describe('Utils#toBytesBE', function () {
 
-  it('should return [0x01, 0x01] when pass 257', function () {
-    expect(Utils.numberToArray(257)).toEqual([0x01, 0x01]);
+  it('should return <Buffer 01, 01> when pass 257', function () {
+    expect(Utils.toBytesBE(257).equals(Buffer.from([0x01, 0x01]))).toBe(true);
   });
 
 });

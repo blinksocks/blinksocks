@@ -7,27 +7,15 @@ import {ATYP_DOMAIN, ATYP_V4, ATYP_V6} from '../proxies/common';
 export class Utils {
 
   /**
-   * convert a number to byte array
-   * @example
-   *   numberToArray(257); // [0x01, 0x01]
+   * convert a number to a buffer with specified length in big-endian
    * @param num
-   * @param minSize
-   * @returns {Array.<*>}
+   * @param len
+   * @returns {Buffer}
    */
-  static numberToArray(num, minSize = 2) {
-    let arr = [];
-    do {
-      arr.push(num & 0xff);
-      num >>= 8;
-    } while (num > 0);
-    if (arr.length < minSize) {
-      const padding = [];
-      for (let i = 0, len = minSize - arr.length; i < len; ++i) {
-        padding.push(0x00);
-      }
-      arr = [...arr, ...padding];
-    }
-    return arr.reverse();
+  static toBytesBE(num, len = 2) {
+    const buf = Buffer.alloc(len);
+    buf.writeUIntBE(num, 0, len);
+    return buf;
   }
 
   /**
@@ -49,7 +37,7 @@ export class Utils {
     const {hostname, port} = url.parse(_uri);
     const addrType = net.isIP(hostname) ? (net.isIPv4(hostname) ? ATYP_V4 : ATYP_V6) : ATYP_DOMAIN;
     const dstAddr = net.isIP(hostname) ? ip.toBuffer(hostname) : Buffer.from(hostname);
-    const dstPort = Buffer.from(Utils.numberToArray(port === null ? 80 : port));
+    const dstPort = Utils.toBytesBE(port === null ? 80 : port);
     return new Address({
       ATYP: addrType,
       DSTADDR: dstAddr,
