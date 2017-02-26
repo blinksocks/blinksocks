@@ -9,6 +9,8 @@ const options = [
   ['--server-host [server-host]', 'an ip address or a hostname to connect'],
   ['--server-port [server-port]', 'where is the server listen on'],
   ['--key <key>', 'a key for encryption and decryption'],
+  ['--frame [frame]', 'a preset used in frame middleware', 'origin'],
+  ['--frame-params [crypto-params]', 'parameters for frame preset', ''],
   ['--crypto [crypto]', 'a preset used in crypto middleware', 'none'],
   ['--crypto-params [crypto-params]', 'parameters for crypto preset', ''],
   ['--protocol [protocol]', 'a preset used in protocol middleware', 'none'],
@@ -52,13 +54,15 @@ function obtainConfig(options) {
     }
     return config;
   }
-  const {host, port, serverHost, serverPort} = options;
-  const {key, crypto, cryptoParams, protocol, protocolParams, obfs, obfsParams, logLevel} = options;
-  const {quiet} = options;
+  const {host, port, serverHost, serverPort, key} = options;
+  const {frame, frameParams, crypto, cryptoParams, protocol, protocolParams, obfs, obfsParams} = options;
+  const {logLevel, quiet} = options;
   const config = {
     host,
     port: parseInt(port, 10),
     key,
+    frame,
+    frame_params: frameParams,
     crypto,
     crypto_params: cryptoParams,
     protocol,
