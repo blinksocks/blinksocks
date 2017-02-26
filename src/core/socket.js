@@ -5,11 +5,12 @@ import {Pipe} from './pipe';
 import {
   MIDDLEWARE_DIRECTION_UPWARD,
   MIDDLEWARE_DIRECTION_DOWNWARD,
-  FrameMiddleware,
-  CryptoMiddleware,
-  ProtocolMiddleware,
-  ObfsMiddleware
-} from '../middlewares';
+  MIDDLEWARE_TYPE_FRAME,
+  MIDDLEWARE_TYPE_CRYPTO,
+  MIDDLEWARE_TYPE_PROTOCOL,
+  MIDDLEWARE_TYPE_OBFS,
+  createMiddleware
+} from './middleware';
 
 import {Utils} from '../utils';
 import {
@@ -165,45 +166,37 @@ export class Socket {
     }
   }
 
+  send(buffer, flag) {
+    if (flag) {
+      this._fsocket && this._fsocket.write(buffer);
+    } else {
+      this._bsocket && this._bsocket.write(buffer);
+    }
+  }
+
   /**
    * create pipes for both data forward and backward
    */
   createPipe() {
-    const onNotified = (action) => {
-      switch (action.type) {
-        case SOCKET_CONNECT_TO_DST:
-          this.connectToDst(...action.payload);
-          break;
-        default:
-          break;
-      }
-    };
     if (__IS_CLIENT__) {
-      this._pipe = new Pipe({onNotified});
-      this._pipe.setMiddlewares(MIDDLEWARE_DIRECTION_UPWARD, [
-        new FrameMiddleware({address: this._targetAddress}),
-        new CryptoMiddleware(),
-        new ProtocolMiddleware(),
-        new ObfsMiddleware()
-      ]);
+      this._pipe = new Pipe();
     } else {
-      this._pipe = new Pipe({onNotified});
-      this._pipe.setMiddlewares(MIDDLEWARE_DIRECTION_DOWNWARD, [
-        new ObfsMiddleware(),
-        new ProtocolMiddleware(),
-        new CryptoMiddleware(),
-        new FrameMiddleware()
-      ]);
+      this._pipe = new Pipe({
+        onNotified: (action) => {
+          if (action.type === SOCKET_CONNECT_TO_DST) {
+            this.connectToDst(...action.payload);
+          }
+        }
+      });
     }
-    const write = (buffer, flag) => {
-      if (flag) {
-        this._fsocket && this._fsocket.write(buffer);
-      } else {
-        this._bsocket && this._bsocket.write(buffer);
-      }
-    };
-    this._pipe.on(`next_${MIDDLEWARE_DIRECTION_UPWARD}`, (buf) => write(buf, __IS_CLIENT__));
-    this._pipe.on(`next_${MIDDLEWARE_DIRECTION_DOWNWARD}`, (buf) => write(buf, __IS_SERVER__));
+    this._pipe.setMiddlewares(MIDDLEWARE_DIRECTION_UPWARD, [
+      createMiddleware(MIDDLEWARE_TYPE_FRAME, [this._targetAddress]),
+      createMiddleware(MIDDLEWARE_TYPE_CRYPTO),
+      createMiddleware(MIDDLEWARE_TYPE_PROTOCOL),
+      createMiddleware(MIDDLEWARE_TYPE_OBFS),
+    ]);
+    this._pipe.on(`next_${MIDDLEWARE_DIRECTION_UPWARD}`, (buf) => this.send(buf, __IS_CLIENT__));
+    this._pipe.on(`next_${MIDDLEWARE_DIRECTION_DOWNWARD}`, (buf) => this.send(buf, __IS_SERVER__));
   }
 
   /**
