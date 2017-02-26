@@ -10,7 +10,7 @@
     "test": "npm run lint && npm run test:coverage",
     "test:coverage": "jest --coverage",
     "lint": "eslint src",
-    "compile": "babel src --out-dir lib --minified",
+    "compile": "babel src --out-dir lib --minified --ignore spec.js,test.js",
     "server:dev": "babel-node bin/bootstrap.js --config server.config.json",
     "client:dev": "babel-node bin/bootstrap.js --config client.config.json",
     "server:prod": "node bin/cli.js --config server.config.json",
@@ -25,40 +25,44 @@
     "collectCoverage": true
   },
   "dependencies": {
-    "babel-polyfill": "^6.20.0",
+    "babel-polyfill": "^6.23.0",
     "commander": "^2.9.0",
     "ip": "^1.1.4",
+    "lodash.chunk": "^4.2.0",
     "lodash.padstart": "^4.6.1",
     "log4js": "^1.1.0"
   },
   "devDependencies": {
-    "babel-cli": "^6.18.0",
+    "babel-cli": "^6.23.0",
     "babel-eslint": "^7.1.1",
-    "babel-jest": "^18.0.0",
-    "babel-plugin-transform-class-properties": "^6.19.0",
-    "babel-plugin-transform-object-rest-spread": "^6.20.2",
-    "babel-preset-latest": "^6.16.0",
-    "babel-register": "^6.18.0",
+    "babel-jest": "^19.0.0",
+    "babel-plugin-transform-class-properties": "^6.23.0",
+    "babel-plugin-transform-object-rest-spread": "^6.23.0",
+    "babel-preset-latest": "^6.22.0",
+    "babel-register": "^6.23.0",
     "benchmark": "^2.1.3",
-    "eslint": "^3.13.1",
+    "eslint": "^3.16.1",
     "eslint-config-babel": "^6.0.0",
     "eslint-plugin-babel": "^4.0.1",
     "eslint-plugin-flowtype": "^2.30.0",
-    "husky": "^0.12.0",
-    "jest": "^18.1.0"
+    "husky": "^0.13.1",
+    "jest": "^19.0.2"
   },
   "repository": {
     "url": "https://github.com/blinksocks/blinksocks",
     "type": "git"
   },
   "keywords": [
-    "security",
+    "fast",
+    "http",
+    "socks4",
+    "socks4a",
     "socks5",
     "proxy"
   ],
   "author": "Micooz <micooz@hotmail.com>",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">= 6.9.0"
+    "node": ">= 6"
   }
 }

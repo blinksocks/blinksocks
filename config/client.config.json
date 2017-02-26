@@ -1,10 +1,16 @@
 {
   "host": "localhost",
-  "port": 1080,
-  "server_host": "example.com",
-  "server_port": 6666,
-  "password": "my secret password",
-  "cipher": "aes-256-cfb",
-  "use_iv": true,
+  "port": 6666,
+  "server_host": "localhost",
+  "server_port": 7777,
+  "key": "secret",
+  "frame": "origin",
+  "frame_params": "",
+  "crypto": "openssl",
+  "crypto_params": "aes-128-ofb",
+  "protocol": "aead",
+  "protocol_params": "aes-256-cbc,sha256",
+  "obfs": "http",
+  "obfs_params": "config/http-fake.txt",
   "log_level": "error"
 }
