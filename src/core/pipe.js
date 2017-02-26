@@ -2,27 +2,7 @@ import EventEmitter from 'events';
 import {
   MIDDLEWARE_DIRECTION_UPWARD,
   MIDDLEWARE_DIRECTION_DOWNWARD
-} from '../middlewares';
-
-/**
- * split buffer into chunks
- * @param buffer
- * @param threshold
- * @returns {Array}
- */
-export function getChunks(buffer, threshold) {
-  const buffers = [];
-  let _buffer = buffer;
-  let len = _buffer.length;
-  do {
-    buffers.push(_buffer.slice(0, threshold));
-    len -= threshold;
-  } while (len > threshold && (_buffer = _buffer.slice(threshold)));
-  if (len > 0) {
-    buffers.push(_buffer.slice(0, len));
-  }
-  return buffers;
-}
+} from './middleware';
 
 export class Pipe extends EventEmitter {
 
@@ -66,7 +46,6 @@ export class Pipe extends EventEmitter {
 
   feed(direction, buffer) {
     const eventName = `next_${direction}`;
-    const chunks = getChunks(buffer, 9999999); // TODO: split buffer into smaller chunks
     const middlewares = this._getMiddlewares(direction);
 
     // create event chain among middlewares
@@ -81,9 +60,7 @@ export class Pipe extends EventEmitter {
     }
 
     // begin pipe
-    for (const chunk of chunks) {
-      middlewares[0].write(direction, chunk);
-    }
+    middlewares[0].write(direction, buffer);
   }
 
   _getMiddlewares(direction) {

@@ -28,6 +28,7 @@
     "babel-polyfill": "^6.23.0",
     "commander": "^2.9.0",
     "ip": "^1.1.4",
+    "lodash.chunk": "^4.2.0",
     "lodash.padstart": "^4.6.1",
     "log4js": "^1.1.0"
   },
