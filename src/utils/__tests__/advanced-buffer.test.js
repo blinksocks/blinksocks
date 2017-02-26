@@ -42,4 +42,15 @@ describe('AdvancedBuffer#put', function () {
     expect(callback).toHaveBeenCalledTimes(3);
   });
 
+  it('should drop buffer', function () {
+    const buffer = new AdvancedBuffer({
+      getPacketLength: () => -1
+    });
+    const callback = jest.fn();
+    buffer.on('data', callback);
+    buffer.put(Buffer.from([0x00]));
+
+    expect(buffer.final().equals(Buffer.alloc(0))).toBeTruthy();
+  });
+
 });

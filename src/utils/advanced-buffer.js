@@ -76,13 +76,17 @@ export class AdvancedBuffer extends EventEmitter {
       throw Error('getPacketLength must return a number');
     }
 
-    if (bound <= 0) {
+    if (bound === 0) {
       return buffer;
+    }
+
+    if (bound === -1) {
+      return Buffer.alloc(0);
     }
 
     if (buffer.length === bound) {
       this.emit('data', Buffer.from(buffer));
-      return Buffer.from([]);
+      return Buffer.alloc(0);
     }
 
     if (buffer.length > bound) {
