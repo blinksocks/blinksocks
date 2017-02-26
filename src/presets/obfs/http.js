@@ -68,6 +68,7 @@ class Faker {
  *   file (String): A text file which contains several HTTP header paris.
  *
  * @examples
+ *   "obfs": "http"
  *   "obfs_params": "http-fake.txt"
  *
  * @protocol

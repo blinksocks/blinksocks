@@ -1,7 +1,9 @@
+import getChunks from 'lodash.chunk';
 import {IPreset} from '../interface';
 import {Utils, AdvancedBuffer, Crypto} from '../../utils';
 
 const PADDING_LEN = 14;
+const MAX_PAYLOAD_LEN = 65000;
 const Logger = require('../../utils/logger')(__filename);
 
 /**
@@ -30,11 +32,14 @@ const Logger = require('../../utils/logger')(__filename);
  *   |<------- header -------->|
  *
  * @explain
- *   1. LEN is total length.
+ *   1. LEN is total length of the packet.
  *   2. PADDING is random generated.
- *   3. HMAC-A verify (PADDING + LEN); HMAC-B verify PAYLOAD.
+ *   3. HMAC-A verify (PADDING + LEN) while HMAC-B verify PAYLOAD.
  *   4. The length of HMAC depends on message digest algorithm.
- *   5. Encrypt-then-MAC (EtM) is performed for calculating HMAC.
+ *   5. The max length of PAYLOAD is 0xffff - len(padding) - 2 - 2 * max(len(HMAC)) = 65391,
+ *      so we must split packets which received from applications into smaller packets(<= 65000)
+ *      before wrap them with our header.
+ *   6. Encrypt-then-MAC (EtM) is performed for calculating HMAC.
  *
  * @reference
  *   [1] Protocol inspired by shadowsocks
@@ -82,13 +87,24 @@ export default class AeadProtocol extends IPreset {
     this._hmacLen = Crypto.getHmacLength(this._hash);
   }
 
+  beforeOut({buffer, next}) {
+    if (buffer.length > MAX_PAYLOAD_LEN) {
+      const chunks = getChunks(buffer, MAX_PAYLOAD_LEN);
+      for (const chunk of chunks) {
+        next(Buffer.from(chunk));
+      }
+    } else {
+      return buffer;
+    }
+  }
+
   clientOut({buffer}) {
     let out;
     if (!this.isHandshakeDone) {
       this._isHandshakeDone = true;
       const header = this.encrypt(Buffer.concat([
         Crypto.randomBytes(PADDING_LEN),
-        Buffer.from(Utils.numberToArray(16 + this._hmacLen + buffer.length + this._hmacLen)),
+        Utils.toBytesBE(16 + this._hmacLen + buffer.length + this._hmacLen),
       ]));
       const hmacA = this.createHmac(header);
       const hmacB = this.createHmac(buffer);
@@ -96,8 +112,8 @@ export default class AeadProtocol extends IPreset {
     } else {
       const header = this.encrypt(Buffer.concat([
         Crypto.randomBytes(PADDING_LEN),
-        Buffer.from(Utils.numberToArray(16 + this._hmacLen + buffer.length + this._hmacLen))
-      ])); // pad 'LEN' to 16
+        Utils.toBytesBE(16 + this._hmacLen + buffer.length + this._hmacLen)
+      ]));
       const hmacA = this.createHmac(header);
       const hmacB = this.createHmac(buffer);
       out = Buffer.concat([header, hmacA, buffer, hmacB]);
@@ -114,8 +130,8 @@ export default class AeadProtocol extends IPreset {
   serverOut({buffer}) {
     const header = this.encrypt(Buffer.concat([
       Crypto.randomBytes(PADDING_LEN),
-      Buffer.from(Utils.numberToArray(16 + this._hmacLen + buffer.length + this._hmacLen))
-    ])); // pad 'LEN' to 16
+      Utils.toBytesBE(16 + this._hmacLen + buffer.length + this._hmacLen)
+    ]));
     const hmacA = this.createHmac(header);
     const hmacB = this.createHmac(buffer);
     const out = Buffer.concat([header, hmacA, buffer, hmacB]);
@@ -133,6 +149,10 @@ export default class AeadProtocol extends IPreset {
    * @returns {Number}
    */
   onGetLength(buffer) {
+    if (buffer.length < 16) {
+      Logger.warn(`dropped unexpected packet (${buffer.length} bytes) received from client`);
+      return -1;
+    }
     if (!this._isHandshakeDone) {
       this._isHandshakeDone = true;
       // server handshake

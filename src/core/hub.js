@@ -30,7 +30,8 @@ export class Hub {
   }
 
   onClose() {
-    Logger.info('server shutdown');
+    Logger.info('hub shutdown');
+    process.exit(0);
   }
 
   onConnect(socket) {

@@ -9,6 +9,7 @@ import {Crypto} from '../../utils';
  *    cipher (String): Which cipher is picked from OpenSSL library.
  *
  * @examples
+ *   "crypto": "openssl"
  *   "crypto_params": "aes-128-cfb"
  *
  * @protocol
