@@ -1,4 +1,5 @@
 import EventEmitter from 'events';
+import logger from 'winston';
 
 export const MIDDLEWARE_DIRECTION_UPWARD = 0;
 export const MIDDLEWARE_DIRECTION_DOWNWARD = 1;
@@ -7,8 +8,6 @@ export const MIDDLEWARE_TYPE_FRAME = 0;
 export const MIDDLEWARE_TYPE_CRYPTO = 1;
 export const MIDDLEWARE_TYPE_PROTOCOL = 2;
 export const MIDDLEWARE_TYPE_OBFS = 3;
-
-const Logger = require('../utils/logger')(__filename);
 
 /**
  * abstraction of middleware
@@ -91,7 +90,7 @@ export function createMiddleware(type, props = []) {
 
     return new Middleware(impl);
   } catch (err) {
-    Logger.fatal(err.message);
+    logger.fatal(err.message);
     process.exit(-1);
   }
   return null;

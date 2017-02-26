@@ -1,10 +1,10 @@
+import logger from 'winston';
 import getChunks from 'lodash.chunk';
 import {IPreset} from '../interface';
 import {Utils, AdvancedBuffer, Crypto} from '../../utils';
 
 const PADDING_LEN = 14;
 const MAX_PAYLOAD_LEN = 65000;
-const Logger = require('../../utils/logger')(__filename);
 
 /**
  * @description
@@ -118,7 +118,7 @@ export default class AeadProtocol extends IPreset {
       const hmacB = this.createHmac(buffer);
       out = Buffer.concat([header, hmacA, buffer, hmacB]);
     }
-    Logger.info(`ClientOut(${out.length} bytes): ${out.toString('hex').substr(0, 60)}`);
+    logger.info(`ClientOut(${out.length} bytes): ${out.toString('hex').substr(0, 60)}`);
     return out;
   }
 
@@ -135,7 +135,7 @@ export default class AeadProtocol extends IPreset {
     const hmacA = this.createHmac(header);
     const hmacB = this.createHmac(buffer);
     const out = Buffer.concat([header, hmacA, buffer, hmacB]);
-    Logger.info(`ServerOut(${out.length} bytes): ${out.toString('hex').substr(0, 60)}`);
+    logger.info(`ServerOut(${out.length} bytes): ${out.toString('hex').substr(0, 60)}`);
     return out;
   }
 
@@ -150,7 +150,7 @@ export default class AeadProtocol extends IPreset {
    */
   onGetLength(buffer) {
     if (buffer.length < 16) {
-      Logger.warn(`dropped unexpected packet (${buffer.length} bytes) received from client`);
+      logger.warn(`dropped unexpected packet (${buffer.length} bytes) received from client`);
       return -1;
     }
     if (!this._isHandshakeDone) {
@@ -184,9 +184,9 @@ export default class AeadProtocol extends IPreset {
    */
   onReceived(packet) {
     if (__IS_CLIENT__) {
-      Logger.info(`ClientIn(${packet.length} bytes): ${packet.toString('hex').substr(0, 60)}`);
+      logger.info(`ClientIn(${packet.length} bytes): ${packet.toString('hex').substr(0, 60)}`);
     } else {
-      Logger.info(`ServerIn(${packet.length} bytes): ${packet.toString('hex').substr(0, 60)}`);
+      logger.info(`ServerIn(${packet.length} bytes): ${packet.toString('hex').substr(0, 60)}`);
     }
     const _packet = packet.slice(16 + this._hmacLen);
     const hmacB = _packet.slice(-this._hmacLen);

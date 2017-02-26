@@ -1,3 +1,4 @@
+import logger from 'winston';
 import {IPreset} from '../interface';
 import {SOCKET_CONNECT_TO_DST} from '../actions';
 import {Address} from '../../core/address';
@@ -7,8 +8,6 @@ import {
   // ATYP_V6,
   ATYP_DOMAIN
 } from '../../proxies/common';
-
-const Logger = require('../../utils/logger')(__filename);
 
 /**
  * @description
@@ -60,7 +59,7 @@ export default class OriginFrame extends IPreset {
   serverIn({buffer, next, broadcast}) {
     if (!this._isHandshakeDone) {
       const frame = this.unpack(buffer);
-      if (frame === null && Logger.isWarnEnabled()) {
+      if (frame === null) {
         throw Error(`dropped unidentified packet ${buffer.length} bytes: ${buffer.toString('hex').substr(0, 60)}`);
       }
       const {ATYP, DSTADDR, DSTPORT, DATA} = frame;
@@ -105,7 +104,7 @@ export default class OriginFrame extends IPreset {
     const _buffer = Buffer.from(buffer);
 
     if (_buffer.length < 7) {
-      Logger.debug(`invalid length: ${_buffer.length}`);
+      logger.debug(`invalid length: ${_buffer.length}`);
       return null;
     }
 
@@ -119,7 +118,7 @@ export default class OriginFrame extends IPreset {
       }
       // case ATYP_V6: {
       //   if (_buffer.length < 21) {
-      //     Logger.debug(`invalid length: ${_buffer.length}`);
+      //     logger.debug(`invalid length: ${_buffer.length}`);
       //     return null;
       //   }
       //   DSTADDR = _buffer.slice(2, 19);
@@ -129,7 +128,7 @@ export default class OriginFrame extends IPreset {
       case ATYP_DOMAIN: {
         const domainLen = _buffer[1];
         if (_buffer.length < 4 + domainLen) {
-          Logger.debug(`invalid length: ${_buffer.length}`);
+          logger.debug(`invalid length: ${_buffer.length}`);
           return null;
         }
         DSTADDR = _buffer.slice(2, 2 + domainLen);
@@ -137,7 +136,7 @@ export default class OriginFrame extends IPreset {
         break;
       }
       default:
-        Logger.debug(`unknown ATYP: ${_buffer[0]}`);
+        logger.debug(`unknown ATYP: ${_buffer[0]}`);
         return null;
     }
 
