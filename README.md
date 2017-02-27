@@ -17,28 +17,26 @@ And [ShadowsocksR](https://github.com/shadowsocksr/shadowsocksr/tree/manyuser).
 
 > Across the Great Wall we can reach every corner in the world.
 
+## Documentation
+
+* [Motivation](docs/motivation)
+* [Principle](docs/principle)
+* [Architecture](docs/architecture)
+* [Middleware](docs/middleware)
+
 ## Features
 
 * HTTP/Socks5/Socks4/Socks4a compatible
 * TCP and UDP relay
-* IPv4 and IPv6 support
-* Universal server and client
-* Fully encryption
-* Docker integration
+* Middleware Based
+* Highly flexible and customizable
+* Cross-platform
+* Docker deployment
 
 ## Installation
 
-You can get pre-compiled library(including executable) of blinksocks from **yarn** or **npm**. Both approach requires your system have had [Node.js](https://nodejs.org) installed.
-
-### -> via yarn
-
-If you know [yarn](https://yarnpkg.com/), this way is recommended:
-
-```
-$ yarn global add blinksocks
-```
-
-### -> via npm
+You can download pre-compiled library(including executable) of blinksocks from **yarn** or **npm**.
+Both approach requires your system have had [Node.js](https://nodejs.org) installed.
 
 ```
 $ npm install -g blinksocks
@@ -52,28 +50,36 @@ $ npm update -g blinksocks
 
 ## Usage
 
-Once installed, you can access blinksocks from command line directly:
+Once installed, you can access blinksocks via CLI:
 
 ```
 $ blinksocks --help
 
-  Usage: blinksocks [options] [...]
+  Usage: blinksocks --host <host> --port <port> --key <key> [...]
 
   Options:
 
-    -h, --help                  output usage information
-    -V, --version               output the version number
-    -c, --config [file]         a json file for configuration, if specified, ignore other options
-    --host <host>               an ip address or a hostname to bind
-    --port <port>               where to listen on
-    --password <password>       a password for encryption and decryption
-    --server-host [serverHost]  an ip address or a hostname to connect
-    --server-port [serverPort]  where is the server listen on
-    --cipher [cipher]           a method for encryption or decryption, leave it empty to enbaled non-encryption mode
-    --use-iv                    if use initialization vector for encryption
-    --log-level [logLevel]      log4js log level
-    -q, --quiet                 limit log level to 'error'
-    --ciphers                   show all supported ciphers
+    -h, --help                           output usage information
+    -V, --version                        output the version number
+    -c, --config [file]                  a json format file for configuration, if specified, other options are ignored
+    --host <host>                        an ip address or a hostname to bind
+    --port <port>                        where to listen on
+    --server-host [server-host]          an ip address or hostname to connect to
+    --server-port [server-port]          which port the server listen on
+    --key <key>                          a key for encryption and decryption
+    --frame [frame]                      a preset used in frame middleware, default: 'origin'
+    --frame-params [crypto-params]       parameters for frame preset, default: ''
+    --crypto [crypto]                    a preset used in crypto middleware, default: 'openssl'
+    --crypto-params [crypto-params]      parameters for crypto, default: 'aes-256-cfb'
+    --protocol [protocol]                a preset used in protocol middleware, default: 'aead'
+    --protocol-params [protocol-params]  parameters for protocol, default: 'aes-256-cbc,sha256'
+    --obfs [obfs]                        a preset used in obfs middleware, default: 'none'
+    --obfs-params [obfs-params]          parameters for obfs, default: ''
+    --log-level [log-level]              log level, default: all
+    -q, --quiet                          force log level to 'error'
+    --ciphers                            display all supported ciphers
+    --hashes                             display all supported hash functions
+
 
   Examples:
 
@@ -81,65 +87,58 @@ $ blinksocks --help
     $ blinksocks -c config.json
 
   To start a server:
-    $ blinksocks --host 0.0.0.0 --port 7777 --password password --cipher "aes-256-cfb"
+    $ blinksocks --host 0.0.0.0 --port 7777 --key key --crypto openssl --crypto-params aes-256-cfb
 
   To start a client:
-    $ blinksocks --host localhost --port 1080 --password password --server-host example.com --server-port 7777 --cipher "aes-256-cfb"
+    $ blinksocks --host localhost --port 1080 --server-host example.com --server-port 7777 --key key --crypto openssl --crypto-params aes-256-cfb
 
 ```
 
-## Configuration
+## Config.json
 
-To start a server or client, you can prepare a configuration json file(`config.json` for example)
-via `--config` or `-c` as follows:
-
-### Client
+To start a server or client, you can prepare a configuration json file(`config.json` for example) then supply to `--config` or `-c`.
 
 ```
 {
   "host": "localhost",
-  "port": 1080,
-  "server_host": "example.com",
+  "port": 6666,
+  "server_host": "localhost",
   "server_port": 7777,
-  "password": "my secret password",
-  "cipher": "aes-256-cfb",
-  "use_iv": true,
+  "key": "secret",
+  "frame": "origin",
+  "frame_params": "",
+  "crypto": "openssl",
+  "crypto_params": "aes-128-ofb",
+  "protocol": "aead",
+  "protocol_params": "aes-256-cbc,sha256",
+  "obfs": "http",
+  "obfs_params": "http-fake.txt",
   "log_level": "error"
 }
 ```
 
-### Server
-
-Just without `server_host` and `server_port`:
-
-```
-{
-  "host": "0.0.0.0",
-  "port": 7777,
-  "password": "my secret password",
-  "cipher": "aes-256-cfb",
-  "use_iv": true,
-  "log_level": "error"
-}
-```
-
-Or you can provide all pf them via command line.
-
-* `host(--host)`: Typically **localhost**.
-* `port(--port)`: Typically **1080**.
-* `server_host(--server-host)`: Typically **0.0.0.0**.
-* `server_port(--server-port)`: Any available number.
-* `password(--password)`: For data encryption, please keep it secret!
-* `cipher(--cipher)`: Encryption method. You can enable **non-encryption mode** by set it to empty string.
-* `use_iv(--use-iv)`: Whether encrypt/decrypt with initialization vector or not.
-* `log_level(--log-level)`: should take a value from Logging Level of
-[Log4js.Level](http://stritti.github.io/log4js/docu/users-guide.html#configuration). The levels are case-insensitive and cumulative.
+|      FIELD      |               DESCRIPTION                 |        DEFAULT       |
+|:----------------|:------------------------------------------|:---------------------|
+| host            | local ip address or domain name           | "localhost"          |
+| port            | local port to bind                        | 1080                 |
+| server_host     | server ip or domain name, **client only** | -                    |
+| server_port     | server port, **client only**              | -                    |
+| key             | for encryption and decryption             | -                    |
+| frame           | frame preset                              | "origin"             |
+| frame_params    | parameters for frame preset               | ""                   |
+| crypto          | crypto preset                             | "openssl"            |
+| crypto_params   | parameters for crypto preset              | ""                   |
+| protocol        | protocol preset                           | "aead"               |
+| protocol_params | parameters for protocol preset            | "aes-256-cbc,sha256" |
+| obfs            | obfs preset                               | "none"               |
+| obfs_params     | parameters for obfs preset                | ""                   |
+| log_level       | log level                                 | "error"              |
 
 ## Compile for production
 
 For production use, we are running our code under `lib` not `src`, so compilation is necessary.
 
-Compilation of blinksocks is super easy:
+Compilation of blinksocks is ultra easy:
 
 ```
 $ npm run compile
@@ -147,9 +146,9 @@ $ npm run compile
 
 This will compile `src` to `lib`.
 
-## Test for development
+## Test in development
 
-Application which support Socks5/Socks4/Socks4a/HTTP can be used for testing.
+Any application support HTTP/Socks5/Socks4/Socks4a can be used for testing.
 
 For example(use curl):
 
@@ -186,11 +185,19 @@ $ pm2 start blinksocks -- -c config.json
 $ pm2 start blinksocks -i 3 -- -c config.json
 ```
 
-## Deploy
+## For Firefox/Google Chrome and more...
+
+A common usage of blinksocks is used it on **browsers**, so I give an advise here.
+
+For Google Chrome, [SwitchyOmega](https://github.com/FelisCatus/SwitchyOmega) extension is a great approach to use socks5 service.
+
+For FireFox, you can configure proxy at `Settings - Advanced - Network - Proxy`.
+
+## Deploy(Docker)
 
 We use Docker to auto-deploy a blinksocks **server**.
 
-### Get image
+### 1. Get image
 
 You can build an image manually or pull it from docker hub:
 
@@ -206,34 +213,13 @@ $ docker build --tags blinksocks:latest .
 $ docker pull blinksocks:latest
 ```
 
-### Run in a container
+### 2. Run in a container
 
-Container will expose `1080` port, so you must bind a host port to `1080` via `-p`.
+Container will expose `1080` port, so you must map a host port to `1080` via `-p`.
 
 ```
 $ docker run -d -p 7777:1080 blinksocks:latest
 ```
-
-## For Firefox/Google Chrome and more...
-
-A common usage of blinksocks is used it on **browsers**, so I give an advise here.
-
-For Google Chrome, [SwitchyOmega](https://github.com/FelisCatus/SwitchyOmega) extension is a great approach to use socks5 service.
-
-For FireFox, you can configure proxy at `Settings - Advanced - Network - Proxy`.
-
-## Documentation
-
-If you are interesting in `Principle`, `Architecture` or `Spec` of blinksocks, please
-check out: [docs](https://github.com/micooz/blinksocks/tree/master/docs).
-
-## Roadmap
-
-**v2.2.0**:
-
-* [x] Middleware System
-* [x] AEAD
-* [ ] Performance Testing & Report
 
 ## References
 
