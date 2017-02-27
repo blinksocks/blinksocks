@@ -2,25 +2,27 @@ const fs = require('fs');
 const program = require('commander');
 const packageJson = require('../package.json');
 
+const usage = '--host <host> --port <port> --key <key> [...]';
+
 const options = [
-  ['-c, --config [file]', 'a json file for configuration, if specified, ignore other options', ''],
-  ['--host <host>', 'an ip address or a hostname to bind'],
-  ['--port <port>', 'where to listen on'],
-  ['--server-host [server-host]', 'an ip address or a hostname to connect'],
-  ['--server-port [server-port]', 'where is the server listen on'],
+  ['-c, --config [file]', 'a json format file for configuration, if specified, other options are ignored', ''],
+  ['--host <host>', 'an ip address or a hostname to bind', 'localhost'],
+  ['--port <port>', 'where to listen on', 1080],
+  ['--server-host [server-host]', 'an ip address or hostname to connect to'],
+  ['--server-port [server-port]', 'which port the server listen on'],
   ['--key <key>', 'a key for encryption and decryption'],
-  ['--frame [frame]', 'a preset used in frame middleware', 'origin'],
-  ['--frame-params [crypto-params]', 'parameters for frame preset', ''],
-  ['--crypto [crypto]', 'a preset used in crypto middleware', 'none'],
-  ['--crypto-params [crypto-params]', 'parameters for crypto preset', ''],
-  ['--protocol [protocol]', 'a preset used in protocol middleware', 'none'],
-  ['--protocol-params [protocol-params]', 'parameters for protocol preset', ''],
-  ['--obfs [obfs]', 'a preset used in obfs middleware', 'none'],
-  ['--obfs-params [obfs-params]', 'parameters for obfs preset', ''],
-  ['--log-level [log-level]', 'log4js log level', 'all'],
-  ['-q, --quiet', 'limit log level to \'error\''],
-  ['--ciphers', 'show all supported ciphers'],
-  ['--hashes', 'show all supported hash functions']
+  ['--frame [frame]', 'a preset used in frame middleware, default: \'origin\'', 'origin'],
+  ['--frame-params [crypto-params]', 'parameters for frame preset, default: \'\'', ''],
+  ['--crypto [crypto]', 'a preset used in crypto middleware, default: \'openssl\'', 'openssl'],
+  ['--crypto-params [crypto-params]', 'parameters for crypto, default: \'aes-256-cfb\'', 'aes-256-cfb'],
+  ['--protocol [protocol]', 'a preset used in protocol middleware, default: \'aead\'', 'aead'],
+  ['--protocol-params [protocol-params]', 'parameters for protocol, default: \'aes-256-cbc,sha256\'', 'aes-256-cbc,sha256'],
+  ['--obfs [obfs]', 'a preset used in obfs middleware, default: \'none\'', 'none'],
+  ['--obfs-params [obfs-params]', 'parameters for obfs, default: \'\'', ''],
+  ['--log-level [log-level]', 'log level, default: all', 'all'],
+  ['-q, --quiet', 'force log level to \'error\''],
+  ['--ciphers', 'display all supported ciphers'],
+  ['--hashes', 'display all supported hash functions']
 ];
 
 const examples = `
@@ -83,7 +85,7 @@ function obtainConfig(options) {
 module.exports = function ({Hub, Crypto}) {
   const pg = program
     .version(packageJson.version)
-    .usage('--host <host> --port <port> --key <key> [...]');
+    .usage(usage);
 
   for (const option of options) {
     pg.option(...option);
