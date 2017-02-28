@@ -2,53 +2,77 @@
 
 ![architecture](architecture.png)
 
-## Socks5/Socks4/Socks4a
+## Proxy Protocols
 
 To take over data send and receive of applications, we must find a widely
-supported proxy protocol. SOCKS is an ideal one, it only works on the client
-side, so don't worry about being attacked.
+used proxy protocol. Http/Socks5/Socks4/Socks4a are ideal, they only work
+on the client side, so don't worry about being attacked.
 
-## HTTP
+## Pipe
 
-Blinksocks `v2.1` also support http proxy, you can switch between Socks5 and HTTP smoothly,
-without restarting the application.
+## Middleware
 
-## Hub, Socket & Relay
+Middleware is a class which used for processing input data to output data from/to
+different middlewares. There are four kind of middlewares:
 
-### Data Forward (client -> server)
+* FrameMiddleware
 
-* On the client side
+The lowest layer in the middleware stack. It packs data from application,
+or unpacks data from CryptoMiddleware.
 
-`Hub` gathers connection requests from `Application`, derives `Socket` associate
-with each connection. `Socket` first makes handshake with `Application`,
-establishes Socks5 connection, then creates a `Relay` associate with itself.
+* CryptoMiddleware
 
-`Relay` retrieves data(payload) from `Application`, packs payload with our
-header, encrypts then forwards data to the remote.
+The second layer in the middleware stack. It encrypts data from FrameMiddleware,
+or decrypts data from ProtocolMiddleware.
 
-* On the server side
+* ProtocolMiddleware
 
-`Hub` gathers connection requests from the client, derives `Socket`, 
-establishes a TCP connection. `Socket` receives encrypted data from client, 
-deliver them to the `Relay`.
+The third layer in the middleware stack. It encapsulates data with additional
+headers from CryptoMiddleware, or decapsulates data from ObfsMiddleware.
 
-`Relay` retrieves data, decrypts, unpacks then forwards data to the real receivers.
+The additional headers may be used for AEAD or other needs.
 
-### Data Backward (client <- server)
+* ObfsMiddleware
 
-Data backward is simpler than data forward:
+The last layer in the middleware stack. It encapsulates data with obfuscation
+headers from ProtocolMiddleware, or decapsulates data from network.
 
-* On the server side
+## Preset
 
-`Relay` receives data from the real receivers, ~~packs with our header~~, 
-encrypts then backward data to the client.
+Preset is the **implement** of middleware, a typical preset must implement
+four methods of IPreset interface, for examples you can check out `src/presets`,
+there are several built-in presets already.
 
-* On the client side
+```
+export class CustomPreset extends IPreset {
 
-`Relay` retrieves encrypted data from the server, decrypts, ~~unpacks~~ then 
-backwards data to the `Application`.
+  clientOut(/* {buffer, next, broadcast} */) {
 
-> NOTE: For TCP relay, backward data(encrypted) does not contain extra header anymore. It's more efficient and secure.
+  }
+
+  serverIn(/* {buffer, next, broadcast} */) {
+
+  }
+
+  serverOut(/* {buffer, next, broadcast} */) {
+
+  }
+
+  clientIn(/* {buffer, next, broadcast} */) {
+
+  }
+
+}
+```
+
+|  METHODS  |              DESCRIPTION             |
+|:----------|:-------------------------------------|
+| clientOut | client will send data to server      |
+| serverIn  | server received data from client     |
+| serverOut | server will send back data to client |
+| clientIn  | client received data from server     |
+
+NOTE: `server*` are used on the server side while `client*` are used on the client side.
 
 ## DNS Cache
 
