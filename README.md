@@ -23,6 +23,7 @@ And [ShadowsocksR](https://github.com/shadowsocksr/shadowsocksr/tree/manyuser).
 * [Principle](docs/principle)
 * [Architecture](docs/architecture)
 * [Middleware](docs/middleware)
+* [Spec](docs/spec)
 
 ## Features
 
@@ -127,7 +128,7 @@ To start a server or client, you can prepare a configuration json file(`config.j
 | frame           | frame preset                              | "origin"             |
 | frame_params    | parameters for frame preset               | ""                   |
 | crypto          | crypto preset                             | "openssl"            |
-| crypto_params   | parameters for crypto preset              | ""                   |
+| crypto_params   | parameters for crypto preset              | "aes-256-cfb"        |
 | protocol        | protocol preset                           | "aead"               |
 | protocol_params | parameters for protocol preset            | "aes-256-cbc,sha256" |
 | obfs            | obfs preset                               | "none"               |

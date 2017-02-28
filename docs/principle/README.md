@@ -32,3 +32,6 @@ from the encrypted data, but they can block it.
 The solution is similar to SSL, but it encrypt all the data(including the header)
 transferred on the Internet. All message are just normal data in view of
 analyzer, because they are missing valuable information due to fully encryption.
+
+However, fully encryption is not always needed. Data carraies non-encryption and
+well-known header can be used for cheating attackers. This approach is called obfuscation.
