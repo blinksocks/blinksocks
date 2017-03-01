@@ -117,22 +117,61 @@ To start a server or client, you can prepare a configuration json file(`config.j
 }
 ```
 
-|      FIELD      |               DESCRIPTION                 |        DEFAULT       |
-|:----------------|:------------------------------------------|:---------------------|
-| host            | local ip address or domain name           | "localhost"          |
-| port            | local port to bind                        | 1080                 |
-| server_host     | server ip or domain name, **client only** | -                    |
-| server_port     | server port, **client only**              | -                    |
-| key             | for encryption and decryption             | -                    |
-| frame           | frame preset                              | "origin"             |
-| frame_params    | parameters for frame preset               | ""                   |
-| crypto          | crypto preset                             | "openssl"            |
-| crypto_params   | parameters for crypto preset              | "aes-256-cfb"        |
-| protocol        | protocol preset                           | "aead"               |
-| protocol_params | parameters for protocol preset            | "aes-256-cbc,sha256" |
-| obfs            | obfs preset                               | "none"               |
-| obfs_params     | parameters for obfs preset                | ""                   |
-| log_level       | log level                                 | "error"              |
+|       FIELD      |               DESCRIPTION                 |        DEFAULT       |
+|:-----------------|:------------------------------------------|:---------------------|
+| *host            | local ip address or domain name           | "localhost"          |
+| *port            | local port to bind                        | 1080                 |
+| server_host      | server ip or domain name, **client only** | -                    |
+| server_port      | server port, **client only**              | -                    |
+| *key             | for encryption and decryption             | -                    |
+| frame            | frame preset                              | "origin"             |
+| frame_params     | parameters for frame preset               | ""                   |
+| crypto           | crypto preset                             | "openssl"            |
+| crypto_params    | parameters for crypto preset              | "aes-256-cfb"        |
+| *protocol        | protocol preset                           | "aead"               |
+| protocol_params  | parameters for protocol preset            | "aes-256-cbc,sha256" |
+| obfs             | obfs preset                               | "none"               |
+| obfs_params      | parameters for obfs preset                | ""                   |
+| log_level        | log level                                 | "error"              |
+
+> NOTE: `host`, `port`, `key` and `protocol` must be set.
+
+* Available Ciphers
+
+`aes-128-ctr`, `aes-192-ctr`, `aes-256-ctr`,
+`aes-128-cfb`, `aes-192-cfb`, `aes-256-cfb`,
+
+`aes-128-ofb`, `aes-192-ofb`, `aes-256-ofb`,
+`aes-128-cbc`, `aes-192-cbc`, `aes-256-cbc`
+
+* Available Hashes
+
+`sha1`, `sha256`, `sha512`,
+
+* Available Presets
+
+```
+├── crypto
+│   ├── none.js
+│   └── openssl.js
+├── frame
+│   └── origin.js
+├── obfs
+│   ├── http.js
+│   └── none.js
+└── protocol
+    ├── aead.js
+    └── basic.js
+```
+
+* Log Levels
+
+The logging library [winston](https://github.com/winstonjs/winston) use
+npm logging levels by default, you can choose one of them demand:
+
+```
+{ error: 0, warn: 1, info: 2, verbose: 3, debug: 4, silly: 5 }
+```
 
 ## Compile for production
 
