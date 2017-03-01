@@ -51,8 +51,6 @@ export default class AeadProtocol extends IPreset {
 
   _hmacLen = 0;
 
-  _isHandshakeDone = false;
-
   _cipher = '';
 
   _hash = '';
@@ -99,25 +97,13 @@ export default class AeadProtocol extends IPreset {
   }
 
   clientOut({buffer}) {
-    let out;
-    if (!this.isHandshakeDone) {
-      this._isHandshakeDone = true;
-      const header = this.encrypt(Buffer.concat([
-        Crypto.randomBytes(PADDING_LEN),
-        Utils.toBytesBE(16 + this._hmacLen + buffer.length + this._hmacLen),
-      ]));
-      const hmacA = this.createHmac(header);
-      const hmacB = this.createHmac(buffer);
-      out = Buffer.concat([header, hmacA, buffer, hmacB]);
-    } else {
-      const header = this.encrypt(Buffer.concat([
-        Crypto.randomBytes(PADDING_LEN),
-        Utils.toBytesBE(16 + this._hmacLen + buffer.length + this._hmacLen)
-      ]));
-      const hmacA = this.createHmac(header);
-      const hmacB = this.createHmac(buffer);
-      out = Buffer.concat([header, hmacA, buffer, hmacB]);
-    }
+    const header = this.encrypt(Buffer.concat([
+      Crypto.randomBytes(PADDING_LEN),
+      Utils.toBytesBE(16 + this._hmacLen + buffer.length + this._hmacLen)
+    ]));
+    const hmacA = this.createHmac(header);
+    const hmacB = this.createHmac(buffer);
+    const out = Buffer.concat([header, hmacA, buffer, hmacB]);
     logger.info(`ClientOut(${out.length} bytes): ${out.toString('hex').substr(0, 60)}`);
     return out;
   }
@@ -153,31 +139,15 @@ export default class AeadProtocol extends IPreset {
       logger.warn(`dropped unexpected packet (${buffer.length} bytes) received from client`);
       return -1;
     }
-    if (!this._isHandshakeDone) {
-      this._isHandshakeDone = true;
-      // server handshake
-      const index = 16;
-      const expHmacA = this.createHmac(buffer.slice(0, index));
-      const hmacA = buffer.slice(index, index + this._hmacLen);
-      if (!hmacA.equals(expHmacA)) {
-        logger.error(`dropped unexpected packet (${buffer.length} bytes) received from client: wrong HMAC-A`);
-        return -1;
-      }
-      // safely decrypt
-      const decrypted = this.decrypt(buffer.slice(0, index));
-      // LEN
-      return decrypted.readUInt16BE(PADDING_LEN);
-    } else {
-      const encLen = buffer.slice(0, 16);
-      const expHmacA = this.createHmac(encLen);
-      const hmacA = buffer.slice(16, 16 + this._hmacLen);
-      if (!hmacA.equals(expHmacA)) {
-        logger.error(`dropped unexpected packet (${buffer.length} bytes) received from server: wrong HMAC-A`);
-        return -1;
-      }
-      // safely decrypt then get length
-      return this.decrypt(encLen).readUInt16BE(PADDING_LEN);
+    const encLen = buffer.slice(0, 16);
+    const expHmacA = this.createHmac(encLen);
+    const hmacA = buffer.slice(16, 16 + this._hmacLen);
+    if (!hmacA.equals(expHmacA)) {
+      logger.error(`dropped unexpected packet (${buffer.length} bytes) received from server: wrong HMAC-A`);
+      return -1;
     }
+    // safely decrypt then get length
+    return this.decrypt(encLen).readUInt16BE(PADDING_LEN);
   }
 
   /**
