@@ -54,14 +54,13 @@ there are several built-in presets already:
 * protocol/*: implement for ProtocolMiddleware
 * obfs/*: implement for ObfsMiddleware
 
-For more detail document of each presets, please refer to [docs/preset](../docs/preset).
-
 ### Custom Preset
 
 A typical preset must implement four methods of IPreset interface:
 
 ```js
-export class CustomPreset extends IPreset {
+// custom.js
+export default class CustomPreset extends IPreset {
 
   clientOut(/* {buffer, next, broadcast} */) {
     // next(buf);  for async
@@ -114,7 +113,8 @@ Once a method broadcast, all other middlewares will receive the action in
 **onNotified(action)** immediately:
 
 ```js
-export class CustomPreset extends IPreset {
+// custom.js
+export default class CustomPreset extends IPreset {
 
   /**
    * how to deal with the action, return false to ignore
@@ -134,7 +134,8 @@ export class CustomPreset extends IPreset {
 There are two hooks avaialble:
 
 ```js
-export class CustomPreset extends IPreset {
+// custom.js
+export default class CustomPreset extends IPreset {
 
   beforeOut({buffer/* , next, broadcast */}) {
     return buffer;

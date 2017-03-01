@@ -1,42 +1,121 @@
-# Plugins
+# Protocol Stack
 
-Blinksocks supports plugin system, this makes blinksocks more flexible and security.
+The protocol stack of blinksocks is middleware based and ultra **flexible**.
 
-There are two kinds of plugins in the blinksocks:
+Like TCP/IP, you can define your own protocol in each layer.
+Application data are processed **step by step** from the lowest layer to the top.
 
-* Protocol Plugin
-* Obfuscation Plugin
+Middlewares here act as a specific layers in the stack.
 
-## Procedure
+We have four kind of middlewares currently, however the classification among middlewares **is not fixed**.
+You can add or subtract some middlewares on demand.
 
-Application data <--> `Protocol Plugin` <--> `Obfuscation Plugin` <--> Data Frame(transfer on the network).
+A typical protocol stack is defined as following(**just for example**):
 
-## Protocol Plugin
+```
+# TCP handshake
 
-Protocol plugin combines application data with additional headers, forming particular frame.
++-----------+-------------------------------------------------------+
+|  HEADER   |                     PAYLOAD                           |
++-----------+-------------------------------------------------------+ <-------+
+| Variable  |                     Variable                          |         |
++-----------+-------------------------------------------------------+         |
+                                                                        ObfsMiddleware(--obfs="http")
+            +-----+-------------------------------------------------+         |
+            | LEN |                    PAYLOAD                      |         |
+            +-----+-------------------------------------------------+ <-------+
+            |  2  |                    Variable                     |         |
+            +-----+-------------------------------------------------+         |
+                                                                        ProtocolMiddleware(--protocol="basic")
+                  +--------+----------------------------------------+         |
+                  |   IV   |                PAYLOAD                 |         |
+                  +--------+----------------------------------------+ <-------+
+                  |   16   |                Variable                |         |
+                  +--------+----------------------------------------+         |
+                                                                              |
+                                                                        CryptoMiddleware(--crypto="openssl")
+                           +------+----------+----------+-----------+         |
+                           | ATYP | DST.ADDR | DST.PORT |  PAYLOAD  |         |
+                           +------+----------+----------+-----------+ <-------+
+                           |  1   | Variable |    2     |  Variable |         |
+                           +------+----------+----------+-----------+         |
+                                                                        FrameMiddleware(--frame="origin")
+                                                        +-----------+         |
+                                                        |   DATA    |         |
+                                Application Data -----> +-----------+ --------+
+                                                        |  Variable |
+                                                        +-----------+
 
-There are several built-in protocol plugins:
+# TCP chunk
 
-* `none`
+                  +-----------------+
+                  |    PAYLOAD      |
+                  +-----------------+ <-------+
+                  |    Variable     |         |
+                  +-----------------+         |
+                                        ObfsMiddleware(--obfs="http")
+                  +-----+-----------+         |
+                  | LEN |  PAYLOAD  |         |
+                  +-----+-----------+ <-------+
+                  |  2  |  Variable |         |
+                  +-----+-----------+         |
+                                        ProtocolMiddleware(--protocol="basic")
+                        +-----------+         |
+                        |  PAYLOAD  |         |
+                        +-----------+ <-------+
+                        |  Variable |         |
+                        +-----------+         |
+                                              |
+                                        CryptoMiddleware(--crypto="openssl")
+                        +-----------+         |
+                        |  PAYLOAD  |         |
+                        +-----------+ <-------+
+                        |  Variable |         |
+                        +-----------+         |
+                                        FrameMiddleware(--frame="origin")
+                        +-----------+         |
+                        |   DATA    |         |
+Application Data -----> +-----------+ --------+
+                        |  Variable |
+                        +-----------+
+```
 
-Do not add any headers to the application data.
+As you can see, you start from **Application Data**, custom middleware behaviour in each preset and
+send them out.
 
-* `basic`
+Ordinarily, `DST.ADDR` and `DST.PORT` is required to be sent to server(like "origin" preset),
+otherwise server cannot figure out where to send data to.
 
-Use AES to ensure confidentiality.
+Blinksocks will pass **target address** to the FrameMiddleware once a connection between application
+and blinksocks client was constructed, so you can obtain that address in your frame preset.
 
-* `aead-gcm`(**Recommended**)
+```js
+// core/socket.js
+this._pipe.setMiddlewares(MIDDLEWARE_DIRECTION_UPWARD, [
+  createMiddleware(MIDDLEWARE_TYPE_FRAME, [this._targetAddress]),
+  createMiddleware(MIDDLEWARE_TYPE_CRYPTO),
+  createMiddleware(MIDDLEWARE_TYPE_PROTOCOL),
+  createMiddleware(MIDDLEWARE_TYPE_OBFS),
+]);
+```
 
-Use AES and HMAC to ensure confidentiality, integrity and authentication.
-`md5` and `sha1` are algorithms applied for HMAC.
+```js
+// preset/frame/origin.js
+export default class OriginFrame extends IPreset {
 
-## Obfuscation Plugin
+  _targetAddress = null; // client use only
 
-After protocol plugin created data frames, cheat plugin wrap the output of
-protocol plugins, disguising a particular protocol such as HTTP or TLS packages,
-rather than an unknown protocol to attackers.
+  constructor(address) {
+    super();
+    this._targetAddress = address;
+  }
 
-There are several built-in Obfuscation plugins:
+  // ...
 
-* `none`, do not wrap output data of protocol plugin
-* `http`, make the handshake packet looks like a http GET/POST request
+}
+```
+
+# Presets
+
+For more document about built-in presets, please check out each implementation
+files in [src/presets](../../src/presets).
