@@ -46,7 +46,7 @@ headers from ProtocolMiddleware, or decapsulates data from network.
 
 ## Preset
 
-Preset is the **implement** of middleware, for examples you can check out `src/presets`,
+Preset is the **implement** of middleware, for examples you can check out [src/presets](../../src/presets),
 there are several built-in presets already:
 
 * frame/*: implement for FrameMiddleware
@@ -54,7 +54,7 @@ there are several built-in presets already:
 * protocol/*: implement for ProtocolMiddleware
 * obfs/*: implement for ObfsMiddleware
 
-For more detail document of each presets, please refer to `docs/presets`.
+For more detail document of each presets, please refer to [docs/preset](../docs/preset).
 
 ### Custom Preset
 
@@ -98,7 +98,7 @@ Every method gets an object which contains three parameters you need:
 | :-------- | :---------------------------------------------------- |
 | buffer    | output from the previous middleware                   |
 | next      | call it with a new buffer once **async** process done |
-| broadcast | call it with an action,                               |
+| broadcast | call it with an action to notify other middlewares    |
 
 Action passed to broadcast is an object which requires a `type` field:
 
