@@ -10,6 +10,13 @@ on the client side, so don't worry about being attacked.
 
 ## Pipe
 
+Pipe is a duplex fancility for dealing with data streaming. A pipe is created once a
+connection was open.
+
+Pipe puts all middlewares in cascade(both upstream and downstream), feeds
+original data to the first middleware from time to time and gathers processed
+data from the last layer of all middlewares.
+
 ## Middleware
 
 Middleware is a class which used for processing input data to output data from/to
@@ -39,15 +46,26 @@ headers from ProtocolMiddleware, or decapsulates data from network.
 
 ## Preset
 
-Preset is the **implement** of middleware, a typical preset must implement
-four methods of IPreset interface, for examples you can check out `src/presets`,
-there are several built-in presets already.
+Preset is the **implement** of middleware, for examples you can check out `src/presets`,
+there are several built-in presets already:
 
-```
+* frame/*: implement for FrameMiddleware
+* crypto/*: implement for CryptoMiddleware
+* protocol/*: implement for ProtocolMiddleware
+* obfs/*: implement for ObfsMiddleware
+
+For more detail document of each presets, please refer to `docs/presets`.
+
+### Custom Preset
+
+A typical preset must implement four methods of IPreset interface:
+
+```js
 export class CustomPreset extends IPreset {
 
   clientOut(/* {buffer, next, broadcast} */) {
-
+    // next(buf);  for async
+    // return buf; for sync
   }
 
   serverIn(/* {buffer, next, broadcast} */) {
@@ -65,17 +83,73 @@ export class CustomPreset extends IPreset {
 }
 ```
 
-|  METHODS  |              DESCRIPTION             |
-|:----------|:-------------------------------------|
+| METHODS   | DESCRIPTION                          |
+| :-------- | :----------------------------------- |
 | clientOut | client will send data to server      |
 | serverIn  | server received data from client     |
 | serverOut | server will send back data to client |
 | clientIn  | client received data from server     |
 
-NOTE: `server*` are used on the server side while `client*` are used on the client side.
+> NOTE: `server*` are used on the server side while `client*` are used on the client side.
 
-## DNS Cache
+Every method gets an object which contains three parameters you need:
 
-Blinksocks use `dns.lookup` which uses operating system facility to resolve 
-a hostname to an ip, then cache it in memory for a period of time. Aimed at 
-speeding up the transition process.
+| PARAM     | DESCRIPTION                                           |
+| :-------- | :---------------------------------------------------- |
+| buffer    | output from the previous middleware                   |
+| next      | call it with a new buffer once **async** process done |
+| broadcast | call it with an action,                               |
+
+Action passed to broadcast is an object which requires a `type` field:
+
+```js
+// action
+{
+  type: <string>,
+  payload: <any>
+}
+```
+
+Once a method broadcast, all other middlewares will receive the action in
+**onNotified(action)** immediately:
+
+```js
+export class CustomPreset extends IPreset {
+
+  /**
+   * how to deal with the action, return false to ignore
+   * @returns {boolean}
+   */
+  onNotified(/* action */) {
+    return false;
+  }
+
+  // ...
+
+}
+```
+
+### Hooks
+
+There are two hooks avaialble:
+
+```js
+export class CustomPreset extends IPreset {
+
+  beforeOut({buffer/* , next, broadcast */}) {
+    return buffer;
+  }
+
+  beforeIn({buffer/* , next, broadcast */}) {
+    return buffer;
+  }
+
+  // ...
+
+}
+```
+
+| METHODS   | DESCRIPTION                |
+| :-------- | :------------------------- |
+| beforeOut | preprocess before `*Out()` |
+| beforeIn  | preprocess before `*In()`  |

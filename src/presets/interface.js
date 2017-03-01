@@ -1,10 +1,14 @@
 export class IPreset {
 
-  // the following interfaces is optional
-
+  /**
+   * how to deal with the action, return false to ignore
+   * @returns {boolean}
+   */
   onNotified(/* action */) {
     return false;
   }
+
+  // hooks
 
   beforeOut({buffer/* , next, broadcast */}) {
     return buffer;

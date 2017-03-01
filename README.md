@@ -23,7 +23,7 @@ And [ShadowsocksR](https://github.com/shadowsocksr/shadowsocksr/tree/manyuser).
 * [Principle](docs/principle)
 * [Architecture](docs/architecture)
 * [Middleware](docs/middleware)
-* [Spec](docs/spec)
+* [Preset](docs/preset)
 
 ## Features
 
