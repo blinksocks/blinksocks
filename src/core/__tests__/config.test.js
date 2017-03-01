@@ -152,6 +152,23 @@ describe('Config#init', function () {
     }).toThrow();
   });
 
+  it('should throw when protocol is empty', function () {
+    expect(function () {
+      Config.init({
+        host: 'localhost',
+        port: 1080,
+        server_host: 'localhost',
+        server_port: 1080,
+        key: '123',
+        frame: 'xxx',
+        frame_params: '',
+        crypto: 'xxx',
+        crypto_params: '1,2',
+        protocol: ''
+      });
+    }).toThrow();
+  });
+
   it('should throw when protocol_params is not string', function () {
     expect(function () {
       Config.init({

@@ -127,6 +127,10 @@ export class Config {
       throw Error('\'protocol\' must be a string');
     }
 
+    if (json.protocol === '') {
+      throw Error('\'protocol\' cannot be empty');
+    }
+
     if (typeof json.protocol_params !== 'string') {
       throw Error('\'protocol_params\' must be a string');
     }
