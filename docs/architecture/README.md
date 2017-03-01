@@ -10,7 +10,7 @@ on the client side, so don't worry about being attacked.
 
 ## Pipe
 
-Pipe is a duplex fancility for dealing with data streaming. A pipe is created once a
+Pipe is a duplex facility for dealing with data streaming. A pipe is created once a
 connection was open.
 
 Pipe puts all middlewares in cascade(both upstream and downstream), feeds
@@ -131,7 +131,7 @@ export default class CustomPreset extends IPreset {
 
 ### Hooks
 
-There are two hooks avaialble:
+There are two hooks available:
 
 ```js
 // custom.js
@@ -150,7 +150,7 @@ export default class CustomPreset extends IPreset {
 }
 ```
 
-| METHODS   | DESCRIPTION                |
-| :-------- | :------------------------- |
-| beforeOut | preprocess before `*Out()` |
-| beforeIn  | preprocess before `*In()`  |
+| METHODS   | DESCRIPTION                 |
+| :-------- | :-------------------------- |
+| beforeOut | pre-process before `*Out()` |
+| beforeIn  | pre-process before `*In()`  |
