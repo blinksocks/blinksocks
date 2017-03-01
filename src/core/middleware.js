@@ -90,7 +90,7 @@ export function createMiddleware(type, props = []) {
 
     return new Middleware(impl);
   } catch (err) {
-    logger.fatal(err.message);
+    logger.error(err.message);
     process.exit(-1);
   }
   return null;
