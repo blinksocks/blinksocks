@@ -1,9 +1,6 @@
 import logger from 'winston';
-import getChunks from 'lodash.chunk';
 import {IPreset} from '../interface';
 import {AdvancedBuffer, Utils} from '../../utils';
-
-const MAX_PAYLOAD_LEN = 65535 - 2;
 
 /**
  * @description
@@ -28,6 +25,7 @@ const MAX_PAYLOAD_LEN = 65535 - 2;
  *
  * @explain
  *   1. LEN is total length of the packet.
+ *   2. LEN is plaintext.
  */
 export default class BasicProtocol extends IPreset {
 
@@ -43,20 +41,9 @@ export default class BasicProtocol extends IPreset {
     this._adBuf.on('data', (data) => this.onReceived(data));
   }
 
-  beforeOut({buffer, next}) {
-    if (buffer.length > MAX_PAYLOAD_LEN) {
-      const chunks = getChunks(buffer, MAX_PAYLOAD_LEN);
-      for (const chunk of chunks) {
-        next(Buffer.from(chunk));
-      }
-    } else {
-      return buffer;
-    }
-  }
-
   clientOut({buffer}) {
     const out = Buffer.concat([Utils.toBytesBE(2 + buffer.length), buffer]);
-    logger.info(`ClientOut(${out.length} bytes): ${out.toString('hex').substr(0, 60)}`);
+    logger.info(`ClientOut(${out.length} bytes): ${out.slice(0, 60).toString('hex')}`);
     return out;
   }
 
@@ -67,7 +54,7 @@ export default class BasicProtocol extends IPreset {
 
   serverOut({buffer}) {
     const out = Buffer.concat([Utils.toBytesBE(2 + buffer.length), buffer]);
-    logger.info(`serverOut(${out.length} bytes): ${out.toString('hex').substr(0, 60)}`);
+    logger.info(`serverOut(${out.length} bytes): ${out.slice(0, 60).toString('hex')}`);
     return out;
   }
 
@@ -77,14 +64,14 @@ export default class BasicProtocol extends IPreset {
   }
 
   onGetLength(buffer) {
-    return buffer.readUInt16BE(0);
+    return buffer.readUIntBE(0, 2);
   }
 
   onReceived(packet) {
     if (__IS_CLIENT__) {
-      logger.info(`ClientIn(${packet.length} bytes): ${packet.toString('hex').substr(0, 60)}`);
+      logger.info(`ClientIn(${packet.length} bytes): ${packet.slice(0, 60).toString('hex')}`);
     } else {
-      logger.info(`ServerIn(${packet.length} bytes): ${packet.toString('hex').substr(0, 60)}`);
+      logger.info(`ServerIn(${packet.length} bytes): ${packet.slice(0, 60).toString('hex')}`);
     }
     const next = __IS_CLIENT__ ? this._bNext : this._fNext;
     next(packet.slice(2));
