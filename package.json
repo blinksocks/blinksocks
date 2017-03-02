@@ -1,6 +1,6 @@
 {
   "name": "blinksocks",
-  "version": "2.1.0-beta.3",
+  "version": "2.2.0-beta.1",
   "description": "Yet another socks5 proxy, designed for speed.",
   "main": "lib/index.js",
   "bin": {
@@ -58,7 +58,14 @@
     "socks4",
     "socks4a",
     "socks5",
-    "proxy"
+    "proxy",
+    "nodejs",
+    "shadowsocks",
+    "shadowsocksr",
+    "middleware",
+    "flexible",
+    "customizable",
+    "aead"
   ],
   "author": "Micooz <micooz@hotmail.com>",
   "license": "Apache-2.0",
