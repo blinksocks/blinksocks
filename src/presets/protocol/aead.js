@@ -1,10 +1,8 @@
 import logger from 'winston';
-import getChunks from 'lodash.chunk';
 import {IPreset} from '../interface';
 import {Utils, AdvancedBuffer, Crypto} from '../../utils';
 
-const PADDING_LEN = 14;
-const MAX_PAYLOAD_LEN = 65000;
+const PADDING_LEN = 12;
 
 /**
  * @description
@@ -24,22 +22,19 @@ const MAX_PAYLOAD_LEN = 65000;
  * @protocol
  *
  *   # TCP handshake & chunk
- *   +-------------------+-----+---------+-------------------+---------+
- *   |      PADDING      | LEN |  HMAC-A |      PAYLOAD      |  HMAC-B |
- *   +-------------------+-----+---------+-------------------+---------+
- *   |        14         |  2  |  Fixed  |      Variable     |  Fixed  |
- *   +-------------------+-----+---------+-------------------+---------+
- *   |<------- header -------->|
+ *   +---------------+-----+---------+-------------------+---------+
+ *   |    PADDING    | LEN |  HMAC-A |      PAYLOAD      |  HMAC-B |
+ *   +---------------+-----+---------+-------------------+---------+
+ *   |      12       |  4  |  Fixed  |      Variable     |  Fixed  |
+ *   +---------------+-----+---------+-------------------+---------+
+ *   |<----- header ------>|
  *
  * @explain
  *   1. LEN is total length of the packet.
  *   2. PADDING is random generated.
  *   3. HMAC-A verify (PADDING + LEN) while HMAC-B verify PAYLOAD.
  *   4. The length of HMAC depends on message digest algorithm.
- *   5. The max length of PAYLOAD is 0xffff - len(padding) - 2 - 2 * max(len(HMAC)) = 65391,
- *      so we must split packets which received from applications into smaller packets(<= 65000)
- *      before wrap them with our header.
- *   6. Encrypt-then-MAC (EtM) is performed for calculating HMAC.
+ *   5. Encrypt-then-MAC (EtM) is performed for calculating HMAC.
  *
  * @reference
  *   [1] Protocol inspired by shadowsocks
@@ -85,26 +80,15 @@ export default class AeadProtocol extends IPreset {
     this._hmacLen = Crypto.getHmacLength(this._hash);
   }
 
-  beforeOut({buffer, next}) {
-    if (buffer.length > MAX_PAYLOAD_LEN) {
-      const chunks = getChunks(buffer, MAX_PAYLOAD_LEN);
-      for (const chunk of chunks) {
-        next(Buffer.from(chunk));
-      }
-    } else {
-      return buffer;
-    }
-  }
-
   clientOut({buffer}) {
     const header = this.encrypt(Buffer.concat([
       Crypto.randomBytes(PADDING_LEN),
-      Utils.toBytesBE(16 + this._hmacLen + buffer.length + this._hmacLen)
+      Utils.toBytesBE(16 + this._hmacLen + buffer.length + this._hmacLen, 4)
     ]));
     const hmacA = this.createHmac(header);
     const hmacB = this.createHmac(buffer);
     const out = Buffer.concat([header, hmacA, buffer, hmacB]);
-    logger.info(`ClientOut(${out.length} bytes): ${out.toString('hex').substr(0, 60)}`);
+    logger.info(`ClientOut(${out.length} bytes): ${out.slice(0, 60).toString('hex')}`);
     return out;
   }
 
@@ -116,12 +100,12 @@ export default class AeadProtocol extends IPreset {
   serverOut({buffer}) {
     const header = this.encrypt(Buffer.concat([
       Crypto.randomBytes(PADDING_LEN),
-      Utils.toBytesBE(16 + this._hmacLen + buffer.length + this._hmacLen)
+      Utils.toBytesBE(16 + this._hmacLen + buffer.length + this._hmacLen, 4)
     ]));
     const hmacA = this.createHmac(header);
     const hmacB = this.createHmac(buffer);
     const out = Buffer.concat([header, hmacA, buffer, hmacB]);
-    logger.info(`ServerOut(${out.length} bytes): ${out.toString('hex').substr(0, 60)}`);
+    logger.info(`ServerOut(${out.length} bytes): ${out.slice(0, 60).toString('hex')}`);
     return out;
   }
 
@@ -135,19 +119,19 @@ export default class AeadProtocol extends IPreset {
    * @returns {Number}
    */
   onGetLength(buffer) {
-    if (buffer.length < 16) {
-      logger.warn(`dropped unexpected packet (${buffer.length} bytes) received from client`);
+    if (buffer.length < (16 + 2 * this._hmacLen)) {
+      logger.warn(`dropped unexpected packet (${buffer.length} bytes) received from client: ${buffer.slice(0, 60).toString('hex')}`);
       return -1;
     }
     const encLen = buffer.slice(0, 16);
     const expHmacA = this.createHmac(encLen);
     const hmacA = buffer.slice(16, 16 + this._hmacLen);
     if (!hmacA.equals(expHmacA)) {
-      logger.error(`dropped unexpected packet (${buffer.length} bytes) received from server: wrong HMAC-A`);
+      logger.error(`dropped unexpected packet (${buffer.length} bytes) received from server: wrong HMAC-A ${buffer.slice(0, 60).toString('hex')}`);
       return -1;
     }
     // safely decrypt then get length
-    return this.decrypt(encLen).readUInt16BE(PADDING_LEN);
+    return this.decrypt(encLen).readUIntBE(PADDING_LEN, 4);
   }
 
   /**
@@ -156,15 +140,15 @@ export default class AeadProtocol extends IPreset {
    */
   onReceived(packet) {
     if (__IS_CLIENT__) {
-      logger.info(`ClientIn(${packet.length} bytes): ${packet.toString('hex').substr(0, 60)}`);
+      logger.info(`ClientIn(${packet.length} bytes): ${packet.slice(0, 60).toString('hex')}`);
     } else {
-      logger.info(`ServerIn(${packet.length} bytes): ${packet.toString('hex').substr(0, 60)}`);
+      logger.info(`ServerIn(${packet.length} bytes): ${packet.slice(0, 60).toString('hex')}`);
     }
     const _packet = packet.slice(16 + this._hmacLen);
     const hmacB = _packet.slice(-this._hmacLen);
     const expHmacB = this.createHmac(_packet.slice(0, -this._hmacLen));
     if (!hmacB.equals(expHmacB)) {
-      logger.error(`dropped unexpected packet (${packet.length} bytes) received from ${__IS_CLIENT__ ? 'server' : 'client'}: wrong HMAC-B`);
+      logger.error(`dropped unexpected packet (${packet.length} bytes) received from ${__IS_CLIENT__ ? 'server' : 'client'}: wrong HMAC-B ${packet.slice(0, 60).toString('hex')}`);
       // TODO: maybe notify to disconnect rather than timeout?
       return;
     }
