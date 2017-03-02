@@ -6,6 +6,10 @@ describe('Utils#toBytesBE', function () {
     expect(Utils.toBytesBE(257).equals(Buffer.from([0x01, 0x01]))).toBe(true);
   });
 
+  it('should throw when pass an out of range number', function () {
+    expect(() => Utils.toBytesBE(65535 + 1, 2)).toThrow();
+  });
+
 });
 
 describe('Utils#hostToAddress', function () {

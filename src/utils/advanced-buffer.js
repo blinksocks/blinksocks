@@ -33,7 +33,7 @@ import EventEmitter from 'events';
 export class AdvancedBuffer extends EventEmitter {
 
   // native Buffer instance to store our data
-  _buffer = Buffer.from([]);
+  _buffer = Buffer.alloc(0);
 
   _getPacketLength = null;
 

@@ -13,6 +13,10 @@ export class Utils {
    * @returns {Buffer}
    */
   static toBytesBE(num, len = 2) {
+    const isOutOfRange = num > parseInt(`0x${'ff'.repeat(len)}`);
+    if (isOutOfRange) {
+      throw Error(`Number ${num} is too long to store in a '${len}' length buffer`);
+    }
     const buf = Buffer.alloc(len);
     buf.writeUIntBE(num, 0, len);
     return buf;
