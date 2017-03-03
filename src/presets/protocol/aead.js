@@ -15,26 +15,25 @@ const PADDING_LEN = 12;
  *
  * @examples
  *   "protocol": "aead"
- *   "protocol_params": "aes-128-cbc,md5"
  *   "protocol_params": "aes-128-cbc,sha256"
- *   "protocol_params": "aes-192-cbc,md5"
  *
  * @protocol
  *
  *   # TCP handshake & chunk
- *   +---------------+-----+---------+-------------------+---------+
- *   |    PADDING    | LEN |  HMAC-A |      PAYLOAD      |  HMAC-B |
- *   +---------------+-----+---------+-------------------+---------+
- *   |      12       |  4  |  Fixed  |      Variable     |  Fixed  |
- *   +---------------+-----+---------+-------------------+---------+
+ *   +---------------+-----+----------+-------------------+----------+
+ *   |    PADDING    | LEN |  HMAC-A  |      PAYLOAD      |  HMAC-B  |
+ *   +---------------+-----+----------+-------------------+----------+
+ *   |      12       |  4  |  Fixed   |      Variable     |  Fixed   |
+ *   +---------------+-----+----------+-------------------+----------+
  *   |<----- header ------>|
  *
  * @explain
- *   1. LEN is total length of the packet.
+ *   1. LEN is the total length of the packet.
  *   2. PADDING is random generated.
- *   3. HMAC-A verify (PADDING + LEN) while HMAC-B verify PAYLOAD.
- *   4. The length of HMAC depends on message digest algorithm.
- *   5. Encrypt-then-MAC (EtM) is performed for calculating HMAC.
+ *   3. HMAC-A = mac(encrypt(header)).
+ *   4. HMAC-B = mac(encrypt(PAYLOAD)).
+ *   5. The length of HMAC depends on message digest algorithm.
+ *   6. Encrypt-then-MAC (EtM) is performed for calculating HMAC.
  *
  * @reference
  *   [1] Protocol inspired by shadowsocks
@@ -80,16 +79,8 @@ export default class AeadProtocol extends IPreset {
     this._hmacLen = Crypto.getHmacLength(this._hash);
   }
 
-  clientOut({buffer}) {
-    const header = this.encrypt(Buffer.concat([
-      Crypto.randomBytes(PADDING_LEN),
-      Utils.toBytesBE(16 + this._hmacLen + buffer.length + this._hmacLen, 4)
-    ]));
-    const hmacA = this.createHmac(header);
-    const hmacB = this.createHmac(buffer);
-    const out = Buffer.concat([header, hmacA, buffer, hmacB]);
-    logger.info(`ClientOut(${out.length} bytes): ${out.slice(0, 60).toString('hex')}`);
-    return out;
+  clientOut(args) {
+    return this._out(args);
   }
 
   serverIn({buffer, next}) {
@@ -97,21 +88,30 @@ export default class AeadProtocol extends IPreset {
     this._adBuf.put(buffer);
   }
 
-  serverOut({buffer}) {
-    const header = this.encrypt(Buffer.concat([
-      Crypto.randomBytes(PADDING_LEN),
-      Utils.toBytesBE(16 + this._hmacLen + buffer.length + this._hmacLen, 4)
-    ]));
-    const hmacA = this.createHmac(header);
-    const hmacB = this.createHmac(buffer);
-    const out = Buffer.concat([header, hmacA, buffer, hmacB]);
-    logger.info(`ServerOut(${out.length} bytes): ${out.slice(0, 60).toString('hex')}`);
-    return out;
+  serverOut(args) {
+    return this._out(args);
   }
 
   clientIn({buffer, next}) {
     this._bNext = next;
     this._adBuf.put(buffer);
+  }
+
+  _out({buffer}) {
+    const encBuffer = this.encrypt(buffer);
+    const encHeader = this.encrypt(Buffer.concat([
+      Crypto.randomBytes(PADDING_LEN),
+      Utils.toBytesBE(16 + this._hmacLen + encBuffer.length + this._hmacLen, 4)
+    ]), false);
+    const hmacA = this.createHmac(encHeader);
+    const hmacB = this.createHmac(encBuffer);
+    const out = Buffer.concat([encHeader, hmacA, encBuffer, hmacB]);
+    if (__IS_CLIENT__) {
+      logger.info(`ClientOut(${out.length} bytes): ${out.slice(0, 60).toString('hex')}`);
+    } else {
+      logger.info(`ServerOut(${out.length} bytes): ${out.slice(0, 60).toString('hex')}`);
+    }
+    return out;
   }
 
   /**
@@ -131,7 +131,7 @@ export default class AeadProtocol extends IPreset {
       return -1;
     }
     // safely decrypt then get length
-    return this.decrypt(encLen).readUIntBE(PADDING_LEN, 4);
+    return this.decrypt(encLen, false).readUIntBE(PADDING_LEN, 4);
   }
 
   /**
@@ -153,18 +153,18 @@ export default class AeadProtocol extends IPreset {
       return;
     }
     const next = __IS_CLIENT__ ? this._bNext : this._fNext;
-    next(_packet.slice(0, -this._hmacLen));
+    next(this.decrypt(_packet.slice(0, -this._hmacLen)));
   }
 
-  encrypt(buffer) {
+  encrypt(buffer, padding = true) {
     const cipher = Crypto.createCipher(this._cipher, this._key);
-    cipher.setAutoPadding(false);
+    cipher.setAutoPadding(padding);
     return Buffer.concat([cipher.update(buffer), cipher.final()]);
   }
 
-  decrypt(buffer) {
+  decrypt(buffer, padding = true) {
     const decipher = Crypto.createDecipher(this._cipher, this._key);
-    decipher.setAutoPadding(false);
+    decipher.setAutoPadding(padding);
     return Buffer.concat([decipher.update(buffer), decipher.final()]);
   }
 
