@@ -10,7 +10,7 @@
 [![Coverage](https://img.shields.io/codecov/c/github/blinksocks/blinksocks/master.svg)](https://codecov.io/gh/blinksocks/blinksocks)
 [![%e2%9d%a4](https://img.shields.io/badge/made%20with-%e2%9d%a4-ff69b4.svg)](https://github.com/blinksocks/blinksocks)
 
-[![blinksocks/blinksocks](http://dockeri.co/image/blinksocks/blinksocks)](https://hub.docker.com/r/micooz/blinksocks/)
+[![micooz/blinksocks](http://dockeri.co/image/micooz/blinksocks)](https://hub.docker.com/r/micooz/blinksocks/)
 
 Yet another Socks5 proxy, designed for speed :zap:. Inspired by [Shadowsocks](https://shadowsocks.org/en/index.html),
 And [ShadowsocksR](https://github.com/shadowsocksr/shadowsocksr/tree/manyuser).
