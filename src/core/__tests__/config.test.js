@@ -277,3 +277,24 @@ describe('Config#setUpLogger', function () {
   });
 
 });
+
+describe('Config#abstract', function () {
+
+  it('should return expected object', function () {
+    const abstract = Config.abstract();
+    expect(abstract).toMatchObject({
+      host: 'localhost',
+      port: 1080,
+      key: '123',
+      frame: 'origin',
+      frame_params: '',
+      crypto: 'xxx',
+      crypto_params: '1,2',
+      protocol: 'basic',
+      protocol_params: '1,2',
+      obfs: 'none',
+      obfs_params: '1,2'
+    });
+  });
+
+});

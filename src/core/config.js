@@ -232,4 +232,24 @@ export class Config {
     this.log_level = _level;
   }
 
+  /**
+   * return an object which describe the configuration
+   * @returns {{}}
+   */
+  static abstract() {
+    const keys = Object.getOwnPropertyNames(this)
+      .filter(
+        (key) => ![
+          'length', 'name', 'prototype',
+          'init', 'setGlobals', 'setUpLogger', 'abstract',
+          '_is_server'
+        ].includes(key) && this[key] !== undefined
+      );
+    const json = {};
+    for (const key of keys) {
+      json[key] = this[key];
+    }
+    return json;
+  }
+
 }

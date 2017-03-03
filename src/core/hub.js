@@ -42,7 +42,8 @@ export class Hub {
       port: __LOCAL_PORT__
     };
     this._hub.listen(options, () => {
-      logger.info(`blinksocks is running as '${__IS_SERVER__ ? 'Server' : 'Client'}'`);
+      logger.info('use configuration:', Config.abstract());
+      logger.info(`running as '${__IS_SERVER__ ? 'Server' : 'Client'}'.`);
       logger.info('opened hub on:', this._hub.address());
     });
   }
