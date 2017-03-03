@@ -1,5 +1,29 @@
+import crypto from 'crypto';
 import {IPreset} from '../interface';
-import {Crypto} from '../../utils';
+
+const HASH_SALT = 'blinksocks';
+const IV_LEN = 16;
+
+// available ciphers
+const ciphers = [
+  'aes-128-ctr', 'aes-192-ctr', 'aes-256-ctr',
+  'aes-128-cfb', 'aes-192-cfb', 'aes-256-cfb',
+  'aes-128-ofb', 'aes-192-ofb', 'aes-256-ofb',
+  'aes-128-cbc', 'aes-192-cbc', 'aes-256-cbc'
+];
+
+/**
+ * generate strong and valid key
+ * @param cipher
+ * @param key
+ * @returns {Buffer}
+ */
+function getStrongKey(cipher, key) {
+  const hash = crypto.createHash('sha256');
+  const keyLen = cipher.split('-')[1] / 8;
+  hash.update(Buffer.concat([Buffer.from(key), Buffer.from(HASH_SALT)]));
+  return hash.digest().slice(0, keyLen);
+}
 
 /**
  * @description
@@ -43,16 +67,16 @@ export default class OpenSSLCrypto extends IPreset {
     if (typeof cipher !== 'string' || cipher === '') {
       throw Error('\'crypto_params\' requires [cipher] parameter.');
     }
-    if (!Crypto.isCipherAvailable(cipher)) {
-      throw Error(`cipher \'${cipher}\' is not supported, use --ciphers to display all supported ciphers`);
+    if (!ciphers.includes(cipher)) {
+      throw Error(`cipher \'${cipher}\' is not supported.`);
     }
     this._cipher = cipher;
-    this._key = Crypto.getStrongKey(cipher, __KEY__);
+    this._key = getStrongKey(cipher, __KEY__);
   }
 
   clientOut({buffer}) {
     if (!this._isHandshakeDone) {
-      const iv = Crypto.generateIV(this._cipher);
+      const iv = crypto.randomBytes(IV_LEN);
       const encrypted = this.encrypt(Buffer.concat([iv, buffer]));
       this._iv = iv;
       this._isHandshakeDone = true;
@@ -64,11 +88,10 @@ export default class OpenSSLCrypto extends IPreset {
 
   serverIn({buffer}) {
     if (!this._isHandshakeDone) {
-      const ivLen = Crypto.getIVLength(this._cipher);
       const decrypted = this.decrypt(buffer);
-      this._iv = decrypted.slice(0, ivLen);
+      this._iv = decrypted.slice(0, IV_LEN);
       this._isHandshakeDone = true;
-      return decrypted.slice(ivLen);
+      return decrypted.slice(IV_LEN);
     } else {
       return this.decrypt(buffer);
     }
@@ -83,12 +106,22 @@ export default class OpenSSLCrypto extends IPreset {
   }
 
   encrypt(buffer) {
-    const cipher = Crypto.createCipher(this._cipher, this._key, this._iv);
+    let cipher;
+    if (this._iv === null) {
+      cipher = crypto.createCipher(this._cipher, this._key);
+    } else {
+      cipher = crypto.createCipheriv(this._cipher, this._key, this._iv);
+    }
     return Buffer.concat([cipher.update(buffer), cipher.final()]);
   }
 
   decrypt(buffer) {
-    const decipher = Crypto.createDecipher(this._cipher, this._key, this._iv);
+    let decipher;
+    if (this._iv === null) {
+      decipher = crypto.createDecipher(this._cipher, this._key);
+    } else {
+      decipher = crypto.createDecipheriv(this._cipher, this._key, this._iv);
+    }
     return Buffer.concat([decipher.update(buffer), decipher.final()]);
   }
 

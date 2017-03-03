@@ -1,8 +1,37 @@
+import crypto from 'crypto';
 import logger from 'winston';
 import {IPreset} from '../interface';
-import {Utils, AdvancedBuffer, Crypto} from '../../utils';
+import {Utils, AdvancedBuffer} from '../../utils';
 
 const PADDING_LEN = 12;
+const HASH_SALT = 'blinksocks';
+
+// available ciphers
+const ciphers = [
+  'aes-128-ctr', 'aes-192-ctr', 'aes-256-ctr',
+  'aes-128-cfb', 'aes-192-cfb', 'aes-256-cfb',
+  'aes-128-ofb', 'aes-192-ofb', 'aes-256-ofb',
+  'aes-128-cbc', 'aes-192-cbc', 'aes-256-cbc'
+];
+
+// available hash functions
+const hashes = ['sha1', 'sha256', 'sha512'];
+
+// map hashes to hmac lengths
+const hmacLens = {'sha1': 20, 'sha256': 32, 'sha512': 64};
+
+/**
+ * generate strong and valid key
+ * @param cipher
+ * @param key
+ * @returns {Buffer}
+ */
+function getStrongKey(cipher, key) {
+  const hash = crypto.createHash('sha256');
+  const keyLen = cipher.split('-')[1] / 8;
+  hash.update(Buffer.concat([Buffer.from(key), Buffer.from(HASH_SALT)]));
+  return hash.digest().slice(0, keyLen);
+}
 
 /**
  * @description
@@ -62,21 +91,21 @@ export default class AeadProtocol extends IPreset {
     if (typeof cipher === 'undefined' || cipher === '') {
       throw Error('\'protocol_params\' requires [cipher] parameter.');
     }
-    if (!Crypto.isCipherAvailable(cipher)) {
-      throw Error(`cipher \'${cipher}\' is not supported, use --ciphers to display all supported ciphers`);
+    if (!ciphers.includes(cipher)) {
+      throw Error(`cipher \'${cipher}\' is not supported.`);
     }
     if (typeof hash === 'undefined' || hash === '') {
       throw Error('\'protocol_params\' requires [hash] parameter.');
     }
-    if (!Crypto.isHashAvailable(hash)) {
-      throw Error(`hash \'${hash}\' is not supported, use --hashes to display all supported hashes`);
+    if (!hashes.includes(hash)) {
+      throw Error(`hash \'${hash}\' is not supported.`);
     }
     this._cipher = cipher;
     this._hash = hash;
-    this._key = Crypto.getStrongKey(cipher, __KEY__);
+    this._key = getStrongKey(cipher, __KEY__);
     this._adBuf = new AdvancedBuffer({getPacketLength: this.onGetLength.bind(this)});
     this._adBuf.on('data', (data) => this.onReceived(data));
-    this._hmacLen = Crypto.getHmacLength(this._hash);
+    this._hmacLen = hmacLens[this._hash];
   }
 
   clientOut(args) {
@@ -100,7 +129,7 @@ export default class AeadProtocol extends IPreset {
   _out({buffer}) {
     const encBuffer = this.encrypt(buffer);
     const encHeader = this.encrypt(Buffer.concat([
-      Crypto.randomBytes(PADDING_LEN),
+      crypto.randomBytes(PADDING_LEN),
       Utils.toBytesBE(16 + this._hmacLen + encBuffer.length + this._hmacLen, 4)
     ]), false);
     const hmacA = this.createHmac(encHeader);
@@ -157,19 +186,19 @@ export default class AeadProtocol extends IPreset {
   }
 
   encrypt(buffer, padding = true) {
-    const cipher = Crypto.createCipher(this._cipher, this._key);
+    const cipher = crypto.createCipher(this._cipher, this._key);
     cipher.setAutoPadding(padding);
     return Buffer.concat([cipher.update(buffer), cipher.final()]);
   }
 
   decrypt(buffer, padding = true) {
-    const decipher = Crypto.createDecipher(this._cipher, this._key);
+    const decipher = crypto.createDecipher(this._cipher, this._key);
     decipher.setAutoPadding(padding);
     return Buffer.concat([decipher.update(buffer), decipher.final()]);
   }
 
   createHmac(buffer) {
-    const hmac = Crypto.createHmac(this._hash, this._key);
+    const hmac = crypto.createHmac(this._hash, this._key);
     hmac.update(buffer);
     return hmac.digest();
   }
