@@ -17,12 +17,10 @@ const options = [
   ['--crypto-params [crypto-params]', 'parameters for crypto, default: \'aes-256-cfb\'', 'aes-256-cfb'],
   ['--protocol [protocol]', 'a preset used in protocol middleware, default: \'aead\'', 'aead'],
   ['--protocol-params [protocol-params]', 'parameters for protocol, default: \'aes-256-cbc,sha256\'', 'aes-256-cbc,sha256'],
-  ['--obfs [obfs]', 'a preset used in obfs middleware, default: \'none\'', 'none'],
+  ['--obfs [obfs]', 'a preset used in obfs middleware, default: \'\'', ''],
   ['--obfs-params [obfs-params]', 'parameters for obfs, default: \'\'', ''],
-  ['--log-level [log-level]', 'log level, default: all', 'all'],
-  ['-q, --quiet', 'force log level to \'error\''],
-  ['--ciphers', 'display all supported ciphers'],
-  ['--hashes', 'display all supported hash functions']
+  ['--log-level [log-level]', 'log level, default: \'silly\'', 'silly'],
+  ['-q, --quiet', 'force log level to \'error\'']
 ];
 
 const examples = `
@@ -32,10 +30,10 @@ const examples = `
     $ blinksocks -c config.json
   
   To start a server:
-    $ blinksocks --host 0.0.0.0 --port 7777 --key key --crypto openssl --crypto-params aes-256-cfb
+    $ blinksocks --host 0.0.0.0 --port 7777 --key password
   
   To start a client:
-    $ blinksocks --host localhost --port 1080 --server-host example.com --server-port 7777 --key key --crypto openssl --crypto-params aes-256-cfb
+    $ blinksocks --host localhost --port 1080 --server-host example.com --server-port 7777 --key password
 `;
 
 /**
@@ -82,7 +80,7 @@ function obtainConfig(options) {
   return config;
 }
 
-module.exports = function ({Hub, Crypto}) {
+module.exports = function ({Hub}) {
   const pg = program
     .version(packageJson.version)
     .usage(usage);
@@ -97,18 +95,6 @@ module.exports = function ({Hub, Crypto}) {
   // no options provided
   if (process.argv.length < 3) {
     program.help();
-    process.exit(0);
-  }
-
-  // --ciphers
-  if (program.ciphers) {
-    console.log(Crypto.getAvailableCiphers().join('\n'));
-    process.exit(0);
-  }
-
-  // --hashes
-  if (program.hashes) {
-    console.log(Crypto.getAvailableHashes().join('\n'));
     process.exit(0);
   }
 
