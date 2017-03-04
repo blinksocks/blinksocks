@@ -27,7 +27,7 @@
   "dependencies": {
     "babel-polyfill": "^6.23.0",
     "commander": "^2.9.0",
-    "ip": "^1.1.4",
+    "ip": "^1.1.5",
     "lodash.padstart": "^4.6.1",
     "winston": "^2.3.1"
   },
@@ -40,7 +40,7 @@
     "babel-preset-latest": "^6.22.0",
     "babel-register": "^6.23.0",
     "benchmark": "^2.1.3",
-    "eslint": "^3.16.1",
+    "eslint": "^3.17.0",
     "eslint-config-babel": "^6.0.0",
     "eslint-plugin-babel": "^4.1.0",
     "eslint-plugin-flowtype": "^2.30.0",
