@@ -1,8 +1,10 @@
 import net from 'net';
 import url from 'url';
-import ip from 'ip';
-import {Address} from '../core/address';
-import {ATYP_DOMAIN, ATYP_V4, ATYP_V6} from '../proxies/common';
+import {
+  ATYP_DOMAIN,
+  ATYP_V4,
+  ATYP_V6
+} from '../proxies/common';
 
 export class Utils {
 
@@ -12,11 +14,16 @@ export class Utils {
    * @param len
    * @returns {Buffer}
    */
-  static toBytesBE(num, len = 2) {
+  static numberToUIntBE(num, len = 2) {
+    if (len < 1) {
+      throw Error('len must be greater than 1');
+    }
+
     const isOutOfRange = num > parseInt(`0x${'ff'.repeat(len)}`);
     if (isOutOfRange) {
       throw Error(`Number ${num} is too long to store in a '${len}' length buffer`);
     }
+
     const buf = Buffer.alloc(len);
     buf.writeUIntBE(num, 0, len);
     return buf;
@@ -25,11 +32,11 @@ export class Utils {
   /**
    * convert an uri to Address
    * @param uri
-   * @returns {Address}
+   * @returns {{type: Number, host: Buffer, port: Buffer}}
    */
-  static hostToAddress(uri) {
+  static parseURI(uri) {
     let _uri = uri;
-    if (_uri.indexOf('http') !== 0 || _uri.indexOf('https') !== 0) {
+    if (_uri.indexOf('http') !== 0 && _uri.indexOf('https') !== 0) {
       if (_uri.indexOf(':443') !== -1) {
         // e.g, bing.com:443
         _uri = `https://${_uri}`;
@@ -38,15 +45,15 @@ export class Utils {
         _uri = `http://${_uri}`;
       }
     }
-    const {hostname, port} = url.parse(_uri);
-    const addrType = net.isIP(hostname) ? (net.isIPv4(hostname) ? ATYP_V4 : ATYP_V6) : ATYP_DOMAIN;
-    const dstAddr = net.isIP(hostname) ? ip.toBuffer(hostname) : Buffer.from(hostname);
-    const dstPort = Utils.toBytesBE(port === null ? 80 : port);
-    return new Address({
-      ATYP: addrType,
-      DSTADDR: dstAddr,
-      DSTPORT: dstPort
-    });
+    const {protocol, hostname} = url.parse(_uri);
+    const isIp = net.isIP(hostname);
+    const addrType = isIp ? (net.isIPv4(hostname) ? ATYP_V4 : ATYP_V6) : ATYP_DOMAIN;
+    const port = {'http:': 80, 'https:': 443}[protocol];
+    return {
+      type: addrType,
+      host: hostname,
+      port
+    };
   }
 
 }

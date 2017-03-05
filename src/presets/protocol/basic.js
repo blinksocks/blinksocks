@@ -42,7 +42,7 @@ export default class BasicProtocol extends IPreset {
   }
 
   clientOut({buffer}) {
-    const out = Buffer.concat([Utils.toBytesBE(2 + buffer.length), buffer]);
+    const out = Buffer.concat([Utils.numberToUIntBE(2 + buffer.length), buffer]);
     logger.info(`ClientOut(${out.length} bytes): ${out.slice(0, 60).toString('hex')}`);
     return out;
   }
@@ -53,7 +53,7 @@ export default class BasicProtocol extends IPreset {
   }
 
   serverOut({buffer}) {
-    const out = Buffer.concat([Utils.toBytesBE(2 + buffer.length), buffer]);
+    const out = Buffer.concat([Utils.numberToUIntBE(2 + buffer.length), buffer]);
     logger.info(`serverOut(${out.length} bytes): ${out.slice(0, 60).toString('hex')}`);
     return out;
   }
