@@ -73,7 +73,7 @@ export class Middleware extends EventEmitter {
  * @returns {Middleware}
  */
 export function createMiddleware(type, props = []) {
-  const array = {
+  const [preset, params] = {
     [MIDDLEWARE_TYPE_FRAME]: [`frame/${__FRAME__}`, __FRAME_PARAMS__],
     [MIDDLEWARE_TYPE_CRYPTO]: [`crypto/${__CRYPTO__}`, __CRYPTO_PARAMS__],
     [MIDDLEWARE_TYPE_PROTOCOL]: [`protocol/${__PROTOCOL__}`, __PROTOCOL_PARAMS__],
@@ -81,10 +81,10 @@ export function createMiddleware(type, props = []) {
   }[type];
 
   try {
-    const ImplClass = require(`../presets/${array[0]}`).default;
-    const params = Array.isArray(array[1]) ? array[1] : array[1].split(',').filter((param) => param.length > 0);
+    const ImplClass = require(`../presets/${preset}`).default;
+    const _params = Array.isArray(params) ? params : params.split(',').filter((param) => param.length > 0);
 
-    const impl = new ImplClass(...props.concat(params));
+    const impl = new ImplClass(...props.concat(_params));
 
     checkMiddleware(ImplClass.name, impl);
 

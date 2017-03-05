@@ -77,11 +77,11 @@ export class AdvancedBuffer extends EventEmitter {
     }
 
     if (bound === 0) {
-      return buffer;
+      return buffer; // continue to put
     }
 
     if (bound === -1) {
-      return Buffer.alloc(0);
+      return Buffer.alloc(0); // drop this one
     }
 
     if (buffer.length === bound) {
@@ -96,7 +96,7 @@ export class AdvancedBuffer extends EventEmitter {
     }
 
     if (buffer.length < bound) {
-      return buffer;
+      return buffer; // continue to put
     }
   }
 
