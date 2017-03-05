@@ -1,4 +1,5 @@
 import dns from 'dns';
+import net from 'net';
 
 export const DNS_SURVIVAL_TIME = 3600000;
 
@@ -32,6 +33,9 @@ export class DNSCache {
   }
 
   async get(hostname) {
+    if (net.isIP(hostname)) {
+      return hostname;
+    }
     let address = null;
     if (typeof this._pool[hostname] === 'undefined') {
       address = await this._lookup(hostname);

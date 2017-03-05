@@ -15,6 +15,7 @@ describe('DNSCache#get', function () {
     const dns = DNSCache.create();
     expect(net.isIP(await dns.get('localhost'))).toBe(4);
     expect(net.isIP(await dns.get('localhost'))).toBe(4);
+    expect(net.isIP(await dns.get('127.0.0.1'))).toBe(4);
   });
 
   it('should throw if fail to resolve', async function () {
