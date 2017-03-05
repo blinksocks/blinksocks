@@ -1,6 +1,5 @@
 import net from 'net';
 import logger from 'winston';
-import {Address} from './address';
 import {DNSCache} from './dns-cache';
 import {Pipe} from './pipe';
 import {
@@ -63,17 +62,18 @@ export class Socket {
 
   _httpReady = false;
 
-  _targetAddress = null;
-
   _pipe = null;
 
   constructor({id, socket}) {
     this._id = id;
     this._bsocket = socket;
-    // handle events
     this._bsocket.on('error', (err) => this.onError(err));
     this._bsocket.on('close', (had_error) => this.onClose(had_error));
     this._bsocket.on('data', (buffer) => this.onForward(buffer));
+    this.onError = this.onError.bind(this);
+    this.onClose = this.onClose.bind(this);
+    this.onForward = this.onForward.bind(this);
+    this.onBackward = this.onBackward.bind(this);
     if (__IS_SERVER__) {
       this.createPipe();
     }
@@ -174,20 +174,20 @@ export class Socket {
   /**
    * create pipes for both data forward and backward
    */
-  createPipe() {
+  createPipe(addr) {
     if (__IS_CLIENT__) {
       this._pipe = new Pipe();
     } else {
       this._pipe = new Pipe({
         onNotified: (action) => {
           if (action.type === SOCKET_CONNECT_TO_DST) {
-            this.connectToDst(...action.payload);
+            return this.connectToDst(...action.payload);
           }
         }
       });
     }
     this._pipe.setMiddlewares(MIDDLEWARE_DIRECTION_UPWARD, [
-      createMiddleware(MIDDLEWARE_TYPE_FRAME, [this._targetAddress]),
+      createMiddleware(MIDDLEWARE_TYPE_FRAME, [addr]),
       createMiddleware(MIDDLEWARE_TYPE_CRYPTO),
       createMiddleware(MIDDLEWARE_TYPE_PROTOCOL),
       createMiddleware(MIDDLEWARE_TYPE_OBFS),
@@ -200,41 +200,36 @@ export class Socket {
    * connect to blinksocks server
    * @returns {Promise}
    */
-  connectToServer() {
-    return new Promise((resolve, reject) => {
-      const ep = {
-        host: __SERVER_HOST__,
-        port: __SERVER_PORT__
-      };
-      this._fsocket = net.connect(ep);
-      this._fsocket.on('connect', () => {
-        logger.info(`[${this._id}] connected to:`, ep);
-        this.createPipe();
-        resolve();
-      });
-      this._fsocket.on('error', (err) => reject(err));
-      this._fsocket.on('close', (had_error) => this.onClose(had_error));
-      this._fsocket.on('data', (buffer) => this.onBackward(buffer));
+  async connectToServer(addr, callback) {
+    const ep = {
+      host: __SERVER_HOST__, // TODO: use dnsCache
+      port: __SERVER_PORT__
+    };
+    logger.info(`[${this._id}] connecting to:`, ep);
+    this._fsocket = net.connect(ep, () => {
+      this.createPipe(addr);
+      callback();
     });
+    this._fsocket.on('error', this.onError);
+    this._fsocket.on('close', this.onClose);
+    this._fsocket.on('data', this.onBackward);
   }
 
   /**
    * connect to the real server, server side only
-   * @param address
+   * @param addr
    * @param callback
    * @returns {Promise.<void>}
    */
-  async connectToDst(address, callback) {
-    const [host, port] = address.getEndPoint();
+  async connectToDst(addr, callback) {
+    const {host, port} = addr;
     try {
       const ip = await dnsCache.get(host);
-      this._fsocket = net.connect({host: ip, port}, () => {
-        logger.info(`[${this._id}] connected to:`, {host, port});
-        callback();
-      });
-      this._fsocket.on('error', (err) => this.onError(err));
-      this._fsocket.on('close', (had_error) => this.onClose(had_error));
-      this._fsocket.on('data', (buffer) => this.onBackward(buffer));
+      logger.info(`[${this._id}] connecting to ${host}(${ip}:${port})`);
+      this._fsocket = net.connect({host: ip, port}, callback);
+      this._fsocket.on('error', this.onError);
+      this._fsocket.on('close', this.onClose);
+      this._fsocket.on('data', this.onBackward);
     } catch (err) {
       logger.error(err.message);
     }
@@ -249,8 +244,8 @@ export class Socket {
     }
   }
 
-  onHandshakeDone(callback) {
-    this.connectToServer().then(callback).catch(this.onError.bind(this));
+  onHandshakeDone(addr, callback) {
+    return this.connectToServer(addr, callback);
   }
 
   trySocksHandshake(socket, buffer) {
@@ -267,12 +262,12 @@ export class Socket {
     if (request !== null) {
       const {CMD, DSTIP, DSTADDR, DSTPORT} = request;
       if (CMD === REQUEST_COMMAND_CONNECT) {
-        this._targetAddress = new Address({
-          ATYP: DSTADDR.length > 0 ? ATYP_DOMAIN : ATYP_V4,
-          DSTADDR: DSTADDR.length > 0 ? DSTADDR : DSTIP,
-          DSTPORT
-        });
-        this.onHandshakeDone(() => {
+        const addr = {
+          type: DSTADDR.length > 0 ? ATYP_DOMAIN : ATYP_V4,
+          host: DSTADDR.length > 0 ? DSTADDR : DSTIP,
+          port: DSTPORT
+        };
+        this.onHandshakeDone(addr, () => {
           // reply success
           const message = new Socks4ReplyMessage({CMD: REPLY_GRANTED});
           socket.write(message.toBuffer());
@@ -298,12 +293,12 @@ export class Socket {
       switch (type) {
         case REQUEST_COMMAND_UDP: // UDP ASSOCIATE
         case REQUEST_COMMAND_CONNECT: {
-          this._targetAddress = new Address({
-            ATYP: request.ATYP,
-            DSTADDR: request.DSTADDR,
-            DSTPORT: request.DSTPORT
-          });
-          this.onHandshakeDone(() => {
+          const addr = {
+            type: request.ATYP,
+            host: request.DSTADDR,
+            port: request.DSTPORT
+          };
+          this.onHandshakeDone(addr, () => {
             // reply success
             const message = new Socks5ReplyMessage({REP: REPLY_SUCCEEDED});
             socket.write(message.toBuffer());
@@ -329,19 +324,18 @@ export class Socket {
     const request = HttpRequestMessage.parse(buffer);
     if (request !== null) {
       const {METHOD, HOST} = request;
+      const addr = Utils.parseURI(HOST.toString());
 
-      this._targetAddress = Utils.hostToAddress(HOST.toString());
-      this._httpReady = true;
-
-      if (METHOD.toString() === 'CONNECT') {
-        this.onHandshakeDone(() => {
+      this.onHandshakeDone(addr, () => {
+        if (METHOD.toString() === 'CONNECT') {
           const message = new ConnectReplyMessage();
           socket.write(message.toBuffer());
-        });
-      } else {
-        // for clients who haven't sent CONNECT, should begin to relay immediately
-        this.onReceiving(socket, buffer);
-      }
+        } else {
+          // for clients who haven't sent CONNECT, should begin to relay immediately
+          this.onForward(buffer);
+        }
+        this._httpReady = true;
+      });
     }
   }
 
