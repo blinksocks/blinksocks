@@ -149,8 +149,7 @@ export default class AeadProtocol extends IPreset {
    */
   onGetLength(buffer) {
     if (buffer.length < (16 + 2 * this._hmacLen)) {
-      logger.warn(`dropped unexpected packet (${buffer.length} bytes) received from client: ${buffer.slice(0, 60).toString('hex')}`);
-      return -1;
+      return 0; // too short, should continue to receive
     }
     const encLen = buffer.slice(0, 16);
     const expHmacA = this.createHmac(encLen);
