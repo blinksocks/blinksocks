@@ -161,6 +161,7 @@ To start a server or client, you can prepare a configuration json file(`config.j
 │   └── none.js
 └── protocol
     ├── aead.js
+    ├── aead2.js
     └── basic.js
 ```
 
