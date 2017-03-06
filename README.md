@@ -128,13 +128,13 @@ To start a server or client, you can prepare a configuration json file(`config.j
 | frame_params     | parameters for frame preset               | ""                   |
 | crypto           | crypto preset                             | "openssl"            |
 | crypto_params    | parameters for crypto preset              | "aes-256-cfb"        |
-| *protocol        | protocol preset                           | "aead"               |
+| protocol         | protocol preset                           | "aead"               |
 | protocol_params  | parameters for protocol preset            | "aes-256-cbc,sha256" |
 | obfs             | obfs preset                               | "none"               |
 | obfs_params      | parameters for obfs preset                | ""                   |
 | log_level        | log level                                 | "error"              |
 
-> NOTE: `host`, `port`, `key` and `protocol` must be set.
+> NOTE: `host`, `port`, and `key` must be set.
 
 * Available Ciphers
 
