@@ -49,3 +49,13 @@ describe('Utils#parseURI', function () {
   });
 
 });
+
+describe('Utils#getRandomInt', function () {
+
+  it('should return a number', function () {
+    const number = Utils.getRandomInt(1, 2);
+    expect(number).toBeGreaterThanOrEqual(1);
+    expect(number).toBeLessThan(2);
+  });
+
+});

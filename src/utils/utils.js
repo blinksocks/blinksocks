@@ -56,4 +56,16 @@ export class Utils {
     };
   }
 
+  /**
+   * returns a random integer in [min, max).
+   * @param min
+   * @param max
+   * @returns {Number}
+   */
+  static getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min)) + min;
+  }
+
 }
