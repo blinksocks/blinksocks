@@ -1,7 +1,6 @@
 import fs from 'fs';
 import readline from 'readline';
 import crypto from 'crypto';
-import logger from 'winston';
 import {IPreset} from '../interface';
 
 class Faker {
@@ -112,7 +111,7 @@ export default class HttpObfs extends IPreset {
     }
   }
 
-  serverIn({buffer, next}) {
+  serverIn({buffer, next, fail}) {
     if (this._isHandshakeDone) {
       return buffer;
     } else {
@@ -124,8 +123,7 @@ export default class HttpObfs extends IPreset {
           this._response = found.response;
           next(buffer.slice(found.request.length));
         } else {
-          logger.error(`dropped unrecognized obfs header: '${buffer.slice(0, 100).toString()}...'`);
-          // wait for timeout
+          fail('obfs header mismatch');
         }
       });
     }
@@ -140,7 +138,7 @@ export default class HttpObfs extends IPreset {
     }
   }
 
-  clientIn({buffer, next}) {
+  clientIn({buffer, next, fail}) {
     if (this._isHandshakeDone) {
       return buffer;
     } else {
@@ -151,8 +149,7 @@ export default class HttpObfs extends IPreset {
         if (typeof found !== 'undefined') {
           next(buffer.slice(found.response.length));
         } else {
-          logger.error(`dropped unrecognized obfs header: '${buffer.slice(0, 100).toString()}...'`);
-          // wait for timeout
+          fail('obfs header mismatch');
         }
       });
       this._isHandshakeDone = true;

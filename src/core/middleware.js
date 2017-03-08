@@ -1,5 +1,6 @@
 import EventEmitter from 'events';
 import logger from 'winston';
+import {PROCESSING_FAILED} from '../presets/actions';
 
 export const MIDDLEWARE_DIRECTION_UPWARD = 0;
 export const MIDDLEWARE_DIRECTION_DOWNWARD = 1;
@@ -42,23 +43,24 @@ export class Middleware extends EventEmitter {
       [MIDDLEWARE_DIRECTION_DOWNWARD]: 'In'
     }[direction];
     const broadcast = this._broadcast;
+    const fail = (message) => broadcast({type: PROCESSING_FAILED, payload: message});
 
     const next = (buf) => {
       const args = {
         buffer: buf,
-        next: (buf) => this.emit(`next_${direction}`, buf),
-        broadcast
+        next: (processed) => this.emit(`next_${direction}`, processed),
+        broadcast,
+        fail
       };
-      const ret = __IS_CLIENT__ ?
-        this._impl[`client${type}`](args) :
-        this._impl[`server${type}`](args);
+      // clientOut, serverOut, clientIn, serverIn
+      const ret = __IS_CLIENT__ ? this._impl[`client${type}`](args) : this._impl[`server${type}`](args);
       if (typeof ret !== 'undefined') {
         args.next(ret);
       }
     };
 
-    const r = this._impl[`before${type}`]({buffer, next, broadcast});
-
+    // beforeOut, beforeIn
+    const r = this._impl[`before${type}`]({buffer, next, broadcast, fail});
     if (typeof r !== 'undefined') {
       next(r);
     }

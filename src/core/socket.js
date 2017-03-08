@@ -14,7 +14,8 @@ import {
 
 import {Utils} from '../utils';
 import {
-  SOCKET_CONNECT_TO_DST
+  SOCKET_CONNECT_TO_DST,
+  PROCESSING_FAILED
 } from '../presets/actions';
 
 import {
@@ -144,22 +145,18 @@ export class Socket {
         logger.error(err);
         break;
     }
-    this.onClose(true);
   }
 
-  onClose(had_error) {
-    if (had_error) {
-      logger.warn(`client[${this._id}] closed due to a transmission error`);
-    } else {
-      logger.info(`client[${this._id}] closed normally`);
-    }
+  onClose() {
     if (this._bsocket !== null && !this._bsocket.destroyed) {
       this._bsocket.end();
       this._bsocket = null;
+      logger.warn(`[${this._id}] downstream closed`);
     }
     if (this._fsocket !== null && !this._fsocket.destroyed) {
       this._fsocket.end();
       this._fsocket = null;
+      logger.warn(`[${this._id}] upstream closed`);
     }
   }
 
@@ -175,17 +172,20 @@ export class Socket {
    * create pipes for both data forward and backward
    */
   createPipe(addr) {
-    if (__IS_CLIENT__) {
-      this._pipe = new Pipe();
-    } else {
-      this._pipe = new Pipe({
-        onNotified: (action) => {
-          if (action.type === SOCKET_CONNECT_TO_DST) {
-            return this.connectToDst(...action.payload);
-          }
+    const pipeProps = {
+      onNotified: (action) => {
+        if (__IS_SERVER__ && action.type === SOCKET_CONNECT_TO_DST) {
+          return this.connectToDst(...action.payload);
         }
-      });
-    }
+        if (action.type === PROCESSING_FAILED) {
+          const message = action.payload;
+          const timeout = Utils.getRandomInt(10, 40);
+          logger.error(`connection will be closed in ${timeout}s due to: ${message}`);
+          setTimeout(() => this.onClose(), timeout * 1e3);
+        }
+      }
+    };
+    this._pipe = new Pipe(pipeProps);
     this._pipe.setMiddlewares(MIDDLEWARE_DIRECTION_UPWARD, [
       createMiddleware(MIDDLEWARE_TYPE_FRAME, [addr]),
       createMiddleware(MIDDLEWARE_TYPE_CRYPTO),

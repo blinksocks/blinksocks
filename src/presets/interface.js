@@ -10,29 +10,29 @@ export class IPreset {
 
   // hooks
 
-  beforeOut({buffer/* , next, broadcast */}) {
+  beforeOut({buffer/* , next, broadcast, fail */}) {
     return buffer;
   }
 
-  beforeIn({buffer/* , next, broadcast */}) {
+  beforeIn({buffer/* , next, broadcast, fail */}) {
     return buffer;
   }
 
   // the following interfaces must be implemented
 
-  clientOut(/* {buffer, next, broadcast} */) {
+  clientOut(/* {buffer, next, broadcast, fail} */) {
 
   }
 
-  serverIn(/* {buffer, next, broadcast} */) {
+  serverIn(/* {buffer, next, broadcast, fail} */) {
 
   }
 
-  serverOut(/* {buffer, next, broadcast} */) {
+  serverOut(/* {buffer, next, broadcast, fail} */) {
 
   }
 
-  clientIn(/* {buffer, next, broadcast} */) {
+  clientIn(/* {buffer, next, broadcast, fail} */) {
 
   }
 
