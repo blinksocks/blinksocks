@@ -10,7 +10,7 @@ const nextId = (function () {
       i = 0;
     }
     return ++i;
-  }
+  };
 })();
 
 export class Hub {
