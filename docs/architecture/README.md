@@ -62,20 +62,20 @@ A typical preset must implement four methods of IPreset interface:
 // custom.js
 export default class CustomPreset extends IPreset {
 
-  clientOut(/* {buffer, next, broadcast} */) {
+  clientOut(/* {buffer, next, broadcast, fail} */) {
     // next(buf);  for async
     // return buf; for sync
   }
 
-  serverIn(/* {buffer, next, broadcast} */) {
+  serverIn(/* {buffer, next, broadcast, fail} */) {
 
   }
 
-  serverOut(/* {buffer, next, broadcast} */) {
+  serverOut(/* {buffer, next, broadcast, fail} */) {
 
   }
 
-  clientIn(/* {buffer, next, broadcast} */) {
+  clientIn(/* {buffer, next, broadcast, fail} */) {
 
   }
 
@@ -93,11 +93,12 @@ export default class CustomPreset extends IPreset {
 
 Every method gets an object which contains three parameters you need:
 
-| PARAM     | DESCRIPTION                                           |
-| :-------- | :---------------------------------------------------- |
-| buffer    | output from the previous middleware                   |
-| next      | call it with a new buffer once **async** process done |
-| broadcast | call it with an action to notify other middlewares    |
+| PARAM     | DESCRIPTION                                                                |
+| :-------- | :------------------------------------------------------------------------- |
+| buffer    | output from the previous middleware                                        |
+| next      | call it with a new buffer once **async** process done                      |
+| broadcast | call it with an action to notify other middlewares                         |
+| fail      | call it once handshake failed, connection will be closed in random seconds |
 
 Action passed to broadcast is an object which requires a `type` field:
 
@@ -137,11 +138,11 @@ There are two hooks available:
 // custom.js
 export default class CustomPreset extends IPreset {
 
-  beforeOut({buffer/* , next, broadcast */}) {
+  beforeOut({buffer/* , next, broadcast, fail */}) {
     return buffer;
   }
 
-  beforeIn({buffer/* , next, broadcast */}) {
+  beforeIn({buffer/* , next, broadcast, fail */}) {
     return buffer;
   }
 
