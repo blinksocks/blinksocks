@@ -17,25 +17,6 @@ LOG_LEVEL="error"
 mkdir -p /blinksocks && touch ${CONFIG_FILE}
 
 echo ">>> Generated configuration with random key..."
-cat <<-EOF > ${CONFIG_FILE}
-{
-  "host": "${BIND_HOST}",
-  "port": ${BIND_PORT},
-  "key": "${RANDOM_KEY}",
-  "frame": "${FRAME}",
-  "frame_params": "${FRAME_PARAMS}",
-  "crypto": "${CRYPTO}",
-  "crypto_params": "${CRYPTO_PARAMS}",
-  "protocol": "${PROTOCOL}",
-  "protocol_params": "${PROTOCOL_PARAMS}",
-  "obfs": "${OBFS}",
-  "obfs_params": "${OBFS_PARAMS}",
-  "log_level": "${LOG_LEVEL}"
-}
-EOF
-
-echo ">>> Using ${CONFIG_FILE}..."
-cat ${CONFIG_FILE}
-
 echo ">>> Running blinksocks with ${CONFIG_FILE}"
-pm2 start blinksocks -i 3 --config ${CONFIG_FILE}
+
+pm2 start blinksocks -i 3 -- --config ${CONFIG_FILE}
