@@ -244,13 +244,13 @@ You can build an image manually or pull it from docker hub:
 * Build an image
 
 ```
-$ docker build --tags blinksocks:latest .
+$ docker build --tag blinksocks:<version> .
 ```
 
 * Pull from docker hub
 
 ```
-$ docker pull blinksocks:latest
+$ docker pull blinksocks:<version>
 ```
 
 ### 2. Run in a container
@@ -258,7 +258,7 @@ $ docker pull blinksocks:latest
 Container will expose `1080` port, so you must map a host port to `1080` via `-p`.
 
 ```
-$ docker run -d -p 7777:1080 blinksocks:latest
+$ docker run -d -p 7777:1080 blinksocks:<version>
 ```
 
 ## References
