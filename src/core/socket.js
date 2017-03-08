@@ -151,12 +151,12 @@ export class Socket {
     if (this._bsocket !== null && !this._bsocket.destroyed) {
       this._bsocket.end();
       this._bsocket = null;
-      logger.warn(`[${this._id}] downstream closed`);
+      logger.info(`[${this._id}] downstream closed`);
     }
     if (this._fsocket !== null && !this._fsocket.destroyed) {
       this._fsocket.end();
       this._fsocket = null;
-      logger.warn(`[${this._id}] upstream closed`);
+      logger.info(`[${this._id}] upstream closed`);
     }
   }
 
