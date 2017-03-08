@@ -5,7 +5,12 @@ import {Socket} from './socket';
 
 const nextId = (function () {
   let i = 0;
-  return () => ++i;
+  return () => {
+    if (i > Number.MAX_SAFE_INTEGER - 1) {
+      i = 0;
+    }
+    return ++i;
+  }
 })();
 
 export class Hub {
