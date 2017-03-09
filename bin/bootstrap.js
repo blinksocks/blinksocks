@@ -27,13 +27,13 @@ const examples = `
   Examples:
   
   As simple as possible:
-    $ blinksocks -c config.json
+    $ blinksocks run -c config.json
   
   To start a server:
-    $ blinksocks --host 0.0.0.0 --port 7777 --key password
+    $ blinksocks run --host 0.0.0.0 --port 7777 --key password
   
   To start a client:
-    $ blinksocks --host localhost --port 1080 --server-host example.com --server-port 7777 --key password
+    $ blinksocks run --host localhost --port 1080 --server-host example.com --server-port 7777 --key password
 `;
 
 /**

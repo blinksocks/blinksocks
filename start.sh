@@ -19,4 +19,4 @@ mkdir -p /blinksocks && touch ${CONFIG_FILE}
 echo ">>> Generated configuration with random key..."
 echo ">>> Running blinksocks with ${CONFIG_FILE}"
 
-pm2 start blinksocks -i 3 -- --config ${CONFIG_FILE}
+pm2 start blinksocks-run -i 3 -- --config ${CONFIG_FILE}
