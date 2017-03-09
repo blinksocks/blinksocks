@@ -10,9 +10,7 @@ export class Config {
 
   static port;
 
-  static server_host;
-
-  static server_port;
+  static servers;
 
   static key;
 
@@ -61,23 +59,27 @@ export class Config {
 
     this.port = json.port;
 
-    // server_host & server_port
+    // servers
 
-    if (typeof json.server_host === 'string') {
-      if (json.server_host === '') {
-        throw Error('\'server_host\' must not be empty');
+    if (typeof json.servers !== 'undefined') {
+
+      if (!Array.isArray(json.servers)) {
+        throw Error('\'servers\' must be an array');
       }
 
-      if (!Number.isSafeInteger(json.server_port) || json.server_port <= 0) {
-        throw Error('\'server_port\' must be a natural number');
+      const servers = json.servers
+        .map((item) => item.split(':'))
+        .filter((pair) => pair.length === 2 && Number.isSafeInteger(+pair[1]));
+
+      if (servers.length < 1) {
+        throw Error('\'server_host\' must contain at least one valid item');
       }
+
+      this.servers = servers;
       this._is_server = false;
     } else {
       this._is_server = true;
     }
-
-    this.server_host = json.server_host;
-    this.server_port = json.server_port;
 
     // key
 
@@ -164,8 +166,7 @@ export class Config {
     global.__LOCAL_HOST__ = this.host;
     global.__LOCAL_PORT__ = this.port;
 
-    global.__SERVER_HOST__ = this.server_host;
-    global.__SERVER_PORT__ = this.server_port;
+    global.__SERVERS__ = this.servers;
 
     global.__KEY__ = this.key;
 

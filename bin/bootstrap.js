@@ -8,8 +8,7 @@ const options = [
   ['-c, --config [file]', 'a json format file for configuration, if specified, other options are ignored', ''],
   ['--host <host>', 'an ip address or a hostname to bind', 'localhost'],
   ['--port <port>', 'where to listen on', 1080],
-  ['--server-host [server-host]', 'an ip address or hostname to connect to'],
-  ['--server-port [server-port]', 'which port the server listen on'],
+  ['--servers [servers]', 'a list of servers, split by comma', (value) => value.split(',')],
   ['--key <key>', 'a key for encryption and decryption'],
   ['--frame [frame]', 'a preset used in frame middleware, default: \'origin\'', 'origin'],
   ['--frame-params [crypto-params]', 'parameters for frame preset, default: \'\'', ''],
@@ -54,7 +53,7 @@ function obtainConfig(options) {
     }
     return config;
   }
-  const {host, port, serverHost, serverPort, key} = options;
+  const {host, port, servers, key} = options;
   const {frame, frameParams, crypto, cryptoParams, protocol, protocolParams, obfs, obfsParams} = options;
   const {logLevel, quiet} = options;
   const config = {
@@ -71,11 +70,8 @@ function obtainConfig(options) {
     obfs_params: obfsParams,
     log_level: typeof quiet === 'undefined' ? logLevel : 'error'
   };
-  if (serverHost) {
-    Object.assign(config, {
-      server_host: serverHost,
-      server_port: parseInt(serverPort, 10)
-    });
+  if (servers) {
+    Object.assign(config, {servers});
   }
   return config;
 }
@@ -103,7 +99,7 @@ module.exports = function ({Hub}) {
     try {
       const app = new Hub(config);
       app.run();
-      process.on('SIGINT', () => process.exit(0));
+      process.on('SIGINT', () => app.onClose());
     } catch (err) {
       console.error(err.message);
       process.exit(-1);

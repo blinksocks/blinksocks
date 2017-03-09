@@ -2,6 +2,7 @@ import net from 'net';
 import logger from 'winston';
 import {Config} from './config';
 import {Socket} from './socket';
+import {Balancer} from './balancer';
 
 const nextId = (function () {
   let i = 0;
@@ -19,6 +20,9 @@ export class Hub {
 
   constructor(config) {
     Config.init(config);
+    if (__IS_CLIENT__) {
+      Balancer.init(__SERVERS__);
+    }
     this._hub = net.createServer();
     this._hub.on('error', this.onError.bind(this));
     this._hub.on('close', this.onClose.bind(this));
@@ -32,6 +36,7 @@ export class Hub {
 
   onClose() {
     logger.info('hub shutdown');
+    Balancer.destroy();
     process.exit(0);
   }
 
@@ -47,9 +52,10 @@ export class Hub {
       port: __LOCAL_PORT__
     };
     this._hub.listen(options, () => {
-      console.info('==> use configuration:', JSON.stringify(Config.abstract()));
+      console.info('==> use configuration:');
+      console.info(Config.abstract());
       console.info(`==> blinksocks is running as: ${__IS_SERVER__ ? 'Server' : 'Client'}`);
-      console.info('==> opened hub on:', this._hub.address());
+      console.info('==> blinksocks is listening on:', this._hub.address());
     });
   }
 
