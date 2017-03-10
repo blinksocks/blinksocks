@@ -1,6 +1,6 @@
 {
   "presets": [
-    "latest"
+    "env"
   ],
   "plugins": [
     "babel-plugin-transform-class-properties",
