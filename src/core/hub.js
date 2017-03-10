@@ -20,9 +20,6 @@ export class Hub {
 
   constructor(config) {
     Config.init(config);
-    if (__IS_CLIENT__) {
-      Balancer.init(__SERVERS__);
-    }
     this._hub = net.createServer();
     this._hub.on('error', this.onError.bind(this));
     this._hub.on('close', this.onClose.bind(this));
@@ -36,6 +33,7 @@ export class Hub {
 
   onClose() {
     logger.info('hub shutdown');
+    logger.info('stopping balancer');
     Balancer.destroy();
     process.exit(0);
   }
@@ -56,6 +54,10 @@ export class Hub {
       console.info(Config.abstract());
       console.info(`==> blinksocks is running as: ${__IS_SERVER__ ? 'Server' : 'Client'}`);
       console.info('==> blinksocks is listening on:', this._hub.address());
+      if (__IS_CLIENT__) {
+        console.info('==> starting balancer');
+        Balancer.init(__SERVERS__);
+      }
     });
   }
 
