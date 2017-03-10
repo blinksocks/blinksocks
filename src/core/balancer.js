@@ -1,6 +1,7 @@
 import net from 'net';
+import logger from 'winston';
 
-const QUERY_INTERVAL = 6e4; // 1min
+const QUERY_INTERVAL = 12e4; // 2min
 
 const now = () => (new Date()).getTime();
 
@@ -52,21 +53,32 @@ export class Balancer {
 
   static _startQuery(interval) {
     if (this._servers.length > 1) {
-      this._timer = setInterval(() => this._servers.map(
-        (server, i) => {
-          const startTime = now();
-          const socket = net.connect(server, () => {
-            this._pings[i] = now() - startTime;
-            socket.end();
-          });
-          socket.on('error', () => this._pings[i] = -1);
-        }
-      ), interval);
+      this._timer = setInterval(() => this._query(), interval);
+      this._query();
     }
   }
 
   static _stopQuery() {
     clearInterval(this._timer);
+  }
+
+  static _query() {
+    this._servers.map((server, i) => {
+      const _server = JSON.stringify(server);
+      logger.info(`[balancer]: querying ${_server}`);
+
+      const startTime = now();
+      const socket = net.connect(server, () => {
+        const ping = now() - startTime;
+        this._pings[i] = ping;
+        logger.info(`[balancer]: ${_server} = ${ping}ms`);
+        socket.end();
+      });
+      socket.on('error', () => {
+        this._pings[i] = -1;
+        logger.warn(`[balancer]: ${_server} lost connection`);
+      });
+    });
   }
 
 }

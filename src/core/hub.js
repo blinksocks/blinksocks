@@ -32,16 +32,18 @@ export class Hub {
   }
 
   onClose() {
-    logger.info('hub shutdown');
-    logger.info('stopping balancer');
-    Balancer.destroy();
+    console.info('==> [hub] shutdown');
+    if (__IS_CLIENT__) {
+      Balancer.destroy();
+      console.info('==> [balancer] stopped');
+    }
     process.exit(0);
   }
 
   onConnect(socket) {
     const id = nextId();
     new Socket({id, socket});
-    logger.info(`client[${id}] connected`);
+    logger.info(`[hub] client[${id}] connected`);
   }
 
   run() {
@@ -50,12 +52,12 @@ export class Hub {
       port: __LOCAL_PORT__
     };
     this._hub.listen(options, () => {
-      console.info('==> use configuration:');
+      console.info('==> [hub] use configuration:');
       console.info(Config.abstract());
-      console.info(`==> blinksocks is running as: ${__IS_SERVER__ ? 'Server' : 'Client'}`);
-      console.info('==> blinksocks is listening on:', this._hub.address());
+      console.info(`==> [hub] is running as: ${__IS_SERVER__ ? 'Server' : 'Client'}`);
+      console.info('==> [hub] is listening on:', this._hub.address());
       if (__IS_CLIENT__) {
-        console.info('==> starting balancer');
+        console.info('==> [balancer] started');
         Balancer.init(__SERVERS__);
       }
     });
