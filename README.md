@@ -55,7 +55,32 @@ Once installed, you can access blinksocks via CLI:
 ```
 $ blinksocks --help
 
-  Usage: blinksocks --host <host> --port <port> --key <key> [...]
+  Usage: blinksocks [command] [options]
+
+
+  Commands:
+
+    init           generate configuration pair randomly
+    run [options]  start service
+    help [cmd]     display help for [cmd]
+
+  Options:
+
+    -h, --help     output usage information
+    -V, --version  output the version number
+
+```
+
+## Git-style sub-command
+
+There are two sub-command to do different tasks:
+
+* `blinksocks run`
+
+```
+$ blinksocks run --help
+
+  Usage: blinksocks-run --host <host> --port <port> --key <key> [...]
 
   Options:
 
@@ -64,8 +89,7 @@ $ blinksocks --help
     -c, --config [file]                  a json format file for configuration, if specified, other options are ignored
     --host <host>                        an ip address or a hostname to bind
     --port <port>                        where to listen on
-    --server-host [server-host]          an ip address or hostname to connect to
-    --server-port [server-port]          which port the server listen on
+    --servers [servers]                  a list of servers, split by comma
     --key <key>                          a key for encryption and decryption
     --frame [frame]                      a preset used in frame middleware, default: 'origin'
     --frame-params [crypto-params]       parameters for frame preset, default: ''
@@ -73,24 +97,22 @@ $ blinksocks --help
     --crypto-params [crypto-params]      parameters for crypto, default: 'aes-256-cfb'
     --protocol [protocol]                a preset used in protocol middleware, default: 'aead'
     --protocol-params [protocol-params]  parameters for protocol, default: 'aes-256-cbc,sha256'
-    --obfs [obfs]                        a preset used in obfs middleware, default: 'none'
+    --obfs [obfs]                        a preset used in obfs middleware, default: ''
     --obfs-params [obfs-params]          parameters for obfs, default: ''
-    --log-level [log-level]              log level, default: all
+    --log-level [log-level]              log level, default: 'silly'
     -q, --quiet                          force log level to 'error'
-    --ciphers                            display all supported ciphers
-    --hashes                             display all supported hash functions
 
 
   Examples:
-
+  
   As simple as possible:
-    $ blinksocks -c config.json
-
+    $ blinksocks run -c config.json
+  
   To start a server:
-    $ blinksocks --host 0.0.0.0 --port 7777 --key key --crypto openssl --crypto-params aes-256-cfb
-
+    $ blinksocks run --host 0.0.0.0 --port 7777 --key password
+  
   To start a client:
-    $ blinksocks --host localhost --port 1080 --server-host example.com --server-port 7777 --key key --crypto openssl --crypto-params aes-256-cfb
+    $ blinksocks run --host localhost --port 1080 --servers node1.test.com:7777,node2.test.com:7777 --key password
 
 ```
 
@@ -102,8 +124,10 @@ To start a server or client, you can prepare a configuration json file(`config.j
 {
   "host": "localhost",
   "port": 6666,
-  "server_host": "localhost",
-  "server_port": 7777,
+  "servers": [
+    "node1.test.com:7777",
+    "node2.test.com:7777"
+  ],
   "key": "secret",
   "frame": "origin",
   "frame_params": "",
@@ -121,8 +145,7 @@ To start a server or client, you can prepare a configuration json file(`config.j
 |:-----------------|:------------------------------------------|:---------------------|
 | *host            | local ip address or domain name           | "localhost"          |
 | *port            | local port to bind                        | 1080                 |
-| server_host      | server ip or domain name, **client only** | -                    |
-| server_port      | server port, **client only**              | -                    |
+| servers          | a list of blinksocks server               | -                    |
 | *key             | for encryption and decryption             | -                    |
 | frame            | frame preset                              | "origin"             |
 | frame_params     | parameters for frame preset               | ""                   |
@@ -216,13 +239,13 @@ Install `pm2` before running blinksocks in the production.
 ### Daemon mode
 
 ```
-$ pm2 start blinksocks -- -c config.json
+$ pm2 start blinksocks-run -- -c config.json
 ```
 
 ### Cluster mode
 
 ```
-$ pm2 start blinksocks -i 3 -- -c config.json
+$ pm2 start blinksocks-run -i 3 -- -c config.json
 ```
 
 ## For Firefox/Google Chrome and more...

@@ -32,7 +32,7 @@ const examples = `
     $ blinksocks run --host 0.0.0.0 --port 7777 --key password
   
   To start a client:
-    $ blinksocks run --host localhost --port 1080 --server-host example.com --server-port 7777 --key password
+    $ blinksocks run --host localhost --port 1080 --servers node1.test.com:7777,node2.test.com:7777 --key password
 `;
 
 /**
