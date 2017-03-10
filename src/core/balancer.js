@@ -51,16 +51,18 @@ export class Balancer {
   // private
 
   static _startQuery(interval) {
-    this._timer = setInterval(() => this._servers.map(
-      (server, i) => {
-        const startTime = now();
-        const socket = net.connect(server, () => {
-          this._pings[i] = now() - startTime;
-          socket.end();
-        });
-        socket.on('error', () => this._pings[i] = -1);
-      }
-    ), interval);
+    if (this._servers.length > 1) {
+      this._timer = setInterval(() => this._servers.map(
+        (server, i) => {
+          const startTime = now();
+          const socket = net.connect(server, () => {
+            this._pings[i] = now() - startTime;
+            socket.end();
+          });
+          socket.on('error', () => this._pings[i] = -1);
+        }
+      ), interval);
+    }
   }
 
   static _stopQuery() {
