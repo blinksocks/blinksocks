@@ -33,12 +33,16 @@ describe('Config#init', function () {
     expect(() => Config.init({host: 'localhost', port: -1})).toThrow();
   });
 
-  it('should throw when server_host(if provided) is empty', function () {
-    expect(() => Config.init({host: 'localhost', port: 1080, server_host: ''})).toThrow();
+  it('should throw when servers(if provided) is not an array', function () {
+    expect(() => Config.init({host: 'localhost', port: 1080, servers: ''})).toThrow();
   });
 
-  it('should throw when server_port(if provided) is not natural number', function () {
-    expect(() => Config.init({host: 'localhost', port: 1080, server_host: 'localhost', server_port: 1.1})).toThrow();
+  it('should throw when servers(if provided) is an array but empty', function () {
+    expect(() => Config.init({host: 'localhost', port: 1080, servers: []})).toThrow();
+  });
+
+  it('should throw when servers(if provided) is an array but has invalid items', function () {
+    expect(() => Config.init({host: 'localhost', port: 1080, servers: ['']})).toThrow();
   });
 
   it('should throw when key is not string', function () {
@@ -46,8 +50,7 @@ describe('Config#init', function () {
       Config.init({
         host: 'localhost',
         port: 1080,
-        server_host: 'localhost',
-        server_port: 1080,
+        servers: ['abc.com:443'],
         key: null
       });
     }).toThrow();
@@ -58,8 +61,7 @@ describe('Config#init', function () {
       Config.init({
         host: 'localhost',
         port: 1080,
-        server_host: 'localhost',
-        server_port: 1080,
+        servers: ['abc.com:443'],
         key: '',
       });
     }).toThrow();
@@ -70,8 +72,7 @@ describe('Config#init', function () {
       Config.init({
         host: 'localhost',
         port: 1080,
-        server_host: 'localhost',
-        server_port: 1080,
+        servers: ['abc.com:443'],
         key: DEFAULT_KEY
       });
     }).toThrow();
@@ -82,8 +83,7 @@ describe('Config#init', function () {
       Config.init({
         host: 'localhost',
         port: 1080,
-        server_host: 'localhost',
-        server_port: 1080,
+        servers: ['abc.com:443'],
         key: '123',
         frame: null
       });
@@ -95,8 +95,7 @@ describe('Config#init', function () {
       Config.init({
         host: 'localhost',
         port: 1080,
-        server_host: 'localhost',
-        server_port: 1080,
+        servers: ['abc.com:443'],
         key: '123',
         frame: 'xxx',
         frame_params: [1, 2]
@@ -109,8 +108,7 @@ describe('Config#init', function () {
       Config.init({
         host: 'localhost',
         port: 1080,
-        server_host: 'localhost',
-        server_port: 1080,
+        servers: ['abc.com:443'],
         key: '123',
         frame: 'xxx',
         frame_params: '',
@@ -124,8 +122,7 @@ describe('Config#init', function () {
       Config.init({
         host: 'localhost',
         port: 1080,
-        server_host: 'localhost',
-        server_port: 1080,
+        servers: ['abc.com:443'],
         key: '123',
         frame: 'xxx',
         frame_params: '',
@@ -140,8 +137,7 @@ describe('Config#init', function () {
       Config.init({
         host: 'localhost',
         port: 1080,
-        server_host: 'localhost',
-        server_port: 1080,
+        servers: ['abc.com:443'],
         key: '123',
         frame: 'xxx',
         frame_params: '',
@@ -157,8 +153,7 @@ describe('Config#init', function () {
       Config.init({
         host: 'localhost',
         port: 1080,
-        server_host: 'localhost',
-        server_port: 1080,
+        servers: ['abc.com:443'],
         key: '123',
         frame: 'xxx',
         frame_params: '',
@@ -175,8 +170,7 @@ describe('Config#init', function () {
       Config.init({
         host: 'localhost',
         port: 1080,
-        server_host: 'localhost',
-        server_port: 1080,
+        servers: ['abc.com:443'],
         key: '123',
         frame: 'xxx',
         frame_params: '',
@@ -194,8 +188,7 @@ describe('Config#init', function () {
       Config.init({
         host: 'localhost',
         port: 1080,
-        server_host: 'localhost',
-        server_port: 1080,
+        servers: ['abc.com:443'],
         key: '123',
         frame: 'xxx',
         frame_params: '',

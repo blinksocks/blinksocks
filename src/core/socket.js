@@ -1,6 +1,7 @@
 import net from 'net';
 import logger from 'winston';
 import {DNSCache} from './dns-cache';
+import {Balancer} from './balancer';
 import {Pipe} from './pipe';
 import {
   MIDDLEWARE_DIRECTION_UPWARD,
@@ -48,6 +49,8 @@ import {
 } from '../proxies/common';
 
 const dnsCache = DNSCache.create();
+
+let lastEndPoint = null;
 
 export class Socket {
 
@@ -133,6 +136,7 @@ export class Socket {
   onError(err) {
     switch (err.code) {
       case 'ECONNREFUSED':
+      // TODO: maybe we can switch to another server
       case 'EADDRNOTAVAIL':
       case 'ENETDOWN':
       case 'ECONNRESET':
@@ -169,13 +173,34 @@ export class Socket {
   }
 
   /**
+   * connect to a server, for both client and server
+   * @param host
+   * @param port
+   * @param callback
+   * @returns {Promise.<void>}
+   */
+  async connectTo({host, port}, callback) {
+    logger.info(`[${this._id}] connecting to:`, {host, port});
+    try {
+      const ip = await dnsCache.get(host);
+      this._fsocket = net.connect({host: ip, port}, callback);
+      this._fsocket.on('error', this.onError);
+      this._fsocket.on('close', this.onClose);
+      this._fsocket.on('data', this.onBackward);
+    } catch (err) {
+      logger.error(err.message);
+    }
+  }
+
+  /**
    * create pipes for both data forward and backward
    */
   createPipe(addr) {
     const pipeProps = {
       onNotified: (action) => {
         if (__IS_SERVER__ && action.type === SOCKET_CONNECT_TO_DST) {
-          return this.connectToDst(...action.payload);
+          const [addr, callback] = action.payload;
+          return this.connectTo(addr, callback);
         }
         if (action.type === PROCESSING_FAILED) {
           const message = action.payload;
@@ -196,45 +221,6 @@ export class Socket {
     this._pipe.on(`next_${MIDDLEWARE_DIRECTION_DOWNWARD}`, (buf) => this.send(buf, __IS_SERVER__));
   }
 
-  /**
-   * connect to blinksocks server
-   * @returns {Promise}
-   */
-  async connectToServer(addr, callback) {
-    const ep = {
-      host: __SERVER_HOST__, // TODO: use dnsCache
-      port: __SERVER_PORT__
-    };
-    logger.info(`[${this._id}] connecting to:`, ep);
-    this._fsocket = net.connect(ep, () => {
-      this.createPipe(addr);
-      callback();
-    });
-    this._fsocket.on('error', this.onError);
-    this._fsocket.on('close', this.onClose);
-    this._fsocket.on('data', this.onBackward);
-  }
-
-  /**
-   * connect to the real server, server side only
-   * @param addr
-   * @param callback
-   * @returns {Promise.<void>}
-   */
-  async connectToDst(addr, callback) {
-    const {host, port} = addr;
-    try {
-      const ip = await dnsCache.get(host);
-      logger.info(`[${this._id}] connecting to ${host}(${ip}:${port})`);
-      this._fsocket = net.connect({host: ip, port}, callback);
-      this._fsocket.on('error', this.onError);
-      this._fsocket.on('close', this.onClose);
-      this._fsocket.on('data', this.onBackward);
-    } catch (err) {
-      logger.error(err.message);
-    }
-  }
-
   /*** client handshake, multiple protocols ***/
 
   onHandshake(buffer) {
@@ -245,7 +231,16 @@ export class Socket {
   }
 
   onHandshakeDone(addr, callback) {
-    return this.connectToServer(addr, callback);
+    const ep = Balancer.getFastest();
+    if (lastEndPoint !== null &&
+      (ep.host !== lastEndPoint.host || ep.port !== lastEndPoint.port)) {
+      logger.info('balancer switch to use:', ep);
+    }
+    lastEndPoint = ep;
+    return this.connectTo(ep, () => {
+      this.createPipe(addr);
+      callback();
+    });
   }
 
   trySocksHandshake(socket, buffer) {
