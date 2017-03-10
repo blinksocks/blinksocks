@@ -69,7 +69,8 @@ export class Config {
 
       const servers = json.servers
         .map((item) => item.split(':'))
-        .filter((pair) => pair.length === 2 && Number.isSafeInteger(+pair[1]));
+        .filter((pair) => pair.length === 2 && Number.isSafeInteger(+pair[1]))
+        .map(([host, port]) => ({host, port}));
 
       if (servers.length < 1) {
         throw Error('\'server_host\' must contain at least one valid item');

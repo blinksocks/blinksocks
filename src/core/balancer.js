@@ -20,7 +20,7 @@ export class Balancer {
    * @param interval
    */
   static init(servers, interval = QUERY_INTERVAL) {
-    this._servers = servers.map(([host, port]) => ({host, port}));
+    this._servers = servers;
     this._pings = this._servers.map(() => 0);
     this._startQuery(interval);
   }
