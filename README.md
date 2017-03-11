@@ -75,6 +75,14 @@ $ blinksocks --help
 
 There are two sub-command to do different tasks:
 
+* `blinksocks init`
+
+```
+$ blinksocks init
+```
+
+This will generate `blinksocks.client.json` and `blinksocks.server.json` pair with a random key and default settings.
+
 * `blinksocks run`
 
 ```
