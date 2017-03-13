@@ -1,5 +1,6 @@
 import net from 'net';
 import logger from 'winston';
+import {ClientProxy} from './client-proxy';
 import {DNSCache} from './dns-cache';
 import {Balancer} from './balancer';
 import {Pipe} from './pipe';
@@ -20,37 +21,10 @@ import {
 } from '../presets/actions';
 
 import {
-  IdentifierMessage,
-  SelectMessage,
-  RequestMessage as Socks5RequestMessage,
-  ReplyMessage as Socks5ReplyMessage,
   UdpRequestMessage
-  // UdpRequestMessage
 } from '../proxies/socks5';
 
-import {
-  RequestMessage as Socks4RequestMessage,
-  ReplyMessage as Socks4ReplyMessage
-} from '../proxies/socks4';
-
-import {
-  HttpRequestMessage,
-  ConnectReplyMessage
-} from '../proxies/http';
-
-import {
-  ATYP_V4,
-  ATYP_DOMAIN,
-  REQUEST_COMMAND_CONNECT,
-  REQUEST_COMMAND_UDP,
-  REPLY_GRANTED,
-  REPLY_SUCCEEDED,
-  REPLY_COMMAND_NOT_SUPPORTED
-} from '../proxies/common';
-
 const dnsCache = DNSCache.create();
-
-let lastEndPoint = null;
 
 export class Socket {
 
@@ -60,13 +34,11 @@ export class Socket {
 
   _fsocket = null;
 
-  _socksTcpReady = false;
-
-  _socksUdpReady = false;
-
-  _httpReady = false;
-
   _pipe = null;
+
+  _proxy = null; // client only
+
+  _lastEndPoint = null;
 
   constructor({id, socket}) {
     this._id = id;
@@ -80,17 +52,17 @@ export class Socket {
     this.onBackward = this.onBackward.bind(this);
     if (__IS_SERVER__) {
       this.createPipe();
+    } else {
+      this._proxy = new ClientProxy({
+        onHandshakeDone: this.onHandshakeDone.bind(this)
+      });
     }
   }
 
-  isHandshakeDone() {
-    return [this._socksTcpReady, this._socksUdpReady, this._httpReady].some((v) => !!v);
-  }
-
   onForward(buffer) {
-    if (__IS_CLIENT__ && !this.isHandshakeDone()) {
+    if (__IS_CLIENT__ && !this._proxy.isDone()) {
       // client handshake(multiple-protocols), client only
-      this.onHandshake(buffer);
+      this._proxy.makeHandshake(this._bsocket, buffer);
       return;
     }
 
@@ -135,15 +107,19 @@ export class Socket {
 
   onError(err) {
     switch (err.code) {
-      case 'ECONNREFUSED':
-      // TODO: maybe we can switch to another server
       case 'EADDRNOTAVAIL':
+      case 'ENETUNREACH':
+      case 'ECONNREFUSED':
+        // TODO: maybe we can switch to another server
+        break;
+      case 'ETIMEDOUT':
+        // just ignore
+        break;
       case 'ENETDOWN':
       case 'ECONNRESET':
-      case 'ETIMEDOUT':
       case 'EAI_AGAIN':
       case 'EPIPE':
-        logger.warn(`[${this._id}] ${err.message}`);
+        logger.warn(`[${this._id}] ${err.code} - ${err.message}`);
         return;
       default:
         logger.error(err);
@@ -221,117 +197,22 @@ export class Socket {
     this._pipe.on(`next_${MIDDLEWARE_DIRECTION_DOWNWARD}`, (buf) => this.send(buf, __IS_SERVER__));
   }
 
-  /*** client handshake, multiple protocols ***/
-
-  onHandshake(buffer) {
-    this.trySocksHandshake(this._bsocket, buffer);
-    if (!this.isHandshakeDone()) {
-      this.tryHttpHandshake(this._bsocket, buffer);
-    }
-  }
-
+  /**
+   * client handshake
+   * @param addr
+   * @param callback
+   * @returns {Promise.<void>}
+   */
   onHandshakeDone(addr, callback) {
     const ep = Balancer.getFastest();
-    if (lastEndPoint !== null &&
-      (ep.host !== lastEndPoint.host || ep.port !== lastEndPoint.port)) {
-      logger.info('balancer switch to use:', ep);
+    if (this._lastEndPoint === null || ep.host !== this._lastEndPoint.host || ep.port !== this._lastEndPoint.port) {
+      logger.info('[balancer] use:', JSON.stringify(ep));
     }
-    lastEndPoint = ep;
+    this._lastEndPoint = ep;
     return this.connectTo(ep, () => {
       this.createPipe(addr);
       callback();
     });
-  }
-
-  trySocksHandshake(socket, buffer) {
-    if (!this.isHandshakeDone()) {
-      this.trySocks5Handshake(socket, buffer);
-    }
-    if (!this.isHandshakeDone()) {
-      this.trySocks4Handshake(socket, buffer);
-    }
-  }
-
-  trySocks4Handshake(socket, buffer) {
-    const request = Socks4RequestMessage.parse(buffer);
-    if (request !== null) {
-      const {CMD, DSTIP, DSTADDR, DSTPORT} = request;
-      if (CMD === REQUEST_COMMAND_CONNECT) {
-        const addr = {
-          type: DSTADDR.length > 0 ? ATYP_DOMAIN : ATYP_V4,
-          host: DSTADDR.length > 0 ? DSTADDR : DSTIP,
-          port: DSTPORT
-        };
-        this.onHandshakeDone(addr, () => {
-          // reply success
-          const message = new Socks4ReplyMessage({CMD: REPLY_GRANTED});
-          socket.write(message.toBuffer());
-          this._socksTcpReady = true;
-        });
-      }
-    }
-  }
-
-  trySocks5Handshake(socket, buffer) {
-    // 1. IDENTIFY
-    const identifier = IdentifierMessage.parse(buffer);
-    if (identifier !== null) {
-      const message = new SelectMessage();
-      socket.write(message.toBuffer());
-      return;
-    }
-
-    // 2. REQUEST
-    const request = Socks5RequestMessage.parse(buffer);
-    if (request !== null) {
-      const type = request.CMD;
-      switch (type) {
-        case REQUEST_COMMAND_UDP: // UDP ASSOCIATE
-        case REQUEST_COMMAND_CONNECT: {
-          const addr = {
-            type: request.ATYP,
-            host: request.DSTADDR,
-            port: request.DSTPORT
-          };
-          this.onHandshakeDone(addr, () => {
-            // reply success
-            const message = new Socks5ReplyMessage({REP: REPLY_SUCCEEDED});
-            socket.write(message.toBuffer());
-
-            if (type === REQUEST_COMMAND_CONNECT) {
-              this._socksTcpReady = true;
-            } else {
-              this._socksUdpReady = true;
-            }
-          });
-          break;
-        }
-        default: {
-          const message = new Socks5ReplyMessage({REP: REPLY_COMMAND_NOT_SUPPORTED});
-          socket.write(message.toBuffer());
-          break;
-        }
-      }
-    }
-  }
-
-  tryHttpHandshake(socket, buffer) {
-    const request = HttpRequestMessage.parse(buffer);
-    if (request !== null) {
-      const {METHOD, HOST} = request;
-      const addr = Utils.parseURI(HOST.toString());
-
-      this.onHandshakeDone(addr, () => {
-        if (METHOD.toString() === 'CONNECT') {
-          const message = new ConnectReplyMessage();
-          socket.write(message.toBuffer());
-        } else {
-          // for clients who haven't sent CONNECT, should begin to relay immediately
-          this.onForward(buffer);
-        }
-        this._httpReady = true;
-      });
-    }
   }
 
 }
