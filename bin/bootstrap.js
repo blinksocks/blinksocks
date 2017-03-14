@@ -2,10 +2,11 @@ const fs = require('fs');
 const program = require('commander');
 const packageJson = require('../package.json');
 
+const version = packageJson.version;
 const usage = '--host <host> --port <port> --key <key> [...]';
 
 const options = [
-  ['-c, --config [file]', 'a json format file for configuration, if specified, other options are ignored', ''],
+  ['-c, --config [file]', 'a json format file for configuration', ''],
   ['--host <host>', 'an ip address or a hostname to bind', 'localhost'],
   ['--port <port>', 'where to listen on', 1080],
   ['--servers [servers]', 'a list of servers, split by comma', (value) => value.split(',')],
@@ -19,7 +20,8 @@ const options = [
   ['--obfs [obfs]', 'a preset used in obfs middleware, default: \'\'', ''],
   ['--obfs-params [obfs-params]', 'parameters for obfs, default: \'\'', ''],
   ['--log-level [log-level]', 'log level, default: \'silly\'', 'silly'],
-  ['-q, --quiet', 'force log level to \'error\'']
+  ['-q, --quiet', 'force log level to \'error\''],
+  ['--profile', 'collect performance statistics, store at blinksocks.profile.log when exit']
 ];
 
 const examples = `
@@ -41,9 +43,10 @@ const examples = `
  * @returns {object}
  */
 function obtainConfig(options) {
+  let config = {};
   if (options.config !== '') {
+    // via --config
     const file = options.config;
-    let config = null;
     try {
       const jsonFile = fs.readFileSync(file);
       config = JSON.parse(jsonFile);
@@ -51,25 +54,31 @@ function obtainConfig(options) {
       console.error(`error parse your \'${file}\'`);
       process.exit(-1);
     }
-    return config;
+  } else {
+    // via CLI
+    const {host, port, key} = options;
+    const {frame, frameParams, crypto, cryptoParams, protocol, protocolParams, obfs, obfsParams} = options;
+    Object.assign(config, {
+      host,
+      port: parseInt(port, 10),
+      key,
+      frame,
+      frame_params: frameParams,
+      crypto,
+      crypto_params: cryptoParams,
+      protocol,
+      protocol_params: protocolParams,
+      obfs,
+      obfs_params: obfsParams
+    });
   }
-  const {host, port, servers, key} = options;
-  const {frame, frameParams, crypto, cryptoParams, protocol, protocolParams, obfs, obfsParams} = options;
-  const {logLevel, quiet} = options;
-  const config = {
-    host,
-    port: parseInt(port, 10),
-    key,
-    frame,
-    frame_params: frameParams,
-    crypto,
-    crypto_params: cryptoParams,
-    protocol,
-    protocol_params: protocolParams,
-    obfs,
-    obfs_params: obfsParams,
-    log_level: typeof quiet === 'undefined' ? logLevel : 'error'
-  };
+  // others
+  const {servers, logLevel, quiet, profile} = options;
+  Object.assign(config, {
+    log_level: quiet ? 'error' : logLevel,
+    profile: !!profile
+  });
+
   if (servers) {
     Object.assign(config, {servers});
   }
@@ -77,9 +86,7 @@ function obtainConfig(options) {
 }
 
 module.exports = function ({Hub}) {
-  const pg = program
-    .version(packageJson.version)
-    .usage(usage);
+  const pg = program.version(version).usage(usage);
 
   for (const option of options) {
     pg.option(...option);
