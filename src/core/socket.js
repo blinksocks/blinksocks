@@ -4,6 +4,7 @@ import {ClientProxy} from './client-proxy';
 import {DNSCache} from './dns-cache';
 import {Balancer} from './balancer';
 import {Pipe} from './pipe';
+import {Profile} from './profile';
 import {
   MIDDLEWARE_DIRECTION_UPWARD,
   MIDDLEWARE_DIRECTION_DOWNWARD,
@@ -87,6 +88,7 @@ export class Socket {
           : MIDDLEWARE_DIRECTION_DOWNWARD,
         _buffer
       );
+      Profile.totalIn += buffer.length;
     } catch (err) {
       logger.error(`[${this._id}]`, err);
     }
@@ -100,6 +102,7 @@ export class Socket {
           : MIDDLEWARE_DIRECTION_UPWARD,
         buffer
       );
+      Profile.totalIn += buffer.length;
     } catch (err) {
       logger.error(`[${this._id}]`, err);
     }
@@ -120,11 +123,12 @@ export class Socket {
       case 'EAI_AGAIN':
       case 'EPIPE':
         logger.warn(`[${this._id}] ${err.code} - ${err.message}`);
-        return;
+        break;
       default:
         logger.error(err);
         break;
     }
+    Profile.errors += 1;
   }
 
   onClose() {
@@ -132,11 +136,13 @@ export class Socket {
       this._bsocket.end();
       this._bsocket = null;
       logger.info(`[${this._id}] downstream closed`);
+      Profile.connections -= 1;
     }
     if (this._fsocket !== null && !this._fsocket.destroyed) {
       this._fsocket.end();
       this._fsocket = null;
       logger.info(`[${this._id}] upstream closed`);
+      Profile.connections -= 1;
     }
   }
 
@@ -146,6 +152,7 @@ export class Socket {
     } else {
       this._bsocket && this._bsocket.write(buffer);
     }
+    Profile.totalOut += buffer.length;
   }
 
   /**
@@ -182,6 +189,7 @@ export class Socket {
           const message = action.payload;
           const timeout = Utils.getRandomInt(10, 40);
           logger.error(`connection will be closed in ${timeout}s due to: ${message}`);
+          Profile.fatals += 1;
           setTimeout(() => this.onClose(), timeout * 1e3);
         }
       }

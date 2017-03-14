@@ -2,6 +2,7 @@ import net from 'net';
 import logger from 'winston';
 import {Config} from './config';
 import {Socket} from './socket';
+import {Profile} from './profile';
 import {Balancer} from './balancer';
 
 const nextId = (function () {
@@ -37,6 +38,12 @@ export class Hub {
       Balancer.destroy();
       console.info('==> [balancer] stopped');
     }
+    if (__PROFILE__) {
+      console.info('==> [profile] saving...');
+      Profile.save();
+      Profile.stop();
+      console.info('==> [profile] stopped');
+    }
     process.exit(0);
   }
 
@@ -44,6 +51,7 @@ export class Hub {
     const id = nextId();
     new Socket({id, socket});
     logger.info(`[hub] client[${id}] connected`);
+    Profile.connections += 1;
   }
 
   run() {
@@ -59,6 +67,10 @@ export class Hub {
       if (__IS_CLIENT__) {
         console.info('==> [balancer] started');
         Balancer.init(__SERVERS__);
+      }
+      if (__PROFILE__) {
+        console.info('==> [profile] started');
+        Profile.start();
       }
     });
   }

@@ -32,6 +32,8 @@ export class Config {
 
   static log_level;
 
+  static profile;
+
   static _is_server;
 
   /**
@@ -150,6 +152,9 @@ export class Config {
     this.obfs = json.obfs || 'none';
     this.obfs_params = json.obfs_params;
 
+    // profile
+    this.profile = !!json.profile;
+
     // globals
     this.setGlobals();
 
@@ -184,6 +189,7 @@ export class Config {
     global.__OBFS_PARAMS__ = this.obfs_params;
 
     global.__LOG_LEVEL__ = this.log_level;
+    global.__PROFILE__ = this.profile;
   }
 
   /**
