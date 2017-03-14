@@ -19,3 +19,4 @@ coverage/
 
 # others
 blinksocks.*.json
+blinksocks.*.log
