@@ -109,6 +109,7 @@ $ blinksocks run --help
     --obfs-params [obfs-params]          parameters for obfs, default: ''
     --log-level [log-level]              log level, default: 'silly'
     -q, --quiet                          force log level to 'error'
+    --profile                            collect performance statistics, store at blinksocks.profile.log when exit
 
 
   Examples:
@@ -290,6 +291,58 @@ Container will expose `1080` port, so you must map a host port to `1080` via `-p
 
 ```
 $ docker run -d -p 7777:1080 blinksocks:<version>
+```
+
+## Profile
+
+By adding `--profile` option in command line, you will get a report named `blinksocks.profile.log` after
+the program was terminated.
+
+```
+$ blinksocks run ... --profile
+```
+
+The report contains several indicators such as:
+
+```
+{
+  "sampleStartedAt": 1489501509866,
+  "sampleStoppedAt": 1489501522167,
+  "sampleDuration": 12301,
+  "outSpeed": 0,
+  "maxOutSpeed": 1492282,
+  "inSpeed": 0,
+  "maxInSpeed": 1512207,
+  "connections": 0,
+  "maxConnections": 2,
+  "errors": 0,
+  "errorRate": 0,
+  "fatals": 0,
+  "fatalRate": 0,
+  "totalOut": 137494,
+  "totalOutPackets": 34,
+  "totalIn": 139107,
+  "totalInPackets": 34,
+  "totalBytes": 276601,
+  "totalPackets": 68,
+  "outBytesRate": 11177.465246727908,
+  "outPacketsRate": 2.764002926591334,
+  "inBytesRate": 11308.59279733355,
+  "inPacketsRate": 2.764002926591334,
+  "totalBytesRate": 22486.058044061458,
+  "totalPacketsRate": 5.528005853182668,
+  "upTime": 16.173,
+  "cpu": {
+    "user": 5010321,
+    "system": 322320
+  },
+  "memory": {
+    "rss": 118710272,
+    "heapTotal": 81195008,
+    "heapUsed": 36819960,
+    "external": 845110
+  }
+}
 ```
 
 ## References
