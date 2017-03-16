@@ -56,7 +56,7 @@ function obtainConfig(options) {
     }
   } else {
     // via CLI
-    const {host, port, key} = options;
+    const {host, port, key, logLevel} = options;
     const {frame, frameParams, crypto, cryptoParams, protocol, protocolParams, obfs, obfsParams} = options;
     Object.assign(config, {
       host,
@@ -69,13 +69,13 @@ function obtainConfig(options) {
       protocol,
       protocol_params: protocolParams,
       obfs,
-      obfs_params: obfsParams
+      obfs_params: obfsParams,
+      log_level: quiet ? 'error' : logLevel
     });
   }
   // others
-  const {servers, logLevel, quiet, profile} = options;
+  const {servers, quiet, profile} = options;
   Object.assign(config, {
-    log_level: quiet ? 'error' : logLevel,
     profile: !!profile
   });
 
