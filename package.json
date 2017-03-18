@@ -17,8 +17,7 @@
     "client:dev": "babel-node bin/bootstrap.js --config client.config.json",
     "server:prod": "node bin/cli.js --config server.config.json",
     "client:prod": "node bin/cli.js --config client.config.json",
-    "percommit": "npm run test",
-    "changelog": "git changelog --no-merges --all --prune-old --stdout > CHANGELOG.md"
+    "percommit": "npm run test"
   },
   "jest": {
     "testPathIgnorePatterns": [

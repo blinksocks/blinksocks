@@ -1,0 +1,5 @@
+since-tag=v2.2.0-beta.5
+include-labels=bug,enhancement,feature
+exclude-labels=duplicate,question,invalid,wontfix
+enhancement-labels=enhancement,feature
+bug-labels=bug
