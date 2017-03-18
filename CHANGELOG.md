@@ -2,6 +2,29 @@
 v2.2.2 / 2017-03-18
 ===================
 
+  * chore(package): add script to auto generate changelog
+  * chore(): add AUTHORS and CHANGELOG.md
+  * chore(package): bump version to v2.2.2
+  * chore(lib): update
+  * chore(package): update yarn.lock
+  * Merge branch 'greenkeeper-babel-preset-env-1.2.2'
+  * Merge branch 'greenkeeper-eslint-3.18.0'
+  * chore(gitignore): more robust
+  * fix(protocol): log
+  * fix(socket): prevent "Error: This socket is closed" when send data
+  * chore(socket): verbose log connection errors
+  * chore(protocol): turn logger.info to logger.verbose
+  * refactor(profile): grouped fields into four parts, profile.log now has a date postfix
+  * fix(core): this.onForward is undefined when perform http proxy
+  * chore(package): update eslint to version 3.18.0
+  * docs(): add performance
+  * docs(readme): update
+  * fix(bootstrap): log_level is invalid when only use --config
+  * chore(package): update babel-preset-env to version 1.2.2
+
+v2.2.2 / 2017-03-18
+===================
+
   * chore(package): bump version to v2.2.2
   * chore(lib): update
   * chore(package): update yarn.lock
