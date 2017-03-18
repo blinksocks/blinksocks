@@ -43,7 +43,7 @@ export default class BasicProtocol extends IPreset {
 
   clientOut({buffer}) {
     const out = Buffer.concat([Utils.numberToUIntBE(2 + buffer.length), buffer]);
-    logger.info(`ClientOut(${out.length} bytes): ${out.slice(0, 60).toString('hex')}`);
+    logger.verbose(`ClientOut(${out.length} bytes): ${out.slice(0, 60).toString('hex')}`);
     return out;
   }
 
@@ -54,7 +54,7 @@ export default class BasicProtocol extends IPreset {
 
   serverOut({buffer}) {
     const out = Buffer.concat([Utils.numberToUIntBE(2 + buffer.length), buffer]);
-    logger.info(`serverOut(${out.length} bytes): ${out.slice(0, 60).toString('hex')}`);
+    logger.verbose(`serverOut(${out.length} bytes): ${out.slice(0, 60).toString('hex')}`);
     return out;
   }
 
@@ -69,9 +69,9 @@ export default class BasicProtocol extends IPreset {
 
   onReceived(packet) {
     if (__IS_CLIENT__) {
-      logger.info(`ClientIn(${packet.length} bytes): ${packet.slice(0, 60).toString('hex')}`);
+      logger.verbose(`ClientIn(${packet.length} bytes): ${packet.slice(0, 60).toString('hex')}`);
     } else {
-      logger.info(`ServerIn(${packet.length} bytes): ${packet.slice(0, 60).toString('hex')}`);
+      logger.verbose(`ServerIn(${packet.length} bytes): ${packet.slice(0, 60).toString('hex')}`);
     }
     const next = __IS_CLIENT__ ? this._bNext : this._fNext;
     next(packet.slice(2));

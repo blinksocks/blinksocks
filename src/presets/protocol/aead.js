@@ -136,9 +136,9 @@ export default class AeadProtocol extends IPreset {
     const hmacB = this.createHmac(encBuffer);
     const out = Buffer.concat([encHeader, hmacA, encBuffer, hmacB]);
     if (__IS_CLIENT__) {
-      logger.info(`ClientOut(LEN=${out.length}): ${out.slice(0, 60).toString('hex')}`);
+      logger.verbose(`ClientOut(LEN=${out.length}): ${out.slice(0, 60).toString('hex')}`);
     } else {
-      logger.info(`ServerOut(LEN=${out.length}): ${out.slice(0, 60).toString('hex')}`);
+      logger.verbose(`ServerOut(LEN=${out.length}): ${out.slice(0, 60).toString('hex')}`);
     }
     return out;
   }
@@ -168,9 +168,9 @@ export default class AeadProtocol extends IPreset {
    */
   onReceived(packet) {
     if (__IS_CLIENT__) {
-      logger.info(`ClientIn(LEN=${packet.length}): ${packet.slice(0, 60).toString('hex')}`);
+      logger.verbose(`ClientIn(LEN=${packet.length}): ${packet.slice(0, 60).toString('hex')}`);
     } else {
-      logger.info(`ServerIn(LEN=${packet.length}): ${packet.slice(0, 60).toString('hex')}`);
+      logger.verbose(`ServerIn(LEN=${packet.length}): ${packet.slice(0, 60).toString('hex')}`);
     }
     const _packet = packet.slice(16 + this._hmacLen);
     const hmacB = _packet.slice(-this._hmacLen);

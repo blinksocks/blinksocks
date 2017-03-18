@@ -67,9 +67,9 @@ export default class Aead2Protocol extends AeadProtocol {
     const hmacB = this.createHmac(encBuffer);
     const out = Buffer.concat([encHeader, hmacA, encBuffer, hmacB]);
     if (__IS_CLIENT__) {
-      logger.info(`ClientOut(LEN=${out.length}, SEQ=${this._seq}): ${out.slice(0, 60).toString('hex')}`);
+      logger.verbose(`ClientOut(LEN=${out.length}, SEQ=${this._seq}): ${out.slice(0, 60).toString('hex')}`);
     } else {
-      logger.info(`ServerOut(LEN=${out.length}, SEQ=${this._seq}): ${out.slice(0, 60).toString('hex')}`);
+      logger.verbose(`ServerOut(LEN=${out.length}, SEQ=${this._seq}): ${out.slice(0, 60).toString('hex')}`);
     }
     this._seq += 1;
     return out;
@@ -108,9 +108,9 @@ export default class Aead2Protocol extends AeadProtocol {
 
   onReceived(packet) {
     if (__IS_CLIENT__) {
-      logger.info(`ClientIn(LEN=${packet.length}, SEQ=${this._seq}): ${packet.slice(0, 60).toString('hex')}`);
+      logger.verbose(`ClientIn(LEN=${packet.length}, SEQ=${this._seq}): ${packet.slice(0, 60).toString('hex')}`);
     } else {
-      logger.info(`ServerIn(LEN=${packet.length}, SEQ=${this._seq}): ${packet.slice(0, 60).toString('hex')}`);
+      logger.verbose(`ServerIn(LEN=${packet.length}, SEQ=${this._seq}): ${packet.slice(0, 60).toString('hex')}`);
     }
     const _packet = packet.slice(16 + this._hmacLen);
     const hmacB = _packet.slice(-this._hmacLen);
