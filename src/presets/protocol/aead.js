@@ -155,7 +155,7 @@ export default class AeadProtocol extends IPreset {
     const expHmacA = this.createHmac(encLen);
     const hmacA = buffer.slice(16, 16 + this._hmacLen);
     if (!hmacA.equals(expHmacA)) {
-      logger.error(`dropped unexpected packet (${buffer.length} bytes) received from server: wrong HMAC-A ${buffer.slice(0, 60).toString('hex')}`);
+      logger.error(`dropped unexpected packet (${buffer.length} bytes) received from ${__IS_CLIENT__ ? 'server' : 'client'}: wrong HMAC-A ${buffer.slice(0, 60).toString('hex')}`);
       return -1;
     }
     // safely decrypt then get length
