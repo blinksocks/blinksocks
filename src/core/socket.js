@@ -219,7 +219,7 @@ export class Socket {
     this._lastEndPoint = ep;
     return this.connectTo(ep, () => {
       this.createPipe(addr);
-      callback();
+      callback(this.onForward);
     });
   }
 

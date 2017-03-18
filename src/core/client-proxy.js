@@ -129,13 +129,13 @@ export class ClientProxy {
       const {METHOD, HOST} = request;
       const addr = Utils.parseURI(HOST.toString());
 
-      this.onHandshakeDone(addr, () => {
+      this.onHandshakeDone(addr, (onForward) => {
         if (METHOD.toString() === 'CONNECT') {
           const message = new ConnectReplyMessage();
           socket.write(message.toBuffer());
         } else {
           // for clients who haven't sent CONNECT, should begin to relay immediately
-          this.onForward(buffer);
+          onForward(buffer);
         }
         this._httpReady = true;
       });
