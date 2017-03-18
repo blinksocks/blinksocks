@@ -18,5 +18,5 @@ coverage/
 *.tgz
 
 # others
-blinksocks.*.json
-blinksocks.*.log
+blinksocks*.json
+blinksocks*.log
