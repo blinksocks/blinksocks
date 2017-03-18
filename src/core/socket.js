@@ -113,16 +113,12 @@ export class Socket {
       case 'EADDRNOTAVAIL':
       case 'ENETUNREACH':
       case 'ECONNREFUSED':
-        // TODO: maybe we can switch to another server
-        break;
       case 'ETIMEDOUT':
-        // just ignore
-        break;
       case 'ENETDOWN':
       case 'ECONNRESET':
       case 'EAI_AGAIN':
       case 'EPIPE':
-        logger.warn(`[${this._id}] ${err.code} - ${err.message}`);
+        logger.verbose(`[${this._id}] ${err.code} - ${err.message}`);
         break;
       default:
         logger.error(err);
@@ -163,7 +159,7 @@ export class Socket {
    * @returns {Promise.<void>}
    */
   async connectTo({host, port}, callback) {
-    logger.info(`[${this._id}] connecting to:`, {host, port});
+    logger.info(`[${this._id}] connecting to: ${host}:${port}`);
     try {
       const ip = await dnsCache.get(host);
       this._fsocket = net.connect({host: ip, port}, callback);
