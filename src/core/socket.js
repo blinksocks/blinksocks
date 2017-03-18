@@ -144,9 +144,9 @@ export class Socket {
 
   send(buffer, flag) {
     if (flag) {
-      this._fsocket && this._fsocket.write(buffer);
+      this._fsocket && !this._fsocket.destroyed && this._fsocket.write(buffer);
     } else {
-      this._bsocket && this._bsocket.write(buffer);
+      this._bsocket && !this._bsocket.destroyed && this._bsocket.write(buffer);
     }
     Profile.totalOut += buffer.length;
   }
