@@ -1,6 +1,5 @@
 import fs from 'fs';
 
-const PROFILE_LOG_FILE = 'blinksocks.profile.log';
 const PROFILE_SAMPLE_INTERVAL = 1; // seconds
 
 const now = () => (new Date()).getTime();
@@ -48,52 +47,50 @@ export class Profile {
     const totalPackets = this._totalInPackets + this._totalOutPackets;
     const totalBytes = this._totalIn + this._totalOut;
     return {
-      sampleStartedAt: this._startTime,
-      sampleStoppedAt: endTime,
-      sampleDuration: endTime - this._startTime,
-
-      outSpeed: this._outSpeed,
-      maxOutSpeed: this._maxOutSpeed,
-
-      inSpeed: this._inSpeed,
-      maxInSpeed: this._maxInSpeed,
-
-      connections: this._connections,
-      maxConnections: this._maxConnections,
-
-      errors: this._errors,
-      errorRate: this._errors / totalPackets,
-
-      fatals: this._fatals,
-      fatalRate: this._fatals / totalPackets,
-
-      totalOut: this._totalOut,
-      totalOutPackets: this._totalOutPackets,
-
-      totalIn: this._totalIn,
-      totalInPackets: this._totalInPackets,
-
-      totalBytes,
-      totalPackets,
-
-      outBytesRate: this._totalOut / duration,
-      outPacketsRate: this._totalOutPackets / duration,
-
-      inBytesRate: this._totalIn / duration,
-      inPacketsRate: this._totalInPackets / duration,
-
-      totalBytesRate: totalBytes / duration,
-      totalPacketsRate: totalPackets / duration,
-
-      upTime: process.uptime(),
-      cpu: process.cpuUsage(),
-      memory: process.memoryUsage()
+      sample: {
+        from: this._startTime,
+        to: endTime,
+        duration: endTime - this._startTime,
+      },
+      instance: {
+        outSpeed: this._outSpeed,
+        inSpeed: this._inSpeed,
+        connections: this._connections,
+        errors: this._errors,
+        fatals: this._fatals,
+        totalOut: this._totalOut,
+        totalIn: this._totalIn,
+        totalOutPackets: this._totalOutPackets,
+        totalInPackets: this._totalInPackets,
+        totalBytes,
+        totalPackets,
+        errorRate: this._errors ? this._errors / totalPackets : 0,
+        fatalRate: this._fatals ? this._fatals / totalPackets : 0,
+        outBytesRate: this._totalOut / duration,
+        outPacketsRate: this._totalOutPackets / duration,
+        inBytesRate: this._totalIn / duration,
+        inPacketsRate: this._totalInPackets / duration,
+        totalBytesRate: totalBytes / duration,
+        totalPacketsRate: totalPackets / duration,
+      },
+      summary: {
+        maxOutSpeed: this._maxOutSpeed,
+        maxInSpeed: this._maxInSpeed,
+        maxConnections: this._maxConnections,
+      },
+      node: {
+        upTime: process.uptime(),
+        cpu: process.cpuUsage(),
+        memory: process.memoryUsage()
+      }
     };
   }
 
   static save() {
+    const dt = new Date();
+    const postfix = `${dt.getFullYear()}-${dt.getMonth() + 1}-${dt.getDate()}`;
     const data = JSON.stringify(this.snapshot(), null, '  ');
-    fs.writeFileSync(PROFILE_LOG_FILE, data);
+    fs.writeFileSync(`blinksocks.profile-${postfix}.log`, data);
   }
 
   // ---- setters & getters
