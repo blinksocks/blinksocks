@@ -36,7 +36,9 @@ Excluded the `key` field for security.
 
 **MEM**: 1.7GB
 
-**BandWidth**: ?
+**BandWidth**: more than 38.9M/s(DL), less than 200KB/s(UL)
+
+NOTE: The Download Speed(DL) was tested via `curl`. The Upload Speed(UL) was tested via `sftp`.
 
 ## Target
 
@@ -66,15 +68,9 @@ Simple duration: `Mar 19, 2017 6:43 PM` - `Mar 19, 2017 6:51 PM`.
 
 Data are collected by [Stackdriver](https://app.google.stackdriver.com).
 
-### CPU Utilization
-
 ![cpu-utilization](cpu-utilization.png)
 
-### Memory Utilization
-
 ![memory-utilization](memory-utilization.png)
-
-### Network
 
 ![network](network.png)
 
