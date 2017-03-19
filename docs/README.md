@@ -7,3 +7,5 @@
 3. [Architecture](architecture)
 
 4. [Middleware](middleware)
+
+5. [Performance](performance)

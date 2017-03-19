@@ -23,6 +23,7 @@ And [ShadowsocksR](https://github.com/shadowsocksr/shadowsocksr/tree/manyuser).
 * [Principle](docs/principle)
 * [Architecture](docs/architecture)
 * [Middleware](docs/middleware)
+* [Performance](docs/performance)
 
 ## Features
 
@@ -94,7 +95,7 @@ $ blinksocks run --help
 
     -h, --help                           output usage information
     -V, --version                        output the version number
-    -c, --config [file]                  a json format file for configuration, if specified, other options are ignored
+    -c, --config [file]                  a json format file for configuration
     --host <host>                        an ip address or a hostname to bind
     --port <port>                        where to listen on
     --servers [servers]                  a list of servers, split by comma
@@ -178,7 +179,7 @@ To start a server or client, you can prepare a configuration json file(`config.j
 
 * Available Hashes
 
-`sha1`, `sha256`, `sha512`,
+`sha1`, `sha256`, `sha512`
 
 * Available Presets
 
@@ -218,25 +219,25 @@ $ npm run compile
 
 This will compile `src` to `lib`.
 
-## Test in development
+## Verify
 
-Any application support HTTP/Socks5/Socks4/Socks4a can be used for testing.
+Any application support HTTP/Socks5/Socks4/Socks4a can be used for verification.
 
 For example(use curl):
 
 ```
 # Socks5
-$ curl --socks5 localhost:1080 https://www.google.com
-$ curl --socks5-hostname localhost:1080 https://www.google.com
+$ curl -L --socks5 localhost:1080 https://www.google.com
+$ curl -L --socks5-hostname localhost:1080 https://www.google.com
 
 # Socks4
-$ curl --socks4 localhost:1080 https://www.google.com
+$ curl -L --socks4 localhost:1080 https://www.google.com
 
 # Socks4a
-$ curl --socks4a localhost:1080 https://www.google.com
+$ curl -L --socks4a localhost:1080 https://www.google.com
 
 # HTTP
-$ curl -x http://localhost:1080 https://www.google.com
+$ curl -L -x http://localhost:1080 https://www.google.com
 ```
 
 ## Run in production
@@ -296,52 +297,60 @@ $ docker run -d -p 7777:1080 blinksocks:<version>
 
 ## Profile
 
-By adding `--profile` option in command line, you will get a report named `blinksocks.profile.log` after
+By adding `--profile` option in the command line, you will get a report named `blinksocks.profile.log` after
 the program was terminated.
 
 ```
 $ blinksocks run ... --profile
 ```
 
-The report contains several indicators such as:
+The report contains several indicators grouped by different types:
 
 ```
 {
-  "sampleStartedAt": 1489501509866,
-  "sampleStoppedAt": 1489501522167,
-  "sampleDuration": 12301,
-  "outSpeed": 0,
-  "maxOutSpeed": 1492282,
-  "inSpeed": 0,
-  "maxInSpeed": 1512207,
-  "connections": 0,
-  "maxConnections": 2,
-  "errors": 0,
-  "errorRate": 0,
-  "fatals": 0,
-  "fatalRate": 0,
-  "totalOut": 137494,
-  "totalOutPackets": 34,
-  "totalIn": 139107,
-  "totalInPackets": 34,
-  "totalBytes": 276601,
-  "totalPackets": 68,
-  "outBytesRate": 11177.465246727908,
-  "outPacketsRate": 2.764002926591334,
-  "inBytesRate": 11308.59279733355,
-  "inPacketsRate": 2.764002926591334,
-  "totalBytesRate": 22486.058044061458,
-  "totalPacketsRate": 5.528005853182668,
-  "upTime": 16.173,
-  "cpu": {
-    "user": 5010321,
-    "system": 322320
+  "sample": {
+    "from": 1489813164761,
+    "to": 1489821114265,
+    "duration": 7949504
   },
-  "memory": {
-    "rss": 118710272,
-    "heapTotal": 81195008,
-    "heapUsed": 36819960,
-    "external": 845110
+  "instance": {
+    "outSpeed": 0,
+    "inSpeed": 0,
+    "connections": 0,
+    "errors": 0,
+    "fatals": 0,
+    "totalOut": 0,
+    "totalIn": 0,
+    "totalOutPackets": 0,
+    "totalInPackets": 0,
+    "totalBytes": 0,
+    "totalPackets": 0,
+    "errorRate": 0,
+    "fatalRate": 0,
+    "outBytesRate": 0,
+    "outPacketsRate": 0,
+    "inBytesRate": 0,
+    "inPacketsRate": 0,
+    "totalBytesRate": 0,
+    "totalPacketsRate": 0
+  },
+  "summary": {
+    "maxOutSpeed": 0,
+    "maxInSpeed": 0,
+    "maxConnections": 0
+  },
+  "node": {
+    "upTime": 7952.505,
+    "cpu": {
+      "user": 5033903,
+      "system": 623320
+    },
+    "memory": {
+      "rss": 25964544,
+      "heapTotal": 37154816,
+      "heapUsed": 32861192,
+      "external": 9284
+    }
   }
 }
 ```
@@ -352,12 +361,6 @@ The report contains several indicators such as:
 * [SOCKS4a](http://www.openssh.com/txt/socks4a.protocol)
 * [SOCKS5 RFC-1928](https://tools.ietf.org/rfc/rfc1928.txt)
 * [HTTP/1.1 RFC-2616](https://tools.ietf.org/rfc/rfc2616.txt)
-
-## Contributors
-
-Micooz(Owner), micooz@hotmail.com
-
-Waiting for more contributors...
 
 ## License
 
