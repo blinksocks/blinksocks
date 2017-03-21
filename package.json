@@ -30,7 +30,6 @@
     "babel-polyfill": "^6.23.0",
     "commander": "^2.9.0",
     "ip": "^1.1.5",
-    "lodash.padstart": "^4.6.1",
     "winston": "^2.3.1"
   },
   "devDependencies": {
