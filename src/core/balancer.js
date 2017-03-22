@@ -65,13 +65,13 @@ export class Balancer {
   static _query() {
     this._servers.map((server, i) => {
       const _server = JSON.stringify(server);
-      logger.info(`[balancer]: querying ${_server}`);
+      logger.verbose(`[balancer]: querying ${_server}`);
 
       const startTime = now();
       const socket = net.connect(server, () => {
         const ping = now() - startTime;
         this._pings[i] = ping;
-        logger.info(`[balancer]: ${_server} = ${ping}ms`);
+        logger.verbose(`[balancer]: ${_server} = ${ping}ms`);
         socket.end();
       });
       socket.on('error', () => {
