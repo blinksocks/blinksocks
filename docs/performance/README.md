@@ -2,6 +2,8 @@
 
 Here I prepared a simple report to show the performance of `blinksock` in the real world.
 
+> NOTE: This report only shows the behaviour of blinksocks when download a single large file in a specific environment.
+
 ## Test Steps
 
 1. Choose a configuration and deploy blinksocks on both client and server.
@@ -81,7 +83,7 @@ The ideal situation is the two curve are completely coincide, but the reality is
 ## Summary
 
 * The CPU usage of blinksocks is extremely low(`< 4%`).
-* There should be a `memory leak`, because memory haven't been released after download for a long time.
+* ~~There should be a `memory leak`, because memory haven't been released after download for a long time.~~ (see [#30](https://github.com/blinksocks/blinksocks/issues/30))
 * The network in speed is high(`> 1MB/s`) but out speed is very low(`< 300KB/s`), this probably because
-the server bandwidth is not equal on both sides, or blinksocks takes a lot of time(encryption e.g) to send
-data out of the server.
+the server bandwidth is not equal on both sides, ~~or blinksocks takes a lot of time(encryption e.g) to send
+data out of the server~~.
