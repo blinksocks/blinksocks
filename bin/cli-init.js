@@ -41,7 +41,7 @@ const files = [
 Promise.all(
   files.map((file, i) => new Promise((resolve) => {
     const jsonData = JSON.stringify(
-      (i === 1) ? commonJson : Object.assign({}, {'servers': ['']}, commonJson),
+      (i === 0) ? commonJson : Object.assign({}, {'servers': ['']}, commonJson),
       null,
       '  '
     );
