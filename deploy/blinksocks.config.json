@@ -1,0 +1,14 @@
+{
+  "host": "0.0.0.0",
+  "port": 1080,
+  "key": "",
+  "frame": "origin",
+  "frame_params": "",
+  "crypto": "",
+  "crypto_params": "",
+  "protocol": "aead",
+  "protocol_params": "aes-256-cbc,sha256",
+  "obfs": "",
+  "obfs_params": "",
+  "log_level": "info"
+}

@@ -1,0 +1,19 @@
+{
+  "apps": [
+    {
+      "name": "blinksocks",
+      "script": "blinksocks-run",
+      "args": "-c blinksocks.config.json",
+      "node_args": "",
+      "exec_mode": "cluster",
+      "instances": 2,
+      "watch": false,
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "env_production": {
+        "NODE_ENV": "production"
+      }
+    }
+  ]
+}

@@ -20,3 +20,6 @@ coverage/
 # others
 blinksocks*.json
 blinksocks*.log
+
+# ignore
+!deploy/*
