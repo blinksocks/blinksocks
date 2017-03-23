@@ -277,7 +277,7 @@ You can build an image manually or pull it from docker hub:
 * Build an image
 
 ```
-$ cd <project-folder>
+$ cd <project-folder>/deploy
 $ docker build --tag <user>/blinksocks:<version> --no-cache .
 ```
 
