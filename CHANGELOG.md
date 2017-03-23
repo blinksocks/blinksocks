@@ -1,5 +1,22 @@
 # Change Log
 
+## [v2.3.0-beta.1](https://github.com/blinksocks/blinksocks/tree/v2.3.0-beta.1) (2017-03-23)
+[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.2.2...v2.3.0-beta.1)
+
+**Implemented enhancements:**
+
+- Print connection track line once a socket was closed [\#33](https://github.com/blinksocks/blinksocks/issues/33)
+- Refactor docker deploy scripts [\#32](https://github.com/blinksocks/blinksocks/issues/32)
+
+**Fixed bugs:**
+
+- "blinksocks init" generates wrong configurations [\#31](https://github.com/blinksocks/blinksocks/issues/31)
+- Fix typo of git commit hook in package.json [\#29](https://github.com/blinksocks/blinksocks/issues/29)
+
+**Closed issues:**
+
+- Drop "lodash.padstart" dependency [\#28](https://github.com/blinksocks/blinksocks/issues/28)
+
 ## [v2.2.2](https://github.com/blinksocks/blinksocks/tree/v2.2.2) (2017-03-18)
 [Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.2.1...v2.2.2)
 
