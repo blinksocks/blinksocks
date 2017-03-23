@@ -19,12 +19,15 @@ export class Hub {
 
   _hub = null; // instance of class net.Server
 
+  _sockets = []; // instances of our class Socket
+
   constructor(config) {
     Config.init(config);
     this._hub = net.createServer();
     this._hub.on('error', this.onError.bind(this));
     this._hub.on('close', this.onClose.bind(this));
     this._hub.on('connection', this.onConnect.bind(this));
+    this.onSocketClose = this.onSocketClose.bind(this);
   }
 
   onError(err) {
@@ -47,10 +50,22 @@ export class Hub {
     process.exit(0);
   }
 
+  onSocketClose(socket) {
+    this._sockets = this._sockets.filter(({id}) => id !== socket.id);
+    Profile.connections = this._sockets.length;
+    // NOTE: would better not force gc manually
+    // global.gc && global.gc();
+  }
+
   onConnect(socket) {
     const id = nextId();
-    new Socket({id, socket});
-    logger.info(`[hub] client[${id}] connected`);
+    const instance = new Socket({
+      id,
+      socket,
+      onClose: this.onSocketClose
+    });
+    this._sockets.push(instance);
+    logger.info(`[hub] [${id}] ${socket.remoteAddress}:${socket.remotePort} connected`);
     Profile.connections += 1;
   }
 
