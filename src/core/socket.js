@@ -187,7 +187,7 @@ export class Socket {
       this._fsocket.on('close', this.onClose);
       this._fsocket.on('data', this.onBackward);
     } catch (err) {
-      logger.error(err.message);
+      logger.error(`[socket] [${this._id}] connect to ${host}:${port} failed due to: ${err.message}`);
     }
   }
 
