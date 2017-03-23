@@ -39,6 +39,8 @@ export class Socket {
 
   _onClose = null;
 
+  _isHandshakeDone = false;
+
   _bsocket = null;
 
   _fsocket = null;
@@ -74,6 +76,13 @@ export class Socket {
     return this._id;
   }
 
+  get isPipable() {
+    return (
+      this._bsocket !== null && !this._bsocket.destroyed &&
+      this._fsocket !== null && !this._fsocket.destroyed
+    );
+  }
+
   onForward(buffer) {
     if (__IS_CLIENT__ && !this._proxy.isDone()) {
       // client handshake(multiple-protocols), client only
@@ -95,34 +104,38 @@ export class Socket {
       }
     }
 
-    try {
-      this._pipe.feed(
-        __IS_CLIENT__
-          ? MIDDLEWARE_DIRECTION_UPWARD
-          : MIDDLEWARE_DIRECTION_DOWNWARD,
-        _buffer
-      );
-      Profile.totalIn += buffer.length;
-      this._tracks.push(TRACK_CHAR_DOWNLOAD);
-      this._tracks.push(buffer.length);
-    } catch (err) {
-      logger.error(`[${this._id}]`, err);
+    if (this.isPipable || (__IS_SERVER__ && !this._isHandshakeDone)) {
+      try {
+        this._pipe.feed(
+          __IS_CLIENT__
+            ? MIDDLEWARE_DIRECTION_UPWARD
+            : MIDDLEWARE_DIRECTION_DOWNWARD,
+          _buffer
+        );
+        Profile.totalIn += buffer.length;
+        this._tracks.push(TRACK_CHAR_DOWNLOAD);
+        this._tracks.push(buffer.length);
+      } catch (err) {
+        logger.error(`[${this._id}]`, err);
+      }
     }
   }
 
   onBackward(buffer) {
-    try {
-      this._pipe.feed(
-        __IS_CLIENT__
-          ? MIDDLEWARE_DIRECTION_DOWNWARD
-          : MIDDLEWARE_DIRECTION_UPWARD,
-        buffer
-      );
-      Profile.totalIn += buffer.length;
-      this._tracks.push(TRACK_CHAR_DOWNLOAD);
-      this._tracks.push(buffer.length);
-    } catch (err) {
-      logger.error(`[${this._id}]`, err);
+    if (this.isPipable) {
+      try {
+        this._pipe.feed(
+          __IS_CLIENT__
+            ? MIDDLEWARE_DIRECTION_DOWNWARD
+            : MIDDLEWARE_DIRECTION_UPWARD,
+          buffer
+        );
+        Profile.totalIn += buffer.length;
+        this._tracks.push(TRACK_CHAR_DOWNLOAD);
+        this._tracks.push(buffer.length);
+      } catch (err) {
+        logger.error(`[${this._id}]`, err);
+      }
     }
   }
 
@@ -160,14 +173,16 @@ export class Socket {
   }
 
   send(buffer, flag) {
-    if (flag) {
-      this._fsocket && !this._fsocket.destroyed && this._fsocket.write(buffer);
-    } else {
-      this._bsocket && !this._bsocket.destroyed && this._bsocket.write(buffer);
+    if (this.isPipable) {
+      if (flag) {
+        this._fsocket.write(buffer);
+      } else {
+        this._bsocket.write(buffer);
+      }
+      Profile.totalOut += buffer.length;
+      this._tracks.push(TRACK_CHAR_UPLOAD);
+      this._tracks.push(buffer.length);
     }
-    Profile.totalOut += buffer.length;
-    this._tracks.push(TRACK_CHAR_UPLOAD);
-    this._tracks.push(buffer.length);
   }
 
   /**
@@ -199,7 +214,10 @@ export class Socket {
       onNotified: (action) => {
         if (__IS_SERVER__ && action.type === SOCKET_CONNECT_TO_DST) {
           const [addr, callback] = action.payload;
-          return this.connect(addr, callback);
+          return this.connect(addr, () => {
+            this._isHandshakeDone = true;
+            callback();
+          });
         }
         if (action.type === PROCESSING_FAILED) {
           const message = action.payload;
@@ -232,6 +250,7 @@ export class Socket {
       this._tracks.slice(0, perSize).concat([' ... ']).concat(this._tracks.slice(-perSize)) :
       this._tracks;
     let ud = '';
+    let samples = 0;
     for (const el of tracks) {
       if (el === TRACK_CHAR_UPLOAD || el === TRACK_CHAR_DOWNLOAD) {
         if (ud === el) {
@@ -240,8 +259,11 @@ export class Socket {
         ud = el;
       }
       strs.push(el);
+      if (Number.isInteger(el)) {
+        samples += 1;
+      }
     }
-    logger.info(`[socket] [${this._id}] summary: ${strs.join(' ')}`);
+    logger.info(`[socket] [${this._id}] summary(${samples} samples): ${strs.join(' ')}`);
   }
 
   /**
@@ -253,11 +275,12 @@ export class Socket {
   onHandshakeDone(addr, callback) {
     const ep = Balancer.getFastest();
     if (lastTarget === null || ep.host !== lastTarget.host || ep.port !== lastTarget.port) {
-      logger.info('[balancer] use:', JSON.stringify(ep));
+      logger.info(`[balancer] use: ${ep.host}:${ep.port}`);
     }
     lastTarget = ep;
     return this.connect(ep, () => {
       this.createPipe(addr);
+      this._isHandshakeDone = true;
       callback(this.onForward);
     });
   }
