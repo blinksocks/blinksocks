@@ -20,20 +20,20 @@ export class IPreset {
 
   // the following interfaces must be implemented
 
-  clientOut(/* {buffer, next, broadcast, fail} */) {
-
+  clientOut({buffer/* , next, broadcast, fail */}) {
+    return buffer;
   }
 
-  serverIn(/* {buffer, next, broadcast, fail} */) {
-
+  serverIn({buffer/* , next, broadcast, fail */}) {
+    return buffer;
   }
 
-  serverOut(/* {buffer, next, broadcast, fail} */) {
-
+  serverOut({buffer/* , next, broadcast, fail */}) {
+    return buffer;
   }
 
-  clientIn(/* {buffer, next, broadcast, fail} */) {
-
+  clientIn({buffer/* , next, broadcast, fail */}) {
+    return buffer;
   }
 
 }

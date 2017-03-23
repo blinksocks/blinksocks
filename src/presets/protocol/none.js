@@ -9,7 +9,7 @@ import {IPreset} from '../interface';
  *  no
  *
  * @examples
- *   "protocol": "ss-origin"
+ *   "protocol": "none"
  *   "protocol_params": ""
  *
  * @protocol
