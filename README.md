@@ -24,10 +24,12 @@ And [ShadowsocksR](https://github.com/shadowsocksr/shadowsocksr/tree/manyuser).
 * [Architecture](docs/architecture)
 * [Middleware](docs/middleware)
 * [Performance](docs/performance)
+* [For-Developer](docs/developer)
 
 ## Features
 
 * HTTP/Socks5/Socks4/Socks4a compatible
+* Compatible with shadowsocks(only stream ciphers for now)
 * TCP and UDP relay
 * Middleware Based
 * Highly flexible and customizable
@@ -130,7 +132,7 @@ $ blinksocks run --help
 
 To start a server or client, you can prepare a configuration json file(`config.json` for example) then supply to `--config` or `-c`.
 
-```
+```json
 {
   "host": "localhost",
   "port": 6666,
@@ -159,7 +161,7 @@ To start a server or client, you can prepare a configuration json file(`config.j
 | *key             | for encryption and decryption             | -                    |
 | frame            | frame preset                              | "origin"             |
 | frame_params     | parameters for frame preset               | ""                   |
-| crypto           | crypto preset                             | "openssl"            |
+| crypto           | crypto preset                             | ""                   |
 | crypto_params    | parameters for crypto preset              | "aes-256-cfb"        |
 | protocol         | protocol preset                           | "aead"               |
 | protocol_params  | parameters for protocol preset            | "aes-256-cbc,sha256" |
@@ -169,19 +171,9 @@ To start a server or client, you can prepare a configuration json file(`config.j
 
 > NOTE: `host`, `port`, and `key` must be set.
 
-* Available Ciphers
+* Presets, Ciphers and Hashes
 
-`aes-128-ctr`, `aes-192-ctr`, `aes-256-ctr`,
-`aes-128-cfb`, `aes-192-cfb`, `aes-256-cfb`,
-
-`aes-128-ofb`, `aes-192-ofb`, `aes-256-ofb`,
-`aes-128-cbc`, `aes-192-cbc`, `aes-256-cbc`
-
-* Available Hashes
-
-`sha1`, `sha256`, `sha512`
-
-* Available Presets
+Please check out relevant [presets](src/presets), they are documented well.
 
 ```
 ├── crypto
@@ -195,7 +187,9 @@ To start a server or client, you can prepare a configuration json file(`config.j
 └── protocol
     ├── aead.js
     ├── aead2.js
-    └── basic.js
+    ├── basic.js
+    └── none.js
+
 ```
 
 * Log Levels
@@ -205,39 +199,6 @@ npm logging levels by default, you can choose one of them demand:
 
 ```
 { error: 0, warn: 1, info: 2, verbose: 3, debug: 4, silly: 5 }
-```
-
-## Compile for production
-
-For production use, we are running our code under `lib` not `src`, so compilation is necessary.
-
-Compilation of blinksocks is ultra easy:
-
-```
-$ npm run compile
-```
-
-This will compile `src` to `lib`.
-
-## Verify
-
-Any application support HTTP/Socks5/Socks4/Socks4a can be used for verification.
-
-For example(use curl):
-
-```
-# Socks5
-$ curl -L --socks5 localhost:1080 https://www.google.com
-$ curl -L --socks5-hostname localhost:1080 https://www.google.com
-
-# Socks4
-$ curl -L --socks4 localhost:1080 https://www.google.com
-
-# Socks4a
-$ curl -L --socks4a localhost:1080 https://www.google.com
-
-# HTTP
-$ curl -L -x http://localhost:1080 https://www.google.com
 ```
 
 ## Run in production
@@ -258,6 +219,23 @@ $ pm2 start blinksocks-run -- -c config.json
 $ pm2 start blinksocks-run -i 3 -- -c config.json
 ```
 
+## Work with shadowsocks
+
+To work with shadowsocks, make sure you have set `protocol` to **none**:
+
+```
+{
+  ...
+  "crypto": "openssl",
+  "crypto_params": "aes-256-cfb",
+  "protocol": "none",
+  "protocol_params": "",
+  ...
+}
+```
+
+That's all you need to concern!
+
 ## For Firefox/Google Chrome and more...
 
 A common usage of blinksocks is used it on **browsers**, so I give an advise here.
@@ -265,95 +243,6 @@ A common usage of blinksocks is used it on **browsers**, so I give an advise her
 For Google Chrome, [SwitchyOmega](https://github.com/FelisCatus/SwitchyOmega) extension is a great approach to use socks5 service.
 
 For FireFox, you can configure proxy at `Settings - Advanced - Network - Proxy`.
-
-## Deploy(Docker)
-
-We use Docker to auto-deploy a blinksocks **server**.
-
-### 1. Get image
-
-You can build an image manually or pull it from docker hub:
-
-* Build an image
-
-```
-$ cd <project-folder>/deploy
-$ docker build --tag <user>/blinksocks:<version> --no-cache .
-```
-
-* Pull from docker hub
-
-```
-$ docker pull blinksocks:<version>
-```
-
-### 2. Run in a container
-
-Container will expose `1080` port, so you must map a host port to `1080` via `-p`.
-
-```
-$ docker run -d -p 7777:1080 blinksocks:<version>
-```
-
-## Profile
-
-By adding `--profile` option in the command line, you will get a report named `blinksocks.profile.log` after
-the program was terminated.
-
-```
-$ blinksocks run ... --profile
-```
-
-The report contains several indicators grouped by different types:
-
-```
-{
-  "sample": {
-    "from": 1489813164761,
-    "to": 1489821114265,
-    "duration": 7949504
-  },
-  "instance": {
-    "outSpeed": 0,
-    "inSpeed": 0,
-    "connections": 0,
-    "errors": 0,
-    "fatals": 0,
-    "totalOut": 0,
-    "totalIn": 0,
-    "totalOutPackets": 0,
-    "totalInPackets": 0,
-    "totalBytes": 0,
-    "totalPackets": 0,
-    "errorRate": 0,
-    "fatalRate": 0,
-    "outBytesRate": 0,
-    "outPacketsRate": 0,
-    "inBytesRate": 0,
-    "inPacketsRate": 0,
-    "totalBytesRate": 0,
-    "totalPacketsRate": 0
-  },
-  "summary": {
-    "maxOutSpeed": 0,
-    "maxInSpeed": 0,
-    "maxConnections": 0
-  },
-  "node": {
-    "upTime": 7952.505,
-    "cpu": {
-      "user": 5033903,
-      "system": 623320
-    },
-    "memory": {
-      "rss": 25964544,
-      "heapTotal": 37154816,
-      "heapUsed": 32861192,
-      "external": 9284
-    }
-  }
-}
-```
 
 ## References
 
