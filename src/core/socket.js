@@ -27,9 +27,17 @@ import {
 
 const dnsCache = DNSCache.create();
 
+const TRACK_CHAR_UPLOAD = 'u';
+const TRACK_CHAR_DOWNLOAD = 'd';
+const TRACK_MAX_SIZE = 40;
+
+let lastTarget = null;
+
 export class Socket {
 
   _id = null;
+
+  _onClose = null;
 
   _bsocket = null;
 
@@ -39,18 +47,19 @@ export class Socket {
 
   _proxy = null; // client only
 
-  _lastEndPoint = null;
+  _tracks = []; // [`remote`, `target`, 'u', '20', 'u', '20', 'd', '10', ...]
 
-  constructor({id, socket}) {
-    this._id = id;
-    this._bsocket = socket;
-    this._bsocket.on('error', (err) => this.onError(err));
-    this._bsocket.on('close', (had_error) => this.onClose(had_error));
-    this._bsocket.on('data', (buffer) => this.onForward(buffer));
+  constructor({id, socket, onClose}) {
     this.onError = this.onError.bind(this);
     this.onClose = this.onClose.bind(this);
     this.onForward = this.onForward.bind(this);
     this.onBackward = this.onBackward.bind(this);
+    this._id = id;
+    this._onClose = onClose;
+    this._bsocket = socket;
+    this._bsocket.on('error', this.onError);
+    this._bsocket.on('close', this.onClose);
+    this._bsocket.on('data', this.onForward);
     if (__IS_SERVER__) {
       this.createPipe();
     } else {
@@ -58,6 +67,11 @@ export class Socket {
         onHandshakeDone: this.onHandshakeDone.bind(this)
       });
     }
+    this._tracks.push(`${socket.remoteAddress}:${socket.remotePort}`);
+  }
+
+  get id() {
+    return this._id;
   }
 
   onForward(buffer) {
@@ -89,6 +103,8 @@ export class Socket {
         _buffer
       );
       Profile.totalIn += buffer.length;
+      this._tracks.push(TRACK_CHAR_DOWNLOAD);
+      this._tracks.push(buffer.length);
     } catch (err) {
       logger.error(`[${this._id}]`, err);
     }
@@ -103,6 +119,8 @@ export class Socket {
         buffer
       );
       Profile.totalIn += buffer.length;
+      this._tracks.push(TRACK_CHAR_DOWNLOAD);
+      this._tracks.push(buffer.length);
     } catch (err) {
       logger.error(`[${this._id}]`, err);
     }
@@ -128,18 +146,17 @@ export class Socket {
   }
 
   onClose() {
-    if (this._bsocket !== null && !this._bsocket.destroyed) {
-      this._bsocket.end();
-      this._bsocket = null;
-      logger.info(`[${this._id}] downstream closed`);
-      Profile.connections -= 1;
+    const sockets = [this._bsocket, this._fsocket];
+    for (const socket of sockets) {
+      if (socket !== null && !socket.destroyed) {
+        socket.destroy();
+        this._onClose(this); // notify hub to remove this one
+        logger.info(`[socket] [${this._id}] closed`);
+        this.dumpTrack();
+      }
     }
-    if (this._fsocket !== null && !this._fsocket.destroyed) {
-      this._fsocket.end();
-      this._fsocket = null;
-      logger.info(`[${this._id}] upstream closed`);
-      Profile.connections -= 1;
-    }
+    this._bsocket = null;
+    this._fsocket = null;
   }
 
   send(buffer, flag) {
@@ -149,6 +166,8 @@ export class Socket {
       this._bsocket && !this._bsocket.destroyed && this._bsocket.write(buffer);
     }
     Profile.totalOut += buffer.length;
+    this._tracks.push(TRACK_CHAR_UPLOAD);
+    this._tracks.push(buffer.length);
   }
 
   /**
@@ -158,8 +177,9 @@ export class Socket {
    * @param callback
    * @returns {Promise.<void>}
    */
-  async connectTo({host, port}, callback) {
-    logger.info(`[${this._id}] connecting to: ${host}:${port}`);
+  async connect({host, port}, callback) {
+    logger.info(`[socket] [${this._id}] connecting to: ${host}:${port}`);
+    this._tracks.push(`${host}:${port}`);
     try {
       const ip = await dnsCache.get(host);
       this._fsocket = net.connect({host: ip, port}, callback);
@@ -179,7 +199,7 @@ export class Socket {
       onNotified: (action) => {
         if (__IS_SERVER__ && action.type === SOCKET_CONNECT_TO_DST) {
           const [addr, callback] = action.payload;
-          return this.connectTo(addr, callback);
+          return this.connect(addr, callback);
         }
         if (action.type === PROCESSING_FAILED) {
           const message = action.payload;
@@ -202,6 +222,29 @@ export class Socket {
   }
 
   /**
+   * print connection track string, and only record the
+   * leading and the trailing TRACK_MAX_SIZE / 2
+   */
+  dumpTrack() {
+    const strs = [];
+    const perSize = Math.floor(TRACK_MAX_SIZE / 2);
+    const tracks = (this._tracks.length > TRACK_MAX_SIZE) ?
+      this._tracks.slice(0, perSize).concat([' ... ']).concat(this._tracks.slice(-perSize)) :
+      this._tracks;
+    let ud = '';
+    for (const el of tracks) {
+      if (el === TRACK_CHAR_UPLOAD || el === TRACK_CHAR_DOWNLOAD) {
+        if (ud === el) {
+          continue;
+        }
+        ud = el;
+      }
+      strs.push(el);
+    }
+    logger.info(`[socket] [${this._id}] summary: ${strs.join(' ')}`);
+  }
+
+  /**
    * client handshake
    * @param addr
    * @param callback
@@ -209,11 +252,11 @@ export class Socket {
    */
   onHandshakeDone(addr, callback) {
     const ep = Balancer.getFastest();
-    if (this._lastEndPoint === null || ep.host !== this._lastEndPoint.host || ep.port !== this._lastEndPoint.port) {
+    if (lastTarget === null || ep.host !== lastTarget.host || ep.port !== lastTarget.port) {
       logger.info('[balancer] use:', JSON.stringify(ep));
     }
-    this._lastEndPoint = ep;
-    return this.connectTo(ep, () => {
+    lastTarget = ep;
+    return this.connect(ep, () => {
       this.createPipe(addr);
       callback(this.onForward);
     });
