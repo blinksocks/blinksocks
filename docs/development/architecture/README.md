@@ -67,21 +67,21 @@ A typical preset must implement four methods of IPreset interface:
 // custom.js
 export default class CustomPreset extends IPreset {
 
-  clientOut(/* {buffer, next, broadcast, fail} */) {
-    // next(buf);  for async
-    // return buf; for sync
+  clientOut({buffer/* , next, broadcast, fail */}) {
+    // next(buffer); async
+    return buffer; // sync
   }
 
-  serverIn(/* {buffer, next, broadcast, fail} */) {
-
+  serverIn({buffer/* , next, broadcast, fail */}) {
+    return buffer;
   }
 
-  serverOut(/* {buffer, next, broadcast, fail} */) {
-
+  serverOut({buffer/* , next, broadcast, fail */}) {
+    return buffer;
   }
 
-  clientIn(/* {buffer, next, broadcast, fail} */) {
-
+  clientIn({buffer/* , next, broadcast, fail */}) {
+    return buffer;
   }
 
 }

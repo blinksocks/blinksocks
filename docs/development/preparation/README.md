@@ -1,4 +1,4 @@
-# For Developer
+# Preparation
 
 ## Get the source
 
@@ -18,8 +18,8 @@ Prepare your configurations and start to test:
 
 ```
 $ bin/cli-init.js
-$ bin/cli-run.js -c blinksocks.client.json
-$ bin/cli-run.js -c blinksocks.server.json
+$ NODE_ENV=development bin/cli-client.js -c blinksocks.json
+$ NODE_ENV=development bin/cli-server.js -c blinksocks.json
 ```
 
 ## Verify
@@ -55,42 +55,13 @@ $ npm run compile
 
 This will compile `src` to `lib`.
 
-## Deploy(Docker)
-
-We use Docker to auto-deploy a blinksocks **server**.
-
-### 1. Get image
-
-You can build an image manually or pull it from docker hub:
-
-* Build an image
-
-```
-$ cd <project-folder>/deploy
-$ docker build --tag <user>/blinksocks:<version> --no-cache .
-```
-
-* Pull from docker hub
-
-```
-$ docker pull blinksocks:<version>
-```
-
-### 2. Run in a container
-
-Container will expose `1080` port, so you must map a host port to `1080` via `-p`.
-
-```
-$ docker run -d -p 7777:1080 blinksocks:<version>
-```
-
 ## Profile
 
 By adding `--profile` option in the command line, you will get a report named `blinksocks.profile.log` after
 the program was terminated.
 
 ```
-$ blinksocks run ... --profile
+$ blinksocks client ... --profile
 ```
 
 The report contains several indicators grouped by different types:

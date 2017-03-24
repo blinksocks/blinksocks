@@ -66,7 +66,7 @@ export class Config {
     if (typeof json.servers !== 'undefined') {
 
       if (!Array.isArray(json.servers)) {
-        throw Error('\'servers\' must be an array');
+        throw Error('\'servers\' must be provided as an array');
       }
 
       const servers = json.servers
@@ -75,7 +75,7 @@ export class Config {
         .map(([host, port]) => ({host, port}));
 
       if (servers.length < 1) {
-        throw Error('\'server_host\' must contain at least one valid item');
+        throw Error('\'servers\' must contain at least one item');
       }
 
       this.servers = servers;

@@ -92,7 +92,7 @@ and blinksocks client was constructed, so you can obtain that address in your fr
 ```js
 // core/socket.js
 this._pipe.setMiddlewares(MIDDLEWARE_DIRECTION_UPWARD, [
-  createMiddleware(MIDDLEWARE_TYPE_FRAME, [this._targetAddress]),
+  createMiddleware(MIDDLEWARE_TYPE_FRAME, [addr]),
   createMiddleware(MIDDLEWARE_TYPE_CRYPTO),
   createMiddleware(MIDDLEWARE_TYPE_PROTOCOL),
   createMiddleware(MIDDLEWARE_TYPE_OBFS),
@@ -103,11 +103,20 @@ this._pipe.setMiddlewares(MIDDLEWARE_DIRECTION_UPWARD, [
 // preset/frame/origin.js
 export default class OriginFrame extends IPreset {
 
-  _targetAddress = null; // client use only
+  _atyp = ATYP_V4;
 
-  constructor(address) {
+  _addr = null; // buffer
+
+  _port = null; // buffer
+
+  constructor(addr) {
     super();
-    this._targetAddress = address;
+    if (__IS_CLIENT__) {
+      const {type, host, port} = addr;
+      this._atyp = type;
+      this._addr = net.isIP(host) ? ip.toBuffer(host) : Buffer.from(host);
+      this._port = port instanceof Buffer ? port : Utils.numberToUIntBE(port);
+    }
   }
 
   // ...
@@ -118,4 +127,4 @@ export default class OriginFrame extends IPreset {
 # Presets
 
 For more document about built-in presets, please check out each implementation
-files in [src/presets](../../src/presets).
+files in [src/presets](../../../src/presets).
