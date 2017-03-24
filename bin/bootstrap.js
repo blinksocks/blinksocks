@@ -2,18 +2,21 @@ const fs = require('fs');
 const program = require('commander');
 const packageJson = require('../package.json');
 
+// const BOOTSTRAP_TYPE_CLIENT = 0;
+const BOOTSTRAP_TYPE_SERVER = 1;
+
 const version = packageJson.version;
 const usage = '--host <host> --port <port> --key <key> [...]';
 
 const options = [
   ['-c, --config [file]', 'a json format file for configuration', ''],
-  ['--host <host>', 'an ip address or a hostname to bind', 'localhost'],
-  ['--port <port>', 'where to listen on', 1080],
-  ['--servers [servers]', 'a list of servers, split by comma', (value) => value.split(',')],
+  ['--host <host>', 'an ip address or a hostname to bind, default: \'localhost\'', 'localhost'],
+  ['--port <port>', 'where to listen on, default: 1080', 1080],
+  ['--servers [servers]', 'a list of servers used by client, split by comma, default: \'\'', (value) => value.split(','), ''],
   ['--key <key>', 'a key for encryption and decryption'],
   ['--frame [frame]', 'a preset used in frame middleware, default: \'origin\'', 'origin'],
   ['--frame-params [crypto-params]', 'parameters for frame preset, default: \'\'', ''],
-  ['--crypto [crypto]', 'a preset used in crypto middleware, default: \'openssl\'', 'openssl'],
+  ['--crypto [crypto]', 'a preset used in crypto middleware, default: \'\'', ''],
   ['--crypto-params [crypto-params]', 'parameters for crypto, default: \'aes-256-cfb\'', 'aes-256-cfb'],
   ['--protocol [protocol]', 'a preset used in protocol middleware, default: \'aead\'', 'aead'],
   ['--protocol-params [protocol-params]', 'parameters for protocol, default: \'aes-256-cbc,sha256\'', 'aes-256-cbc,sha256'],
@@ -28,21 +31,22 @@ const examples = `
   Examples:
   
   As simple as possible:
-    $ blinksocks run -c config.json
+    $ blinksocks client -c config.json
   
   To start a server:
-    $ blinksocks run --host 0.0.0.0 --port 7777 --key password
+    $ blinksocks server --host 0.0.0.0 --port 7777 --key password
   
   To start a client:
-    $ blinksocks run --host localhost --port 1080 --servers node1.test.com:7777,node2.test.com:7777 --key password
+    $ blinksocks client --host localhost --port 1080 --key password --servers=node1.test.com:7777,node2.test.com:7777
 `;
 
 /**
  * get raw config object from json or command line options
+ * @param type
  * @param options
  * @returns {object}
  */
-function obtainConfig(options) {
+function obtainConfig(type, options) {
   let config = {};
   if (options.config !== '') {
     // via --config
@@ -76,16 +80,16 @@ function obtainConfig(options) {
   // others
   const {servers, quiet, profile} = options;
   Object.assign(config, {
-    profile: !!profile
+    profile: !!profile,
+    servers: servers || config.servers
   });
-
-  if (servers) {
-    Object.assign(config, {servers});
+  if (type === BOOTSTRAP_TYPE_SERVER) {
+    delete config.servers;
   }
   return config;
 }
 
-module.exports = function ({Hub}) {
+module.exports = function (type, {Hub}) {
   const pg = program.version(version).usage(usage);
 
   for (const option of options) {
@@ -101,7 +105,7 @@ module.exports = function ({Hub}) {
     process.exit(0);
   }
 
-  const config = obtainConfig(program);
+  const config = obtainConfig(type, program);
   if (config !== null) {
     try {
       const app = new Hub(config);

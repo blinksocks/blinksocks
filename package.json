@@ -6,7 +6,8 @@
   "bin": {
     "blinksocks": "bin/cli.js",
     "blinksocks-init": "bin/cli-init.js",
-    "blinksocks-run": "bin/cli-run.js"
+    "blinksocks-client": "bin/cli-client.js",
+    "blinksocks-server": "bin/cli-server.js"
   },
   "scripts": {
     "test": "npm run lint && npm run test:coverage",

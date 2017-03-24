@@ -18,9 +18,10 @@ function getRandomString(len) {
     .join('');
 }
 
-const commonJson = {
+const json = {
   "host": "localhost",
   "port": 1080,
+  "servers": [],
   "key": getRandomString(16),
   "frame": "origin",
   "frame_params": "",
@@ -30,31 +31,14 @@ const commonJson = {
   "protocol_params": "aes-256-cbc,sha256",
   "obfs": "",
   "obfs_params": "",
-  "log_level": "error"
+  "log_level": "info"
 };
 
-const files = [
-  'blinksocks.server.json',
-  'blinksocks.client.json'
-];
+const file = 'blinksocks.json';
 
-Promise.all(
-  files.map((file, i) => new Promise((resolve) => {
-    const jsonData = JSON.stringify(
-      (i === 0) ? commonJson : Object.assign({}, {'servers': ['']}, commonJson),
-      null,
-      '  '
-    );
-    fs.writeFile(file, jsonData, function (err) {
-      if (err) {
-        throw err;
-      }
-      resolve();
-    });
-  }))
-)
-  .then(() => {
-    console.log('configurations are saved at:');
-    files.forEach((f) => console.log(f));
-  })
-  .catch((err) => console.error(err));
+const data = JSON.stringify(json, null, '  ');
+fs.writeFile(file, data, function (err) {
+  if (err) {
+    throw err;
+  }
+});
