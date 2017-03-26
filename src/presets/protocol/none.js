@@ -21,7 +21,7 @@ import {IPreset} from '../interface';
  *   |           Variable         |
  *   +----------------------------+
  */
-export default class SSOriginProtocol extends IPreset {
+export default class NoneProtocol extends IPreset {
 
   clientOut({buffer}) {
     return buffer;
