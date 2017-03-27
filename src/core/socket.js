@@ -193,16 +193,22 @@ export class Socket {
    * @returns {Promise.<void>}
    */
   async connect({host, port}, callback) {
-    logger.info(`[socket] [${this._id}] connecting to: ${host}:${port}`);
-    this._tracks.push(`${host}:${port}`);
-    try {
-      const ip = await dnsCache.get(host);
-      this._fsocket = net.connect({host: ip, port}, callback);
-      this._fsocket.on('error', this.onError);
-      this._fsocket.on('close', this.onClose);
-      this._fsocket.on('data', this.onBackward);
-    } catch (err) {
-      logger.error(`[socket] [${this._id}] connect to ${host}:${port} failed due to: ${err.message}`);
+    // host maybe empty, see https://github.com/blinksocks/blinksocks/issues/34
+    if (host && port) {
+      logger.info(`[socket] [${this._id}] connecting to: ${host}:${port}`);
+      this._tracks.push(`${host}:${port}`);
+      try {
+        const ip = await dnsCache.get(host);
+        this._fsocket = net.connect({host: ip, port}, callback);
+        this._fsocket.on('error', this.onError);
+        this._fsocket.on('close', this.onClose);
+        this._fsocket.on('data', this.onBackward);
+      } catch (err) {
+        logger.error(`[socket] [${this._id}] connect to ${host}:${port} failed due to: ${err.message}`);
+      }
+    } else {
+      logger.warn(`unexpected host=${host} port=${port}`);
+      this.onClose();
     }
   }
 
