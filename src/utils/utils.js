@@ -6,15 +6,19 @@ import {
   ATYP_V6
 } from '../proxies/common';
 
+export const BYTE_ORDER_BE = 0;
+export const BYTE_ORDER_LE = 1;
+
 export class Utils {
 
   /**
    * convert a number to a buffer with specified length in big-endian
    * @param num
    * @param len
+   * @param byteOrder
    * @returns {Buffer}
    */
-  static numberToUIntBE(num, len = 2) {
+  static numberToUInt(num, len = 2, byteOrder = BYTE_ORDER_BE) {
     if (len < 1) {
       throw Error('len must be greater than 0');
     }
@@ -25,28 +29,11 @@ export class Utils {
     }
 
     const buf = Buffer.alloc(len);
-    buf.writeUIntBE(num, 0, len);
-    return buf;
-  }
-
-  /**
-   * convert a number to a buffer with specified length in little-endian
-   * @param num
-   * @param len
-   * @returns {Buffer}
-   */
-  static numberToUIntLE(num, len = 2) {
-    if (len < 1) {
-      throw Error('len must be greater than 0');
+    if (byteOrder === BYTE_ORDER_BE) {
+      buf.writeUIntBE(num, 0, len);
+    } else {
+      buf.writeUIntLE(num, 0, len);
     }
-
-    const isOutOfRange = num > parseInt(`0x${'ff'.repeat(len)}`);
-    if (isOutOfRange) {
-      throw Error(`Number ${num} is too long to store in a '${len}' length buffer`);
-    }
-
-    const buf = Buffer.alloc(len);
-    buf.writeUIntLE(num, 0, len);
     return buf;
   }
 
