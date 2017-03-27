@@ -16,7 +16,7 @@ export class Utils {
    */
   static numberToUIntBE(num, len = 2) {
     if (len < 1) {
-      throw Error('len must be greater than 1');
+      throw Error('len must be greater than 0');
     }
 
     const isOutOfRange = num > parseInt(`0x${'ff'.repeat(len)}`);
@@ -26,6 +26,27 @@ export class Utils {
 
     const buf = Buffer.alloc(len);
     buf.writeUIntBE(num, 0, len);
+    return buf;
+  }
+
+  /**
+   * convert a number to a buffer with specified length in little-endian
+   * @param num
+   * @param len
+   * @returns {Buffer}
+   */
+  static numberToUIntLE(num, len = 2) {
+    if (len < 1) {
+      throw Error('len must be greater than 0');
+    }
+
+    const isOutOfRange = num > parseInt(`0x${'ff'.repeat(len)}`);
+    if (isOutOfRange) {
+      throw Error(`Number ${num} is too long to store in a '${len}' length buffer`);
+    }
+
+    const buf = Buffer.alloc(len);
+    buf.writeUIntLE(num, 0, len);
     return buf;
   }
 
