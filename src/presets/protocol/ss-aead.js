@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import {IPreset} from '../interface';
-import {Utils, AdvancedBuffer} from '../../utils';
+import {Utils, BYTE_ORDER_LE, AdvancedBuffer} from '../../utils';
 import {EVP_BytesToKey} from '../crypto/openssl';
 
 const NONCE_LEN = 12;
@@ -146,37 +146,27 @@ export default class SSAeadProtocol extends IPreset {
     this._adBuf.on('data', this.onChunkReceived.bind(this));
   }
 
-  clientOut({buffer}) {
+  beforeOut({buffer}) {
     let salt = null;
     if (this._cipherKey === null) {
       const size = this._cipherName.split('-')[1] / 8; // key and salt size
       salt = crypto.randomBytes(size);
       this._cipherKey = HKDF(salt, EVP_BytesToKey(__KEY__, size), this._info, size);
     }
-    const encChunks = [];
-    const chunks = getChunks(buffer, MAX_DATA_LEN);
-    for (const chunk of chunks) {
-      const dataLen = Utils.numberToUIntBE(chunk.length);
+    const chunks = getChunks(buffer, MAX_DATA_LEN).map((chunk) => {
+      const dataLen = Utils.numberToUInt(chunk.length);
       const [encLen, lenTag] = this.encrypt(dataLen);
       const [encData, dataTag] = this.encrypt(chunk);
-      encChunks.push(Buffer.concat([encLen, lenTag, encData, dataTag]));
-    }
+      return Buffer.concat([encLen, lenTag, encData, dataTag]);
+    });
     if (salt) {
-      return Buffer.concat([salt, ...encChunks]);
+      return Buffer.concat([salt, ...chunks]);
     } else {
-      return Buffer.concat(encChunks);
+      return Buffer.concat(chunks);
     }
   }
 
-  serverIn({buffer}) {
-    return buffer;
-  }
-
-  serverOut({buffer}) {
-    return buffer;
-  }
-
-  clientIn({buffer, next, fail}) {
+  beforeIn({buffer, next, fail}) {
     this._adBuf.put(buffer, {next, fail});
   }
 
@@ -184,7 +174,7 @@ export default class SSAeadProtocol extends IPreset {
     if (this._decipherKey === null) {
       const size = this._cipherName.split('-')[1] / 8; // key and salt size
       if (buffer.length < size) {
-        return 0; // too short to get salt
+        return; // too short to get salt
       }
       const salt = buffer.slice(0, size);
       this._decipherKey = HKDF(salt, EVP_BytesToKey(__KEY__, size), this._info, size);
@@ -192,7 +182,7 @@ export default class SSAeadProtocol extends IPreset {
     }
 
     if (buffer.length < MIN_CHUNK_LEN) {
-      return 0; // too short to verify DataLen
+      return; // too short to verify DataLen
     }
 
     // verify DataLen, DataLen_TAG
@@ -220,7 +210,7 @@ export default class SSAeadProtocol extends IPreset {
     const cipher = crypto.createCipheriv(
       this._cipherName,
       this._cipherKey,
-      Utils.numberToUIntLE(this._cipherNonce, NONCE_LEN)
+      Utils.numberToUInt(this._cipherNonce, NONCE_LEN, BYTE_ORDER_LE)
     );
     const encrypted = Buffer.concat([cipher.update(message), cipher.final()]);
     const tag = cipher.getAuthTag();
@@ -232,7 +222,7 @@ export default class SSAeadProtocol extends IPreset {
     const decipher = crypto.createDecipheriv(
       this._cipherName,
       this._decipherKey,
-      Utils.numberToUIntLE(this._decipherNonce, NONCE_LEN)
+      Utils.numberToUInt(this._decipherNonce, NONCE_LEN, BYTE_ORDER_LE)
     );
     decipher.setAuthTag(tag);
     try {
