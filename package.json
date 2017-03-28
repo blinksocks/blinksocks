@@ -1,7 +1,7 @@
 {
   "name": "blinksocks",
-  "version": "2.3.0-beta.2",
-  "description": "Yet another socks5 proxy, designed for speed.",
+  "version": "2.3.0-beta.3",
+  "description": "Yet another secure proxy, designed for speed.",
   "main": "lib/index.js",
   "bin": {
     "blinksocks": "bin/cli.js",
@@ -54,11 +54,10 @@
     "type": "git"
   },
   "keywords": [
-    "fast",
-    "http",
+    "socks5",
     "socks4",
     "socks4a",
-    "socks5",
+    "http",
     "proxy",
     "nodejs",
     "shadowsocks",
