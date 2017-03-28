@@ -140,21 +140,7 @@ export class Socket {
   }
 
   onError(err) {
-    switch (err.code) {
-      case 'EADDRNOTAVAIL':
-      case 'ENETUNREACH':
-      case 'ECONNREFUSED':
-      case 'ETIMEDOUT':
-      case 'ENETDOWN':
-      case 'ECONNRESET':
-      case 'EAI_AGAIN':
-      case 'EPIPE':
-        logger.verbose(`[${this._id}] ${err.code} - ${err.message}`);
-        break;
-      default:
-        logger.error(err);
-        break;
-    }
+    logger.verbose(`[${this._id}] ${err.code} - ${err.message}`);
     Profile.errors += 1;
   }
 
