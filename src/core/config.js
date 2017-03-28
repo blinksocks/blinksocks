@@ -136,7 +136,7 @@ export class Config {
       throw Error('\'protocol_params\' must be a string');
     }
 
-    this.protocol = json.protocol || 'aead';
+    this.protocol = json.protocol || 'none';
     this.protocol_params = json.protocol_params;
 
     // obfs & obfs_params
