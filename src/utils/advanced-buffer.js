@@ -37,6 +37,8 @@ export class AdvancedBuffer extends EventEmitter {
 
   _getPacketLength = null;
 
+  _nextLength = 0;
+
   constructor(options = {}) {
     super();
     if (typeof options.getPacketLength !== 'function') {
@@ -72,33 +74,45 @@ export class AdvancedBuffer extends EventEmitter {
    * @returns {Buffer}
    */
   _digest(buffer, ...args) {
-    const bound = this._getPacketLength(buffer, ...args);
+    const expectLen = this._nextLength || this._getPacketLength(buffer, ...args);
 
-    if (bound === 0 || typeof bound === 'undefined') {
+    if (expectLen === 0 || typeof expectLen === 'undefined') {
       return buffer; // continue to put
     }
 
-    if (bound === -1) {
+    if (expectLen === -1) {
       return Buffer.alloc(0); // drop this one
     }
 
-    if (bound instanceof Buffer) {
-      return this._digest(bound, ...args); // start from the new point
+    if (expectLen instanceof Buffer) {
+      return this._digest(expectLen, ...args); // start from the new point
     }
 
-    if (buffer.length === bound) {
+    // luckily: <- [chunk]
+    if (buffer.length === expectLen) {
       this.emit('data', Buffer.from(buffer), ...args);
+      this._nextLength = 0;
       return Buffer.alloc(0);
     }
 
-    if (buffer.length > bound) {
-      this.emit('data', buffer.slice(0, bound), ...args);
-      // recursively digest buffer
-      return this._digest(buffer.slice(bound), ...args);
+    // incomplete packet: <- [chu]
+    if (buffer.length < expectLen) {
+      // prevent redundant calling to getPacketLength()
+      this._nextLength = expectLen;
+
+      // continue to put
+      return buffer;
     }
 
-    if (buffer.length < bound) {
-      return buffer; // continue to put
+    // packet sticking: <- [chunk][chunk][chu...
+    if (buffer.length > expectLen) {
+      this.emit('data', buffer.slice(0, expectLen), ...args);
+
+      // note that each chunk has probably different length
+      this._nextLength = 0;
+
+      // digest buffer recursively
+      return this._digest(buffer.slice(expectLen), ...args);
     }
   }
 
