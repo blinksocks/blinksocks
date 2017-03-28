@@ -1,5 +1,16 @@
 # Change Log
 
+## [v2.3.0-beta.3](https://github.com/blinksocks/blinksocks/tree/v2.3.0-beta.3) (2017-03-28)
+[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.3.0-beta.2...v2.3.0-beta.3)
+
+**Implemented enhancements:**
+
+- Disable a server by prefixing a '-' [\#38](https://github.com/blinksocks/blinksocks/issues/38)
+
+**Closed issues:**
+
+- Error: Invalid arguments: hostname must be a string or falsey [\#34](https://github.com/blinksocks/blinksocks/issues/34)
+
 ## [v2.3.0-beta.2](https://github.com/blinksocks/blinksocks/tree/v2.3.0-beta.2) (2017-03-24)
 [Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.3.0-beta.1...v2.3.0-beta.2)
 
