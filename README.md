@@ -20,7 +20,7 @@ and [ShadowsocksR](https://github.com/shadowsocksr/shadowsocksr).
 ## Features
 
 * HTTP/Socks5/Socks4/Socks4a using the same port
-* Compatible with **shadowsocks** [stream ciphers](https://shadowsocks.org/en/spec/Stream-Ciphers.html)
+* Partially compatible with **shadowsocks** [#27](https://github.com/blinksocks/blinksocks/issues/27)
 * Flexible, customizable and pluggable
 * Running on Linux based, Windows and macOS
 * Docker integration
