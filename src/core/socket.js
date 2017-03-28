@@ -256,7 +256,6 @@ export class Socket {
       this._tracks.slice(0, perSize).concat([' ... ']).concat(this._tracks.slice(-perSize)) :
       this._tracks;
     let ud = '';
-    let samples = 0;
     for (const el of tracks) {
       if (el === TRACK_CHAR_UPLOAD || el === TRACK_CHAR_DOWNLOAD) {
         if (ud === el) {
@@ -265,11 +264,9 @@ export class Socket {
         ud = el;
       }
       strs.push(el);
-      if (Number.isInteger(el)) {
-        samples += 1;
-      }
     }
-    logger.info(`[socket] [${this._id}] summary(${samples} samples): ${strs.join(' ')}`);
+    const samples = this._tracks.filter(Number.isInteger).length;
+    logger.info(`[socket] [${this._id}] summary(${samples} sampled): ${strs.join(' ')}`);
   }
 
   /**
