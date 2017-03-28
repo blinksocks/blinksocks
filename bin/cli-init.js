@@ -5,30 +5,28 @@ const fs = require('fs');
 const crypto = require('crypto');
 
 /**
- * return random human readable string
+ * return a fixed length random string from array
+ * @param array
+ * @param len
  * @returns {string}
  */
-function getRandomString(len) {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+<>?:|{}ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const size = chars.length;
-  return crypto.randomBytes(len)
-    .toJSON()
-    .data
-    .map((char) => chars[char % size])
-    .join('');
+function random(array, len) {
+  const size = array.length;
+  const randomIndexes = crypto.randomBytes(len).toJSON().data;
+  return randomIndexes.map((char) => array[char % size]).join('');
 }
 
 const json = {
   "host": "localhost",
   "port": 1080,
   "servers": [],
-  "key": getRandomString(16),
+  "key": random('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+<>?:|{}ABCDEFGHIJKLMNOPQRSTUVWXYZ', 16),
   "frame": "origin",
   "frame_params": "",
   "crypto": "",
   "crypto_params": "",
-  "protocol": "aead",
-  "protocol_params": "aes-256-cbc,sha256",
+  "protocol": "ss-aead",
+  "protocol_params": "aes-256-gcm,ss-subkey",
   "obfs": "",
   "obfs_params": "",
   "log_level": "info"
