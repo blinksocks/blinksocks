@@ -1,6 +1,6 @@
 # Config.json
 
-To start a server or client, you can prepare a configuration json file(`config.json` for example)
+To start a server or a client, you can prepare a configuration json file(`config.json` for example)
 then supply it to `--config` or `-c`:
 
 ```
@@ -32,23 +32,43 @@ $ blinksocks -c config.json
 
 ## Description
 
-|       FIELD      |               DESCRIPTION                 |        DEFAULT       |
-|:-----------------|:------------------------------------------|:---------------------|
-| *host            | local ip address or domain name           | "localhost"          |
-| *port            | local port to bind                        | 1080                 |
-| servers          | a list of blinksocks server               | -                    |
-| *key             | for encryption and decryption             | -                    |
-| frame            | frame preset                              | "origin"             |
-| frame_params     | parameters for frame preset               | ""                   |
-| crypto           | crypto preset                             | "none"               |
-| crypto_params    | parameters for crypto preset              | "aes-256-cfb"        |
-| protocol         | protocol preset                           | "aead"               |
-| protocol_params  | parameters for protocol preset            | "aes-256-cbc,sha256" |
-| obfs             | obfs preset                               | "none"               |
-| obfs_params      | parameters for obfs preset                | ""                   |
-| log_level        | log level                                 | "error"              |
+|       FIELD      |               DESCRIPTION                 |         EXAMPLE         |
+|:-----------------|:------------------------------------------|:------------------------|
+| *host            | local ip address or domain name           | "localhost"             |
+| *port            | local port to bind                        | 1024-65535              |
+| servers          | a list of blinksocks server               | -                       |
+| *key             | for encryption and decryption             | -                       |
+| frame            | frame preset                              | "origin"                |
+| frame_params     | parameters for frame preset               | ""                      |
+| crypto           | crypto preset                             | ""                      |
+| crypto_params    | parameters for crypto preset              | ""                      |
+| protocol         | protocol preset                           | "ss-aead"               |
+| protocol_params  | parameters for protocol preset            | "aes-256-gcm,ss-subkey" |
+| obfs             | obfs preset                               | ""                      |
+| obfs_params      | parameters for obfs preset                | ""                      |
+| log_level        | log level                                 | "info"                  |
 
 > NOTE: `host`, `port`, and `key` must be set.
+
+* Servers
+
+`servers` includes multiple servers, a server must either be formed with `ip:port` or `hostname:port`.
+
+You can temporary disable servers by prefixing a '-':
+
+```
+{
+  ...
+  "servers": [
+    "123.123.123.123:8080",
+    "example.com:4545",
+    "-disabled.thisone.com:4545" // disable this one temporary
+  ],
+  ...
+}
+```
+
+Also see [Multi-Server mode](../development/architecture#multi-server-mode).
 
 * Presets, Ciphers and Hashes
 
@@ -62,10 +82,10 @@ $ blinksocks -c config.json
 │   ├── http.js
 │   └── none.js
 └── protocol
-    ├── aead.js
     ├── aead2.js
-    ├── basic.js
-    └── none.js
+    ├── aead.js
+    ├── none.js
+    └── ss-aead.js
 ```
 
 Please check out relevant [presets](src/presets), they are documented well.
@@ -81,17 +101,37 @@ npm logging levels by default, you can choose one of them demand:
 
 ## Work with shadowsocks
 
-To work with **shadowsocks** [stream ciphers](https://shadowsocks.org/en/spec/Stream-Ciphers.html),
-please make sure you are using **"openssl"** `crypto` and have set `protocol` to **"none"**:
+To work with **shadowsocks**, please choose one of the following configuration:
+
+**Steam Ciphers(Old Versions)**
 
 ```
 {
   ...
-  "crypto": "openssl",
-  "crypto_params": "aes-256-cfb", // shadowsocks's method
-  "protocol": "none"
+  "crypto": "openssl",            // must be "openssl"
+  "crypto_params": "aes-256-cfb", // method of shadowsocks
+  "protocol": "",                 // must be ""
+  "protocol_params": "",
+  "obfs": "",                     // must be ""
+  "obfs_params": ""
   ...
 }
 ```
 
-That's all you need to concern!
+**AEAD Ciphers(Newer Versions)**
+
+```
+{
+  ...
+  "crypto": "",                               // must be ""
+  "crypto_params": "",
+  "protocol": "ss-aead",                      // must be "ss-aead"
+  "protocol_params": "aes-256-gcm,ss-subkey", // method of shadowsocks
+  "obfs": "",                                 // must be ""
+  "obfs_params": ""
+  ...
+}
+```
+
+Please also check out [#27](https://github.com/blinksocks/blinksocks/issues/27) for ciphers we've
+already implemented.
