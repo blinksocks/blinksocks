@@ -10,13 +10,6 @@ describe('AdvancedBuffer#constructor', function () {
 
 describe('AdvancedBuffer#put', function () {
 
-  it('should throw when getPacketLength() return non-number', function () {
-    const buffer = new AdvancedBuffer({
-      getPacketLength: () => null
-    });
-    expect(() => buffer.put(Buffer.from([]))).toThrow();
-  });
-
   it('should throw when pass a non-buffer to put() ', function () {
     const buffer = new AdvancedBuffer({
       getPacketLength: () => 0
@@ -33,6 +26,30 @@ describe('AdvancedBuffer#put', function () {
     const callback = jest.fn();
     buffer.on('data', callback);
     buffer.put(Buffer.from([0x00, 0x02])); // emit
+    buffer.put(Buffer.from([0x00]));
+    buffer.put(Buffer.from([0x02, 0x00])); // emit
+    buffer.put(Buffer.from([0x03]));
+    buffer.put(Buffer.from([0x00, 0xff])); // emit
+
+    expect(buffer.final().equals(Buffer.from([0xff]))).toBeTruthy();
+    expect(callback).toHaveBeenCalledTimes(3);
+  });
+
+  it('should drop the first byte', function () {
+    let dropped = false;
+    const buffer = new AdvancedBuffer({
+      getPacketLength: (chunk) => {
+        if (!dropped) {
+          dropped = true;
+          return chunk.slice(1);
+        } else {
+          return chunk.length > 1 ? chunk.readUInt16BE(0) : 0;
+        }
+      }
+    });
+    const callback = jest.fn();
+    buffer.on('data', callback);
+    buffer.put(Buffer.from([0xff, 0x00, 0x02])); // emit
     buffer.put(Buffer.from([0x00]));
     buffer.put(Buffer.from([0x02, 0x00])); // emit
     buffer.put(Buffer.from([0x03]));

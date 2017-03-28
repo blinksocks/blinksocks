@@ -59,7 +59,7 @@ export default class OriginFrame extends IPreset {
       const {type, host, port} = addr;
       this._atyp = type;
       this._addr = net.isIP(host) ? ip.toBuffer(host) : Buffer.from(host);
-      this._port = port instanceof Buffer ? port : Utils.numberToUIntBE(port);
+      this._port = port instanceof Buffer ? port : Utils.numberToUInt(port);
     }
   }
 
@@ -68,7 +68,7 @@ export default class OriginFrame extends IPreset {
       this._isHandshakeDone = true;
       return Buffer.from([
         this._atyp,
-        ...(this._atyp === ATYP_DOMAIN) ? Utils.numberToUIntBE(this._addr.length, 1) : [],
+        ...(this._atyp === ATYP_DOMAIN) ? Utils.numberToUInt(this._addr.length, 1) : [],
         ...this._addr,
         ...this._port,
         ...buffer

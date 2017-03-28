@@ -1,17 +1,21 @@
-import {Utils} from '../../utils';
+import {Utils, BYTE_ORDER_LE} from '../../utils';
 
-describe('Utils#numberToUIntBE', function () {
+describe('Utils#numberToUInt', function () {
 
-  it('should return <Buffer 01, 01> when pass 257', function () {
-    expect(Utils.numberToUIntBE(257).equals(Buffer.from([0x01, 0x01]))).toBe(true);
+  it('should return <Buffer 01, 02> in big-endian when pass 258', function () {
+    expect(Utils.numberToUInt(258).equals(Buffer.from([0x01, 0x02]))).toBe(true);
+  });
+
+  it('should return <Buffer 02, 01> in little-endian when pass 258', function () {
+    expect(Utils.numberToUInt(258, 2, BYTE_ORDER_LE).equals(Buffer.from([0x02, 0x01]))).toBe(true);
   });
 
   it('should throw when len < 1', function () {
-    expect(() => Utils.numberToUIntBE(255, 0)).toThrow();
+    expect(() => Utils.numberToUInt(255, 0)).toThrow();
   });
 
   it('should throw when pass an out of range number', function () {
-    expect(() => Utils.numberToUIntBE(65535 + 1, 2)).toThrow();
+    expect(() => Utils.numberToUInt(65535 + 1, 2)).toThrow();
   });
 
 });

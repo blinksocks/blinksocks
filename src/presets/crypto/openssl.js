@@ -31,7 +31,7 @@ function md5(buffer) {
  * @algorithm
  *   D_i = HASH^count(D_(i-1) || data || salt)
  */
-function EVP_BytesToKey(password, keyLen, ivLen = IV_LEN) {
+export function EVP_BytesToKey(password, keyLen, ivLen = IV_LEN) {
   let _data = Buffer.from(password);
   let i = 0;
   const bufs = [];

@@ -48,12 +48,13 @@ export class AdvancedBuffer extends EventEmitter {
   /**
    * put incoming chunk to the buffer, then digest them
    * @param chunk{Buffer}
+   * @param args
    */
-  put(chunk) {
+  put(chunk, ...args) {
     if (!(chunk instanceof Buffer)) {
       throw Error('chunk must be a Buffer');
     }
-    this._buffer = this._digest(Buffer.concat([this._buffer, chunk]));
+    this._buffer = this._digest(Buffer.concat([this._buffer, chunk]), ...args);
   }
 
   /**
@@ -67,16 +68,13 @@ export class AdvancedBuffer extends EventEmitter {
   /**
    * digest a buffer, emit an event if a complete packet was resolved
    * @param buffer{Buffer}: a buffer to be digested
+   * @param args
    * @returns {Buffer}
    */
-  _digest(buffer) {
-    const bound = this._getPacketLength(buffer);
+  _digest(buffer, ...args) {
+    const bound = this._getPacketLength(buffer, ...args);
 
-    if (typeof bound !== 'number') {
-      throw Error('getPacketLength must return a number');
-    }
-
-    if (bound === 0) {
+    if (bound === 0 || typeof bound === 'undefined') {
       return buffer; // continue to put
     }
 
@@ -84,15 +82,19 @@ export class AdvancedBuffer extends EventEmitter {
       return Buffer.alloc(0); // drop this one
     }
 
+    if (bound instanceof Buffer) {
+      return this._digest(bound, ...args); // start from the new point
+    }
+
     if (buffer.length === bound) {
-      this.emit('data', Buffer.from(buffer));
+      this.emit('data', Buffer.from(buffer), ...args);
       return Buffer.alloc(0);
     }
 
     if (buffer.length > bound) {
-      this.emit('data', buffer.slice(0, bound));
+      this.emit('data', buffer.slice(0, bound), ...args);
       // recursively digest buffer
-      return this._digest(buffer.slice(bound));
+      return this._digest(buffer.slice(bound), ...args);
     }
 
     if (buffer.length < bound) {

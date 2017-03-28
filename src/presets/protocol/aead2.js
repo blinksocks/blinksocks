@@ -60,8 +60,8 @@ export default class Aead2Protocol extends AeadProtocol {
     const encBuffer = this.encrypt(buffer);
     const encHeader = this.encrypt(Buffer.concat([
       crypto.randomBytes(PADDING_LEN),
-      Utils.numberToUIntBE(this._seq, SEQ_LEN),
-      Utils.numberToUIntBE(16 + this._hmacLen + encBuffer.length + this._hmacLen, 4)
+      Utils.numberToUInt(this._seq, SEQ_LEN),
+      Utils.numberToUInt(16 + this._hmacLen + encBuffer.length + this._hmacLen, 4)
     ]), false);
     const hmacA = this.createHmac(encHeader);
     const hmacB = this.createHmac(encBuffer);

@@ -130,7 +130,7 @@ export default class AeadProtocol extends IPreset {
     const encBuffer = this.encrypt(buffer);
     const encHeader = this.encrypt(Buffer.concat([
       crypto.randomBytes(PADDING_LEN),
-      Utils.numberToUIntBE(16 + this._hmacLen + encBuffer.length + this._hmacLen, 4)
+      Utils.numberToUInt(16 + this._hmacLen + encBuffer.length + this._hmacLen, 4)
     ]), false);
     const hmacA = this.createHmac(encHeader);
     const hmacB = this.createHmac(encBuffer);
