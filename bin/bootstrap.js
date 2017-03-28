@@ -81,7 +81,7 @@ function obtainConfig(type, options) {
   const {servers, quiet, profile} = options;
   Object.assign(config, {
     profile: !!profile,
-    servers: (servers || config.servers).filter((server) => server[0] !== '-')
+    servers: (servers || config.servers || []).filter((server) => server[0] !== '-')
   });
   if (type === BOOTSTRAP_TYPE_SERVER) {
     delete config.servers;
