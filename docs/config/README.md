@@ -26,6 +26,8 @@ $ blinksocks -c config.json
   "protocol_params": "aes-256-cbc,sha256",
   "obfs": "",
   "obfs_params": "",
+  "profile": false,
+  "watch": true,
   "log_level": "info"
 }
 ```
@@ -46,6 +48,8 @@ $ blinksocks -c config.json
 | protocol_params  | parameters for protocol preset            | "aes-256-gcm,ss-subkey" |
 | obfs             | obfs preset                               | ""                      |
 | obfs_params      | parameters for obfs preset                | ""                      |
+| profile          | whether profile or not                    | false                   |
+| watch            | watch --config for changes                | true                    |
 | log_level        | log level                                 | "info"                  |
 
 > NOTE: `host`, `port`, and `key` must be set.

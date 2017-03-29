@@ -55,14 +55,15 @@ $ blinksocks server --help
     --obfs [obfs]                        a preset used in obfs middleware, default: ''
     --obfs-params [obfs-params]          parameters for obfs, default: ''
     --log-level [log-level]              log level, default: 'silly'
-    -q, --quiet                          force log level to 'error'
-    --profile                            generate performance statistics, store at blinksocks.profile.log once exit
+    -q, --quiet                          force log level to 'error', default: false
+    -w, --watch                          hot reload config.json specified via -c, default: true
+    --profile                            generate performance statistics, store at blinksocks.profile.log once exit, default: false
 
 
   Examples:
   
   As simple as possible:
-    $ blinksocks client -c config.json
+    $ blinksocks client -c config.json --watch
   
   To start a server:
     $ blinksocks server --host 0.0.0.0 --port 7777 --key password
