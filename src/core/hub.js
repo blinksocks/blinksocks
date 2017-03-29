@@ -21,8 +21,7 @@ export class Hub {
 
   _sockets = []; // instances of our class Socket
 
-  constructor(config) {
-    Config.init(config);
+  constructor() {
     this._hub = net.createServer();
     this._hub.on('error', this.onError.bind(this));
     this._hub.on('close', this.onClose.bind(this));
@@ -46,6 +45,9 @@ export class Hub {
       Profile.save();
       Profile.stop();
       console.info('==> [profile] stopped');
+    }
+    for (const socket of this._sockets) {
+      socket !== null && !socket.destroyed && socket.destroy();
     }
     process.exit(0);
   }
@@ -76,7 +78,7 @@ export class Hub {
     };
     this._hub.listen(options, () => {
       console.info('==> [hub] use configuration:');
-      console.info(Config.abstract());
+      console.info(JSON.stringify(Config.abstract(), null, '  '));
       console.info(`==> [hub] is running as: ${__IS_SERVER__ ? 'Server' : 'Client'}`);
       console.info('==> [hub] is listening on:', this._hub.address());
       if (__IS_CLIENT__) {

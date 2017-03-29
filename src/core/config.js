@@ -34,6 +34,8 @@ export class Config {
 
   static profile;
 
+  static watch;
+
   static _is_server;
 
   /**
@@ -153,7 +155,10 @@ export class Config {
     this.obfs_params = json.obfs_params;
 
     // profile
-    this.profile = !!json.profile;
+    this.profile = json.profile;
+
+    // watch
+    this.watch = json.watch;
 
     // globals
     this.setGlobals();

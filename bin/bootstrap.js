@@ -12,7 +12,7 @@ const options = [
   ['-c, --config [file]', 'a json format file for configuration', ''],
   ['--host <host>', 'an ip address or a hostname to bind, default: \'localhost\'', 'localhost'],
   ['--port <port>', 'where to listen on, default: 1080', 1080],
-  ['--servers [servers]', 'a list of servers used by client, split by comma, default: \'\'', (value) => value.split(','), ''],
+  ['--servers [servers]', 'a list of servers used by client, split by comma, default: \'\'', (value) => value.split(','), []],
   ['--key <key>', 'a key for encryption and decryption'],
   ['--frame [frame]', 'a preset used in frame middleware, default: \'origin\'', 'origin'],
   ['--frame-params [crypto-params]', 'parameters for frame preset, default: \'\'', ''],
@@ -23,8 +23,9 @@ const options = [
   ['--obfs [obfs]', 'a preset used in obfs middleware, default: \'\'', ''],
   ['--obfs-params [obfs-params]', 'parameters for obfs, default: \'\'', ''],
   ['--log-level [log-level]', 'log level, default: \'silly\'', 'silly'],
-  ['-q, --quiet', 'force log level to \'error\''],
-  ['--profile', 'generate performance statistics, store at blinksocks.profile.log once exit']
+  ['-q, --quiet', 'force log level to \'error\'', false],
+  ['-w, --watch', 'hot reload config.json specified via -c', true],
+  ['--profile', 'generate performance statistics, store at blinksocks.profile.log once exit', false]
 ];
 
 const examples = `
@@ -42,54 +43,71 @@ const examples = `
 
 /**
  * get raw config object from json or command line options
- * @param type
+ * @param type, BOOTSTRAP_TYPE_CLIENT or BOOTSTRAP_TYPE_SERVER
  * @param options
  * @returns {object}
  */
 function obtainConfig(type, options) {
-  let config = {};
+  // CLI options should be able to overwrite options specified in --config
+  const {host, servers, key, quiet} = options;
+  const {frame, crypto, protocol, obfs} = options;
+
+  // renames
+  const [frame_params, crypto_params, protocol_params, obfs_params] = [
+    options.frameParams,
+    options.cryptoParams,
+    options.protocolParams,
+    options.obfsParams
+  ];
+
+  // pre-process
+  const [port, log_level, watch, profile] = [
+    parseInt(options.port, 10),
+    quiet ? 'error' : options.logLevel,
+    !!options.watch,
+    !!options.profile
+  ];
+
+  // assemble, undefined fields will be omitted
+  const config = {
+    host,
+    port,
+    servers,
+    key,
+    frame,
+    frame_params,
+    crypto,
+    crypto_params,
+    protocol,
+    protocol_params,
+    obfs,
+    obfs_params,
+    log_level,
+    watch,
+    profile
+  };
+
+  // --config, if provided, options in config.json should be able to overwrite CLI options
   if (options.config !== '') {
-    // via --config
     const file = options.config;
     try {
       const jsonFile = fs.readFileSync(file);
-      config = JSON.parse(jsonFile);
+      Object.assign(config, JSON.parse(jsonFile));
     } catch (err) {
-      console.error(`error parse your \'${file}\'`);
-      process.exit(-1);
+      throw Error(`error parse your \'${file}\'`);
     }
-  } else {
-    // via CLI
-    const {host, port, key, logLevel} = options;
-    const {frame, frameParams, crypto, cryptoParams, protocol, protocolParams, obfs, obfsParams} = options;
-    Object.assign(config, {
-      host,
-      port: parseInt(port, 10),
-      key,
-      frame,
-      frame_params: frameParams,
-      crypto,
-      crypto_params: cryptoParams,
-      protocol,
-      protocol_params: protocolParams,
-      obfs,
-      obfs_params: obfsParams,
-      log_level: quiet ? 'error' : logLevel
-    });
   }
-  // others
-  const {servers, quiet, profile} = options;
-  Object.assign(config, {
-    profile: !!profile,
-    servers: (servers || config.servers || []).filter((server) => server[0] !== '-')
-  });
+
+  /// post-process
   if (type === BOOTSTRAP_TYPE_SERVER) {
     delete config.servers;
+  } else {
+    config.servers = config.servers.filter((server) => server[0] !== '-');
   }
   return config;
 }
 
-module.exports = function (type, {Hub}) {
+module.exports = function (type, {Hub, Config}) {
   const pg = program.version(version).usage(usage);
 
   for (const option of options) {
@@ -105,17 +123,27 @@ module.exports = function (type, {Hub}) {
     process.exit(0);
   }
 
-  const config = obtainConfig(type, program);
-  if (config !== null) {
-    try {
-      const app = new Hub(config);
-      app.run();
-      process.on('SIGINT', () => app.onClose());
-    } catch (err) {
-      console.error(err.message);
-      process.exit(-1);
-    }
-  } else {
-    program.help();
+  if (program.watch) {
+    fs.watchFile(program.config, function (curr, prev) {
+      if (curr.mtime > prev.mtime) {
+        console.log(`==> [bootstrap] ${program.config} has changed, reload`);
+        try {
+          Config.init(obtainConfig(type, program));
+          console.info(JSON.stringify(Config.abstract(), null, '  '));
+        } catch (err) {
+          console.error(err.message);
+        }
+      }
+    });
+  }
+
+  try {
+    Config.init(obtainConfig(type, program));
+    const app = new Hub();
+    app.run();
+    process.on('SIGINT', () => app.onClose());
+  } catch (err) {
+    console.error(err.message);
+    process.exit(-1);
   }
 };
