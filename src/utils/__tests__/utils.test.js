@@ -63,3 +63,19 @@ describe('Utils#getRandomInt', function () {
   });
 
 });
+
+describe('Utils#isValidPort', function () {
+
+  it('should return false', function () {
+    expect(Utils.isValidPort('')).toBe(false);
+  });
+
+  it('should return false', function () {
+    expect(Utils.isValidPort(-1)).toBe(false);
+  });
+
+  it('should return true', function () {
+    expect(Utils.isValidPort(80)).toBe(true);
+  });
+
+});

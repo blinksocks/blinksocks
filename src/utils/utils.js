@@ -76,4 +76,19 @@ export class Utils {
     return Math.floor(Math.random() * (max - min)) + min;
   }
 
+  /**
+   * whether a port is valid or not
+   * @param port
+   * @returns {boolean}
+   */
+  static isValidPort(port) {
+    if (typeof port !== 'number') {
+      return false;
+    }
+    if (port < 0 || port > 65535) {
+      return false;
+    }
+    return true;
+  }
+
 }
