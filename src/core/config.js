@@ -1,5 +1,6 @@
 import fs from 'fs';
 import winston from 'winston';
+import {Utils} from '../utils';
 
 export const DEFAULT_KEY = 'my secret password';
 export const DEFAULT_LOG_LEVEL = 'error';
@@ -30,6 +31,8 @@ export class Config {
 
   static obfs_params;
 
+  static redirect;
+
   static log_level;
 
   static profile;
@@ -57,8 +60,8 @@ export class Config {
 
     // port
 
-    if (!Number.isSafeInteger(json.port) || json.port <= 0) {
-      throw Error('\'port\' must be a natural number');
+    if (!Utils.isValidPort(json.port)) {
+      throw Error('\'port\' is invalid');
     }
 
     this.port = json.port;
@@ -73,11 +76,11 @@ export class Config {
 
       const servers = json.servers
         .map((item) => item.split(':'))
-        .filter((pair) => pair.length === 2 && Number.isSafeInteger(+pair[1]))
+        .filter((pair) => pair.length === 2 && Utils.isValidPort(+pair[1]))
         .map(([host, port]) => ({host, port}));
 
       if (servers.length < 1) {
-        throw Error('\'servers\' must contain at least one item');
+        throw Error('\'servers\' must contain at least one valid item');
       }
 
       this.servers = servers;
@@ -154,6 +157,21 @@ export class Config {
     this.obfs = json.obfs || 'none';
     this.obfs_params = json.obfs_params;
 
+    // redirect
+
+    if (typeof json.redirect !== 'string') {
+      throw Error('\'redirect\' must be a string');
+    }
+
+    if (json.redirect !== '') {
+      const address = json.redirect.split(':');
+      if (address.length !== 2 || !Utils.isValidPort(+address[1])) {
+        throw Error('\'redirect\' is an invalid address');
+      }
+    }
+
+    this.redirect = json.redirect;
+
     // profile
     this.profile = json.profile;
 
@@ -193,8 +211,11 @@ export class Config {
     global.__OBFS__ = this.obfs;
     global.__OBFS_PARAMS__ = this.obfs_params;
 
+    global.__REDIRECT__ = this.redirect;
+
     global.__LOG_LEVEL__ = this.log_level;
     global.__PROFILE__ = this.profile;
+    global.__IS_WATCH__ = this.watch;
   }
 
   /**

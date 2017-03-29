@@ -29,6 +29,9 @@ const json = {
   "protocol_params": "aes-256-gcm,ss-subkey",
   "obfs": "",
   "obfs_params": "",
+  "redirect": "",
+  "profile": false,
+  "watch": true,
   "log_level": "info"
 };
 

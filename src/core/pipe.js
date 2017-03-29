@@ -3,6 +3,7 @@ import {
   MIDDLEWARE_DIRECTION_UPWARD,
   MIDDLEWARE_DIRECTION_DOWNWARD
 } from './middleware';
+import {PROCESSING_FAILED} from '../presets/actions';
 
 export class Pipe extends EventEmitter {
 
@@ -47,11 +48,18 @@ export class Pipe extends EventEmitter {
   feed(direction, buffer) {
     const eventName = `next_${direction}`;
     const middlewares = this._getMiddlewares(direction);
+    const fail = (message) => this.onBroadcast(direction, {
+      type: PROCESSING_FAILED,
+      payload: {
+        message,
+        orgData: buffer
+      }
+    });
 
     // create event chain among middlewares
     const last = middlewares.reduce((prev, next) => {
       if (prev.listenerCount(eventName) < 1) {
-        prev.on(eventName, (buf) => next.write(direction, buf));
+        prev.on(eventName, (buf) => next.write(direction, buf, fail));
       }
       return next;
     });
@@ -60,7 +68,7 @@ export class Pipe extends EventEmitter {
     }
 
     // begin pipe
-    middlewares[0].write(direction, buffer);
+    middlewares[0].write(direction, buffer, fail);
   }
 
   _getMiddlewares(direction) {

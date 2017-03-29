@@ -1,6 +1,5 @@
 import EventEmitter from 'events';
 import logger from 'winston';
-import {PROCESSING_FAILED} from '../presets/actions';
 
 export const MIDDLEWARE_DIRECTION_UPWARD = 0;
 export const MIDDLEWARE_DIRECTION_DOWNWARD = 1;
@@ -36,14 +35,14 @@ export class Middleware extends EventEmitter {
    * call hook functions of implement in order
    * @param direction
    * @param buffer
+   * @param fail
    */
-  write(direction, buffer) {
+  write(direction, buffer, fail) {
     const type = {
       [MIDDLEWARE_DIRECTION_UPWARD]: 'Out',
       [MIDDLEWARE_DIRECTION_DOWNWARD]: 'In'
     }[direction];
     const broadcast = this._broadcast;
-    const fail = (message) => broadcast({type: PROCESSING_FAILED, payload: message});
 
     const next = (buf) => {
       const args = {

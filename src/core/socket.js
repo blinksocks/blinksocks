@@ -47,6 +47,8 @@ export class Socket {
 
   _pipe = null;
 
+  _isRedirect = false; // server only
+
   _proxy = null; // client only
 
   _tracks = []; // [`remote`, `target`, 'u', '20', 'u', '20', 'd', '10', ...]
@@ -78,6 +80,7 @@ export class Socket {
 
   get isPipable() {
     return (
+      !this._isRedirect &&
       this._bsocket !== null && !this._bsocket.destroyed &&
       this._fsocket !== null && !this._fsocket.destroyed
     );
@@ -119,6 +122,10 @@ export class Socket {
         logger.error(`[${this._id}]`, err);
       }
     }
+
+    if (__IS_SERVER__ && this._isRedirect) {
+      this._fsocket.write(buffer);
+    }
   }
 
   onBackward(buffer) {
@@ -136,6 +143,10 @@ export class Socket {
       } catch (err) {
         logger.error(`[${this._id}]`, err);
       }
+    }
+
+    if (__IS_SERVER__ && this._isRedirect) {
+      this._bsocket.write(buffer);
     }
   }
 
@@ -212,11 +223,7 @@ export class Socket {
           });
         }
         if (action.type === PROCESSING_FAILED) {
-          const message = action.payload;
-          const timeout = Utils.getRandomInt(10, 40);
-          logger.error(`connection will be closed in ${timeout}s due to: ${message}`);
-          Profile.fatals += 1;
-          setTimeout(() => this.onClose(), timeout * 1e3);
+          return this.onPresetFailed(action);
         }
       }
     };
@@ -229,6 +236,27 @@ export class Socket {
     ]);
     this._pipe.on(`next_${MIDDLEWARE_DIRECTION_UPWARD}`, (buf) => this.send(buf, __IS_CLIENT__));
     this._pipe.on(`next_${MIDDLEWARE_DIRECTION_DOWNWARD}`, (buf) => this.send(buf, __IS_SERVER__));
+  }
+
+  /**
+   * if any preset failed, this function will be called
+   * @param action
+   */
+  onPresetFailed(action) {
+    const {message, orgData} = action.payload;
+    if (__IS_SERVER__ && __REDIRECT__ !== '' && this._fsocket === null) {
+      const [host, port] = __REDIRECT__.split(':');
+      logger.error(`[socket] [${this._id}] connection will be redirected to ${host}:${port} due to: ${message}`);
+      this.connect({host, port}, () => {
+        this._isRedirect = true;
+        this._fsocket.write(orgData);
+      });
+    } else {
+      const timeout = Utils.getRandomInt(10, 40);
+      logger.error(`[socket] [${this._id}] connection will be closed in ${timeout}s due to: ${message}`);
+      setTimeout(() => this.onClose(), timeout * 1e3);
+    }
+    Profile.fatals += 1;
   }
 
   /**

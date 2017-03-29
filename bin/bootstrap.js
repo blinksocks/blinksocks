@@ -22,10 +22,11 @@ const options = [
   ['--protocol-params [protocol-params]', 'parameters for protocol, default: \'aes-256-gcm,ss-subkey\'', 'aes-256-gcm,ss-subkey'],
   ['--obfs [obfs]', 'a preset used in obfs middleware, default: \'\'', ''],
   ['--obfs-params [obfs-params]', 'parameters for obfs, default: \'\'', ''],
+  ['--redirect [redirect]', 'redirect stream to here when any preset fail to process, default: \'\'', ''],
   ['--log-level [log-level]', 'log level, default: \'silly\'', 'silly'],
-  ['-q, --quiet', 'force log level to \'error\', default: false', false],
-  ['-w, --watch', 'hot reload config.json specified via -c, default: true', true],
-  ['--profile', 'generate performance statistics, store at blinksocks.profile.log once exit, default: false', false]
+  ['-q, --quiet [quiet]', 'force log level to \'error\', default: false', false],
+  ['-w, --watch [watch]', 'hot reload config.json specified via -c, default: true', true],
+  ['--profile [profile]', 'generate performance statistics, store at blinksocks.profile.log once exit, default: false', false]
 ];
 
 const examples = `
@@ -50,7 +51,7 @@ const examples = `
 function obtainConfig(type, options) {
   // CLI options should be able to overwrite options specified in --config
   const {host, servers, key, quiet} = options;
-  const {frame, crypto, protocol, obfs} = options;
+  const {frame, crypto, protocol, obfs, redirect} = options;
 
   // renames
   const [frame_params, crypto_params, protocol_params, obfs_params] = [
@@ -82,6 +83,7 @@ function obtainConfig(type, options) {
     protocol_params,
     obfs,
     obfs_params,
+    redirect,
     log_level,
     watch,
     profile
