@@ -159,11 +159,7 @@ export class Config {
 
     // redirect
 
-    if (typeof json.redirect !== 'string') {
-      throw Error('\'redirect\' must be a string');
-    }
-
-    if (json.redirect !== '') {
+    if (typeof json.redirect === 'string' && json.redirect !== '') {
       const address = json.redirect.split(':');
       if (address.length !== 2 || !Utils.isValidPort(+address[1])) {
         throw Error('\'redirect\' is an invalid address');

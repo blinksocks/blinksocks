@@ -202,6 +202,26 @@ describe('Config#init', function () {
     }).toThrow();
   });
 
+  it('should throw when redirect is invalid', function () {
+    expect(function () {
+      Config.init({
+        host: 'localhost',
+        port: 1080,
+        servers: ['abc.com:443'],
+        key: '123',
+        frame: 'xxx',
+        frame_params: '',
+        crypto: 'xxx',
+        crypto_params: '1,2',
+        protocol: 'basic',
+        protocol_params: '1,2',
+        obfs: 'none',
+        obfs_params: '',
+        redirect: 'test.com'
+      });
+    }).toThrow();
+  });
+
   // others
 
   it('should this._is_server set to true, if no server_host provided', function () {
