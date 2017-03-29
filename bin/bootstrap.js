@@ -33,7 +33,7 @@ const examples = `
   Examples:
   
   As simple as possible:
-    $ blinksocks client -c config.json
+    $ blinksocks client -c config.json --watch
   
   To start a server:
     $ blinksocks server --host 0.0.0.0 --port 7777 --key password

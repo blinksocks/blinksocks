@@ -54,10 +54,11 @@ $ blinksocks server --help
     --protocol-params [protocol-params]  parameters for protocol, default: 'aes-256-gcm,ss-subkey'
     --obfs [obfs]                        a preset used in obfs middleware, default: ''
     --obfs-params [obfs-params]          parameters for obfs, default: ''
+    --redirect [redirect]                redirect stream to here when any preset fail to process, default: ''
     --log-level [log-level]              log level, default: 'silly'
-    -q, --quiet                          force log level to 'error', default: false
-    -w, --watch                          hot reload config.json specified via -c, default: true
-    --profile                            generate performance statistics, store at blinksocks.profile.log once exit, default: false
+    -q, --quiet [quiet]                  force log level to 'error', default: false
+    -w, --watch [watch]                  hot reload config.json specified via -c, default: true
+    --profile [profile]                  generate performance statistics, store at blinksocks.profile.log once exit, default: false
 
 
   Examples:
