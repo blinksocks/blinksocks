@@ -23,9 +23,9 @@ const options = [
   ['--obfs [obfs]', 'a preset used in obfs middleware, default: \'\'', ''],
   ['--obfs-params [obfs-params]', 'parameters for obfs, default: \'\'', ''],
   ['--log-level [log-level]', 'log level, default: \'silly\'', 'silly'],
-  ['-q, --quiet', 'force log level to \'error\'', false],
-  ['-w, --watch', 'hot reload config.json specified via -c', true],
-  ['--profile', 'generate performance statistics, store at blinksocks.profile.log once exit', false]
+  ['-q, --quiet', 'force log level to \'error\', default: false', false],
+  ['-w, --watch', 'hot reload config.json specified via -c, default: true', true],
+  ['--profile', 'generate performance statistics, store at blinksocks.profile.log once exit, default: false', false]
 ];
 
 const examples = `
@@ -123,7 +123,7 @@ module.exports = function (type, {Hub, Config}) {
     process.exit(0);
   }
 
-  if (program.watch) {
+  if (program.config !== '' && program.watch) {
     fs.watchFile(program.config, function (curr, prev) {
       if (curr.mtime > prev.mtime) {
         console.log(`==> [bootstrap] ${program.config} has changed, reload`);
