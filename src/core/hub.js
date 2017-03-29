@@ -47,7 +47,7 @@ export class Hub {
       console.info('==> [profile] stopped');
     }
     for (const socket of this._sockets) {
-      socket !== null && !socket.destroyed && socket.destroy();
+      socket.onClose();
     }
     process.exit(0);
   }
