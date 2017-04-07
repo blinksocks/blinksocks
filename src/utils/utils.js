@@ -1,5 +1,6 @@
 import net from 'net';
 import url from 'url';
+import crypto from 'crypto';
 import {
   ATYP_DOMAIN,
   ATYP_V4,
@@ -89,6 +90,37 @@ export class Utils {
       return false;
     }
     return true;
+  }
+
+  /**
+   * md5 message digest
+   * @param buffer
+   * @returns {*}
+   */
+  static md5(buffer) {
+    const md5 = crypto.createHash('md5');
+    md5.update(buffer);
+    return md5.digest();
+  }
+
+  /**
+   * EVP_BytesToKey with the digest algorithm set to MD5, one iteration, and no salt
+   *
+   * @algorithm
+   *   D_i = HASH^count(D_(i-1) || data || salt)
+   */
+  static EVP_BytesToKey(password, keyLen, ivLen) {
+    let _data = Buffer.from(password);
+    let i = 0;
+    const bufs = [];
+    while (Buffer.concat(bufs).length < (keyLen + ivLen)) {
+      if (i > 0) {
+        _data = Buffer.concat([bufs[i - 1], Buffer.from(password)]);
+      }
+      bufs.push(this.md5(_data));
+      i += 1;
+    }
+    return Buffer.concat(bufs).slice(0, keyLen);
   }
 
 }

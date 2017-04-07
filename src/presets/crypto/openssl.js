@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import {IPreset} from '../interface';
+import {Utils} from '../../utils';
 
 const IV_LEN = 16;
 
@@ -13,37 +14,6 @@ const ciphers = [
   'aes-128-ofb', 'aes-192-ofb', 'aes-256-ofb',
   'aes-128-cbc', 'aes-192-cbc', 'aes-256-cbc'
 ];
-
-/**
- * md5 message digest
- * @param buffer
- * @returns {*}
- */
-function md5(buffer) {
-  const md5 = crypto.createHash('md5');
-  md5.update(buffer);
-  return md5.digest();
-}
-
-/**
- * EVP_BytesToKey with the digest algorithm set to MD5, one iteration, and no salt
- *
- * @algorithm
- *   D_i = HASH^count(D_(i-1) || data || salt)
- */
-export function EVP_BytesToKey(password, keyLen, ivLen = IV_LEN) {
-  let _data = Buffer.from(password);
-  let i = 0;
-  const bufs = [];
-  while (Buffer.concat(bufs).length < (keyLen + ivLen)) {
-    if (i > 0) {
-      _data = Buffer.concat([bufs[i - 1], Buffer.from(password)]);
-    }
-    bufs.push(md5(_data));
-    i += 1;
-  }
-  return Buffer.concat(bufs).slice(0, keyLen);
-}
 
 /**
  * @description
@@ -101,7 +71,7 @@ export default class OpenSSLCrypto extends IPreset {
       throw Error(`cipher \'${cipherName}\' is not supported.`);
     }
     this._cipherName = cipherName;
-    this._key = EVP_BytesToKey(__KEY__, this._cipherName.split('-')[1] / 8);
+    this._key = Utils.EVP_BytesToKey(__KEY__, this._cipherName.split('-')[1] / 8, IV_LEN);
   }
 
   beforeOut({buffer}) {
