@@ -25,7 +25,7 @@ const json = {
   "frame_params": "",
   "crypto": "",
   "crypto_params": "",
-  "protocol": "ss-aead",
+  "protocol": "aead",
   "protocol_params": "aes-256-gcm,ss-subkey",
   "obfs": "",
   "obfs_params": "",
