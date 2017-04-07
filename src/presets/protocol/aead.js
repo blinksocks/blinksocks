@@ -1,92 +1,137 @@
 import crypto from 'crypto';
-import logger from 'winston';
 import {IPreset} from '../interface';
-import {Utils, AdvancedBuffer} from '../../utils';
+import {Utils, BYTE_ORDER_LE, AdvancedBuffer} from '../../utils';
 
-const PADDING_LEN = 12;
-const HASH_SALT = 'blinksocks';
+const NONCE_LEN = 12;
+const TAG_LEN = 16;
+const MIN_CHUNK_LEN = TAG_LEN * 2 + 3;
+const MAX_DATA_LEN = 0x3FFF;
 
 // available ciphers
 const ciphers = [
-  'aes-128-ctr', 'aes-192-ctr', 'aes-256-ctr',
-  'aes-128-cfb', 'aes-192-cfb', 'aes-256-cfb',
-  'aes-128-ofb', 'aes-192-ofb', 'aes-256-ofb',
-  'aes-128-cbc', 'aes-192-cbc', 'aes-256-cbc'
+  'aes-128-gcm', 'aes-192-gcm', 'aes-256-gcm'
 ];
 
-// available hash functions
-const hashes = ['sha1', 'sha256', 'sha512'];
-
-// map hashes to hmac lengths
-const hmacLens = {'sha1': 20, 'sha256': 32, 'sha512': 64};
+const HKDF_HASH_ALGORITHM = 'sha1';
 
 /**
- * generate strong and valid key
- * @param cipher
+ * divide buffer into size length chunks
+ * @param buffer
+ * @param size
+ * @returns {Array<Buffer>}
+ */
+function getChunks(buffer, size) {
+  const totalLen = buffer.length;
+  const bufs = [];
+  let ptr = 0;
+  while (ptr < totalLen - 1) {
+    bufs.push(buffer.slice(ptr, ptr + size));
+    ptr += size;
+  }
+  if (ptr < totalLen) {
+    bufs.push(buffer.slice(ptr));
+  }
+  return bufs;
+}
+
+/**
+ * calculate the HMAC from key and message
  * @param key
+ * @param buffer
  * @returns {Buffer}
  */
-function getStrongKey(cipher, key) {
-  const hash = crypto.createHash('sha256');
-  const keyLen = cipher.split('-')[1] / 8;
-  hash.update(Buffer.concat([Buffer.from(key), Buffer.from(HASH_SALT)]));
-  return hash.digest().slice(0, keyLen);
+function hmac(key, buffer) {
+  const hmac = crypto.createHmac(HKDF_HASH_ALGORITHM, key);
+  return hmac.update(buffer).digest();
+}
+
+/**
+ * HMAC-based Extract-and-Expand Key Derivation Function
+ * @param salt, a non-secret random value
+ * @param ikm, input keying material
+ * @param info, optional context and application specific information
+ * @param length, length of output keying material in octets
+ * @returns {Buffer}
+ */
+function HKDF(salt, ikm, info, length) {
+  // Step 1: "extract" to fixed length pseudo-random key(prk)
+  const prk = hmac(salt, ikm);
+  // Step 2: "expand" prk to several pseudo-random keys(okm)
+  let t = Buffer.alloc(0);
+  let okm = Buffer.alloc(0);
+  for (let i = 0; i < Math.ceil(length / prk.length); ++i) {
+    t = hmac(prk, Buffer.concat([t, info, Buffer.alloc(1, i + 1)]));
+    okm = Buffer.concat([okm, t]);
+  }
+  // Step 3: crop okm to desired length
+  return okm.slice(0, length);
 }
 
 /**
  * @description
- *   This protocol implementation is Authenticated Encryption(AE) which simultaneously
- *   provides confidentiality, integrity, and authenticity assurances on the data.
+ *   AEAD ciphers simultaneously provide confidentiality, integrity, and authenticity.
  *
  * @params
- *   cipher (String): How to encrypt/decrypt the header bytes.
- *   hash (String): A hash method for calculating HMAC.
+ *   cipher: The encryption/decryption method.
+ *   info: An info for HKDF.
  *
  * @examples
- *   "protocol": "aead"
- *   "protocol_params": "aes-128-cbc,sha256"
+ *   "protocol": "ss-aead"
+ *   "protocol_params": "aes-128-gcm,ss-subkey"
  *
  * @protocol
  *
- *   # TCP handshake & chunk
- *   +---------------+-----+----------+-------------------+----------+
- *   |    PADDING    | LEN |  HMAC-A  |      PAYLOAD      |  HMAC-B  |
- *   +---------------+-----+----------+-------------------+----------+
- *   |      12       |  4  |  Fixed   |      Variable     |  Fixed   |
- *   +---------------+-----+----------+-------------------+----------+
- *   |<----- header ------>|
+ *   # TCP packet
+ *   +---------+------------+------------+-----------+
+ *   |  SALT   |   chunk_0  |   chunk_1  |    ...    |
+ *   +---------+------------+------------+-----------+
+ *   |  Fixed  |  Variable  |  Variable  |    ...    |
+ *   +---------+------------+------------+-----------+
+ *
+ *   # TCP chunk
+ *   +---------+-------------+----------------+--------------+
+ *   | DataLen | DataLen_TAG |      Data      |   Data_TAG   |
+ *   +---------+-------------+----------------+--------------+
+ *   |    2    |    Fixed    |    Variable    |    Fixed     |
+ *   +---------+-------------+----------------+--------------+
  *
  * @explain
- *   1. LEN is the total length of the packet.
- *   2. PADDING is random generated.
- *   3. HMAC-A = mac(encrypt(header)).
- *   4. HMAC-B = mac(encrypt(PAYLOAD)).
- *   5. The length of HMAC depends on message digest algorithm.
- *   6. Encrypt-then-MAC (EtM) is performed for calculating HMAC.
+ *   1. Salt is randomly generated, and is to derive the per-session subkey in HKDF.
+ *   2. Shadowsocks python reuse OpenSSLCrypto which derive original key by EVP_BytesToKey first.
+ *   3. DataLen and Data are ciphertext, while TAGs are plaintext.
+ *   4. TAGs are automatically generated and verified by Node.js crypto module.
+ *   5. len(Data) <= 0x3FFF.
+ *   6. The high 2-bit of DataLen must be zero.
+ *   7. Nonce is used as IV in encryption/decryption.
+ *   8. Nonce is little-endian.
+ *   9. Each chunk increases the nonce twice.
  *
  * @reference
- *   [1] Protocol inspired by shadowsocks
- *       https://shadowsocks.org/en/spec/AEAD.html
- *   [2] Encrypt-then-MAC (EtM)
- *       https://en.wikipedia.org/wiki/Authenticated_encryption#Encrypt-then-MAC_.28EtM.29
+ *   [1] HKDF
+ *       https://tools.ietf.org/html/rfc5869
+ *   [2] AEAD Spec
+ *       https://shadowsocks.org/en/spec/AEAD-Ciphers.html
+ *   [3] Tags
+ *       https://nodejs.org/dist/latest-v6.x/docs/api/crypto.html#crypto_cipher_getauthtag
+ *       https://nodejs.org/dist/latest-v6.x/docs/api/crypto.html#crypto_decipher_setauthtag_buffer
  */
 export default class AeadProtocol extends IPreset {
 
-  _hmacLen = 0;
+  _cipherName = '';
 
-  _cipher = '';
+  _info = null;
 
-  _hash = '';
+  _cipherKey = null;
 
-  _key = null;
+  _decipherKey = null;
+
+  _cipherNonce = 0;
+
+  _decipherNonce = 0;
 
   _adBuf = null;
 
-  _fNext = null;
-
-  _bNext = null;
-
-  constructor(cipher, hash) {
+  constructor(cipher, info) {
     super();
     if (typeof cipher === 'undefined' || cipher === '') {
       throw Error('\'protocol_params\' requires [cipher] parameter.');
@@ -94,112 +139,98 @@ export default class AeadProtocol extends IPreset {
     if (!ciphers.includes(cipher)) {
       throw Error(`cipher \'${cipher}\' is not supported.`);
     }
-    if (typeof hash === 'undefined' || hash === '') {
-      throw Error('\'protocol_params\' requires [hash] parameter.');
+    this._cipherName = cipher;
+    this._info = Buffer.from(info);
+    this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});
+    this._adBuf.on('data', this.onChunkReceived.bind(this));
+  }
+
+  beforeOut({buffer}) {
+    let salt = null;
+    if (this._cipherKey === null) {
+      const size = this._cipherName.split('-')[1] / 8; // key and salt size
+      salt = crypto.randomBytes(size);
+      this._cipherKey = HKDF(salt, Utils.EVP_BytesToKey(__KEY__, size, 16), this._info, size);
     }
-    if (!hashes.includes(hash)) {
-      throw Error(`hash \'${hash}\' is not supported.`);
-    }
-    this._cipher = cipher;
-    this._hash = hash;
-    this._key = getStrongKey(cipher, __KEY__);
-    this._adBuf = new AdvancedBuffer({getPacketLength: this.onGetLength.bind(this)});
-    this._adBuf.on('data', (data) => this.onReceived(data));
-    this._hmacLen = hmacLens[this._hash];
-  }
-
-  clientOut(args) {
-    return this._out(args);
-  }
-
-  serverIn({buffer, next}) {
-    this._fNext = next;
-    this._adBuf.put(buffer);
-  }
-
-  serverOut(args) {
-    return this._out(args);
-  }
-
-  clientIn({buffer, next}) {
-    this._bNext = next;
-    this._adBuf.put(buffer);
-  }
-
-  _out({buffer}) {
-    const encBuffer = this.encrypt(buffer);
-    const encHeader = this.encrypt(Buffer.concat([
-      crypto.randomBytes(PADDING_LEN),
-      Utils.numberToUInt(16 + this._hmacLen + encBuffer.length + this._hmacLen, 4)
-    ]), false);
-    const hmacA = this.createHmac(encHeader);
-    const hmacB = this.createHmac(encBuffer);
-    const out = Buffer.concat([encHeader, hmacA, encBuffer, hmacB]);
-    if (__IS_CLIENT__) {
-      logger.verbose(`ClientOut(LEN=${out.length}): ${out.slice(0, 60).toString('hex')}`);
+    const chunks = getChunks(buffer, MAX_DATA_LEN).map((chunk) => {
+      const dataLen = Utils.numberToUInt(chunk.length);
+      const [encLen, lenTag] = this.encrypt(dataLen);
+      const [encData, dataTag] = this.encrypt(chunk);
+      return Buffer.concat([encLen, lenTag, encData, dataTag]);
+    });
+    if (salt) {
+      return Buffer.concat([salt, ...chunks]);
     } else {
-      logger.verbose(`ServerOut(LEN=${out.length}): ${out.slice(0, 60).toString('hex')}`);
+      return Buffer.concat(chunks);
     }
-    return out;
   }
 
-  /**
-   * @param buffer
-   * @returns {Number}
-   */
-  onGetLength(buffer) {
-    if (buffer.length < (16 + 2 * this._hmacLen)) {
-      return 0; // too short, should continue to receive
+  beforeIn({buffer, next, fail}) {
+    this._adBuf.put(buffer, {next, fail});
+  }
+
+  onReceiving(buffer, {fail}) {
+    if (this._decipherKey === null) {
+      const size = this._cipherName.split('-')[1] / 8; // key and salt size
+      if (buffer.length < size) {
+        return; // too short to get salt
+      }
+      const salt = buffer.slice(0, size);
+      this._decipherKey = HKDF(salt, Utils.EVP_BytesToKey(__KEY__, size, 16), this._info, size);
+      return buffer.slice(size); // drop salt
     }
-    const encLen = buffer.slice(0, 16);
-    const expHmacA = this.createHmac(encLen);
-    const hmacA = buffer.slice(16, 16 + this._hmacLen);
-    if (!hmacA.equals(expHmacA)) {
-      logger.error(`dropped unexpected packet (${buffer.length} bytes) received from ${__IS_CLIENT__ ? 'server' : 'client'}: wrong HMAC-A ${buffer.slice(0, 60).toString('hex')}`);
+
+    if (buffer.length < MIN_CHUNK_LEN) {
+      return; // too short to verify DataLen
+    }
+
+    // verify DataLen, DataLen_TAG
+    const [encLen, lenTag] = [buffer.slice(0, 2), buffer.slice(2, 2 + TAG_LEN)];
+    const dataLen = this.decrypt(encLen, lenTag);
+    if (dataLen === null) {
+      fail(`unexpected DataLen_TAG=${lenTag.toString('hex')} when verify DataLen=${encLen.toString('hex')}`);
       return -1;
     }
-    // safely decrypt then get length
-    return this.decrypt(encLen, false).readUIntBE(PADDING_LEN, 4);
+    return 2 + TAG_LEN + dataLen.readUInt16BE(0) + TAG_LEN;
   }
 
-  /**
-   * triggered when all chunks received
-   * @param packet
-   */
-  onReceived(packet) {
-    if (__IS_CLIENT__) {
-      logger.verbose(`ClientIn(LEN=${packet.length}): ${packet.slice(0, 60).toString('hex')}`);
-    } else {
-      logger.verbose(`ServerIn(LEN=${packet.length}): ${packet.slice(0, 60).toString('hex')}`);
-    }
-    const _packet = packet.slice(16 + this._hmacLen);
-    const hmacB = _packet.slice(-this._hmacLen);
-    const expHmacB = this.createHmac(_packet.slice(0, -this._hmacLen));
-    if (!hmacB.equals(expHmacB)) {
-      logger.error(`dropped unexpected packet (${packet.length} bytes) received from ${__IS_CLIENT__ ? 'server' : 'client'}: wrong HMAC-B ${packet.slice(0, 60).toString('hex')}`);
-      // TODO: maybe notify to disconnect rather than timeout?
+  onChunkReceived(chunk, {next, fail}) {
+    // verify Data, Data_TAG
+    const [encData, dataTag] = [chunk.slice(2 + TAG_LEN, -TAG_LEN), chunk.slice(-TAG_LEN)];
+    const data = this.decrypt(encData, dataTag);
+    if (data === null) {
+      fail(`unexpected Data_TAG=${dataTag.toString('hex')} when verify Data=${encData.slice(0, 60).toString('hex')}`);
       return;
     }
-    const next = __IS_CLIENT__ ? this._bNext : this._fNext;
-    next(this.decrypt(_packet.slice(0, -this._hmacLen)));
+    next(data);
   }
 
-  encrypt(buffer, padding = true) {
-    const cipher = crypto.createCipher(this._cipher, this._key);
-    cipher.setAutoPadding(padding);
-    return Buffer.concat([cipher.update(buffer), cipher.final()]);
+  encrypt(message) {
+    const cipher = crypto.createCipheriv(
+      this._cipherName,
+      this._cipherKey,
+      Utils.numberToUInt(this._cipherNonce, NONCE_LEN, BYTE_ORDER_LE)
+    );
+    const encrypted = Buffer.concat([cipher.update(message), cipher.final()]);
+    const tag = cipher.getAuthTag();
+    this._cipherNonce += 1;
+    return [encrypted, tag];
   }
 
-  decrypt(buffer, padding = true) {
-    const decipher = crypto.createDecipher(this._cipher, this._key);
-    decipher.setAutoPadding(padding);
-    return Buffer.concat([decipher.update(buffer), decipher.final()]);
-  }
-
-  createHmac(buffer) {
-    const hmac = crypto.createHmac(this._hash, this._key);
-    hmac.update(buffer);
-    return hmac.digest();
+  decrypt(ciphertext, tag) {
+    const decipher = crypto.createDecipheriv(
+      this._cipherName,
+      this._decipherKey,
+      Utils.numberToUInt(this._decipherNonce, NONCE_LEN, BYTE_ORDER_LE)
+    );
+    decipher.setAuthTag(tag);
+    try {
+      const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+      this._decipherNonce += 1;
+      return decrypted;
+    } catch (err) {
+      return null;
+    }
   }
 
 }
