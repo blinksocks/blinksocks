@@ -76,7 +76,7 @@ function HKDF(salt, ikm, info, length) {
  *   info: An info for HKDF.
  *
  * @examples
- *   "protocol": "ss-aead"
+ *   "protocol": "aead"
  *   "protocol_params": "aes-128-gcm,ss-subkey"
  *
  * @protocol

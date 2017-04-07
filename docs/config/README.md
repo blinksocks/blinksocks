@@ -45,7 +45,7 @@ $ blinksocks -c config.json
 | frame_params     | parameters for frame preset                | ""                      |
 | crypto           | crypto preset                              | ""                      |
 | crypto_params    | parameters for crypto preset               | ""                      |
-| protocol         | protocol preset                            | "ss-aead"               |
+| protocol         | protocol preset                            | "aead"                  |
 | protocol_params  | parameters for protocol preset             | "aes-256-gcm,ss-subkey" |
 | obfs             | obfs preset                                | ""                      |
 | obfs_params      | parameters for obfs preset                 | ""                      |
@@ -88,10 +88,8 @@ Also see [Multi-Server mode](../development/architecture#multi-server-mode).
 │   ├── http.js
 │   └── none.js
 └── protocol
-    ├── aead2.js
     ├── aead.js
-    ├── none.js
-    └── ss-aead.js
+    └── none.js
 ```
 
 Please check out relevant [presets](src/presets), they are documented well.
@@ -137,7 +135,7 @@ If `redirect` is not provided, connection will be closed after random seconds wh
 
 To work with **shadowsocks**, please choose one of the following configuration:
 
-**Steam Ciphers(Old Versions)**
+**Steam Ciphers(Older Versions)**
 
 ```
 {
@@ -159,7 +157,7 @@ To work with **shadowsocks**, please choose one of the following configuration:
   ...
   "crypto": "",                               // must be ""
   "crypto_params": "",
-  "protocol": "ss-aead",                      // must be "ss-aead"
+  "protocol": "aead",                         // must be "aead"
   "protocol_params": "aes-256-gcm,ss-subkey", // method of shadowsocks
   "obfs": "",                                 // must be ""
   "obfs_params": ""

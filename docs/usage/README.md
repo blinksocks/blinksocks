@@ -50,7 +50,7 @@ $ blinksocks server --help
     --frame-params [crypto-params]       parameters for frame preset, default: ''
     --crypto [crypto]                    a preset used in crypto middleware, default: ''
     --crypto-params [crypto-params]      parameters for crypto, default: 'aes-256-cfb'
-    --protocol [protocol]                a preset used in protocol middleware, default: 'ss-aead'
+    --protocol [protocol]                a preset used in protocol middleware, default: 'aead'
     --protocol-params [protocol-params]  parameters for protocol, default: 'aes-256-gcm,ss-subkey'
     --obfs [obfs]                        a preset used in obfs middleware, default: ''
     --obfs-params [obfs-params]          parameters for obfs, default: ''
