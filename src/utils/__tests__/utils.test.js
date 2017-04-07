@@ -79,3 +79,25 @@ describe('Utils#isValidPort', function () {
   });
 
 });
+
+describe('Utils#md5', function () {
+
+  it('should return expected buffer', function () {
+    const src = Buffer.from([1, 2, 3, 4]);
+    const dst = Buffer.from('08d6c05a21512a79a1dfeb9d2a8f262f', 'hex');
+    expect(Utils.md5(src).equals(dst)).toBe(true);
+  });
+
+});
+
+describe('Utils#EVP_BytesToKey', function () {
+
+  it('should return true', function () {
+    const password = Buffer.from('password');
+    const keyLen = 16;
+    const ivLen = 16;
+    const dst = Buffer.from('5f4dcc3b5aa765d61d8327deb882cf99', 'hex');
+    expect(Utils.EVP_BytesToKey(password, keyLen, ivLen).equals(dst)).toBe(true);
+  });
+
+});
