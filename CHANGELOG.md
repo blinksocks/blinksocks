@@ -1,11 +1,17 @@
 # Change Log
 
-## [v2.3.0-beta.3](https://github.com/blinksocks/blinksocks/tree/v2.3.0-beta.3) (2017-03-28)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.3.0-beta.2...v2.3.0-beta.3)
+## [v2.3.0](https://github.com/blinksocks/blinksocks/tree/v2.3.0) (2017-04-09)
+[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.3.0-beta.3...v2.3.0)
 
 **Implemented enhancements:**
 
+- Consider redirecting TCP stream to other host/port rather than close connections [\#39](https://github.com/blinksocks/blinksocks/issues/39)
 - Disable a server by prefixing a '-' [\#38](https://github.com/blinksocks/blinksocks/issues/38)
+- Hot reload config.json [\#37](https://github.com/blinksocks/blinksocks/issues/37)
+- Share the same config.json between clients and servers [\#35](https://github.com/blinksocks/blinksocks/issues/35)
+
+## [v2.3.0-beta.3](https://github.com/blinksocks/blinksocks/tree/v2.3.0-beta.3) (2017-03-28)
+[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.3.0-beta.2...v2.3.0-beta.3)
 
 **Closed issues:**
 
@@ -13,8 +19,6 @@
 
 ## [v2.3.0-beta.2](https://github.com/blinksocks/blinksocks/tree/v2.3.0-beta.2) (2017-03-24)
 [Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.3.0-beta.1...v2.3.0-beta.2)
-
-- Add missing libs
 
 ## [v2.3.0-beta.1](https://github.com/blinksocks/blinksocks/tree/v2.3.0-beta.1) (2017-03-23)
 [Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.2.2...v2.3.0-beta.1)
