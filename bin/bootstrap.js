@@ -24,6 +24,7 @@ const options = [
   ['--obfs-params [obfs-params]', 'parameters for obfs, default: \'\'', ''],
   ['--redirect [redirect]', 'redirect stream to here when any preset fail to process, default: \'\'', ''],
   ['--log-level [log-level]', 'log level, default: \'silly\'', 'silly'],
+  ['--timeout [timeout]', 'time to close connection if inactive, default: 600', 600],
   ['-q, --quiet [quiet]', 'force log level to \'error\', default: false', false],
   ['-w, --watch [watch]', 'hot reload config.json specified via -c, default: true', true],
   ['--profile [profile]', 'generate performance statistics, store at blinksocks.profile.log once exit, default: false', false]
@@ -62,9 +63,10 @@ function obtainConfig(type, options) {
   ];
 
   // pre-process
-  const [port, log_level, watch, profile] = [
+  const [port, log_level, timeout, watch, profile] = [
     parseInt(options.port, 10),
     quiet ? 'error' : options.logLevel,
+    parseInt(options.timeout, 10),
     !!options.watch,
     !!options.profile
   ];
@@ -85,6 +87,7 @@ function obtainConfig(type, options) {
     obfs_params,
     redirect,
     log_level,
+    timeout,
     watch,
     profile
   };

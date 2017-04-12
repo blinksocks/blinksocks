@@ -56,6 +56,7 @@ $ blinksocks server --help
     --obfs-params [obfs-params]          parameters for obfs, default: ''
     --redirect [redirect]                redirect stream to here when any preset fail to process, default: ''
     --log-level [log-level]              log level, default: 'silly'
+    --timeout [timeout]                  time to close connection if inactive, default: 600
     -q, --quiet [quiet]                  force log level to 'error', default: false
     -w, --watch [watch]                  hot reload config.json specified via -c, default: true
     --profile [profile]                  generate performance statistics, store at blinksocks.profile.log once exit, default: false

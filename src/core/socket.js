@@ -53,6 +53,10 @@ export class Socket {
 
   _tracks = []; // [`remote`, `target`, 'u', '20', 'u', '20', 'd', '10', ...]
 
+  _timeout = 0;
+
+  _timeout_timer = null;
+
   constructor({id, socket, onClose}) {
     this.onError = this.onError.bind(this);
     this.onClose = this.onClose.bind(this);
@@ -72,6 +76,7 @@ export class Socket {
       });
     }
     this._tracks.push(`${socket.remoteAddress}:${socket.remotePort}`);
+    this.setupTimeout();
   }
 
   get id() {
@@ -87,6 +92,8 @@ export class Socket {
   }
 
   onForward(buffer) {
+    this._timeout = __TIMEOUT__;
+
     if (__IS_CLIENT__ && !this._proxy.isDone()) {
       // client handshake(multiple-protocols), client only
       this._proxy.makeHandshake(this._bsocket, buffer);
@@ -129,6 +136,8 @@ export class Socket {
   }
 
   onBackward(buffer) {
+    this._timeout = __TIMEOUT__;
+
     if (this.isPipable) {
       try {
         this._pipe.feed(
@@ -167,6 +176,7 @@ export class Socket {
     }
     this._bsocket = null;
     this._fsocket = null;
+    clearInterval(this._timeout_timer);
   }
 
   send(buffer, flag) {
@@ -180,6 +190,7 @@ export class Socket {
       this._tracks.push(TRACK_CHAR_UPLOAD);
       this._tracks.push(buffer.length);
     }
+    this._timeout = __TIMEOUT__;
   }
 
   /**
@@ -207,6 +218,19 @@ export class Socket {
       logger.warn(`unexpected host=${host} port=${port}`);
       this.onClose();
     }
+  }
+
+  /**
+   * initialize timeout
+   */
+  setupTimeout() {
+    this._timeout = __TIMEOUT__;
+    this._timeout_timer = setInterval(() => {
+      if (--this._timeout < 1) {
+        logger.warn(`[socket] [${this._id}] timeout: no I/O on the connection for ${__TIMEOUT__}s`);
+        this.onClose();
+      }
+    }, 1e3);
   }
 
   /**

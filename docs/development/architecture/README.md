@@ -8,11 +8,6 @@ To take over data send and receive of applications, we must find a widely
 used proxy protocol. Http/Socks5/Socks4/Socks4a are ideal, they only work
 on the client side, so don't worry about being attacked.
 
-## Multi-Server mode
-
-You can specify a list of servers via `config.json` or CLI. Blinksocks will detect which server
-is the fastest in a fixed time interval using [balancer.js](../../src/core/balancer.js).
-
 ## Pipe
 
 Pipe is a duplex facility for dealing with data streaming. A pipe is created once a

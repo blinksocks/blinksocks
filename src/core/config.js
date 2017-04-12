@@ -168,6 +168,22 @@ export class Config {
 
     this.redirect = json.redirect;
 
+    // timeout
+
+    if (typeof json.timeout !== 'number') {
+      throw Error('\'timeout\' must be a number');
+    }
+
+    if (json.timeout < 1) {
+      throw Error('\'timeout\' must be greater than 0');
+    }
+
+    if (json.timeout < 60) {
+      console.warn(`==> [config] 'timeout' is too short, is ${json.timeout}s expected?`);
+    }
+
+    this.timeout = json.timeout;
+
     // profile
     this.profile = json.profile;
 
@@ -208,6 +224,7 @@ export class Config {
     global.__OBFS_PARAMS__ = this.obfs_params;
 
     global.__REDIRECT__ = this.redirect;
+    global.__TIMEOUT__ = this.timeout;
 
     global.__LOG_LEVEL__ = this.log_level;
     global.__PROFILE__ = this.profile;

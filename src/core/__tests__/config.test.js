@@ -222,6 +222,36 @@ describe('Config#init', function () {
     }).toThrow();
   });
 
+  it('should throw when timeout is invalid', function () {
+    const conf = {
+      host: 'localhost',
+      port: 1080,
+      servers: ['abc.com:443'],
+      key: '123',
+      frame: 'xxx',
+      frame_params: '',
+      crypto: 'xxx',
+      crypto_params: '1,2',
+      protocol: 'basic',
+      protocol_params: '1,2',
+      obfs: 'none',
+      obfs_params: '',
+      redirect: 'test.com:443'
+    };
+
+    expect(function () {
+      Config.init({...conf, timeout: '0'});
+    }).toThrow();
+
+    expect(function () {
+      Config.init({...conf, timeout: 0});
+    }).toThrow();
+
+    expect(function () {
+      Config.init({...conf, timeout: 1});
+    }).not.toThrow();
+  });
+
   // others
 
   it('should this._is_server set to true, if no server_host provided', function () {
@@ -236,7 +266,8 @@ describe('Config#init', function () {
       protocol: 'basic',
       protocol_params: '1,2',
       obfs: 'none',
-      obfs_params: '1,2'
+      obfs_params: '1,2',
+      timeout: 300
     });
     expect(Config._is_server).toBe(true);
   });
@@ -257,7 +288,8 @@ describe('Config#setGlobals', function () {
       protocol: 'basic',
       protocol_params: '1,2',
       obfs: 'none',
-      obfs_params: '1,2'
+      obfs_params: '1,2',
+      timeout: 600
     });
     expect(__IS_SERVER__).toBe(true);
     expect(__IS_CLIENT__).toBe(false);

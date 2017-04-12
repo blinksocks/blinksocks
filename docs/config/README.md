@@ -27,6 +27,7 @@ $ blinksocks -c config.json
   "obfs": "",
   "obfs_params": "",
   "redirect": "",
+  "timeout": 600,
   "profile": false,
   "watch": true,
   "log_level": "info"
@@ -35,24 +36,25 @@ $ blinksocks -c config.json
 
 ## Description
 
-|       FIELD      |               DESCRIPTION                  |         EXAMPLE         |
-|:-----------------|:-------------------------------------------|:------------------------|
-| *host            | local ip address or domain name            | "localhost"             |
-| *port            | local port to bind                         | 1024-65535              |
-| servers          | a list of blinksocks server                | -                       |
-| *key             | for encryption and decryption              | -                       |
-| frame            | frame preset                               | "origin"                |
-| frame_params     | parameters for frame preset                | ""                      |
-| crypto           | crypto preset                              | ""                      |
-| crypto_params    | parameters for crypto preset               | ""                      |
-| protocol         | protocol preset                            | "aead"                  |
-| protocol_params  | parameters for protocol preset             | "aes-256-gcm,ss-subkey" |
-| obfs             | obfs preset                                | ""                      |
-| obfs_params      | parameters for obfs preset                 | ""                      |
-| redirect         | redirect requests to here when preset fail | "127.0.0.1:80"          |
-| profile          | whether profile or not                     | false                   |
-| watch            | watch --config for changes                 | true                    |
-| log_level        | log level                                  | "info"                  |
+|       FIELD      |                   DESCRIPTION                   |         EXAMPLE         |
+|:-----------------|:------------------------------------------------|:------------------------|
+| *host            | local ip address or domain name                 | "localhost"             |
+| *port            | local port to bind                              | 1024-65535              |
+| servers          | a list of blinksocks server                     | -                       |
+| *key             | for encryption and decryption                   | -                       |
+| frame            | frame preset                                    | "origin"                |
+| frame_params     | parameters for frame preset                     | ""                      |
+| crypto           | crypto preset                                   | ""                      |
+| crypto_params    | parameters for crypto preset                    | ""                      |
+| protocol         | protocol preset                                 | "aead"                  |
+| protocol_params  | parameters for protocol preset                  | "aes-256-gcm,ss-subkey" |
+| obfs             | obfs preset                                     | ""                      |
+| obfs_params      | parameters for obfs preset                      | ""                      |
+| redirect         | redirect requests to here when preset fail      | "127.0.0.1:80"          |
+| timeout          | close inactive connection after timeout seconds | false                   |
+| profile          | whether profile or not                          | false                   |
+| watch            | watch --config for changes                      | true                    |
+| log_level        | log level                                       | "info"                  |
 
 > NOTE: `host`, `port`, and `key` must be set.
 
@@ -74,7 +76,7 @@ You can temporary disable servers by prefixing a '-':
 }
 ```
 
-Also see [Multi-Server mode](../development/architecture#multi-server-mode).
+Blinksocks will detect which server is the fastest in a fixed interval using [balancer.js](../../src/core/balancer.js).
 
 * Presets, Ciphers and Hashes
 
