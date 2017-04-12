@@ -23,7 +23,7 @@ $ blinksocks -c config.json
   "crypto": "",
   "crypto_params": "",
   "protocol": "aead",
-  "protocol_params": "aes-256-cbc,sha256",
+  "protocol_params": "aes-256-gcm,ss-subkey",
   "obfs": "",
   "obfs_params": "",
   "redirect": "",
