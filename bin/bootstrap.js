@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const program = require('commander');
 const packageJson = require('../package.json');
 
@@ -94,12 +95,22 @@ function obtainConfig(type, options) {
 
   // --config, if provided, options in config.json should be able to overwrite CLI options
   if (options.config !== '') {
-    const file = options.config;
+    // resolve to absolute path
+    const file = path.resolve(process.cwd(), options.config);
     try {
-      const jsonFile = fs.readFileSync(file);
-      Object.assign(config, JSON.parse(jsonFile));
+      let json;
+      const ext = path.extname(file);
+      if (ext === '.js') {
+        // require .js directly
+        json = require(file);
+      } else {
+        // others are treated as .json
+        const jsonFile = fs.readFileSync(file);
+        json = JSON.parse(jsonFile);
+      }
+      Object.assign(config, json);
     } catch (err) {
-      throw Error(`error parse your \'${file}\'`);
+      throw Error(`fail to parse your \'${options.config}\'`);
     }
   }
 
