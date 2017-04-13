@@ -78,126 +78,52 @@ describe('Config#init', function () {
     }).toThrow();
   });
 
-  it('should throw when frame is not string', function () {
+  it('should throw when presets is not an array', function () {
     expect(function () {
       Config.init({
         host: 'localhost',
         port: 1080,
         servers: ['abc.com:443'],
-        key: '123',
-        frame: null
+        key: 'secret',
+        presets: null
       });
     }).toThrow();
   });
 
-  it('should throw when frame_params is not string', function () {
+  it('should throw when presets is empty', function () {
     expect(function () {
       Config.init({
         host: 'localhost',
         port: 1080,
         servers: ['abc.com:443'],
-        key: '123',
-        frame: 'xxx',
-        frame_params: [1, 2]
+        key: 'secret',
+        presets: []
       });
     }).toThrow();
   });
 
-  it('should throw when crypto is not string', function () {
+  it('should throw when presets is invalid', function () {
     expect(function () {
       Config.init({
         host: 'localhost',
         port: 1080,
         servers: ['abc.com:443'],
-        key: '123',
-        frame: 'xxx',
-        frame_params: '',
-        crypto: null
+        key: 'secret',
+        presets: [{}]
       });
     }).toThrow();
   });
 
-  it('should throw when crypto_params is not string', function () {
+  it('should throw when preset name is invalid', function () {
     expect(function () {
       Config.init({
         host: 'localhost',
         port: 1080,
         servers: ['abc.com:443'],
-        key: '123',
-        frame: 'xxx',
-        frame_params: '',
-        crypto: 'xxx',
-        crypto_params: [1, 2]
-      });
-    }).toThrow();
-  });
-
-  it('should throw when protocol is not string', function () {
-    expect(function () {
-      Config.init({
-        host: 'localhost',
-        port: 1080,
-        servers: ['abc.com:443'],
-        key: '123',
-        frame: 'xxx',
-        frame_params: '',
-        crypto: 'xxx',
-        crypto_params: '1,2',
-        protocol: null
-      });
-    }).toThrow();
-  });
-
-  it('should throw when protocol_params is not string', function () {
-    expect(function () {
-      Config.init({
-        host: 'localhost',
-        port: 1080,
-        servers: ['abc.com:443'],
-        key: '123',
-        frame: 'xxx',
-        frame_params: '',
-        crypto: 'xxx',
-        crypto_params: '1,2',
-        protocol: 'basic',
-        protocol_params: [1, 2]
-      });
-    }).toThrow();
-  });
-
-  it('should throw when obfs is not string', function () {
-    expect(function () {
-      Config.init({
-        host: 'localhost',
-        port: 1080,
-        servers: ['abc.com:443'],
-        key: '123',
-        frame: 'xxx',
-        frame_params: '',
-        crypto: 'xxx',
-        crypto_params: '1,2',
-        protocol: 'basic',
-        protocol_params: '1,2',
-        obfs: null
-      });
-    }).toThrow();
-  });
-
-  it('should throw when obfs_params is not string', function () {
-    expect(function () {
-      Config.init({
-        host: 'localhost',
-        port: 1080,
-        servers: ['abc.com:443'],
-        key: '123',
-        frame: 'xxx',
-        frame_params: '',
-        crypto: 'xxx',
-        crypto_params: '1,2',
-        protocol: 'basic',
-        protocol_params: '1,2',
-        obfs: 'none',
-        obfs_params: [1, 2]
+        key: 'secret',
+        presets: [{
+          name: ''
+        }]
       });
     }).toThrow();
   });
@@ -208,15 +134,16 @@ describe('Config#init', function () {
         host: 'localhost',
         port: 1080,
         servers: ['abc.com:443'],
-        key: '123',
-        frame: 'xxx',
-        frame_params: '',
-        crypto: 'xxx',
-        crypto_params: '1,2',
-        protocol: 'basic',
-        protocol_params: '1,2',
-        obfs: 'none',
-        obfs_params: '',
+        key: 'secret',
+        presets: [{
+          name: 'ss-base',
+          params: {}
+        }, {
+          name: 'ss-stream-cipher',
+          params: {
+            method: 'aes-128-cfb'
+          }
+        }],
         redirect: 'test.com'
       });
     }).toThrow();
@@ -227,15 +154,11 @@ describe('Config#init', function () {
       host: 'localhost',
       port: 1080,
       servers: ['abc.com:443'],
-      key: '123',
-      frame: 'xxx',
-      frame_params: '',
-      crypto: 'xxx',
-      crypto_params: '1,2',
-      protocol: 'basic',
-      protocol_params: '1,2',
-      obfs: 'none',
-      obfs_params: '',
+      key: 'secret',
+      presets: [{
+        name: 'ss-base',
+        params: {}
+      }],
       redirect: 'test.com:443'
     };
 
@@ -259,14 +182,11 @@ describe('Config#init', function () {
       host: 'localhost',
       port: 1080,
       key: '123',
-      frame: 'xxx',
-      frame_params: '',
-      crypto: 'xxx',
-      crypto_params: '1,2',
-      protocol: 'basic',
-      protocol_params: '1,2',
-      obfs: 'none',
-      obfs_params: '1,2',
+      presets: [{
+        name: 'ss-base',
+        params: {}
+      }],
+      redirect: 'test.com:443',
       timeout: 300
     });
     expect(Config._is_server).toBe(true);
@@ -281,29 +201,18 @@ describe('Config#setGlobals', function () {
       host: 'localhost',
       port: 1080,
       key: '123',
-      frame: 'origin',
-      frame_params: '',
-      crypto: 'xxx',
-      crypto_params: '1,2',
-      protocol: 'basic',
-      protocol_params: '1,2',
-      obfs: 'none',
-      obfs_params: '1,2',
-      timeout: 600
+      presets: [{
+        name: 'ss-base',
+        params: {}
+      }],
+      timeout: 300
     });
     expect(__IS_SERVER__).toBe(true);
     expect(__IS_CLIENT__).toBe(false);
     expect(__LOCAL_HOST__).toBe('localhost');
     expect(__LOCAL_PORT__).toBe(1080);
     expect(__KEY__).toBe('123');
-    expect(__FRAME__).toBe('origin');
-    expect(__FRAME_PARAMS__).toBe('');
-    expect(__PROTOCOL__).toBe('basic');
-    expect(__PROTOCOL_PARAMS__).toBe('1,2');
-    expect(__OBFS__).toBe('none');
-    expect(__OBFS_PARAMS__).toBe('1,2');
-    expect(__CRYPTO__).toBe('xxx');
-    expect(__CRYPTO_PARAMS__).toBe('1,2');
+    expect(__TIMEOUT__).toBe(300);
     expect(__LOG_LEVEL__).toBe(DEFAULT_LOG_LEVEL);
   });
 
@@ -331,14 +240,11 @@ describe('Config#abstract', function () {
       host: 'localhost',
       port: 1080,
       key: '123',
-      frame: 'origin',
-      frame_params: '',
-      crypto: 'xxx',
-      crypto_params: '1,2',
-      protocol: 'basic',
-      protocol_params: '1,2',
-      obfs: 'none',
-      obfs_params: '1,2'
+      presets: [{
+        name: 'ss-base',
+        params: {}
+      }],
+      timeout: 300
     });
   });
 
