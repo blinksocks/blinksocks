@@ -28,7 +28,7 @@ and [ShadowsocksR](https://github.com/shadowsocksr/shadowsocksr).
 ## Quick Start
 
 ```
-$ blinksocks server -c blinksocks.config.js
+$ blinksocks client -c blinksocks.config.js
 ```
 
 ```js
