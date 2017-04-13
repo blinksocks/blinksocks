@@ -16,29 +16,32 @@ function random(array, len) {
   return randomIndexes.map((char) => array[char % size]).join('');
 }
 
-const json = {
+const js = `
+module.exports = {
   "host": "localhost",
   "port": 1080,
   "servers": [],
-  "key": random('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+<>?:|{}ABCDEFGHIJKLMNOPQRSTUVWXYZ', 16),
-  "frame": "origin",
-  "frame_params": "",
-  "crypto": "",
-  "crypto_params": "",
-  "protocol": "aead",
-  "protocol_params": "aes-256-gcm,ss-subkey",
-  "obfs": "",
-  "obfs_params": "",
+  "key": "${random('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+<>?:|{}ABCDEFGHIJKLMNOPQRSTUVWXYZ', 16)}",
+  "presets": [{
+    "name": "origin",
+    "params": {}
+  }, {
+    "name": "aead",
+    "params": {
+      "method": "aes-128-gcm",
+      "info": "ss-subkey"
+    }
+  }],
   "redirect": "",
+  "timeout": 600,
+  "log_level": "info",
   "profile": false,
-  "watch": true,
-  "log_level": "info"
-};
+  "watch": true
+};`;
 
-const file = 'blinksocks.json';
+const file = 'blinksocks.config.js';
 
-const data = JSON.stringify(json, null, '  ');
-fs.writeFile(file, data, function (err) {
+fs.writeFile(file, js, function (err) {
   if (err) {
     throw err;
   }
