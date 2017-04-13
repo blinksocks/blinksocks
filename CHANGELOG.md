@@ -1,5 +1,14 @@
 # Change Log
 
+## [v2.4.0-beta.1](https://github.com/blinksocks/blinksocks/tree/v2.4.0-beta.1) (2017-04-13)
+[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.3.0...v2.4.0-beta.1)
+
+**Implemented enhancements:**
+
+- Support configuration file with ".js" format [\#49](https://github.com/blinksocks/blinksocks/issues/49)
+- Lack of timeout mechanism [\#45](https://github.com/blinksocks/blinksocks/issues/45)
+- Robust design for middlewares [\#40](https://github.com/blinksocks/blinksocks/issues/40)
+
 ## [v2.3.0](https://github.com/blinksocks/blinksocks/tree/v2.3.0) (2017-04-09)
 [Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.3.0-beta.3...v2.3.0)
 
@@ -9,6 +18,7 @@
 - Disable a server by prefixing a '-' [\#38](https://github.com/blinksocks/blinksocks/issues/38)
 - Hot reload config.json [\#37](https://github.com/blinksocks/blinksocks/issues/37)
 - Share the same config.json between clients and servers [\#35](https://github.com/blinksocks/blinksocks/issues/35)
+- Add suitable presets to be compatible with shadowsocks protocols [\#27](https://github.com/blinksocks/blinksocks/issues/27)
 
 ## [v2.3.0-beta.3](https://github.com/blinksocks/blinksocks/tree/v2.3.0-beta.3) (2017-03-28)
 [Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.3.0-beta.2...v2.3.0-beta.3)
