@@ -25,6 +25,34 @@ and [ShadowsocksR](https://github.com/shadowsocksr/shadowsocksr).
 * Running on Linux based, Windows and macOS
 * Docker integration
 
+## Quick Start
+
+```
+$ blinksocks server -c blinksocks.config.js
+```
+
+```
+// blinksocks.config.js
+
+module.exports = {
+  "host": "localhost",
+  "port": 1080,
+  "servers": [{
+    "bs.example.com:1234"
+  }],
+  "key": "(m-p14a=*&*/P^n?",
+  "presets": [
+    {"name": "ss-base", "params": {}},
+    {"name": "ss-aead-cipher", "params": {"method": "aes-256-gcm", "info": "ss-subkey"}
+  }],
+  "redirect": "",
+  "timeout": 600,
+  "log_level": "info",
+  "profile": false,
+  "watch": true
+};
+```
+
 ## Documents
 
 1. [Getting Started](docs/tutorials)
