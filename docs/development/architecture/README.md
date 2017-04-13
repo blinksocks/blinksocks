@@ -2,11 +2,18 @@
 
 ![architecture](architecture.png)
 
-## Proxy Protocols
+## Proxy Application Data
 
 To take over data send and receive of applications, we must find a widely
 used proxy protocol. Http/Socks5/Socks4/Socks4a are ideal, they only work
 on the client side, so don't worry about being attacked.
+
+**References**
+
+* [SOCKS4](http://www.openssh.com/txt/socks4.protocol)
+* [SOCKS4a](http://www.openssh.com/txt/socks4a.protocol)
+* [SOCKS5 RFC-1928](https://tools.ietf.org/rfc/rfc1928.txt)
+* [HTTP/1.1 RFC-2616](https://tools.ietf.org/rfc/rfc2616.txt)
 
 ## Pipe
 
@@ -19,40 +26,98 @@ data from the last layer of all middlewares.
 
 ## Middleware
 
-Middleware is a class which used for processing input data to output data from/to
-different middlewares. There are four kind of middlewares:
+Middleware is a director which used for processing input data to output data from/to
+other middlewares.
 
-* FrameMiddleware
+Similar to TCP/IP, you can define your own protocol in each layer. Application data are processed
+**step by step** from the lowest layer to the top. Middlewares here act as specific layers in the stack.
 
-The lowest layer in the middleware stack. It packs data from application,
-or unpacks data from CryptoMiddleware.
+Here is the original `shadowsocks` protocol implemented in `blinksocks` using the following config:
 
-* CryptoMiddleware
+```json
+{
+  ...
+  "presets": [
+    {"name": "ss-base", "params": {}},
+    {"name": "ss-stream-cipher", "params": {"method": "aes-256-cfb"}}
+  ]
+  ...
+}
+```
 
-The second layer in the middleware stack. It encrypts data from FrameMiddleware,
-or decrypts data from ProtocolMiddleware.
+These two presets act as two middlewares, processing data from the bottom to the top.
 
-* ProtocolMiddleware
+```
++--------+----------------------------------------+
+|   IV   |                PAYLOAD                 |
++--------+----------------------------------------+ <-------+
+|   16   |                Variable                |         |
++--------+----------------------------------------+         |
+                                                            |
+                              {"name": "ss-stream-cipher", "params": {"method": "aes-256-cfb"}}
+                                                            |
+         +------+----------+----------+-----------+         |
+         | ATYP | DST.ADDR | DST.PORT |  PAYLOAD  |         |
+         +------+----------+----------+-----------+ <-------+
+         |  1   | Variable |    2     |  Variable |         |
+         +------+----------+----------+-----------+         |
+                                                            |
+                                            {"name": "ss-base", "params": {}}
+                                                            |
+                                      +-----------+         |
+                                      |   DATA    |         |
+              Application Data -----> +-----------+ --------+
+                                      |  Variable |
+                                      +-----------+
+```
 
-The third layer in the middleware stack. It encapsulates data with additional
-headers from CryptoMiddleware, or decapsulates data from ObfsMiddleware.
+Ordinarily, `DST.ADDR` and `DST.PORT` is required to be sent to server(like "origin" preset),
+otherwise server cannot figure out where to send data to.
 
-The additional headers may be used for AEAD or other needs.
+Blinksocks will pass **target address** to the first preset once a connection between application
+and blinksocks client was constructed, so you can obtain that address in your frame preset.
 
-* ObfsMiddleware
+```js
+// core/socket.js
+this._pipe.setMiddlewares(MIDDLEWARE_DIRECTION_UPWARD,
+  __PRESETS__.map((preset, i) => createMiddleware(preset.name, {
+    ...preset.params,
+    ...(i === 0 ? addr : {}) // pass target address to the first preset
+  }))
+);
+```
 
-The last layer in the middleware stack. It encapsulates data with obfuscation
-headers from ProtocolMiddleware, or decapsulates data from network.
+Store target address for further use:
+
+```js
+// presets/ss-base.js
+export default class SSBasePreset extends IPreset {
+
+  _atyp = ATYP_V4;
+
+  _addr = null; // buffer
+
+  _port = null; // buffer
+
+  constructor(addr) {
+    super();
+    if (__IS_CLIENT__) {
+      const {type, host, port} = addr;
+      this._atyp = type;
+      this._addr = net.isIP(host) ? ip.toBuffer(host) : Buffer.from(host);
+      this._port = port instanceof Buffer ? port : Utils.numberToUIntBE(port);
+    }
+  }
+
+  // ...
+
+}
+```
 
 ## Preset
 
-Preset is the **implement** of middleware, for examples you can check out [src/presets](../../src/presets),
-there are several built-in presets already:
-
-* frame/*: implement for FrameMiddleware
-* crypto/*: implement for CryptoMiddleware
-* protocol/*: implement for ProtocolMiddleware
-* obfs/*: implement for ObfsMiddleware
+Preset is the **implementation** of middleware, for examples you can check out [src/presets](../../src/presets),
+there are several built-in presets already.
 
 ### Custom Preset
 
@@ -100,7 +165,11 @@ Every method gets an object which contains three parameters you need:
 | broadcast | call it with an action to notify other middlewares                         |
 | fail      | call it once handshake failed, connection will be closed in random seconds |
 
-Action passed to broadcast is an object which requires a `type` field:
+### Presets Decoupling
+
+There may be coupling between presets, you can pass an action to broadcast().
+
+Action is a plain object which only requires a `type` field:
 
 ```
 // action
@@ -110,8 +179,7 @@ Action passed to broadcast is an object which requires a `type` field:
 }
 ```
 
-Once a method broadcast, all other middlewares will receive the action in
-**onNotified(action)** immediately:
+Once broadcast, **all** other middlewares will receive the action in **onNotified(action)** immediately:
 
 ```js
 // custom.js
@@ -129,6 +197,8 @@ export default class CustomPreset extends IPreset {
 
 }
 ```
+
+NOTE: `onNotified` is **synchronous**.
 
 ### Hooks
 

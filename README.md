@@ -29,16 +29,9 @@ and [ShadowsocksR](https://github.com/shadowsocksr/shadowsocksr).
 
 1. [Getting Started](docs/tutorials)
 2. [Usage](docs/usage)
-3. [Config.json](docs/config)
+3. [-c, --config](docs/config)
 4. [Development](docs/development)
 5. [Performance](docs/performance)
-
-## References
-
-* [SOCKS4](http://www.openssh.com/txt/socks4.protocol)
-* [SOCKS4a](http://www.openssh.com/txt/socks4a.protocol)
-* [SOCKS5 RFC-1928](https://tools.ietf.org/rfc/rfc1928.txt)
-* [HTTP/1.1 RFC-2616](https://tools.ietf.org/rfc/rfc2616.txt)
 
 ## Contributors
 

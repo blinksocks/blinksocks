@@ -18,8 +18,8 @@ Prepare your configurations and start to test:
 
 ```
 $ bin/cli-init.js
-$ NODE_ENV=development bin/cli-client.js -c blinksocks.json
-$ NODE_ENV=development bin/cli-server.js -c blinksocks.json
+$ NODE_ENV=development bin/cli-client.js -c blinksocks.config.js
+$ NODE_ENV=development bin/cli-server.js -c blinksocks.config.js
 ```
 
 ## Verify

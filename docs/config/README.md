@@ -1,62 +1,70 @@
-# Config.json
+# -c, --config
 
-To start a server or a client, you can prepare a configuration json file(`config.json` for example)
+To start a server or a client, you prepare a json or js file(`config.json/config.js` for example) first,
 then supply it to `--config` or `-c`:
 
 ```
-$ blinksocks -c config.json
+$ blinksocks -c config.js
 ```
 
 ## Template
+
+**config.json**
 
 ```json
 {
   "host": "localhost",
   "port": 1080,
   "servers": [
-    "node1.test.com:7777",
-    "node2.test.com:7777"
+    "node1.example.com:7777",
+    "node2.example.com:7778"
   ],
   "key": "oh my secret key",
-  "frame": "origin",
-  "frame_params": "",
-  "crypto": "",
-  "crypto_params": "",
-  "protocol": "aead",
-  "protocol_params": "aes-256-gcm,ss-subkey",
-  "obfs": "",
-  "obfs_params": "",
+  "presets": [
+    {
+      "name": "ss-base",
+      "params": {}
+    },
+    {
+      "name": "ss-aead-cipher",
+      "params": {
+        "method": "aes-128-gcm",
+        "info": "ss-subkey"
+      }
+    }
+  ],
   "redirect": "",
   "timeout": 600,
+  "log_level": "silly",
   "profile": false,
-  "watch": true,
-  "log_level": "info"
+  "watch": true
 }
+```
+
+**config.js**
+
+```js
+module.exports = {
+  ...
+};
 ```
 
 ## Description
 
-|       FIELD      |                   DESCRIPTION                   |         EXAMPLE         |
-|:-----------------|:------------------------------------------------|:------------------------|
-| *host            | local ip address or domain name                 | "localhost"             |
-| *port            | local port to bind                              | 1024-65535              |
-| servers          | a list of blinksocks server                     | -                       |
-| *key             | for encryption and decryption                   | -                       |
-| frame            | frame preset                                    | "origin"                |
-| frame_params     | parameters for frame preset                     | ""                      |
-| crypto           | crypto preset                                   | ""                      |
-| crypto_params    | parameters for crypto preset                    | ""                      |
-| protocol         | protocol preset                                 | "aead"                  |
-| protocol_params  | parameters for protocol preset                  | "aes-256-gcm,ss-subkey" |
-| obfs             | obfs preset                                     | ""                      |
-| obfs_params      | parameters for obfs preset                      | ""                      |
-| redirect         | redirect requests to here when preset fail      | "127.0.0.1:80"          |
-| timeout          | close inactive connection after timeout seconds | false                   |
-| profile          | whether profile or not                          | false                   |
-| watch            | watch --config for changes                      | true                    |
-| log_level        | log level                                       | "info"                  |
+|       FIELD      |                      DESCRIPTION                      |         EXAMPLE         |
+|:-----------------|:------------------------------------------------------|:------------------------|
+| *host            | local ip address or domain name                       | "localhost"             |
+| *port            | local port to bind                                    | 1024-65535              |
+| servers          | a list of blinksocks server                           | -                       |
+| *key             | for encryption and decryption                         | -                       |
+| *presets         | a list of presets use in middlewares                  | -                       |
+| redirect         | redirect requests to here once preset fail to process | "127.0.0.1:80"          |
+| timeout          | close inactive connection after timeout seconds       | false                   |
+| log_level        | log level                                             | "info"                  |
+| profile          | whether profile or not                                | false                   |
+| watch            | watch --config for changes                            | true                    |
 
-> NOTE: `host`, `port`, and `key` must be set.
+> NOTE: field marked with \* must be set.
 
 * Servers(Client Side Only)
 
@@ -78,20 +86,17 @@ You can temporary disable servers by prefixing a '-':
 
 Blinksocks will detect which server is the fastest in a fixed interval using [balancer.js](../../src/core/balancer.js).
 
-* Presets, Ciphers and Hashes
+* Presets
 
-```
-├── crypto
-│   ├── none.js
-│   └── openssl.js
-├── frame
-│   └── origin.js
-├── obfs
-│   ├── http.js
-│   └── none.js
-└── protocol
-    ├── aead.js
-    └── none.js
+`presets` is a list, a preset is defined as:
+
+```json
+{
+  "name": "preset-name",
+  "params": {
+    "key": "value"
+  }
+}
 ```
 
 Please check out relevant [presets](src/presets), they are documented well.
@@ -105,7 +110,7 @@ npm logging levels by default, you can choose one of them demand:
 { error: 0, warn: 1, info: 2, verbose: 3, debug: 4, silly: 5 }
 ```
 
-## Hot reload config.json
+## Hot reload
 
 `--watch` is enabled by default, this means when file specified by `-c` or `--config` has been modified,
 blinksocks will hot-reload it without stop-the-world.
@@ -142,12 +147,15 @@ To work with **shadowsocks**, please choose one of the following configuration:
 ```
 {
   ...
-  "crypto": "openssl",            // must be "openssl"
-  "crypto_params": "aes-256-cfb", // method of shadowsocks
-  "protocol": "",                 // must be ""
-  "protocol_params": "",
-  "obfs": "",                     // must be ""
-  "obfs_params": ""
+  "presets": [{
+    "name": "ss-base",
+    "params": {}
+  }, {
+    "name": "ss-stream-cipher",
+    "params": {
+      "method": "aes-256-cfb"
+    }
+  }],
   ...
 }
 ```
@@ -157,12 +165,16 @@ To work with **shadowsocks**, please choose one of the following configuration:
 ```
 {
   ...
-  "crypto": "",                               // must be ""
-  "crypto_params": "",
-  "protocol": "aead",                         // must be "aead"
-  "protocol_params": "aes-256-gcm,ss-subkey", // method of shadowsocks
-  "obfs": "",                                 // must be ""
-  "obfs_params": ""
+  "presets": [{
+    "name": "ss-base",
+    "params": {}
+  }, {
+    "name": "ss-aead-cipher",
+    "params": {
+      "method": "aes-256-gcm",
+      "info": "ss-subkey"
+    }
+  }],
   ...
 }
 ```

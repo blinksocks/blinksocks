@@ -28,54 +28,40 @@ There are threes commands to do different tasks:
 
 ### blinksocks init
 
-This will generate `blinksocks.client.json` and `blinksocks.server.json` pair with a random key and default settings.
+This will generate `blinksocks.config.js` with a random key and some default settings.
 
 ### blinksocks client/server
 
 ```
 $ blinksocks server --help
 
-  Usage: blinksocks-server --host <host> --port <port> --key <key> [...]
+  Usage: blinksocks-server --config <file> --host <host> --port <port> --key <key> [...]
 
   Options:
 
-    -h, --help                           output usage information
-    -V, --version                        output the version number
-    -c, --config [file]                  a json format file for configuration
-    --host <host>                        an ip address or a hostname to bind, default: 'localhost'
-    --port <port>                        where to listen on, default: 1080
-    --servers [servers]                  a list of servers used by client, split by comma, default: ''
-    --key <key>                          a key for encryption and decryption
-    --frame [frame]                      a preset used in frame middleware, default: 'origin'
-    --frame-params [crypto-params]       parameters for frame preset, default: ''
-    --crypto [crypto]                    a preset used in crypto middleware, default: ''
-    --crypto-params [crypto-params]      parameters for crypto, default: 'aes-256-cfb'
-    --protocol [protocol]                a preset used in protocol middleware, default: 'aead'
-    --protocol-params [protocol-params]  parameters for protocol, default: 'aes-256-gcm,ss-subkey'
-    --obfs [obfs]                        a preset used in obfs middleware, default: ''
-    --obfs-params [obfs-params]          parameters for obfs, default: ''
-    --redirect [redirect]                redirect stream to here when any preset fail to process, default: ''
-    --log-level [log-level]              log level, default: 'silly'
-    --timeout [timeout]                  time to close connection if inactive, default: 600
-    -q, --quiet [quiet]                  force log level to 'error', default: false
-    -w, --watch [watch]                  hot reload config.json specified via -c, default: true
-    --profile [profile]                  generate performance statistics, store at blinksocks.profile.log once exit, default: false
+    -h, --help               output usage information
+    -V, --version            output the version number
+    -c, --config <file>      a json/js format file for configuration
+    --host <host>            an ip address or a hostname to bind, default: 'localhost'
+    --port <port>            where to listen on, default: 1080
+    --key <key>              a key for encryption and decryption
+    --redirect [redirect]    redirect stream to here when any preset fail to process, default: ''
+    --log-level [log-level]  log level, default: 'silly'
+    --timeout [timeout]      time to close connection if inactive, default: 600
+    -q, --quiet [quiet]      force log level to 'error', default: false
+    -w, --watch [watch]      hot reload config specified via -c, default: true
+    --profile [profile]      generate performance statistics, store at blinksocks.profile.log once exit, default: false
 
 
   Examples:
   
   As simple as possible:
-    $ blinksocks client -c config.json --watch
-  
-  To start a server:
-    $ blinksocks server --host 0.0.0.0 --port 7777 --key password
-  
-  To start a client:
-    $ blinksocks client --host localhost --port 1080 --key password --servers=node1.test.com:7777,node2.test.com:7777
+    $ blinksocks client -c config.js
+    $ blinksocks server -c config.js
 
 ```
 
-> Please check out [config.json](../config) for detail explanation of every options.
+> Please check out [--config](../config) for detailed explanation of every options.
 
 ## Run in production
 
@@ -90,13 +76,13 @@ $ npm install -g pm2
 ### Daemon mode
 
 ```
-$ pm2 start blinksocks-client -- -c config.json
+$ pm2 start blinksocks-client -- -c config.js
 ```
 
 ### Cluster mode
 
 ```
-$ pm2 start blinksocks-server -i 2 -- -c config.json
+$ pm2 start blinksocks-server -i 2 -- -c config.js
 ```
 
 ## For Firefox/Google Chrome and more...
