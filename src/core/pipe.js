@@ -3,7 +3,7 @@ import {
   MIDDLEWARE_DIRECTION_UPWARD,
   MIDDLEWARE_DIRECTION_DOWNWARD
 } from './middleware';
-import {PROCESSING_FAILED} from '../presets/actions';
+import {PROCESSING_FAILED} from '../presets/defs';
 
 export class Pipe extends EventEmitter {
 

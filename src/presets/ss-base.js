@@ -1,15 +1,13 @@
 import net from 'net';
 import ip from 'ip';
-import logger from 'winston';
-import {IPreset} from '../interface';
-import {SOCKET_CONNECT_TO_DST} from '../actions';
-import {Utils} from '../../utils';
+import {IPreset, SOCKET_CONNECT_TO_DST} from './defs';
+import {Utils} from '../utils';
 
 import {
   ATYP_V4,
   ATYP_V6,
   ATYP_DOMAIN
-} from '../../proxies/common';
+} from '../proxies/common';
 
 /**
  * @description
@@ -19,8 +17,10 @@ import {
  *   no
  *
  * @examples
- *   "frame": "origin"
- *   "frame_params": ""
+ *   {
+ *     "name": "ss-base",
+ *     "params": {}
+ *   }
  *
  * @protocol
  *
@@ -43,7 +43,7 @@ import {
  *   2. When ATYP is 0x03, DST.ADDR[0] is len(DST.ADDR).
  *   3. When ATYP is 0x04, DST.ADDR is a 16 bytes ipv6 address.
  */
-export default class OriginFrame extends IPreset {
+export default class SSBasePreset extends IPreset {
 
   _isHandshakeDone = false;
 
@@ -78,18 +78,14 @@ export default class OriginFrame extends IPreset {
     }
   }
 
-  serverIn({buffer, next, broadcast}) {
+  serverIn({buffer, next, broadcast, fail}) {
     if (!this._isHandshakeDone) {
       if (buffer.length < 7) {
-        logger.error(`invalid length: ${buffer.length}`);
+        fail(`invalid length: ${buffer.length}`);
         return;
       }
 
       const atyp = buffer[0];
-      if (![ATYP_DOMAIN, ATYP_V4, ATYP_V6].includes(atyp)) {
-        logger.error(`invalid atyp: ${atyp}`);
-        return;
-      }
 
       let addr, port; // string
       let offset = 3;
@@ -102,7 +98,7 @@ export default class OriginFrame extends IPreset {
           break;
         case ATYP_V6:
           if (buffer.length < 19) {
-            logger.error(`invalid length: ${buffer.length}`);
+            fail(`invalid length: ${buffer.length}`);
             return;
           }
           addr = ip.toString(buffer.slice(1, 16));
@@ -112,7 +108,7 @@ export default class OriginFrame extends IPreset {
         case ATYP_DOMAIN:
           const domainLen = buffer[1];
           if (buffer.length < domainLen + 4) {
-            logger.error(`invalid length: ${buffer.length}`);
+            fail(`invalid length: ${buffer.length}`);
             return;
           }
           addr = buffer.slice(2, 2 + domainLen).toString();
@@ -120,7 +116,7 @@ export default class OriginFrame extends IPreset {
           offset += domainLen + 1;
           break;
         default:
-          logger.error(`invalid atyp: ${atyp}`);
+          fail(`invalid atyp: ${atyp}`);
           return;
       }
 

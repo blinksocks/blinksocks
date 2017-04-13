@@ -7,22 +7,13 @@ const packageJson = require('../package.json');
 const BOOTSTRAP_TYPE_SERVER = 1;
 
 const version = packageJson.version;
-const usage = '--host <host> --port <port> --key <key> [...]';
+const usage = '--config <file> --host <host> --port <port> --key <key> [...]';
 
 const options = [
-  ['-c, --config [file]', 'a json format file for configuration', ''],
+  ['-c, --config <file>', 'a json/js format file for configuration', ''],
   ['--host <host>', 'an ip address or a hostname to bind, default: \'localhost\'', 'localhost'],
   ['--port <port>', 'where to listen on, default: 1080', 1080],
-  ['--servers [servers]', 'a list of servers used by client, split by comma, default: \'\'', (value) => value.split(','), []],
   ['--key <key>', 'a key for encryption and decryption'],
-  ['--frame [frame]', 'a preset used in frame middleware, default: \'origin\'', 'origin'],
-  ['--frame-params [crypto-params]', 'parameters for frame preset, default: \'\'', ''],
-  ['--crypto [crypto]', 'a preset used in crypto middleware, default: \'\'', ''],
-  ['--crypto-params [crypto-params]', 'parameters for crypto, default: \'aes-256-cfb\'', 'aes-256-cfb'],
-  ['--protocol [protocol]', 'a preset used in protocol middleware, default: \'aead\'', 'aead'],
-  ['--protocol-params [protocol-params]', 'parameters for protocol, default: \'aes-256-gcm,ss-subkey\'', 'aes-256-gcm,ss-subkey'],
-  ['--obfs [obfs]', 'a preset used in obfs middleware, default: \'\'', ''],
-  ['--obfs-params [obfs-params]', 'parameters for obfs, default: \'\'', ''],
   ['--redirect [redirect]', 'redirect stream to here when any preset fail to process, default: \'\'', ''],
   ['--log-level [log-level]', 'log level, default: \'silly\'', 'silly'],
   ['--timeout [timeout]', 'time to close connection if inactive, default: 600', 600],
@@ -35,13 +26,8 @@ const examples = `
   Examples:
   
   As simple as possible:
-    $ blinksocks client -c config.json --watch
-  
-  To start a server:
-    $ blinksocks server --host 0.0.0.0 --port 7777 --key password
-  
-  To start a client:
-    $ blinksocks client --host localhost --port 1080 --key password --servers=node1.test.com:7777,node2.test.com:7777
+    $ blinksocks client -c config.js
+    $ blinksocks server -c config.js
 `;
 
 /**
@@ -52,16 +38,7 @@ const examples = `
  */
 function obtainConfig(type, options) {
   // CLI options should be able to overwrite options specified in --config
-  const {host, servers, key, quiet} = options;
-  const {frame, crypto, protocol, obfs, redirect} = options;
-
-  // renames
-  const [frame_params, crypto_params, protocol_params, obfs_params] = [
-    options.frameParams,
-    options.cryptoParams,
-    options.protocolParams,
-    options.obfsParams
-  ];
+  const {host, servers, key, presets, redirect, quiet} = options;
 
   // pre-process
   const [port, log_level, timeout, watch, profile] = [
@@ -78,14 +55,7 @@ function obtainConfig(type, options) {
     port,
     servers,
     key,
-    frame,
-    frame_params,
-    crypto,
-    crypto_params,
-    protocol,
-    protocol_params,
-    obfs,
-    obfs_params,
+    presets,
     redirect,
     log_level,
     timeout,
@@ -159,7 +129,7 @@ module.exports = function (type, {Hub, Config}) {
     app.run();
     process.on('SIGINT', () => app.onClose());
   } catch (err) {
-    console.error(err.message);
+    console.error(err);
     process.exit(-1);
   }
 };

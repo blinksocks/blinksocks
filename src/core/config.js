@@ -15,21 +15,7 @@ export class Config {
 
   static key;
 
-  static frame;
-
-  static frame_params;
-
-  static crypto;
-
-  static crypto_params;
-
-  static protocol;
-
-  static protocol_params;
-
-  static obfs;
-
-  static obfs_params;
+  static presets;
 
   static redirect;
 
@@ -105,57 +91,33 @@ export class Config {
 
     this.key = json.key;
 
-    // frame & frame_params
+    // presets & presets' parameters
 
-    if (typeof json.frame !== 'string') {
-      throw Error('\'frame\' must be a string');
+    if (!Array.isArray(json.presets)) {
+      throw Error('\'presets\' must be an array');
     }
 
-    if (typeof json.frame_params !== 'string') {
-      throw Error('\'frame_params\' must be a string');
+    if (json.presets.length < 1) {
+      throw Error('\'presets\' must contain at least one preset');
     }
 
-    this.frame = json.frame || 'origin';
-    this.frame_params = json.frame_params;
+    for (const preset of json.presets) {
+      const {name, params} = preset;
 
-    // crypto & crypto_params
+      if (typeof name === 'undefined') {
+        throw Error('\'preset.name\' must be a string');
+      }
 
-    if (typeof json.crypto !== 'string') {
-      throw Error('\'crypto\' must be a string');
+      // 1. check for the existence of the preset
+      const ps = require(`../presets/${preset.name}`).default;
+
+      // 2. check parameters, but ignore the first preset
+      if (name !== json.presets[0].name) {
+        delete new ps(params || {});
+      }
     }
 
-    if (typeof json.crypto_params !== 'string') {
-      throw Error('\'crypto_params\' must be a string');
-    }
-
-    this.crypto = json.crypto || 'none';
-    this.crypto_params = json.crypto_params;
-
-    // protocol & protocol_params
-
-    if (typeof json.protocol !== 'string') {
-      throw Error('\'protocol\' must be a string');
-    }
-
-    if (typeof json.protocol_params !== 'string') {
-      throw Error('\'protocol_params\' must be a string');
-    }
-
-    this.protocol = json.protocol || 'none';
-    this.protocol_params = json.protocol_params;
-
-    // obfs & obfs_params
-
-    if (typeof json.obfs !== 'string') {
-      throw Error('\'obfs\' must be a string');
-    }
-
-    if (typeof json.obfs_params !== 'string') {
-      throw Error('\'obfs_params\' must be a string');
-    }
-
-    this.obfs = json.obfs || 'none';
-    this.obfs_params = json.obfs_params;
+    this.presets = json.presets;
 
     // redirect
 
@@ -211,17 +173,7 @@ export class Config {
 
     global.__KEY__ = this.key;
 
-    global.__FRAME__ = this.frame;
-    global.__FRAME_PARAMS__ = this.frame_params;
-
-    global.__CRYPTO__ = this.crypto;
-    global.__CRYPTO_PARAMS__ = this.crypto_params;
-
-    global.__PROTOCOL__ = this.protocol;
-    global.__PROTOCOL_PARAMS__ = this.protocol_params;
-
-    global.__OBFS__ = this.obfs;
-    global.__OBFS_PARAMS__ = this.obfs_params;
+    global.__PRESETS__ = this.presets;
 
     global.__REDIRECT__ = this.redirect;
     global.__TIMEOUT__ = this.timeout;

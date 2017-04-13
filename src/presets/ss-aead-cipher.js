@@ -1,6 +1,6 @@
 import crypto from 'crypto';
-import {IPreset} from '../interface';
-import {Utils, BYTE_ORDER_LE, AdvancedBuffer} from '../../utils';
+import {IPreset} from './defs';
+import {Utils, BYTE_ORDER_LE, AdvancedBuffer} from '../utils';
 
 const NONCE_LEN = 12;
 const TAG_LEN = 16;
@@ -72,12 +72,17 @@ function HKDF(salt, ikm, info, length) {
  *   AEAD ciphers simultaneously provide confidentiality, integrity, and authenticity.
  *
  * @params
- *   cipher: The encryption/decryption method.
+ *   method: The encryption/decryption method.
  *   info: An info for HKDF.
  *
  * @examples
- *   "protocol": "aead"
- *   "protocol_params": "aes-128-gcm,ss-subkey"
+ *  {
+ *    "name": "ss-aead-cipher",
+ *    "params": {
+ *      "method": "aes-128-gcm",
+ *      "info": "ss-subkey"
+ *    }
+ *  }
  *
  * @protocol
  *
@@ -115,7 +120,7 @@ function HKDF(salt, ikm, info, length) {
  *       https://nodejs.org/dist/latest-v6.x/docs/api/crypto.html#crypto_cipher_getauthtag
  *       https://nodejs.org/dist/latest-v6.x/docs/api/crypto.html#crypto_decipher_setauthtag_buffer
  */
-export default class AeadProtocol extends IPreset {
+export default class SSAeadCipherPreset extends IPreset {
 
   _cipherName = '';
 
@@ -131,15 +136,15 @@ export default class AeadProtocol extends IPreset {
 
   _adBuf = null;
 
-  constructor(cipher, info) {
+  constructor({method, info}) {
     super();
-    if (typeof cipher === 'undefined' || cipher === '') {
-      throw Error('\'protocol_params\' requires [cipher] parameter.');
+    if (typeof method === 'undefined' || method === '') {
+      throw Error('\'method\' must be set.');
     }
-    if (!ciphers.includes(cipher)) {
-      throw Error(`cipher \'${cipher}\' is not supported.`);
+    if (!ciphers.includes(method)) {
+      throw Error(`method \'${method}\' is not supported.`);
     }
-    this._cipherName = cipher;
+    this._cipherName = method;
     this._info = Buffer.from(info);
     this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});
     this._adBuf.on('data', this.onChunkReceived.bind(this));

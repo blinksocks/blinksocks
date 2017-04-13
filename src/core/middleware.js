@@ -4,11 +4,6 @@ import logger from 'winston';
 export const MIDDLEWARE_DIRECTION_UPWARD = 0;
 export const MIDDLEWARE_DIRECTION_DOWNWARD = 1;
 
-export const MIDDLEWARE_TYPE_FRAME = 0;
-export const MIDDLEWARE_TYPE_CRYPTO = 1;
-export const MIDDLEWARE_TYPE_PROTOCOL = 2;
-export const MIDDLEWARE_TYPE_OBFS = 3;
-
 /**
  * abstraction of middleware
  */
@@ -69,23 +64,14 @@ export class Middleware extends EventEmitter {
 
 /**
  * create an instance of Middleware
- * @param type
- * @param props
+ * @param name
+ * @param params
  * @returns {Middleware}
  */
-export function createMiddleware(type, props = []) {
-  const [preset, params] = {
-    [MIDDLEWARE_TYPE_FRAME]: [`frame/${__FRAME__}`, __FRAME_PARAMS__],
-    [MIDDLEWARE_TYPE_CRYPTO]: [`crypto/${__CRYPTO__}`, __CRYPTO_PARAMS__],
-    [MIDDLEWARE_TYPE_PROTOCOL]: [`protocol/${__PROTOCOL__}`, __PROTOCOL_PARAMS__],
-    [MIDDLEWARE_TYPE_OBFS]: [`obfs/${__OBFS__}`, __OBFS_PARAMS__]
-  }[type];
-
+export function createMiddleware(name, params = {}) {
   try {
-    const ImplClass = require(`../presets/${preset}`).default;
-    const _params = Array.isArray(params) ? params : params.split(',').filter((param) => param.length > 0);
-
-    const impl = new ImplClass(...props.concat(_params));
+    const ImplClass = require(`../presets/${name}`).default;
+    const impl = new ImplClass(params);
 
     checkMiddleware(ImplClass.name, impl);
 

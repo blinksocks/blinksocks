@@ -21,14 +21,14 @@ module.exports = {
   "host": "localhost",
   "port": 1080,
   "servers": [],
-  "key": "${random('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+<>?:|{}ABCDEFGHIJKLMNOPQRSTUVWXYZ', 16)}",
+  "key": "${random('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+<>?:|{}-=[];,./ABCDEFGHIJKLMNOPQRSTUVWXYZ', 16)}",
   "presets": [{
-    "name": "origin",
+    "name": "ss-base",
     "params": {}
   }, {
-    "name": "aead",
+    "name": "ss-aead-cipher",
     "params": {
-      "method": "aes-128-gcm",
+      "method": "aes-256-gcm",
       "info": "ss-subkey"
     }
   }],
@@ -41,8 +41,4 @@ module.exports = {
 
 const file = 'blinksocks.config.js';
 
-fs.writeFile(file, js, function (err) {
-  if (err) {
-    throw err;
-  }
-});
+fs.writeFileSync(file, js);

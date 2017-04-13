@@ -1,6 +1,6 @@
 import crypto from 'crypto';
-import {IPreset} from '../interface';
-import {Utils} from '../../utils';
+import {IPreset} from './defs';
+import {Utils} from '../utils';
 
 const IV_LEN = 16;
 
@@ -20,11 +20,15 @@ const ciphers = [
  *   Perform encrypt/decrypt using Node.js 'crypto' module(OpenSSL wrappers).
  *
  * @params
- *   cipher (String): Which cipher is picked from OpenSSL library.
+ *   method: A cipher picked from OpenSSL library.
  *
  * @examples
- *   "crypto": "openssl"
- *   "crypto_params": "aes-256-cfb"
+ *   {
+ *     "name": "ss-stream-cipher",
+ *     "params": {
+ *       "method": "aes-256-cfb"
+ *     }
+ *   }
  *
  * @protocol
  *
@@ -52,7 +56,7 @@ const ciphers = [
  *       https://www.openssl.org/docs/man1.0.2/crypto/EVP_BytesToKey.html
  *       https://github.com/shadowsocks/shadowsocks/blob/master/shadowsocks/cryptor.py#L53
  */
-export default class OpenSSLCrypto extends IPreset {
+export default class SSStreamCipherPreset extends IPreset {
 
   _cipherName = '';
 
@@ -62,16 +66,18 @@ export default class OpenSSLCrypto extends IPreset {
 
   _decipher = null;
 
-  constructor(cipherName) {
+  constructor({method}) {
     super();
-    if (typeof cipherName !== 'string' || cipherName === '') {
-      throw Error('\'crypto_params\' requires [cipher] parameter.');
+    if (typeof method !== 'string' || method === '') {
+      throw Error('\'method\' must be set');
     }
-    if (!ciphers.includes(cipherName)) {
-      throw Error(`cipher \'${cipherName}\' is not supported.`);
+    if (!ciphers.includes(method)) {
+      throw Error(`method \'${method}\' is not supported.`);
     }
-    this._cipherName = cipherName;
-    this._key = Utils.EVP_BytesToKey(__KEY__, this._cipherName.split('-')[1] / 8, IV_LEN);
+    this._cipherName = method;
+    if (global.__KEY__) {
+      this._key = Utils.EVP_BytesToKey(__KEY__, this._cipherName.split('-')[1] / 8, IV_LEN);
+    }
   }
 
   beforeOut({buffer}) {

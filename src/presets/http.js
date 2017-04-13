@@ -1,7 +1,7 @@
 import fs from 'fs';
 import readline from 'readline';
 import crypto from 'crypto';
-import {IPreset} from '../interface';
+import {IPreset} from './defs';
 
 class Faker {
 
@@ -61,11 +61,15 @@ class Faker {
  *   Wrap packet with pre-shared HTTP header.
  *
  * @params
- *   file (String): A text file which contains several HTTP header paris.
+ *   file: A text file which contains several HTTP header paris.
  *
  * @examples
- *   "obfs": "http"
- *   "obfs_params": "http-fake.txt"
+ *   {
+ *     "name": "http",
+ *     "params": {
+ *       "file": "http-fake.txt"
+ *     }
+ *   }
  *
  * @protocol
  *
@@ -83,7 +87,7 @@ class Faker {
  *   |         Variable           |
  *   +----------------------------+
  */
-export default class HttpObfs extends IPreset {
+export default class HttpPreset extends IPreset {
 
   _isHandshakeDone = false;
 
@@ -91,10 +95,10 @@ export default class HttpObfs extends IPreset {
 
   _response = null;
 
-  constructor(file) {
+  constructor({file}) {
     super();
     if (typeof file === 'undefined') {
-      throw Error('\'obfs_params\' requires at least one parameter.');
+      throw Error('\'file\' parameter is required.');
     }
     this._file = file;
   }

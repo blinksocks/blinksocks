@@ -8,10 +8,6 @@ import {Profile} from './profile';
 import {
   MIDDLEWARE_DIRECTION_UPWARD,
   MIDDLEWARE_DIRECTION_DOWNWARD,
-  MIDDLEWARE_TYPE_FRAME,
-  MIDDLEWARE_TYPE_CRYPTO,
-  MIDDLEWARE_TYPE_PROTOCOL,
-  MIDDLEWARE_TYPE_OBFS,
   createMiddleware
 } from './middleware';
 
@@ -19,7 +15,7 @@ import {Utils} from '../utils';
 import {
   SOCKET_CONNECT_TO_DST,
   PROCESSING_FAILED
-} from '../presets/actions';
+} from '../presets/defs';
 
 import {
   UdpRequestMessage
@@ -252,12 +248,12 @@ export class Socket {
       }
     };
     this._pipe = new Pipe(pipeProps);
-    this._pipe.setMiddlewares(MIDDLEWARE_DIRECTION_UPWARD, [
-      createMiddleware(MIDDLEWARE_TYPE_FRAME, [addr]),
-      createMiddleware(MIDDLEWARE_TYPE_CRYPTO),
-      createMiddleware(MIDDLEWARE_TYPE_PROTOCOL),
-      createMiddleware(MIDDLEWARE_TYPE_OBFS),
-    ]);
+    this._pipe.setMiddlewares(MIDDLEWARE_DIRECTION_UPWARD,
+      __PRESETS__.map((preset, i) => createMiddleware(preset.name, {
+        ...preset.params,
+        ...(i === 0 ? addr : {})
+      }))
+    );
     this._pipe.on(`next_${MIDDLEWARE_DIRECTION_UPWARD}`, (buf) => this.send(buf, __IS_CLIENT__));
     this._pipe.on(`next_${MIDDLEWARE_DIRECTION_DOWNWARD}`, (buf) => this.send(buf, __IS_SERVER__));
   }
