@@ -1,13 +1,12 @@
 # Configuration
 
-To start a server or a client, you prepare a json or js file(`config.json/config.js` for example) first,
-then supply it to `--config` or `-c`:
-
-```
-$ blinksocks -c config.js
-```
-
 ## Template
+
+You can use blinksocks init to generate a `blinksocks.config.js`:
+
+```
+$ blinksocks init
+```
 
 **config.json**
 
@@ -47,6 +46,15 @@ $ blinksocks -c config.js
 module.exports = {
   ...
 };
+```
+
+## Run blinksocks
+
+To start a server or a client, you prepare a json or js file(`config.json/config.js` for example) first,
+then supply it to `--config` or `-c`:
+
+```
+$ blinksocks -c config.js
 ```
 
 ## Description
