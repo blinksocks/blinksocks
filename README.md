@@ -31,7 +31,7 @@ and [ShadowsocksR](https://github.com/shadowsocksr/shadowsocksr).
 $ blinksocks server -c blinksocks.config.js
 ```
 
-```
+```js
 // blinksocks.config.js
 
 module.exports = {
@@ -57,7 +57,7 @@ module.exports = {
 
 1. [Getting Started](docs/tutorials)
 2. [Usage](docs/usage)
-3. [-c, --config](docs/config)
+3. [Configuration](docs/config)
 4. [Development](docs/development)
 5. [Performance](docs/performance)
 

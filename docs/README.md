@@ -4,7 +4,7 @@
 
 1. [Getting Started](tutorials)
 2. [Usage](usage)
-3. [-c, --config](config)
+3. [Configuration](config)
 
 ## For Developers
 
