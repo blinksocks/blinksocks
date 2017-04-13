@@ -99,7 +99,7 @@ Blinksocks will detect which server is the fastest in a fixed interval using [ba
 }
 ```
 
-Please check out relevant [presets](src/presets), they are documented well.
+Please check out relevant [presets](../../src/presets), they are documented well.
 
 * Log Levels
 
