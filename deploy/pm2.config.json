@@ -3,7 +3,7 @@
     {
       "name": "blinksocks",
       "script": "blinksocks-server",
-      "args": "-c blinksocks.json",
+      "args": "-c blinksocks.config.js",
       "node_args": "",
       "exec_mode": "cluster",
       "instances": 2,
