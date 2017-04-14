@@ -1,3 +1,4 @@
+import {Utils} from '../../utils';
 import SSBasePreset from '../ss-base';
 
 describe('SSBasePreset#constructor', function () {
@@ -6,8 +7,8 @@ describe('SSBasePreset#constructor', function () {
     global.__IS_CLIENT__ = true;
     const preset = new SSBasePreset({
       type: 1,
-      host: 'example.com',
-      port: 1080
+      host: Buffer.from('example.com'),
+      port: Utils.numberToUInt(1080)
     });
     expect(preset._atyp).toBe(1);
     expect(preset._addr.equals(Buffer.from([101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109]))).toBe(true);
@@ -20,8 +21,8 @@ describe('SSBasePreset#clientOut', function () {
   global.__IS_CLIENT__ = true;
   const preset = new SSBasePreset({
     type: 1,
-    host: 'example.com',
-    port: 1080
+    host: Buffer.from('example.com'),
+    port: Utils.numberToUInt(1080)
   });
 
   it('should return more than 1 byte', function () {
@@ -41,8 +42,8 @@ describe('SSBasePreset#clientOut', function () {
 describe('SSBasePreset#serverIn', function () {
   const params = {
     next: jest.fn(),
-    broadcast: jest.fn(({payload}) => {
-      payload[1]();
+    broadcast: jest.fn(({payload: {onConnected}}) => {
+      onConnected();
       expect(params.next).toHaveBeenCalled();
     }),
     fail: jest.fn()
@@ -75,19 +76,40 @@ describe('SSBasePreset#serverIn', function () {
     const preset = new SSBasePreset();
     preset.serverIn({
       ...params, buffer: Buffer.from([
-        0x04, 0x05, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0
+        0x04, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0
       ])
     });
     expect(params.broadcast).toHaveBeenCalled();
   });
 
-  it('should return 1 byte', function () {
+  it('should call broadcast domain', function () {
     global.__IS_CLIENT__ = false;
     const preset = new SSBasePreset();
-    preset.serverIn({...params, buffer: Buffer.from([0x03, 0x05, 0, 0, 0, 0, 0, 0, 0])});
-    expect(preset.serverIn({...params, buffer: Buffer.alloc(1)}).length).toBe(1);
+    preset.serverIn({
+      ...params, buffer: Buffer.from([
+        0x03, 0x0b, ...Buffer.from('example.com'),
+        0, 0
+      ])
+    });
+    expect(params.broadcast).toHaveBeenCalled();
+
+    expect(
+      preset.serverIn({...params, buffer: Buffer.alloc(1)}).length
+    ).toBe(1);
+  });
+
+  it('should call fail if domain is invalid', function () {
+    global.__IS_CLIENT__ = false;
+    const preset = new SSBasePreset();
+    preset.serverIn({
+      ...params, buffer: Buffer.from([
+        0x03, 0x0c, ...Buffer.from('=example.com'),
+        0, 0
+      ])
+    });
+    expect(params.fail).toHaveBeenCalled();
   });
 });
 
@@ -106,8 +128,8 @@ describe('v#clientIn', function () {
   global.__IS_CLIENT__ = true;
   const preset = new SSBasePreset({
     type: 1,
-    host: 'example.com',
-    port: 1080
+    host: Buffer.from('example.com'),
+    port: Utils.numberToUInt(1080)
   });
 
   it('should return only 1 byte', function () {

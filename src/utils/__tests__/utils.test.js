@@ -26,29 +26,29 @@ describe('Utils#parseURI', function () {
     let addr = Utils.parseURI('http://bing.com');
     expect(addr).toMatchObject({
       type: 3,
-      host: 'bing.com',
-      port: 80
+      host: Buffer.from('bing.com'),
+      port: Utils.numberToUInt(80)
     });
 
     addr = Utils.parseURI('bing.com');
     expect(addr).toMatchObject({
       type: 3,
-      host: 'bing.com',
-      port: 80
+      host: Buffer.from('bing.com'),
+      port: Utils.numberToUInt(80)
     });
 
     addr = Utils.parseURI('bing.com:443');
     expect(addr).toMatchObject({
       type: 3,
-      host: 'bing.com',
-      port: 443
+      host: Buffer.from('bing.com'),
+      port: Utils.numberToUInt(443)
     });
 
     addr = Utils.parseURI('https://bing.com');
     expect(addr).toMatchObject({
       type: 3,
-      host: 'bing.com',
-      port: 443
+      host: Buffer.from('bing.com'),
+      port: Utils.numberToUInt(443)
     });
   });
 
@@ -60,6 +60,26 @@ describe('Utils#getRandomInt', function () {
     const number = Utils.getRandomInt(1, 2);
     expect(number).toBeGreaterThanOrEqual(1);
     expect(number).toBeLessThan(2);
+  });
+
+});
+
+describe('Utils#isValidHostname', function () {
+
+  it('should return false', function () {
+    expect(Utils.isValidHostname('')).toBe(false);
+  });
+
+  it('should return false', function () {
+    expect(Utils.isValidHostname('a.')).toBe(false);
+  });
+
+  it('should return false', function () {
+    expect(Utils.isValidHostname(`${'a'.repeat(64)}.com`)).toBe(false);
+  });
+
+  it('should return true', function () {
+    expect(Utils.isValidHostname(`${'a'.repeat(63)}.com`)).toBe(true);
   });
 
 });

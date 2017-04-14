@@ -1,6 +1,7 @@
 import net from 'net';
 import url from 'url';
 import crypto from 'crypto';
+import ip from 'ip';
 import {
   ATYP_DOMAIN,
   ATYP_V4,
@@ -55,13 +56,12 @@ export class Utils {
       }
     }
     const {protocol, hostname} = url.parse(_uri);
-    const isIp = net.isIP(hostname);
-    const addrType = isIp ? (net.isIPv4(hostname) ? ATYP_V4 : ATYP_V6) : ATYP_DOMAIN;
+    const addrType = net.isIP(hostname) ? (net.isIPv4(hostname) ? ATYP_V4 : ATYP_V6) : ATYP_DOMAIN;
     const port = {'http:': 80, 'https:': 443}[protocol];
     return {
       type: addrType,
-      host: hostname,
-      port
+      host: net.isIP(hostname) ? ip.toBuffer(hostname) : Buffer.from(hostname),
+      port: this.numberToUInt(port)
     };
   }
 
@@ -75,6 +75,31 @@ export class Utils {
     min = Math.ceil(min);
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min)) + min;
+  }
+
+  /**
+   * verify hostname
+   *
+   * @param hostname
+   * @returns {boolean}
+   *
+   * @reference
+   *   http://stackoverflow.com/questions/1755144/how-to-validate-domain-name-in-php
+   */
+  static isValidHostname(hostname) {
+    // overall length check
+    if (hostname.length < 1 || hostname.length > 253) {
+      return false;
+    }
+    // valid chars check
+    if (/^([a-z\d](-*[a-z\d])*)(\.([a-z\d](-*[a-z\d])*))*$/i.test(hostname) === false) {
+      return false;
+    }
+    // length of each label
+    if (/^[^.]{1,63}(\.[^.]{1,63})*$/.test(hostname) === false) {
+      return false;
+    }
+    return true;
   }
 
   /**

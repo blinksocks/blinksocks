@@ -236,10 +236,10 @@ export class Socket {
     const pipeProps = {
       onNotified: (action) => {
         if (__IS_SERVER__ && action.type === SOCKET_CONNECT_TO_DST) {
-          const [addr, callback] = action.payload;
-          return this.connect(addr, () => {
+          const {targetAddress, onConnected} = action.payload;
+          return this.connect(targetAddress, () => {
             this._isHandshakeDone = true;
-            callback();
+            onConnected();
           });
         }
         if (action.type === PROCESSING_FAILED) {

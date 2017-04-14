@@ -1,13 +1,10 @@
-import net from 'net';
 import ip from 'ip';
 import {IPreset, SOCKET_CONNECT_TO_DST} from './defs';
 import {Utils} from '../utils';
 
-import {
-  ATYP_V4,
-  ATYP_V6,
-  ATYP_DOMAIN
-} from '../proxies/common';
+const ATYP_V4 = 0x01;
+const ATYP_V6 = 0x04;
+const ATYP_DOMAIN = 0x03;
 
 /**
  * @description
@@ -58,8 +55,8 @@ export default class SSBasePreset extends IPreset {
     if (__IS_CLIENT__) {
       const {type, host, port} = addr;
       this._atyp = type;
-      this._addr = net.isIP(host) ? ip.toBuffer(host) : Buffer.from(host);
-      this._port = port instanceof Buffer ? port : Utils.numberToUInt(port);
+      this._addr = host;
+      this._port = port;
     }
   }
 
@@ -87,7 +84,8 @@ export default class SSBasePreset extends IPreset {
 
       const atyp = buffer[0];
 
-      let addr, port; // string
+      let addr; // string
+      let port; // number
       let offset = 3;
 
       switch (atyp) {
@@ -101,7 +99,7 @@ export default class SSBasePreset extends IPreset {
             fail(`invalid length: ${buffer.length}`);
             return;
           }
-          addr = ip.toString(buffer.slice(1, 16));
+          addr = ip.toString(buffer.slice(1, 17));
           port = buffer.slice(16, 18).readUInt16BE(0);
           offset += 16;
           break;
@@ -112,37 +110,39 @@ export default class SSBasePreset extends IPreset {
             return;
           }
           addr = buffer.slice(2, 2 + domainLen).toString();
+          if (!Utils.isValidHostname(addr)) {
+            fail(`addr=${addr} is an invalid hostname`);
+            return;
+          }
           port = buffer.slice(2 + domainLen, 4 + domainLen).readUInt16BE(0);
-          offset += domainLen + 1;
+          offset += (domainLen + 1);
           break;
         default:
           fail(`invalid atyp: ${atyp}`);
           return;
       }
 
+      const data = buffer.slice(offset);
+
       // notify to connect to the real server
       broadcast({
         type: SOCKET_CONNECT_TO_DST,
-        payload: [{
-          type: atyp,
-          host: addr,
-          port
-        }, () => { // once connected
-          next(buffer.slice(offset));
-          this._isHandshakeDone = true;
-        }]
+        payload: {
+          targetAddress: {
+            type: atyp,
+            host: addr,
+            port
+          },
+          // once connected
+          onConnected: () => {
+            next(data);
+            this._isHandshakeDone = true;
+          }
+        }
       });
     } else {
       return buffer;
     }
-  }
-
-  serverOut({buffer}) {
-    return buffer;
-  }
-
-  clientIn({buffer}) {
-    return buffer;
   }
 
 }
