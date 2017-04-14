@@ -225,3 +225,33 @@ export default class CustomPreset extends IPreset {
 | :-------- | :-------------------------- |
 | beforeOut | pre-process before `*Out()` |
 | beforeIn  | pre-process before `*In()`  |
+
+### Access User Configuration
+
+You can access user configuration from your preset:
+
+| NAME               |
+| :----------------- |
+| \_\_IS_SERVER\_\_  |
+| \_\_IS_CLIENT\_\_  |
+| \_\_LOCAL_HOST\_\_ |
+| \_\_LOCAL_PORT\_\_ |
+| \_\_SERVERS\_\_    |
+| \_\_KEY\_\_        |
+| \_\_PRESETS\_\_    |
+| \_\_REDIRECT\_\_   |
+| \_\_TIMEOUT\_\_    |
+| \_\_LOG_LEVEL\_\_  |
+| \_\_PROFILE\_\_    |
+| \_\_IS_WATCH\_\_   |
+
+```js
+export default class CustomPreset extends IPreset {
+  
+  constructor() {
+    super();
+    console.log(__KEY__);
+  }
+  
+}
+```
