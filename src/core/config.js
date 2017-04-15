@@ -2,35 +2,10 @@ import fs from 'fs';
 import winston from 'winston';
 import {Utils} from '../utils';
 
-export const DEFAULT_KEY = 'my secret password';
 export const DEFAULT_LOG_LEVEL = 'error';
 
 export class Config {
 
-  static host;
-
-  static port;
-
-  static servers;
-
-  static key;
-
-  static presets;
-
-  static redirect;
-
-  static log_level;
-
-  static profile;
-
-  static watch;
-
-  static _is_server;
-
-  /**
-   * parse config.json
-   * @param json
-   */
   static init(json) {
     if (typeof json !== 'object' || Array.isArray(json)) {
       throw Error('Invalid configuration file');
@@ -42,7 +17,7 @@ export class Config {
       throw Error('\'host\' must be provided and is not empty');
     }
 
-    this.host = json.host;
+    global.__LOCAL_HOST__ = json.host;
 
     // port
 
@@ -50,7 +25,7 @@ export class Config {
       throw Error('\'port\' is invalid');
     }
 
-    this.port = json.port;
+    global.__LOCAL_PORT__ = json.port;
 
     // servers
 
@@ -60,64 +35,19 @@ export class Config {
         throw Error('\'servers\' must be provided as an array');
       }
 
-      const servers = json.servers
-        .map((item) => item.split(':'))
-        .filter((pair) => pair.length === 2 && Utils.isValidPort(+pair[1]))
-        .map(([host, port]) => ({host, port}));
-
-      if (servers.length < 1) {
-        throw Error('\'servers\' must contain at least one valid item');
+      if (json.servers.length < 1) {
+        throw Error('\'servers\' must contain at least one item');
       }
 
-      this.servers = servers;
-      this._is_server = false;
+      global.__SERVERS__ = json.servers.filter((server) => server.enabled === true);
+
+      global.__IS_SERVER__ = false;
+      global.__IS_CLIENT__ = true;
     } else {
-      this._is_server = true;
+      global.__IS_SERVER__ = true;
+      global.__IS_CLIENT__ = false;
+      this.initServer(json);
     }
-
-    // key
-
-    if (typeof json.key !== 'string') {
-      throw Error('\'key\' must be a string');
-    }
-
-    if (json.key === '') {
-      throw Error('\'key\' cannot be empty');
-    }
-
-    if (json.key === DEFAULT_KEY) {
-      throw Error(`'key' cannot be '${DEFAULT_KEY}'`);
-    }
-
-    this.key = json.key;
-
-    // presets & presets' parameters
-
-    if (!Array.isArray(json.presets)) {
-      throw Error('\'presets\' must be an array');
-    }
-
-    if (json.presets.length < 1) {
-      throw Error('\'presets\' must contain at least one preset');
-    }
-
-    for (const preset of json.presets) {
-      const {name, params} = preset;
-
-      if (typeof name === 'undefined') {
-        throw Error('\'preset.name\' must be a string');
-      }
-
-      // 1. check for the existence of the preset
-      const ps = require(`../presets/${preset.name}`).default;
-
-      // 2. check parameters, but ignore the first preset
-      if (name !== json.presets[0].name) {
-        delete new ps(params || {});
-      }
-    }
-
-    this.presets = json.presets;
 
     // redirect
 
@@ -128,7 +58,7 @@ export class Config {
       }
     }
 
-    this.redirect = json.redirect;
+    global.__REDIRECT__ = json.redirect;
 
     // timeout
 
@@ -144,49 +74,66 @@ export class Config {
       console.warn(`==> [config] 'timeout' is too short, is ${json.timeout}s expected?`);
     }
 
-    this.timeout = json.timeout;
+    global.__TIMEOUT__ = json.timeout;
 
     // profile
-    this.profile = json.profile;
+    global.__PROFILE__ = !!json.profile;
 
     // watch
-    this.watch = json.watch;
-
-    // globals
-    this.setGlobals();
+    global.__IS_WATCH__ = !!json.watch;
 
     // log_level
-    this.setUpLogger(json.log_level || DEFAULT_LOG_LEVEL);
+    global.__LOG_LEVEL__ = this.setUpLogger(json.log_level || DEFAULT_LOG_LEVEL);
+
+    global.__ALL_CONFIG__ = json;
   }
 
-  /**
-   * make global constants
-   */
-  static setGlobals() {
-    global.__IS_SERVER__ = this._is_server;
-    global.__IS_CLIENT__ = !this._is_server;
+  static initServer(server) {
+    // key
 
-    global.__LOCAL_HOST__ = this.host;
-    global.__LOCAL_PORT__ = this.port;
+    if (typeof server.key !== 'string') {
+      throw Error('\'key\' must be a string');
+    }
 
-    global.__SERVERS__ = this.servers;
+    if (server.key === '') {
+      throw Error('\'key\' cannot be empty');
+    }
 
-    global.__KEY__ = this.key;
+    global.__KEY__ = server.key;
 
-    global.__PRESETS__ = this.presets;
+    // presets & presets' parameters
 
-    global.__REDIRECT__ = this.redirect;
-    global.__TIMEOUT__ = this.timeout;
+    if (!Array.isArray(server.presets)) {
+      throw Error('\'presets\' must be an array');
+    }
 
-    global.__LOG_LEVEL__ = this.log_level;
-    global.__PROFILE__ = this.profile;
-    global.__IS_WATCH__ = this.watch;
+    if (server.presets.length < 1) {
+      throw Error('\'presets\' must contain at least one preset');
+    }
+
+    for (const preset of server.presets) {
+      const {name, params} = preset;
+
+      if (typeof name === 'undefined') {
+        throw Error('\'preset.name\' must be a string');
+      }
+
+      if (name === '') {
+        throw Error('\'preset.name\' cannot be empty');
+      }
+
+      // 1. check for the existence of the preset
+      const ps = require(`../presets/${preset.name}`).default;
+
+      // 2. check parameters, but ignore the first preset
+      if (name !== server.presets[0].name) {
+        delete new ps(params || {});
+      }
+    }
+
+    global.__PRESETS__ = server.presets;
   }
 
-  /**
-   * configure logger
-   * @param level
-   */
   static setUpLogger(level = '') {
     // create logs directory
     try {
@@ -227,28 +174,7 @@ export class Config {
         })
       ]
     });
-
-    this.log_level = _level;
-  }
-
-  /**
-   * return an object which describe the configuration
-   * @returns {{}}
-   */
-  static abstract() {
-    const keys = Object.getOwnPropertyNames(this)
-      .filter(
-        (key) => ![
-          'length', 'name', 'prototype',
-          'init', 'setGlobals', 'setUpLogger', 'abstract',
-          '_is_server'
-        ].includes(key) && this[key] !== undefined
-      );
-    const json = {};
-    for (const key of keys) {
-      json[key] = this[key];
-    }
-    return json;
+    return _level;
   }
 
 }

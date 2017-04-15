@@ -1,6 +1,5 @@
 import net from 'net';
 import logger from 'winston';
-import {Config} from './config';
 import {Socket} from './socket';
 import {Profile} from './profile';
 import {Balancer} from './balancer';
@@ -78,12 +77,12 @@ export class Hub {
     };
     this._hub.listen(options, () => {
       console.info('==> [hub] use configuration:');
-      console.info(JSON.stringify(Config.abstract(), null, '  '));
+      console.info(JSON.stringify(__ALL_CONFIG__, null, '  '));
       console.info(`==> [hub] is running as: ${__IS_SERVER__ ? 'Server' : 'Client'}`);
       console.info('==> [hub] is listening on:', this._hub.address());
       if (__IS_CLIENT__) {
         console.info('==> [balancer] started');
-        Balancer.init(__SERVERS__);
+        Balancer.start(__SERVERS__);
       }
       if (__PROFILE__) {
         console.info('==> [profile] started');

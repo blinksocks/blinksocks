@@ -20,7 +20,7 @@ export class Balancer {
    * @param servers
    * @param interval
    */
-  static init(servers, interval = QUERY_INTERVAL) {
+  static start(servers, interval = QUERY_INTERVAL) {
     this._servers = servers;
     this._pings = this._servers.map(() => 0);
     this._startQuery(interval);
@@ -34,7 +34,7 @@ export class Balancer {
   }
 
   /**
-   * returns the fastest one of the servers
+   * returns the fastest server
    * @returns {{host, port}}
    */
   static getFastest() {
@@ -53,6 +53,9 @@ export class Balancer {
 
   static _startQuery(interval) {
     if (this._servers.length > 1) {
+      if (this._timer !== null) {
+        this._stopQuery();
+      }
       this._timer = setInterval(() => this._query(), interval);
       this._query();
     }
@@ -60,23 +63,23 @@ export class Balancer {
 
   static _stopQuery() {
     clearInterval(this._timer);
+    this._timer = null;
   }
 
   static _query() {
     this._servers.map((server, i) => {
-      const _server = JSON.stringify(server);
-      logger.verbose(`[balancer]: querying ${_server}`);
-
+      const sstr = `${server.host}:${server.port}`;
+      logger.verbose(`[balancer] querying ${sstr}`);
       const startTime = now();
-      const socket = net.connect(server, () => {
+      const socket = net.connect({host: server.host, port: server.port}, () => {
         const ping = now() - startTime;
         this._pings[i] = ping;
-        logger.verbose(`[balancer]: ${_server} = ${ping}ms`);
+        logger.verbose(`[balancer] ${sstr} = ${ping}ms`);
         socket.end();
       });
       socket.on('error', () => {
         this._pings[i] = -1;
-        logger.warn(`[balancer]: ${_server} lost connection`);
+        logger.warn(`[balancer] ${sstr} lost connection`);
       });
     });
   }

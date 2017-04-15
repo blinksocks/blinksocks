@@ -1,5 +1,6 @@
 import net from 'net';
 import logger from 'winston';
+import {Config} from './config';
 import {ClientProxy} from './client-proxy';
 import {DNSCache} from './dns-cache';
 import {Balancer} from './balancer';
@@ -27,7 +28,7 @@ const TRACK_CHAR_UPLOAD = 'u';
 const TRACK_CHAR_DOWNLOAD = 'd';
 const TRACK_MAX_SIZE = 40;
 
-let lastTarget = null;
+let lastServer = null;
 
 export class Socket {
 
@@ -233,29 +234,34 @@ export class Socket {
    * create pipes for both data forward and backward
    */
   createPipe(addr) {
-    const pipeProps = {
-      onNotified: (action) => {
-        if (__IS_SERVER__ && action.type === SOCKET_CONNECT_TO_DST) {
-          const {targetAddress, onConnected} = action.payload;
-          return this.connect(targetAddress, () => {
-            this._isHandshakeDone = true;
-            onConnected();
-          });
-        }
-        if (action.type === PROCESSING_FAILED) {
-          return this.onPresetFailed(action);
-        }
-      }
-    };
-    this._pipe = new Pipe(pipeProps);
-    this._pipe.setMiddlewares(MIDDLEWARE_DIRECTION_UPWARD,
-      __PRESETS__.map((preset, i) => createMiddleware(preset.name, {
+    const presets = __PRESETS__.map(
+      (preset, i) => createMiddleware(preset.name, {
         ...preset.params,
         ...(i === 0 ? addr : {})
-      }))
+      })
     );
+    this._pipe = new Pipe({onNotified: this.onPipeNotified.bind(this)});
+    this._pipe.setMiddlewares(MIDDLEWARE_DIRECTION_UPWARD, presets);
     this._pipe.on(`next_${MIDDLEWARE_DIRECTION_UPWARD}`, (buf) => this.send(buf, __IS_CLIENT__));
     this._pipe.on(`next_${MIDDLEWARE_DIRECTION_DOWNWARD}`, (buf) => this.send(buf, __IS_SERVER__));
+  }
+
+  /**
+   * if no action were caught by middlewares
+   * @param action
+   * @returns {*}
+   */
+  onPipeNotified(action) {
+    if (__IS_SERVER__ && action.type === SOCKET_CONNECT_TO_DST) {
+      const {targetAddress, onConnected} = action.payload;
+      return this.connect(targetAddress, () => {
+        this._isHandshakeDone = true;
+        onConnected();
+      });
+    }
+    if (action.type === PROCESSING_FAILED) {
+      return this.onPresetFailed(action);
+    }
   }
 
   /**
@@ -310,12 +316,14 @@ export class Socket {
    * @returns {Promise.<void>}
    */
   onHandshakeDone(addr, callback) {
-    const ep = Balancer.getFastest();
-    if (lastTarget === null || ep.host !== lastTarget.host || ep.port !== lastTarget.port) {
-      logger.info(`[balancer] use: ${ep.host}:${ep.port}`);
+    const server = Balancer.getFastest();
+    const {host, port} = server;
+    if (lastServer === null || host !== lastServer.host || port !== lastServer.port) {
+      logger.info(`[balancer] use: ${host}:${port}`);
+      Config.initServer(server);
     }
-    lastTarget = ep;
-    return this.connect(ep, () => {
+    lastServer = server;
+    return this.connect({host, port}, () => {
       this.createPipe(addr);
       this._isHandshakeDone = true;
       callback(this.onForward);

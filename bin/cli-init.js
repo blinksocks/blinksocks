@@ -20,92 +20,78 @@ const key = random('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+<>?:|{}-=[];
 
 const js = `module.exports = {
 
-  /**
-   * local hostname or ip address
-   *
-   * @note
-   *   1. For client, act as a Socks5/Socks4/HTTP server.
-   *   2. For server, act as a blinksocks server.
-   */
-  "host": "localhost",
+  // local hostname or ip address
+  //
+  // @note
+  //   1. For client, act as a Socks5/Socks4/HTTP server.
+  //   2. For server, act as a blinksocks server.
+  host: "localhost",
 
-  /**
-   * local port to be listen on
-   */
-  "port": 5555,
+  // local port to be listen on
+  port: 5555,
 
-  /**
-   * a list of blinksocks/shadowsocks server
-   *
-   * @note
-   *   1. You can disable an item by prefixing a '-'.
-   *   2. Optional, used only on CLIENT.
-   *   3. Each item should be formed with "host:port".
-   */
-  "servers": [
-    
-  ],
-
-  /**
-   * a secret key for encryption/description
-   */
-  "key": "${key}",
-
-  /**
-   * presets to process data stream
-   *
-   * @note
-   *   1. DO NOT modify the first preset if you don't know what it is.
-   *   2. Take care the order of those presets, read the docs before changing them.
-   */
-  "presets": [
+  // a list of blinksocks/shadowsocks server(client side only)
+  servers: [
     {
-      // preset name
-      "name": "ss-base",
-      // preset parameters
-      "params": {}
-    },
-    {
-      "name": "ss-aead-cipher",
-      "params": {
-        "method": "aes-256-gcm",
-        "info": "ss-subkey"
-      }
+      // allow to use this server or not
+      enabled: true,
+
+      // server host name or ip address
+      host: "localhost",
+
+      // server port
+      port: 7777,
+
+      // a secret key for encryption/description
+      key: "${key}",
+
+      // presets to process data stream
+      //
+      // @note
+      //   1. DO NOT modify the first preset if you don't know what it is.
+      //   2. Take care the order of those presets, read the docs before changing them.
+      presets: [
+        {
+          // preset name
+          name: "ss-base",
+
+          // preset parameters
+          params: {}
+        },
+        {
+          name: "ss-aead-cipher",
+          params: {
+            method: "aes-256-gcm",
+            info: "ss-subkey"
+          }
+        }
+      ]
     }
   ],
 
-  /**
-   * redirect data stream to here once preset fail to process
-   *
-   * @note
-   *   1. should be formed with "host:port".
-   */
-  "redirect": "",
+  // redirect data stream to here once preset fail to process(server side only)
+  //
+  // @note
+  //   1. Should be formed with "host:port".
+  redirect: "",
 
-  /**
-   * close inactive connection after timeout seconds
-   */
-  "timeout": 600,
+  // close inactive connection after timeout seconds
+  timeout: 600,
 
-  /**
-   * collect performance statistics
-   */
-  "profile": false,
+  // collect performance statistics
+  profile: false,
 
-  /**
-   * hot-reload when this file changed
-   */
-  "watch": true,
+  // hot-reload when this file changed
+  watch: true,
 
-  /**
-   * log by the level
-   *
-   * @note
-   *   1. should be one of [error, warn, info, verbose, debug, silly]
-   */
-  "log_level": "info"
+  // log at the level
+  //
+  // @note
+  //   1. should be one of [error, warn, info, verbose, debug, silly]
+  log_level: "info"
 
-};`;
+};
+`;
 
 const file = 'blinksocks.config.js';
 
