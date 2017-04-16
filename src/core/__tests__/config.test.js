@@ -43,6 +43,7 @@ describe('Config#init', function () {
         host: 'localhost',
         port: 1080,
         servers: [{
+          enabled: true,
           host: 'abc.com',
           port: 443,
           key: 'secret',

@@ -35,11 +35,13 @@ export class Config {
         throw Error('\'servers\' must be provided as an array');
       }
 
-      if (json.servers.length < 1) {
-        throw Error('\'servers\' must contain at least one item');
+      const servers = json.servers.filter((server) => server.enabled === true);
+
+      if (servers.length < 1) {
+        throw Error('\'servers\' must have at least one enabled item');
       }
 
-      global.__SERVERS__ = json.servers.filter((server) => server.enabled === true);
+      global.__SERVERS__ = servers;
 
       global.__IS_SERVER__ = false;
       global.__IS_CLIENT__ = true;
