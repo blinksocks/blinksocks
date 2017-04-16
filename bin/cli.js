@@ -5,7 +5,7 @@ const packageJson = require('../package.json');
 program
   .version(packageJson.version)
   .usage('[command] [options]')
-  .command('init', 'generate configuration randomly')
+  .command('init', 'generate configurations with random key')
   .command('client [options]', 'start a client')
   .command('server [options]', 'start a server')
   .parse(process.argv);

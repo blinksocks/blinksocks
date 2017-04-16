@@ -18,7 +18,7 @@ function random(array, len) {
 
 const key = random('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+<>?:|{}-=[];,./ABCDEFGHIJKLMNOPQRSTUVWXYZ', 16);
 
-const js = `module.exports = {
+const clientJs = `module.exports = {
 
   // local hostname or ip address
   //
@@ -69,6 +69,61 @@ const js = `module.exports = {
     }
   ],
 
+  // close inactive connection after timeout seconds
+  timeout: 600,
+
+  // collect performance statistics
+  profile: false,
+
+  // hot-reload when this file changed
+  watch: true,
+
+  // log at the level
+  //
+  // @note
+  //   1. should be one of [error, warn, info, verbose, debug, silly]
+  log_level: "info"
+
+};
+`;
+
+const serverJs = `module.exports = {
+
+  // local hostname or ip address
+  //
+  // @note
+  //   1. For client, act as a Socks5/Socks4/HTTP server.
+  //   2. For server, act as a blinksocks server.
+  host: "localhost",
+
+  // local port to be listen on
+  port: 7777,
+
+  // a secret key for encryption/description
+  key: "${key}",
+
+  // presets to process data stream
+  //
+  // @note
+  //   1. DO NOT modify the first preset if you don't know what it is.
+  //   2. Take care the order of those presets, read the docs before changing them.
+  presets: [
+    {
+      // preset name
+      name: "ss-base",
+
+      // preset parameters
+      params: {}
+    },
+    {
+      name: "ss-aead-cipher",
+      params: {
+        method: "aes-256-gcm",
+        info: "ss-subkey"
+      }
+    }
+  ],
+
   // redirect data stream to here once preset fail to process(server side only)
   //
   // @note
@@ -93,6 +148,5 @@ const js = `module.exports = {
 };
 `;
 
-const file = 'blinksocks.config.js';
-
-fs.writeFileSync(file, js);
+fs.writeFileSync('blinksocks.client.js', clientJs);
+fs.writeFileSync('blinksocks.server.js', serverJs);
