@@ -1,5 +1,13 @@
 # Change Log
 
+## [v2.4.0-beta.2](https://github.com/blinksocks/blinksocks/tree/v2.4.0-beta.2) (2017-04-16)
+[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.0-beta.1...v2.4.0-beta.2)
+
+**Implemented enhancements:**
+
+- Multiple servers use different configurations [\#48](https://github.com/blinksocks/blinksocks/issues/48)
+- Verify DST.ADDR of "presets/ss-base" [\#47](https://github.com/blinksocks/blinksocks/issues/47)
+
 ## [v2.4.0-beta.1](https://github.com/blinksocks/blinksocks/tree/v2.4.0-beta.1) (2017-04-13)
 [Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.3.0...v2.4.0-beta.1)
 
