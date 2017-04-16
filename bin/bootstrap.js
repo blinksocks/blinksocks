@@ -16,8 +16,8 @@ const options = [
 const examples = `
   Examples:
 
-    $ blinksocks client -c config.js
-    $ blinksocks server -c config.js
+    $ blinksocks client -c blinksocks.client.js
+    $ blinksocks server -c blinksocks.server.js
 `;
 
 /**

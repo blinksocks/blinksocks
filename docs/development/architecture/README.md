@@ -79,11 +79,11 @@ and blinksocks client was constructed, so you can obtain that address in your fr
 
 ```js
 // core/socket.js
-this._pipe.setMiddlewares(MIDDLEWARE_DIRECTION_UPWARD,
-  __PRESETS__.map((preset, i) => createMiddleware(preset.name, {
+const presets = __PRESETS__.map(
+  (preset, i) => createMiddleware(preset.name, {
     ...preset.params,
-    ...(i === 0 ? addr : {}) // pass target address to the first preset
-  }))
+    ...(i === 0 ? addr : {})
+  })
 );
 ```
 
@@ -104,8 +104,8 @@ export default class SSBasePreset extends IPreset {
     if (__IS_CLIENT__) {
       const {type, host, port} = addr;
       this._atyp = type;
-      this._addr = net.isIP(host) ? ip.toBuffer(host) : Buffer.from(host);
-      this._port = port instanceof Buffer ? port : Utils.numberToUIntBE(port);
+      this._addr = host;
+      this._port = port;
     }
   }
 
@@ -230,8 +230,22 @@ export default class CustomPreset extends IPreset {
 
 You can access user configuration from your preset:
 
+```js
+export default class CustomPreset extends IPreset {
+  
+  constructor() {
+    super();
+    console.log(__KEY__);
+  }
+  
+}
+```
+
+**available constants**
+
 | NAME               |
 | :----------------- |
+| \_\_ALL_CONFIG\_\_ |
 | \_\_IS_SERVER\_\_  |
 | \_\_IS_CLIENT\_\_  |
 | \_\_LOCAL_HOST\_\_ |
@@ -244,14 +258,3 @@ You can access user configuration from your preset:
 | \_\_LOG_LEVEL\_\_  |
 | \_\_PROFILE\_\_    |
 | \_\_IS_WATCH\_\_   |
-
-```js
-export default class CustomPreset extends IPreset {
-  
-  constructor() {
-    super();
-    console.log(__KEY__);
-  }
-  
-}
-```

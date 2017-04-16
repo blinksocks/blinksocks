@@ -10,7 +10,7 @@ $ blinksocks --help
 
   Commands:
 
-    init              generate configuration randomly
+    init              generate configurations with random key
     client [options]  start a client
     server [options]  start a server
     help [cmd]        display help for [cmd]
@@ -28,36 +28,26 @@ There are threes commands to do different tasks:
 
 ### blinksocks init
 
-This will generate `blinksocks.config.js` with a random key and some default settings.
+This will generate `blinksocks.client.js` and `blinksocks.server.js` with a random key and default settings.
 
 ### blinksocks client/server
 
 ```
 $ blinksocks server --help
 
-  Usage: blinksocks-server --config <file> --host <host> --port <port> --key <key> [...]
+  Usage: blinksocks-server --config <file> [...]
 
   Options:
 
-    -h, --help               output usage information
-    -V, --version            output the version number
-    -c, --config <file>      a json/js format file for configuration
-    --host <host>            an ip address or a hostname to bind, default: 'localhost'
-    --port <port>            where to listen on, default: 1080
-    --key <key>              a key for encryption and decryption
-    --redirect [redirect]    redirect stream to here when any preset fail to process, default: ''
-    --log-level [log-level]  log level, default: 'silly'
-    --timeout [timeout]      time to close connection if inactive, default: 600
-    -q, --quiet [quiet]      force log level to 'error', default: false
-    -w, --watch [watch]      hot reload config specified via -c, default: true
-    --profile [profile]      generate performance statistics, store at blinksocks.profile.log once exit, default: false
+    -h, --help           output usage information
+    -V, --version        output the version number
+    -c, --config <file>  a json/js format configuration file
 
 
   Examples:
-  
-  As simple as possible:
-    $ blinksocks client -c config.js
-    $ blinksocks server -c config.js
+
+    $ blinksocks client -c blinksocks.client.js
+    $ blinksocks server -c blinksocks.server.js
 
 ```
 
@@ -76,13 +66,13 @@ $ npm install -g pm2
 ### Daemon mode
 
 ```
-$ pm2 start blinksocks-client -- -c config.js
+$ pm2 start blinksocks-client -- -c blinksocks.client.js
 ```
 
 ### Cluster mode
 
 ```
-$ pm2 start blinksocks-server -i 2 -- -c config.js
+$ pm2 start blinksocks-server -i 2 -- -c blinksocks.server.js
 ```
 
 ## For Firefox/Google Chrome and more...

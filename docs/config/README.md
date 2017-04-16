@@ -2,101 +2,167 @@
 
 ## Template
 
-You can use blinksocks init to generate a `blinksocks.config.js`:
+You can use blinksocks init to generate `blinksocks.client.js` and `blinksocks.server.js`:
 
 ```
 $ blinksocks init
 ```
 
-**config.json**
-
-```json
-{
-  "host": "localhost",
-  "port": 1080,
-  "servers": [
-    "node1.example.com:7777",
-    "node2.example.com:7778"
-  ],
-  "key": "oh my secret key",
-  "presets": [
-    {
-      "name": "ss-base",
-      "params": {}
-    },
-    {
-      "name": "ss-aead-cipher",
-      "params": {
-        "method": "aes-128-gcm",
-        "info": "ss-subkey"
-      }
-    }
-  ],
-  "redirect": "",
-  "timeout": 600,
-  "log_level": "silly",
-  "profile": false,
-  "watch": true
-}
-```
-
-**config.js**
+**blinksocks.client.js**
 
 ```js
 module.exports = {
-  ...
+
+  // local hostname or ip address
+  //
+  // @note
+  //   1. For client, act as a Socks5/Socks4/HTTP server.
+  //   2. For server, act as a blinksocks server.
+  host: "localhost",
+
+  // local port to be listen on
+  port: 5555,
+
+  // a list of blinksocks/shadowsocks server(client side only)
+  servers: [
+    {
+      // allow to use this server or not
+      enabled: true,
+
+      // server host name or ip address
+      host: "localhost",
+
+      // server port
+      port: 7777,
+
+      // a secret key for encryption/description
+      key: "j+b3)I<h#c1_Jl^c",
+
+      // presets to process data stream
+      //
+      // @note
+      //   1. DO NOT modify the first preset if you don't know what it is.
+      //   2. Take care the order of those presets, read the docs before changing them.
+      presets: [
+        {
+          // preset name
+          name: "ss-base",
+
+          // preset parameters
+          params: {}
+        },
+        {
+          name: "ss-aead-cipher",
+          params: {
+            method: "aes-256-gcm",
+            info: "ss-subkey"
+          }
+        }
+      ]
+    }
+  ],
+
+  // close inactive connection after timeout seconds
+  timeout: 600,
+
+  // collect performance statistics
+  profile: false,
+
+  // hot-reload when this file changed
+  watch: true,
+
+  // log at the level
+  //
+  // @note
+  //   1. should be one of [error, warn, info, verbose, debug, silly]
+  log_level: "info"
+
+};
+```
+
+**blinksocks.server.js**
+
+```js
+module.exports = {
+
+  // local hostname or ip address
+  //
+  // @note
+  //   1. For client, act as a Socks5/Socks4/HTTP server.
+  //   2. For server, act as a blinksocks server.
+  host: "localhost",
+
+  // local port to be listen on
+  port: 7777,
+
+  // a secret key for encryption/description
+  key: "j+b3)I<h#c1_Jl^c",
+
+  // presets to process data stream
+  //
+  // @note
+  //   1. DO NOT modify the first preset if you don't know what it is.
+  //   2. Take care the order of those presets, read the docs before changing them.
+  presets: [
+    {
+      // preset name
+      name: "ss-base",
+
+      // preset parameters
+      params: {}
+    },
+    {
+      name: "ss-aead-cipher",
+      params: {
+        method: "aes-256-gcm",
+        info: "ss-subkey"
+      }
+    }
+  ],
+
+  // redirect data stream to here once preset fail to process(server side only)
+  //
+  // @note
+  //   1. Should be formed with "host:port".
+  redirect: "",
+
+  // close inactive connection after timeout seconds
+  timeout: 600,
+
+  // collect performance statistics
+  profile: false,
+
+  // hot-reload when this file changed
+  watch: true,
+
+  // log at the level
+  //
+  // @note
+  //   1. should be one of [error, warn, info, verbose, debug, silly]
+  log_level: "info"
+
 };
 ```
 
 ## Run blinksocks
 
-To start a server or a client, you prepare a json or js file(`config.json/config.js` for example) first,
-then supply it to `--config` or `-c`:
+To start a server or a client, you prepare a json or js file first, then supply it to `--config` or `-c`:
 
 ```
-$ blinksocks -c config.js
+$ blinksocks client -c blinksocks.client.js
 ```
-
-## Description
-
-|       FIELD      |                      DESCRIPTION                      |         EXAMPLE         |
-|:-----------------|:------------------------------------------------------|:------------------------|
-| *host            | local ip address or domain name                       | "localhost"             |
-| *port            | local port to bind                                    | 1024-65535              |
-| servers          | a list of blinksocks server                           | -                       |
-| *key             | for encryption and decryption                         | -                       |
-| *presets         | a list of presets use in middlewares                  | -                       |
-| redirect         | redirect requests to here once preset fail to process | "127.0.0.1:80"          |
-| timeout          | close inactive connection after timeout seconds       | false                   |
-| log_level        | log level                                             | "info"                  |
-| profile          | whether profile or not                                | false                   |
-| watch            | watch --config for changes                            | true                    |
-
-> NOTE: field marked with \* must be set.
 
 * Servers(Client Side Only)
 
-`servers` includes multiple servers, a server must either be formed with `ip:port` or `hostname:port`.
+`servers` is a list of blinksocks/shadowsocks servers. Each server consist of `enabled`, `host`, `port`, `key` and `presets`.
 
-You can temporary disable servers by prefixing a '-':
+You can temporary disable a server by setting `enabled: false`.
 
-```
-{
-  ...
-  "servers": [
-    "123.123.123.123:8080",
-    "example.com:4545",
-    "-disabled.thisone.com:4545" // disable this one temporary
-  ],
-  ...
-}
-```
-
-Blinksocks will detect which server is the fastest in a fixed interval using [balancer.js](../../src/core/balancer.js).
+Blinksocks will detect which server is the fastest in intervals using [balancer.js](../../src/core/balancer.js).
 
 * Presets
 
-`presets` is a list, a preset is defined as:
+`presets` is a list of procedures, each preset is defined as:
 
 ```json
 {
@@ -106,6 +172,8 @@ Blinksocks will detect which server is the fastest in a fixed interval using [ba
   }
 }
 ```
+
+`presets` are chaining from the first to the last, and are almost free to compose.
 
 Please check out relevant [presets](../../src/presets), they are documented well.
 
