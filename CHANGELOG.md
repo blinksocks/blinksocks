@@ -1,5 +1,12 @@
 # Change Log
 
+## [v2.4.0-beta.3](https://github.com/blinksocks/blinksocks/tree/v2.4.0-beta.3) (2017-04-17)
+[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.0-beta.2...v2.4.0-beta.3)
+
+**Fixed bugs:**
+
+- "ss-aead-cipher" does not work at server side when use shadowsocks client [\#50](https://github.com/blinksocks/blinksocks/issues/50)
+
 ## [v2.4.0-beta.2](https://github.com/blinksocks/blinksocks/tree/v2.4.0-beta.2) (2017-04-16)
 [Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.0-beta.1...v2.4.0-beta.2)
 
