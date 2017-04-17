@@ -21,7 +21,7 @@ module.exports = {
   host: "localhost",
 
   // local port to be listen on
-  port: 5555,
+  port: 1080,
 
   // a list of blinksocks/shadowsocks server(client side only)
   servers: [
@@ -30,10 +30,10 @@ module.exports = {
       enabled: true,
 
       // server host name or ip address
-      host: "localhost",
+      host: "example.com",
 
       // server port
-      port: 7777,
+      port: 5678,
 
       // a secret key for encryption/description
       key: "j+b3)I<h#c1_Jl^c",
@@ -90,10 +90,10 @@ module.exports = {
   // @note
   //   1. For client, act as a Socks5/Socks4/HTTP server.
   //   2. For server, act as a blinksocks server.
-  host: "localhost",
+  host: "0.0.0.0",
 
   // local port to be listen on
-  port: 7777,
+  port: 5678,
 
   // a secret key for encryption/description
   key: "j+b3)I<h#c1_Jl^c",
