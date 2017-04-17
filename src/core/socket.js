@@ -1,5 +1,6 @@
 import net from 'net';
 import logger from 'winston';
+import isEqual from 'lodash.isequal';
 import {Config} from './config';
 import {ClientProxy} from './client-proxy';
 import {DNSCache} from './dns-cache';
@@ -170,7 +171,7 @@ export class Socket {
   onHandshakeDone(addr, callback) {
     const server = Balancer.getFastest();
     const {host, port} = server;
-    if (lastServer === null || host !== lastServer.host || port !== lastServer.port) {
+    if (lastServer === null || !isEqual(server, lastServer)) {
       logger.info(`[balancer] use: ${host}:${port}`);
       Config.initServer(server);
     }
@@ -362,7 +363,7 @@ export class Socket {
     const {message, orgData} = action.payload;
     if (__IS_SERVER__ && __REDIRECT__ !== '' && this._fsocket === null) {
       const [host, port] = __REDIRECT__.split(':');
-      logger.error(`[socket] [${this.remote}] connection will be redirected to ${host}:${port} due to: ${message}`);
+      logger.error(`[socket] [${this.remote}] connection is redirected to ${host}:${port} due to: ${message}`);
       this.connect({host, port}, () => {
         this._isRedirect = true;
         this._fsocket.write(orgData);
