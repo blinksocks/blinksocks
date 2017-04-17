@@ -66,7 +66,7 @@ export class Hub {
       onClose: this.onSocketClose
     });
     this._sockets.push(instance);
-    logger.info(`[hub] [${id}] ${socket.remoteAddress}:${socket.remotePort} connected`);
+    logger.info(`[hub] [${socket.remoteAddress}:${socket.remotePort}] connected`);
     Profile.connections += 1;
   }
 

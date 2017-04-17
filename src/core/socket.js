@@ -38,6 +38,10 @@ export class Socket {
 
   _isHandshakeDone = false;
 
+  _remoteAddress = '';
+
+  _remotePort = '';
+
   _bsocket = null;
 
   _fsocket = null;
@@ -48,7 +52,10 @@ export class Socket {
 
   _proxy = null; // client only
 
-  _tracks = []; // [`remote`, `target`, 'u', '20', 'u', '20', 'd', '10', ...]
+  // +---+-----------------------+---+
+  // | C | d <--> u     u <--> d | S |
+  // +---+-----------------------+---+
+  _tracks = []; // [`target`, 'u', '20', 'u', '20', 'd', '10', ...]
 
   _timeout = 0;
 
@@ -65,6 +72,8 @@ export class Socket {
     this._bsocket.on('error', this.onError);
     this._bsocket.on('close', this.onClose);
     this._bsocket.on('data', this.onForward);
+    this._remoteAddress = socket.remoteAddress;
+    this._remotePort = socket.remotePort;
     if (__IS_SERVER__) {
       this.createPipe();
     } else {
@@ -72,12 +81,17 @@ export class Socket {
         onHandshakeDone: this.onHandshakeDone.bind(this)
       });
     }
-    this._tracks.push(`${socket.remoteAddress}:${socket.remotePort}`);
     this.setupTimeout();
   }
 
+  // getters
+
   get id() {
     return this._id;
+  }
+
+  get remote() {
+    return `${this._remoteAddress}:${this._remotePort}`;
   }
 
   get isPipable() {
@@ -88,76 +102,48 @@ export class Socket {
     );
   }
 
+  // events
+
   onForward(buffer) {
+    // reset timeout
     this._timeout = __TIMEOUT__;
 
-    if (__IS_CLIENT__ && !this._proxy.isDone()) {
-      // client handshake(multiple-protocols), client only
-      this._proxy.makeHandshake(this._bsocket, buffer);
-      return;
-    }
-
-    let _buffer = buffer;
-
-    // udp compatible
-    if (__IS_CLIENT__ && this._socksUdpReady) {
-      const request = UdpRequestMessage.parse(buffer);
-      if (request !== null) {
-        // just drop RSV and FRAG
-        _buffer = request.DATA;
-      } else {
-        logger.warn(`[${this._id}] -x-> dropped unidentified packet ${buffer.length} bytes`);
+    if (__IS_CLIENT__) {
+      if (!this._proxy.isDone()) {
+        // client handshake(multiple-protocols)
+        this._proxy.makeHandshake(this._bsocket, buffer);
         return;
       }
-    }
-
-    if (this.isPipable || (__IS_SERVER__ && !this._isHandshakeDone)) {
-      try {
-        this._pipe.feed(
-          __IS_CLIENT__
-            ? MIDDLEWARE_DIRECTION_UPWARD
-            : MIDDLEWARE_DIRECTION_DOWNWARD,
-          _buffer
-        );
-        Profile.totalIn += buffer.length;
-        this._tracks.push(TRACK_CHAR_DOWNLOAD);
-        this._tracks.push(buffer.length);
-      } catch (err) {
-        logger.error(`[${this._id}]`, err);
+      this.clientOut(buffer);
+    } else {
+      if (this._isRedirect) {
+        // server redirect
+        this._fsocket.write(buffer);
+        return;
       }
+      this.serverIn(buffer);
     }
-
-    if (__IS_SERVER__ && this._isRedirect) {
-      this._fsocket.write(buffer);
-    }
+    Profile.totalIn += buffer.length;
   }
 
   onBackward(buffer) {
+    // reset timeout
     this._timeout = __TIMEOUT__;
 
-    if (this.isPipable) {
-      try {
-        this._pipe.feed(
-          __IS_CLIENT__
-            ? MIDDLEWARE_DIRECTION_DOWNWARD
-            : MIDDLEWARE_DIRECTION_UPWARD,
-          buffer
-        );
-        Profile.totalIn += buffer.length;
-        this._tracks.push(TRACK_CHAR_DOWNLOAD);
-        this._tracks.push(buffer.length);
-      } catch (err) {
-        logger.error(`[${this._id}]`, err);
+    if (__IS_CLIENT__) {
+      this.clientIn(buffer);
+    } else {
+      if (this._isRedirect) {
+        // server redirect
+        this._bsocket.write(buffer);
+        return;
       }
-    }
-
-    if (__IS_SERVER__ && this._isRedirect) {
-      this._bsocket.write(buffer);
+      this.serverOut(buffer);
     }
   }
 
   onError(err) {
-    logger.verbose(`[${this._id}] ${err.code} - ${err.message}`);
+    logger.warn(`[socket] [${this.remote}] ${err.code} - ${err.message}`);
     Profile.errors += 1;
   }
 
@@ -167,7 +153,6 @@ export class Socket {
       if (socket !== null && !socket.destroyed) {
         socket.destroy();
         this._onClose(this); // notify hub to remove this one
-        logger.info(`[socket] [${this._id}] closed`);
         this.dumpTrack();
       }
     }
@@ -176,18 +161,134 @@ export class Socket {
     clearInterval(this._timeout_timer);
   }
 
-  send(buffer, flag) {
-    if (this.isPipable) {
-      if (flag) {
-        this._fsocket.write(buffer);
+  /**
+   * client handshake
+   * @param addr
+   * @param callback
+   * @returns {Promise.<void>}
+   */
+  onHandshakeDone(addr, callback) {
+    const server = Balancer.getFastest();
+    const {host, port} = server;
+    if (lastServer === null || host !== lastServer.host || port !== lastServer.port) {
+      logger.info(`[balancer] use: ${host}:${port}`);
+      Config.initServer(server);
+    }
+    lastServer = server;
+    return this.connect({host, port}, () => {
+      this.createPipe(addr);
+      this._isHandshakeDone = true;
+      callback(this.onForward);
+    });
+  }
+
+  // pipe chain
+
+  clientOut(buffer) {
+    let _buffer = buffer;
+
+    // udp compatible
+    if (this._socksUdpReady) {
+      const request = UdpRequestMessage.parse(buffer);
+      if (request !== null) {
+        _buffer = request.DATA; // just drop RSV and FRAG
       } else {
-        this._bsocket.write(buffer);
+        logger.warn(`[socket] [${this.remote}] -x-> dropped unidentified packet ${buffer.length} bytes`);
+        return;
       }
-      Profile.totalOut += buffer.length;
+    }
+
+    if (this.isPipable) {
+      try {
+        this._pipe.feed(MIDDLEWARE_DIRECTION_UPWARD, _buffer);
+      } catch (err) {
+        logger.error(`[socket] [${this.remote}]`, err);
+      }
+    }
+  }
+
+  serverIn(buffer) {
+    if (this.isPipable || !this._isHandshakeDone) {
+      try {
+        this._pipe.feed(MIDDLEWARE_DIRECTION_DOWNWARD, buffer);
+        this._tracks.push(TRACK_CHAR_DOWNLOAD);
+        this._tracks.push(buffer.length);
+      } catch (err) {
+        logger.error(`[socket] [${this.remote}]`, err);
+      }
+    }
+  }
+
+  serverOut(buffer) {
+    if (this.isPipable) {
+      try {
+        this._pipe.feed(MIDDLEWARE_DIRECTION_UPWARD, buffer);
+      } catch (err) {
+        logger.error(`[socket] [${this.remote}]`, err);
+      }
+    }
+  }
+
+  clientIn(buffer) {
+    if (this.isPipable) {
+      try {
+        this._pipe.feed(MIDDLEWARE_DIRECTION_DOWNWARD, buffer);
+        this._tracks.push(TRACK_CHAR_DOWNLOAD);
+        this._tracks.push(buffer.length);
+      } catch (err) {
+        logger.error(`[socket] [${this.remote}]`, err);
+      }
+    }
+  }
+
+  // fsocket and bsocket
+
+  send(direction, buffer) {
+    // reset timeout
+    this._timeout = __TIMEOUT__;
+
+    if (direction === MIDDLEWARE_DIRECTION_UPWARD) {
+      if (__IS_CLIENT__) {
+        this.clientForward(buffer);
+      } else {
+        this.serverBackward(buffer);
+      }
+    } else {
+      if (__IS_CLIENT__) {
+        this.clientBackward(buffer);
+      } else {
+        this.serverForward(buffer);
+      }
+    }
+    Profile.totalOut += buffer.length;
+  }
+
+  clientForward(buffer) {
+    if (this.isPipable) {
+      this._fsocket.write(buffer);
       this._tracks.push(TRACK_CHAR_UPLOAD);
       this._tracks.push(buffer.length);
     }
-    this._timeout = __TIMEOUT__;
+  }
+
+  serverForward(buffer) {
+    if (this.isPipable) {
+      this._fsocket.write(buffer);
+    }
+  }
+
+  serverBackward(buffer) {
+    if (this.isPipable) {
+      this._bsocket.write(buffer);
+      this._tracks.push(TRACK_CHAR_UPLOAD);
+      this._tracks.push(buffer.length);
+    }
+  }
+
+  clientBackward(buffer) {
+    if (this.isPipable) {
+      this._bsocket.write(buffer);
+    }
   }
 
   /**
@@ -198,9 +299,9 @@ export class Socket {
    * @returns {Promise.<void>}
    */
   async connect({host, port}, callback) {
-    // host maybe empty, see https://github.com/blinksocks/blinksocks/issues/34
+    // host could be empty, see https://github.com/blinksocks/blinksocks/issues/34
     if (host && port) {
-      logger.info(`[socket] [${this._id}] connecting to: ${host}:${port}`);
+      logger.info(`[socket] [${this.remote}] connecting to: ${host}:${port}`);
       this._tracks.push(`${host}:${port}`);
       try {
         const ip = await dnsCache.get(host);
@@ -209,7 +310,7 @@ export class Socket {
         this._fsocket.on('close', this.onClose);
         this._fsocket.on('data', this.onBackward);
       } catch (err) {
-        logger.error(`[socket] [${this._id}] connect to ${host}:${port} failed due to: ${err.message}`);
+        logger.error(`[socket] [${this.remote}] connect to ${host}:${port} failed due to: ${err.message}`);
       }
     } else {
       logger.warn(`unexpected host=${host} port=${port}`);
@@ -217,18 +318,7 @@ export class Socket {
     }
   }
 
-  /**
-   * initialize timeout
-   */
-  setupTimeout() {
-    this._timeout = __TIMEOUT__;
-    this._timeout_timer = setInterval(() => {
-      if (--this._timeout < 1) {
-        logger.warn(`[socket] [${this._id}] timeout: no I/O on the connection for ${__TIMEOUT__}s`);
-        this.onClose();
-      }
-    }, 1e3);
-  }
+  // pipe
 
   /**
    * create pipes for both data forward and backward
@@ -242,8 +332,8 @@ export class Socket {
     );
     this._pipe = new Pipe({onNotified: this.onPipeNotified.bind(this)});
     this._pipe.setMiddlewares(MIDDLEWARE_DIRECTION_UPWARD, presets);
-    this._pipe.on(`next_${MIDDLEWARE_DIRECTION_UPWARD}`, (buf) => this.send(buf, __IS_CLIENT__));
-    this._pipe.on(`next_${MIDDLEWARE_DIRECTION_DOWNWARD}`, (buf) => this.send(buf, __IS_SERVER__));
+    this._pipe.on(`next_${MIDDLEWARE_DIRECTION_UPWARD}`, (buf) => this.send(MIDDLEWARE_DIRECTION_UPWARD, buf));
+    this._pipe.on(`next_${MIDDLEWARE_DIRECTION_DOWNWARD}`, (buf) => this.send(MIDDLEWARE_DIRECTION_DOWNWARD, buf));
   }
 
   /**
@@ -272,17 +362,32 @@ export class Socket {
     const {message, orgData} = action.payload;
     if (__IS_SERVER__ && __REDIRECT__ !== '' && this._fsocket === null) {
       const [host, port] = __REDIRECT__.split(':');
-      logger.error(`[socket] [${this._id}] connection will be redirected to ${host}:${port} due to: ${message}`);
+      logger.error(`[socket] [${this.remote}] connection will be redirected to ${host}:${port} due to: ${message}`);
       this.connect({host, port}, () => {
         this._isRedirect = true;
         this._fsocket.write(orgData);
       });
     } else {
       const timeout = Utils.getRandomInt(10, 40);
-      logger.error(`[socket] [${this._id}] connection will be closed in ${timeout}s due to: ${message}`);
+      logger.error(`[socket] [${this.remote}] connection will be closed in ${timeout}s due to: ${message}`);
       setTimeout(() => this.onClose(), timeout * 1e3);
     }
     Profile.fatals += 1;
+  }
+
+  // methods
+
+  /**
+   * initialize timeout
+   */
+  setupTimeout() {
+    this._timeout = __TIMEOUT__;
+    this._timeout_timer = setInterval(() => {
+      if (--this._timeout < 1) {
+        logger.warn(`[socket] [${this.remote}] timeout: no I/O on the connection for ${__TIMEOUT__}s`);
+        this.onClose();
+      }
+    }, 1e3);
   }
 
   /**
@@ -290,44 +395,35 @@ export class Socket {
    * leading and the trailing TRACK_MAX_SIZE / 2
    */
   dumpTrack() {
-    const strs = [];
-    const perSize = Math.floor(TRACK_MAX_SIZE / 2);
-    const tracks = (this._tracks.length > TRACK_MAX_SIZE) ?
-      this._tracks.slice(0, perSize).concat([' ... ']).concat(this._tracks.slice(-perSize)) :
-      this._tracks;
+    let strs = [];
+    let dp = 0, db = 0;
+    let up = 0, ub = 0;
     let ud = '';
-    for (const el of tracks) {
+    for (const el of this._tracks) {
       if (el === TRACK_CHAR_UPLOAD || el === TRACK_CHAR_DOWNLOAD) {
         if (ud === el) {
           continue;
         }
         ud = el;
       }
+      if (Number.isInteger(el)) {
+        if (ud === TRACK_CHAR_DOWNLOAD) {
+          dp += 1;
+          db += el;
+        }
+        if (ud === TRACK_CHAR_UPLOAD) {
+          up += 1;
+          ub += el;
+        }
+      }
       strs.push(el);
     }
-    const samples = this._tracks.filter(Number.isInteger).length;
-    logger.info(`[socket] [${this._id}] summary(${samples} sampled): ${strs.join(' ')}`);
-  }
-
-  /**
-   * client handshake
-   * @param addr
-   * @param callback
-   * @returns {Promise.<void>}
-   */
-  onHandshakeDone(addr, callback) {
-    const server = Balancer.getFastest();
-    const {host, port} = server;
-    if (lastServer === null || host !== lastServer.host || port !== lastServer.port) {
-      logger.info(`[balancer] use: ${host}:${port}`);
-      Config.initServer(server);
+    const perSize = Math.floor(TRACK_MAX_SIZE / 2);
+    if (strs.length > TRACK_MAX_SIZE) {
+      strs = strs.slice(0, perSize).concat([' ... ']).concat(strs.slice(-perSize));
     }
-    lastServer = server;
-    return this.connect({host, port}, () => {
-      this.createPipe(addr);
-      this._isHandshakeDone = true;
-      callback(this.onForward);
-    });
+    const summary = __IS_CLIENT__ ? `out/in = ${up}/${dp}, ${ub}b/${db}b` : `in/out = ${dp}/${up}, ${db}b/${ub}b`;
+    logger.info(`[socket] [${this.remote}] closed with summary(${summary}) abstract(${strs.join(' ')})`);
   }
 
 }
