@@ -44,11 +44,15 @@ export default class SSBasePreset extends IPreset {
 
   _isHandshakeDone = false;
 
+  _isAddressReceived = false;
+
   _atyp = ATYP_V4;
 
   _addr = null; // buffer
 
   _port = null; // buffer
+
+  _staging = Buffer.alloc(0);
 
   constructor(addr) {
     super();
@@ -77,6 +81,14 @@ export default class SSBasePreset extends IPreset {
 
   serverIn({buffer, next, broadcast, fail}) {
     if (!this._isHandshakeDone) {
+
+      // shadowsocks aead cipher put [atyp][dst.addr][dst.port] into the first chunk
+      // we must wait onConnected() before next().
+      if (this._isAddressReceived) {
+        this._staging = Buffer.concat([this._staging, buffer]);
+        return;
+      }
+
       if (buffer.length < 7) {
         fail(`invalid length: ${buffer.length}`);
         return;
@@ -135,11 +147,13 @@ export default class SSBasePreset extends IPreset {
           },
           // once connected
           onConnected: () => {
-            next(data);
+            next(Buffer.concat([this._staging, data]));
             this._isHandshakeDone = true;
+            this._staging = null;
           }
         }
       });
+      this._isAddressReceived = true;
     } else {
       return buffer;
     }
