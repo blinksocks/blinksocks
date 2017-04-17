@@ -111,30 +111,5 @@ describe('SSBasePreset#serverIn', function () {
     });
     expect(params.fail).toHaveBeenCalled();
   });
-});
 
-describe('SSBasePreset#serverOut', function () {
-  global.__IS_CLIENT__ = false;
-  const preset = new SSBasePreset();
-
-  it('should return only 1 byte', function () {
-    expect(
-      preset.serverOut({buffer: Buffer.alloc(1)}).length
-    ).toBe(1);
-  });
-});
-
-describe('v#clientIn', function () {
-  global.__IS_CLIENT__ = true;
-  const preset = new SSBasePreset({
-    type: 1,
-    host: Buffer.from('example.com'),
-    port: Utils.numberToUInt(1080)
-  });
-
-  it('should return only 1 byte', function () {
-    expect(
-      preset.clientIn({buffer: Buffer.alloc(1)}).length
-    ).toBe(1);
-  });
 });
