@@ -119,7 +119,7 @@ export class Socket {
     } else {
       if (this._isRedirect) {
         // server redirect
-        this._fsocket.write(buffer);
+        this._fsocket && this._fsocket.write(buffer);
         return;
       }
       this.serverIn(buffer);
@@ -136,7 +136,7 @@ export class Socket {
     } else {
       if (this._isRedirect) {
         // server redirect
-        this._bsocket.write(buffer);
+        this._bsocket && this._bsocket.write(buffer);
         return;
       }
       this.serverOut(buffer);
