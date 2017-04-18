@@ -64,14 +64,15 @@ export class Socket {
 
   constructor({id, socket, onClose}) {
     this.onError = this.onError.bind(this);
-    this.onClose = this.onClose.bind(this);
+    this.onBackwardSocketClose = this.onBackwardSocketClose.bind(this);
+    this.onForwardSocketClose = this.onForwardSocketClose.bind(this);
     this.onForward = this.onForward.bind(this);
     this.onBackward = this.onBackward.bind(this);
     this._id = id;
     this._onClose = onClose;
     this._bsocket = socket;
     this._bsocket.on('error', this.onError);
-    this._bsocket.on('close', this.onClose);
+    this._bsocket.on('close', this.onBackwardSocketClose);
     this._bsocket.on('data', this.onForward);
     this._remoteAddress = socket.remoteAddress;
     this._remotePort = socket.remotePort;
@@ -148,18 +149,27 @@ export class Socket {
     Profile.errors += 1;
   }
 
-  onClose() {
-    const sockets = [this._bsocket, this._fsocket];
-    for (const socket of sockets) {
-      if (socket !== null && !socket.destroyed) {
-        socket.destroy();
-        this._onClose(this); // notify hub to remove this one
-        this.dumpTrack();
-      }
+  onForwardSocketClose() {
+    if (this._fsocket !== null && !this._fsocket.destroyed) {
+      this._fsocket.destroy();
     }
-    this._bsocket = null;
+    if (__IS_CLIENT__ && this._tracks.length > 0) {
+      this.dumpTrack();
+    }
     this._fsocket = null;
+  }
+
+  onBackwardSocketClose() {
+    if (this._bsocket !== null && !this._bsocket.destroyed) {
+      this._bsocket.destroy();
+    }
+    this.onForwardSocketClose();
+    if (__IS_SERVER__ && this._tracks.length > 0) {
+      this.dumpTrack();
+    }
     clearInterval(this._timeout_timer);
+    this._bsocket = null;
+    this._onClose(this); // notify hub to remove this one
   }
 
   /**
@@ -308,14 +318,14 @@ export class Socket {
         const ip = await dnsCache.get(host);
         this._fsocket = net.connect({host: ip, port}, callback);
         this._fsocket.on('error', this.onError);
-        this._fsocket.on('close', this.onClose);
+        this._fsocket.on('close', this.onForwardSocketClose);
         this._fsocket.on('data', this.onBackward);
       } catch (err) {
         logger.error(`[socket] [${this.remote}] connect to ${host}:${port} failed due to: ${err.message}`);
       }
     } else {
       logger.warn(`unexpected host=${host} port=${port}`);
-      this.onClose();
+      this.onBackwardSocketClose();
     }
   }
 
@@ -371,7 +381,10 @@ export class Socket {
     } else {
       const timeout = Utils.getRandomInt(10, 40);
       logger.error(`[socket] [${this.remote}] connection will be closed in ${timeout}s due to: ${message}`);
-      setTimeout(() => this.onClose(), timeout * 1e3);
+      setTimeout(() => {
+        this.onForwardSocketClose();
+        this.onBackwardSocketClose();
+      }, timeout * 1e3);
     }
     Profile.fatals += 1;
   }
@@ -386,7 +399,8 @@ export class Socket {
     this._timeout_timer = setInterval(() => {
       if (--this._timeout < 1) {
         logger.warn(`[socket] [${this.remote}] timeout: no I/O on the connection for ${__TIMEOUT__}s`);
-        this.onClose();
+        this.onForwardSocketClose();
+        this.onBackwardSocketClose();
       }
     }, 1e3);
   }
@@ -425,6 +439,7 @@ export class Socket {
     }
     const summary = __IS_CLIENT__ ? `out/in = ${up}/${dp}, ${ub}b/${db}b` : `in/out = ${dp}/${up}, ${db}b/${ub}b`;
     logger.info(`[socket] [${this.remote}] closed with summary(${summary}) abstract(${strs.join(' ')})`);
+    this._tracks = [];
   }
 
 }

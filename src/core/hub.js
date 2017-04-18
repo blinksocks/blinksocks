@@ -45,9 +45,6 @@ export class Hub {
       Profile.stop();
       console.info('==> [profile] stopped');
     }
-    for (const socket of this._sockets) {
-      socket.onClose();
-    }
     process.exit(0);
   }
 
