@@ -243,18 +243,21 @@ export default class CustomPreset extends IPreset {
 
 **available constants**
 
-| NAME               |
-| :----------------- |
-| \_\_ALL_CONFIG\_\_ |
-| \_\_IS_SERVER\_\_  |
-| \_\_IS_CLIENT\_\_  |
-| \_\_LOCAL_HOST\_\_ |
-| \_\_LOCAL_PORT\_\_ |
-| \_\_SERVERS\_\_    |
-| \_\_KEY\_\_        |
-| \_\_PRESETS\_\_    |
-| \_\_REDIRECT\_\_   |
-| \_\_TIMEOUT\_\_    |
-| \_\_LOG_LEVEL\_\_  |
-| \_\_PROFILE\_\_    |
-| \_\_IS_WATCH\_\_   |
+| NAME                |
+| :------------------ |
+| \_\_ALL_CONFIG\_\_  |
+| \_\_IS_SERVER\_\_   |
+| \_\_IS_CLIENT\_\_   |
+| \_\_LOCAL_HOST\_\_  |
+| \_\_LOCAL_PORT\_\_  |
+| \_\_TRANSPORT\_\_   |
+| \_\_SERVER_HOST\_\_ |
+| \_\_SERVER_PORT\_\_ |
+| \_\_SERVERS\_\_     |
+| \_\_KEY\_\_         |
+| \_\_PRESETS\_\_     |
+| \_\_REDIRECT\_\_    |
+| \_\_TIMEOUT\_\_     |
+| \_\_LOG_LEVEL\_\_   |
+| \_\_PROFILE\_\_     |
+| \_\_IS_WATCH\_\_    |
