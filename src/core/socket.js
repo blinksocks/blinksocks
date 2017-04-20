@@ -25,8 +25,8 @@ import {
 
 const dnsCache = DNSCache.create();
 
-const TRACK_CHAR_UPLOAD = 'u';
-const TRACK_CHAR_DOWNLOAD = 'd';
+const TRACK_CHAR_UPLOAD = '↑';
+const TRACK_CHAR_DOWNLOAD = '↓';
 const TRACK_MAX_SIZE = 40;
 
 let lastServer = null;
@@ -77,6 +77,7 @@ export class Socket {
     this._remoteAddress = socket.remoteAddress;
     this._remotePort = socket.remotePort;
     if (__IS_SERVER__) {
+      this._tracks.push(`${socket.remoteAddress}:${socket.remotePort}`);
       this.createPipe();
     } else {
       this._proxy = new ClientProxy({
@@ -173,7 +174,7 @@ export class Socket {
   }
 
   /**
-   * client handshake
+   * handshake
    * @param addr
    * @param callback
    * @returns {Promise.<void>}
@@ -188,6 +189,7 @@ export class Socket {
     lastServer = server;
     return this.connect({host, port}, () => {
       this.createPipe(addr);
+      this._tracks.push(`${addr.host.toString()}:${addr.port.readUInt16BE(0)}`);
       this._isHandshakeDone = true;
       callback(this.onForward);
     });
