@@ -91,14 +91,42 @@ export class Config {
   }
 
   static initServer(server) {
+    // transport
+
+    if (typeof server.transport !== 'string') {
+      throw Error('\'server.transport\' must be a string');
+    }
+
+    if (!['tcp', 'udp'].includes(server.transport.toLowerCase())) {
+      throw Error('\'server.transport\' must be one of "tcp" or "udp"');
+    }
+
+    global.__TRANSPORT__ = server.transport;
+
+    // host
+
+    if (typeof server.host !== 'string' || server.host === '') {
+      throw Error('\'server.host\' must be provided and is not empty');
+    }
+
+    global.__SERVER_HOST__ = server.host;
+
+    // port
+
+    if (!Utils.isValidPort(server.port)) {
+      throw Error('\'server.port\' is invalid');
+    }
+
+    global.__SERVER_PORT__ = server.port;
+
     // key
 
     if (typeof server.key !== 'string') {
-      throw Error('\'key\' must be a string');
+      throw Error('\'server.key\' must be a string');
     }
 
     if (server.key === '') {
-      throw Error('\'key\' cannot be empty');
+      throw Error('\'server.key\' cannot be empty');
     }
 
     global.__KEY__ = server.key;
@@ -106,22 +134,22 @@ export class Config {
     // presets & presets' parameters
 
     if (!Array.isArray(server.presets)) {
-      throw Error('\'presets\' must be an array');
+      throw Error('\'server.presets\' must be an array');
     }
 
     if (server.presets.length < 1) {
-      throw Error('\'presets\' must contain at least one preset');
+      throw Error('\'server.presets\' must contain at least one preset');
     }
 
     for (const preset of server.presets) {
       const {name, params} = preset;
 
       if (typeof name === 'undefined') {
-        throw Error('\'preset.name\' must be a string');
+        throw Error('\'server.presets[].name\' must be a string');
       }
 
       if (name === '') {
-        throw Error('\'preset.name\' cannot be empty');
+        throw Error('\'server.presets[].name\' cannot be empty');
       }
 
       // 1. check for the existence of the preset

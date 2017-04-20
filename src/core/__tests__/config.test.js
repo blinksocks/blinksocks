@@ -64,6 +64,7 @@ describe('Config#init', function () {
 
   it('should throw when timeout is invalid', function () {
     const conf = {
+      transport: 'tcp',
       host: 'localhost',
       port: 1080,
       key: 'abc',
@@ -96,6 +97,7 @@ describe('Config#init', function () {
 
   it('should __IS_SERVER__ set to true, if no servers provided', function () {
     Config.init({
+      transport: 'tcp',
       host: 'localhost',
       port: 1080,
       key: 'abc',
@@ -118,34 +120,64 @@ describe('Config#init', function () {
 
 describe('Config#initServer', function () {
 
+  it('should throw when server.transport is not string', function () {
+    expect(() => Config.initServer({transport: null})).toThrow();
+  });
+
+  it('should throw when server.transport is not \"tcp\" or \"udp\"', function () {
+    expect(() => Config.initServer({transport: ''})).toThrow();
+  });
+
+  it('should throw when server.host is not string', function () {
+    expect(() => Config.initServer({transport: 'tcp', host: null})).toThrow();
+  });
+
+  it('should throw when server.host is empty', function () {
+    expect(() => Config.initServer({transport: 'tcp', host: ''})).toThrow();
+  });
+
+  it('should throw when server.port is not string', function () {
+    expect(() => Config.initServer({transport: 'tcp', host: 'abc', port: null})).toThrow();
+  });
+
+  it('should throw when server.port is empty', function () {
+    expect(() => Config.initServer({transport: 'tcp', host: 'abc', port: ''})).toThrow();
+  });
+
   it('should throw when server.key is not string', function () {
-    expect(() => Config.initServer({key: null})).toThrow();
+    expect(() => Config.initServer({transport: 'tcp', host: 'abc', port: 123, key: null})).toThrow();
   });
 
   it('should throw when server.key is empty', function () {
-    expect(() => Config.initServer({key: ''})).toThrow();
+    expect(() => Config.initServer({transport: 'tcp', host: 'abc', port: 123, key: ''})).toThrow();
   });
 
   it('should throw when server.presets is not an array', function () {
-    expect(() => Config.initServer({key: 'secret', presets: null})).toThrow();
+    expect(() => Config.initServer({transport: 'tcp', host: 'abc', port: 123, key: 'secret', presets: null})).toThrow();
   });
 
   it('should throw when server.presets is empty', function () {
-    expect(() => Config.initServer({key: 'secret', presets: []})).toThrow();
+    expect(() => Config.initServer({transport: 'tcp', host: 'abc', port: 123, key: 'secret', presets: []})).toThrow();
   });
 
-  it('should throw when server[].preset.name is not present', function () {
+  it('should throw when server.preset[].name is not present', function () {
     expect(function () {
       Config.initServer({
+        transport: 'tcp',
+        host: 'abc',
+        port: 123,
         key: 'secret',
         presets: [{}]
       });
     }).toThrow();
   });
 
-  it('should throw when server[].preset.name is empty', function () {
+  it('should throw when server.preset[].name is empty', function () {
     expect(function () {
       Config.initServer({
+        transport: 'tcp',
+        host: 'abc',
+        port: 123,
         key: 'secret',
         presets: [{
           name: ''

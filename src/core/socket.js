@@ -174,20 +174,21 @@ export class Socket {
   }
 
   /**
-   * handshake
+   * client handshake
    * @param addr
    * @param callback
    * @returns {Promise.<void>}
    */
   onHandshakeDone(addr, callback) {
+    // select a server via Balancer
     const server = Balancer.getFastest();
-    const {host, port} = server;
     if (lastServer === null || !isEqual(server, lastServer)) {
-      logger.info(`[balancer] use: ${host}:${port}`);
       Config.initServer(server);
+      lastServer = server;
+      logger.info(`[balancer] use: ${__SERVER_HOST__}:${__SERVER_PORT__}`);
     }
-    lastServer = server;
-    return this.connect({host, port}, () => {
+    // connect to our server
+    return this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__}, () => {
       this.createPipe(addr);
       this._tracks.push(`${addr.host.toString()}:${addr.port.readUInt16BE(0)}`);
       this._isHandshakeDone = true;
