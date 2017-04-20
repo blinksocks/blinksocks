@@ -16,15 +16,13 @@ function random(array, len) {
   return randomIndexes.map((char) => array[char % size]).join('');
 }
 
-const key = random('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+<>?:|{}-=[];,./ABCDEFGHIJKLMNOPQRSTUVWXYZ', 16);
+const key = random('abcdefghjklmnpqrstuvwxyz23456789!@#$%^&*()_+<>?:|{}-=[];,./ABCDEFGHJKLMNPQRSTUVWXYZ', 16);
 
 const clientJs = `module.exports = {
 
   // local hostname or ip address
-  //
-  // @note
-  //   1. For client, act as a Socks5/Socks4/HTTP server.
-  //   2. For server, act as a blinksocks server.
+  // For client, act as a Socks5/Socks4/HTTP server.
+  // For server, act as a blinksocks server.
   host: "localhost",
 
   // local port to be listen on
@@ -36,6 +34,9 @@ const clientJs = `module.exports = {
       // allow to use this server or not
       enabled: true,
 
+      // the transport layer, "tcp" or "udp"
+      transport: 'tcp',
+
       // server host name or ip address
       host: "example.com",
 
@@ -46,10 +47,8 @@ const clientJs = `module.exports = {
       key: "${key}",
 
       // presets to process data stream
-      //
-      // @note
-      //   1. DO NOT modify the first preset if you don't know what it is.
-      //   2. Take care the order of those presets, read the docs before changing them.
+      // DO NOT modify the first preset if you don't know what it is.
+      // Take care the order of those presets, read the docs before changing them.
       presets: [
         {
           // preset name
@@ -78,10 +77,7 @@ const clientJs = `module.exports = {
   // hot-reload when this file changed
   watch: true,
 
-  // log at the level
-  //
-  // @note
-  //   1. should be one of [error, warn, info, verbose, debug, silly]
+  // log at the level, "error", "warn", "info", "verbose", "debug" or "silly"
   log_level: "info"
 
 };
@@ -90,23 +86,22 @@ const clientJs = `module.exports = {
 const serverJs = `module.exports = {
 
   // local hostname or ip address
-  //
-  // @note
-  //   1. For client, act as a Socks5/Socks4/HTTP server.
-  //   2. For server, act as a blinksocks server.
+  // For client, act as a Socks5/Socks4/HTTP server.
+  // For server, act as a blinksocks server.
   host: "0.0.0.0",
 
   // local port to be listen on
   port: 5678,
 
+  // the transport layer, "tcp" or "udp"
+  transport: 'tcp',
+
   // a secret key for encryption/description
   key: "${key}",
 
   // presets to process data stream
-  //
-  // @note
-  //   1. DO NOT modify the first preset if you don't know what it is.
-  //   2. Take care the order of those presets, read the docs before changing them.
+  // DO NOT modify the first preset if you don't know what it is.
+  // Take care the order of those presets, read the docs before changing them.
   presets: [
     {
       // preset name
@@ -124,10 +119,8 @@ const serverJs = `module.exports = {
     }
   ],
 
-  // redirect data stream to here once preset fail to process(server side only)
-  //
-  // @note
-  //   1. Should be formed with "host:port".
+  // redirect data to here once preset fail to process(server side only)
+  // Should be formed with "host:port".
   redirect: "",
 
   // close inactive connection after timeout seconds
@@ -139,10 +132,7 @@ const serverJs = `module.exports = {
   // hot-reload when this file changed
   watch: true,
 
-  // log at the level
-  //
-  // @note
-  //   1. should be one of [error, warn, info, verbose, debug, silly]
+  // log at the level, "error", "warn", "info", "verbose", "debug" or "silly"
   log_level: "info"
 
 };
