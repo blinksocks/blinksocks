@@ -5,7 +5,8 @@ import {Utils, BYTE_ORDER_LE, AdvancedBuffer} from '../utils';
 const NONCE_LEN = 12;
 const TAG_LEN = 16;
 const MIN_CHUNK_LEN = TAG_LEN * 2 + 3;
-const MAX_DATA_LEN = 0x3FFF;
+const MIN_CHUNK_SPLIT_LEN = 0x07FF;
+const MAX_CHUNK_SPLIT_LEN = 0x3FFF;
 
 // available ciphers
 const ciphers = [
@@ -13,26 +14,6 @@ const ciphers = [
 ];
 
 const HKDF_HASH_ALGORITHM = 'sha1';
-
-/**
- * divide buffer into size length chunks
- * @param buffer
- * @param size
- * @returns {Array<Buffer>}
- */
-function getChunks(buffer, size) {
-  const totalLen = buffer.length;
-  const bufs = [];
-  let ptr = 0;
-  while (ptr < totalLen - 1) {
-    bufs.push(buffer.slice(ptr, ptr + size));
-    ptr += size;
-  }
-  if (ptr < totalLen) {
-    bufs.push(buffer.slice(ptr));
-  }
-  return bufs;
-}
 
 /**
  * calculate the HMAC from key and message
@@ -157,7 +138,7 @@ export default class SSAeadCipherPreset extends IPreset {
       salt = crypto.randomBytes(size);
       this._cipherKey = HKDF(salt, Utils.EVP_BytesToKey(__KEY__, size, 16), this._info, size);
     }
-    const chunks = getChunks(buffer, MAX_DATA_LEN).map((chunk) => {
+    const chunks = Utils.getRandomChunks(buffer, MIN_CHUNK_SPLIT_LEN, MAX_CHUNK_SPLIT_LEN).map((chunk) => {
       const dataLen = Utils.numberToUInt(chunk.length);
       const [encLen, lenTag] = this.encrypt(dataLen);
       const [encData, dataTag] = this.encrypt(chunk);

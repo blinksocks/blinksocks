@@ -64,6 +64,28 @@ describe('Utils#getRandomInt', function () {
 
 });
 
+describe('Utils#getRandomChunks', function () {
+
+  it('should return expected random chunks', function () {
+    const chunks = Utils.getRandomChunks([1, 2, 3], 1, 1);
+    expect(chunks[0]).toEqual([1]);
+    expect(chunks[1]).toEqual([2]);
+    expect(chunks[2]).toEqual([3]);
+  });
+
+});
+
+describe('Utils#getChunks', function () {
+
+  it('should return expected chunks', function () {
+    const chunks = Utils.getChunks([1, 2, 3], 1);
+    expect(chunks[0]).toEqual([1]);
+    expect(chunks[1]).toEqual([2]);
+    expect(chunks[2]).toEqual([3]);
+  });
+
+});
+
 describe('Utils#isValidHostname', function () {
 
   it('should return false', function () {

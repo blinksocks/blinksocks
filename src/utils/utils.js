@@ -78,6 +78,48 @@ export class Utils {
   }
 
   /**
+   * split buffer into chunks, each chunk size is picked randomly from [min, max)
+   * @param buffer
+   * @param min
+   * @param max
+   * @returns {Array<Buffer>}
+   */
+  static getRandomChunks(buffer, min, max) {
+    const totalLen = buffer.length;
+    const bufs = [];
+    let ptr = 0;
+    while (ptr < totalLen - 1) {
+      const offset = this.getRandomInt(min, max);
+      bufs.push(buffer.slice(ptr, ptr + offset));
+      ptr += offset;
+    }
+    if (ptr < totalLen) {
+      bufs.push(buffer.slice(ptr));
+    }
+    return bufs;
+  }
+
+  /**
+   * split buffer into chunks, the max chunk size is maxSize
+   * @param buffer
+   * @param maxSize
+   * @returns {Array<Buffer>}
+   */
+  static getChunks(buffer, maxSize) {
+    const totalLen = buffer.length;
+    const bufs = [];
+    let ptr = 0;
+    while (ptr < totalLen - 1) {
+      bufs.push(buffer.slice(ptr, ptr + maxSize));
+      ptr += maxSize;
+    }
+    if (ptr < totalLen) {
+      bufs.push(buffer.slice(ptr));
+    }
+    return bufs;
+  }
+
+  /**
    * verify hostname
    *
    * @param hostname
