@@ -1,16 +1,20 @@
 import crypto from 'crypto';
 import {IPreset} from './defs';
-import {Utils} from '../utils';
+import {Utils, AdvancedBuffer} from '../utils';
 
 function getUTC() {
   const ts = Math.floor((new Date()).getTime() / 1e3);
   const buf = Buffer.alloc(4);
   buf.writeInt32BE(ts, 0);
-  return buf.toJSON().data;
+  return buf;
 }
 
 function stb(str) {
   return Buffer.from(str, 'hex');
+}
+
+function len(bufArray) {
+  return bufArray.reduce((prev, next) => prev + next.length, 0);
 }
 
 const TLS_STAGE_HELLO = 1;
@@ -25,23 +29,31 @@ export default class ObfsTLS12TicketPreset extends IPreset {
 
   _pending = null;
 
+  _adBuf = null;
+
   constructor({sni}) {
     super();
     this._sni = Buffer.from(sni);
+    this.onReceiving = this.onReceiving.bind(this);
+    this.onChunkReceived = this.onChunkReceived.bind(this);
+    this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving});
+    this._adBuf.on('data', this.onChunkReceived);
   }
 
-  clientOut({buffer, next}) {
+  clientOut({buffer, direct}) {
     if (this._stage === TLS_STAGE_HELLO) {
       this._stage = TLS_STAGE_CHANGE_CIPHER_SPEC;
       this._pending = buffer;
-      // extensions
+
+      // 1. Send Client Hello
+
       const ticketLen = crypto.randomBytes(1).readUInt8(0);
       const exts = [
         // Extension: renegotiation_info
         stb('ff01000100'),
 
         // Extension: server_name
-        stb('0000'), // Type: server_name
+        stb('0000'),                                      // Type: server_name
         Utils.numberToUInt(2 + 1 + 2 + this._sni.length), // Length
         Utils.numberToUInt(1 + 2 + this._sni.length),     // Server Name List length
         stb('00'),                                        // Server Name Type: host_name(0)
@@ -52,7 +64,7 @@ export default class ObfsTLS12TicketPreset extends IPreset {
         stb('00170000'),
 
         // Extension: SessionTicket TLS
-        stb('0023'),    // Type: SessionTicket TLS
+        stb('0023'),                   // Type: SessionTicket TLS
         Utils.numberToUInt(ticketLen), // Length
         crypto.randomBytes(ticketLen), // Data
 
@@ -76,7 +88,7 @@ export default class ObfsTLS12TicketPreset extends IPreset {
         stb('20'),                  // Session ID Length
         crypto.randomBytes(0x20),   // Session ID
 
-        stb('000a'), // Cipher Suites Length
+        stb('001a'), // Cipher Suites Length
         stb('c02b'), // Cipher Suite: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 (0xc02b)
         stb('c02f'), // Cipher Suite: TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 (0xc02f)
         stb('c02c'), // Cipher Suite: TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 (0xc02c)
@@ -94,51 +106,40 @@ export default class ObfsTLS12TicketPreset extends IPreset {
         stb('01'), // Compression Methods Length
         stb('00'), // Compression Methods = [null]
 
-        Utils.numberToUInt(exts.length), // Extension Length
+        Utils.numberToUInt(len(exts)), // Extension Length
         ...exts                          // Extensions
       ];
       const header = [
-        stb('16'),                               // Content Type: Handshake
-        stb('0301'),                             // Version: TLS 1.0
-        Utils.numberToUInt(1 + 3 + body.length), // Length
-        stb('01'),                               // Handshake Type: ClientHello
-        Utils.numberToUInt(body.length, 3)       // Length
+        stb('16'),                             // Content Type: Handshake
+        stb('0301'),                           // Version: TLS 1.0
+        Utils.numberToUInt(1 + 3 + len(body)), // Length
+        stb('01'),                             // Handshake Type: ClientHello
+        Utils.numberToUInt(len(body), 3)       // Length
       ];
-      next(Buffer.concat([...header, ...body]));
+      direct(Buffer.concat([...header, ...body]));
       return;
     }
 
-    if (this._stage === TLS_STAGE_CHANGE_CIPHER_SPEC) {
-      this._stage = TLS_STAGE_APPLICATION_DATA;
-      return Buffer.concat([
-        stb('14'),   // Content Type: Change Cipher Spec
-        stb('0303'), // Version: TLS 1.2
-        stb('0001'), // Length
-        stb('01'),   // Change Cipher Spec Message
-        // Handshake Protocol: Multiple Handshake Messages
-        stb('16'),   // Content Type: Handshake
-        stb('0303'), // Version: TLS 1.2
-        stb('0020'), // Length: 32
-        crypto.randomBytes(0x20)
-      ]);
-    }
-
     if (this._stage === TLS_STAGE_APPLICATION_DATA) {
+      // TODO: split buffer into chunks
+      // Send Application Data
       return Buffer.concat([
-        stb('17'),   // Content Type: Application Data
-        stb('0303'), // Version: TLS 1.2
-        Utils.numberToUInt(this._pending.length),
-        this._pending
+        stb('17'),                         // Content Type: Application Data
+        stb('0303'),                       // Version: TLS 1.2
+        Utils.numberToUInt(buffer.length), // Length
+        buffer
       ]);
     }
   }
 
-  serverIn({buffer, fail}) {
+  serverIn({buffer, next, direct, fail}) {
     if (this._stage === TLS_STAGE_HELLO) {
-      this._stage = TLS_STAGE_APPLICATION_DATA;
+      this._stage = TLS_STAGE_CHANGE_CIPHER_SPEC;
 
-      if (buffer.length < 500) {
-        fail('TLS handshake header is too short');
+      // 1. Check Client Hello
+
+      if (buffer.length < 200) {
+        fail(`TLS handshake header(${buffer.length} bytes) is too short`);
         return;
       }
 
@@ -153,6 +154,8 @@ export default class ObfsTLS12TicketPreset extends IPreset {
         fail('unexpected TLS handshake header length');
         return;
       }
+
+      // 2. Send ServerHello, Change Cipher Spec, Finished
 
       const exts = [
         // Extension: renegotiation_info
@@ -173,44 +176,104 @@ export default class ObfsTLS12TicketPreset extends IPreset {
         stb('c02f'),                // Cipher Suite
         stb('00'),                  // Compression Method
 
-        Utils.numberToUInt(exts.length), // Extension Length
-        ...exts                          // Extensions
+        Utils.numberToUInt(len(exts)), // Extension Length
+        ...exts                        // Extensions
       ];
 
       const header = [
         stb('16'),                               // Content Type: Handshake
         stb('0303'),                             // Version: TLS 1.2
-        Utils.numberToUInt(1 + 3 + body.length), // Length
+        Utils.numberToUInt(1 + 3 + len(body)),   // Length
         stb('02'),                               // Handshake Type: Server Hello
-        Utils.numberToUInt(body.length, 3)       // Length
+        Utils.numberToUInt(len(body), 3)         // Length
       ];
 
+      const finishedLen = Utils.getRandomInt(32, 41);
       const finished = [
-        stb('16'),   // Content Type: Handshake
-        stb('0303'), // Version: TLS 1.2
-        stb('0020'), // Length: 32 TODO: random length
-        crypto.randomBytes(0x20)
+        stb('16'),                       // Content Type: Handshake
+        stb('0303'),                     // Version: TLS 1.2
+        Utils.numberToUInt(finishedLen), // Length
+        crypto.randomBytes(finishedLen)
       ];
 
-      return Buffer.concat([
+      direct(Buffer.concat([
+        // Server Hello
         ...header,
         ...body,
-        stb('140303001001'), // Change Cipher Spec
+
+        // Change Cipher Spec
+        stb('140303000101'),
+
+        // Finished
         ...finished
-      ]);
+      ]), true);
+      return;
     }
 
-    if (this._stage === TLS_STAGE_APPLICATION_DATA) {
-      return buffer;
+    let _buffer = buffer;
+
+    if (this._stage === TLS_STAGE_CHANGE_CIPHER_SPEC) {
+      this._stage = TLS_STAGE_APPLICATION_DATA;
+      // TODO: 1. Check Client Change Cipher Spec
+
+      // 2. Drop Client Change Cipher Spec
+      _buffer = buffer.slice(43);
     }
+
+    this._adBuf.put(_buffer, {next, fail});
   }
 
-  // serverOut({buffer}) {
-  //
-  // }
-  //
-  // clientIn({buffer}) {
-  //
-  // }
+  serverOut({buffer}) {
+    // TODO: split buffer into chunks
+    // Send Application Data
+    return Buffer.concat([
+      stb('17'),                         // Content Type: Application Data
+      stb('0303'),                       // Version: TLS 1.2
+      Utils.numberToUInt(buffer.length), // Length
+      buffer
+    ]);
+  }
+
+  clientIn({buffer, next, direct, fail}) {
+    if (this._stage === TLS_STAGE_CHANGE_CIPHER_SPEC) {
+      this._stage = TLS_STAGE_APPLICATION_DATA;
+      // TODO: 1. Check Server Hello
+
+      // 2. Send Change Cipher Spec(43 bytes fixed) and Pending Data
+      direct(Buffer.concat([
+        stb('14'),   // Content Type: Change Cipher Spec
+        stb('0303'), // Version: TLS 1.2
+        stb('0001'), // Length
+        stb('01'),   // Change Cipher Spec Message
+
+        stb('16'),   // Content Type: Handshake
+        stb('0303'), // Version: TLS 1.2
+        stb('0020'), // Length: 32
+        crypto.randomBytes(0x20),
+
+        // TODO: split pending data into chunks
+        stb('17'),                                // Content Type: Application Data
+        stb('0303'),                              // Version: TLS 1.2
+        Utils.numberToUInt(this._pending.length), // Length
+        this._pending
+      ]), true);
+      this._pending = null;
+      return;
+    }
+    this._adBuf.put(buffer, {next, fail});
+  }
+
+  onReceiving(buffer, {fail}) {
+    if (buffer.length < 5) {
+      fail(`Application Data is too short: ${buffer.length} bytes`);
+      return;
+    }
+    return 5 + buffer.readUInt16BE(3);
+  }
+
+  onChunkReceived(chunk, {next}) {
+    // Drop TLS Application Data header
+    next(chunk.slice(5));
+  }
 
 }
