@@ -132,7 +132,7 @@ export class Utils {
    * @param str
    * @returns {Buffer}
    */
-  static stringToBuffer(str) {
+  static hexStringToBuffer(str) {
     return Buffer.from(str, 'hex');
   }
 
