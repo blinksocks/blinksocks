@@ -65,19 +65,19 @@ export class Utils {
   }
 
   /**
-   * returns a random integer in [min, max).
+   * returns a random integer in [min, max].
    * @param min
    * @param max
    * @returns {Number}
    */
   static getRandomInt(min, max) {
     min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min)) + min;
+    max = Math.ceil(max);
+    return Math.floor(crypto.randomBytes(1)[0] / 0xff * (max - min + 1)) + min;
   }
 
   /**
-   * split buffer into chunks, each chunk size is picked randomly from [min, max)
+   * split buffer into chunks, each chunk size is picked randomly from [min, max]
    * @param buffer
    * @param min
    * @param max
