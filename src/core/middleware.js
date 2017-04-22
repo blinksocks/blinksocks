@@ -1,8 +1,8 @@
 import EventEmitter from 'events';
 import logger from 'winston';
 
-export const MIDDLEWARE_DIRECTION_UPWARD = 0;
-export const MIDDLEWARE_DIRECTION_DOWNWARD = 1;
+export const MIDDLEWARE_DIRECTION_UPWARD = 1;
+export const MIDDLEWARE_DIRECTION_DOWNWARD = -1;
 
 /**
  * abstraction of middleware
@@ -30,9 +30,10 @@ export class Middleware extends EventEmitter {
    * call hook functions of implement in order
    * @param direction
    * @param buffer
+   * @param direct
    * @param fail
    */
-  write(direction, buffer, fail) {
+  write(direction, {buffer, direct, fail}) {
     const type = {
       [MIDDLEWARE_DIRECTION_UPWARD]: 'Out',
       [MIDDLEWARE_DIRECTION_DOWNWARD]: 'In'
@@ -44,6 +45,7 @@ export class Middleware extends EventEmitter {
         buffer: buf,
         next: (processed) => this.emit(`next_${direction}`, processed),
         broadcast,
+        direct,
         fail
       };
       // clientOut, serverOut, clientIn, serverIn
@@ -54,7 +56,7 @@ export class Middleware extends EventEmitter {
     };
 
     // beforeOut, beforeIn
-    const r = this._impl[`before${type}`]({buffer, next, broadcast, fail});
+    const r = this._impl[`before${type}`]({buffer, next, broadcast, direct, fail});
     if (typeof r !== 'undefined') {
       next(r);
     }

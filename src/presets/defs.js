@@ -13,29 +13,29 @@ export class IPreset {
 
   // hooks
 
-  beforeOut({buffer/* , next, broadcast, fail */}) {
+  beforeOut({buffer/* , next, broadcast, direct, fail */}) {
     return buffer;
   }
 
-  beforeIn({buffer/* , next, broadcast, fail */}) {
+  beforeIn({buffer/* , next, broadcast, direct, fail */}) {
     return buffer;
   }
 
   // the following interfaces must be implemented
 
-  clientOut({buffer/* , next, broadcast, fail */}) {
+  clientOut({buffer/* , next, broadcast, direct, fail */}) {
     return buffer;
   }
 
-  serverIn({buffer/* , next, broadcast, fail */}) {
+  serverIn({buffer/* , next, broadcast, direct, fail */}) {
     return buffer;
   }
 
-  serverOut({buffer/* , next, broadcast, fail */}) {
+  serverOut({buffer/* , next, broadcast, direct, fail */}) {
     return buffer;
   }
 
-  clientIn({buffer/* , next, broadcast, fail */}) {
+  clientIn({buffer/* , next, broadcast, direct, fail */}) {
     return buffer;
   }
 

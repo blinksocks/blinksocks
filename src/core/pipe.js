@@ -20,7 +20,7 @@ export class Pipe extends EventEmitter {
   }
 
   onBroadcast(direction, action) {
-    const middlewares = this._getMiddlewares(direction);
+    const middlewares = this.getMiddlewares(direction);
     const results = [];
     for (const middleware of middlewares) {
       results.push(middleware.onNotified(action));
@@ -45,9 +45,22 @@ export class Pipe extends EventEmitter {
     }
   }
 
+  getMiddlewares(direction) {
+    return {
+      [MIDDLEWARE_DIRECTION_UPWARD]: this._upstream_middlewares,
+      [MIDDLEWARE_DIRECTION_DOWNWARD]: this._downstream_middlewares
+    }[direction];
+  }
+
   feed(direction, buffer) {
     const eventName = `next_${direction}`;
-    const middlewares = this._getMiddlewares(direction);
+    const middlewares = this.getMiddlewares(direction);
+
+    // methods to be injected
+    const direct = (buf, isReverse = false) => this.emit(
+      isReverse ? `next_${-direction}` : eventName,
+      buf
+    );
     const fail = (message) => this.onBroadcast(direction, {
       type: PROCESSING_FAILED,
       payload: {
@@ -59,23 +72,18 @@ export class Pipe extends EventEmitter {
     // create event chain among middlewares
     const last = middlewares.reduce((prev, next) => {
       if (prev.listenerCount(eventName) < 1) {
-        prev.on(eventName, (buf) => next.write(direction, buf, fail));
+        prev.on(eventName, (buf) => next.write(direction, {buffer: buf, direct, fail}));
       }
       return next;
     });
+
+    // the last middleware send data out via direct(buf)
     if (last.listenerCount(eventName) < 1) {
-      last.on(eventName, (buf) => this.emit(eventName, buf));
+      last.on(eventName, direct);
     }
 
     // begin pipe
-    middlewares[0].write(direction, buffer, fail);
-  }
-
-  _getMiddlewares(direction) {
-    return {
-      [MIDDLEWARE_DIRECTION_UPWARD]: this._upstream_middlewares,
-      [MIDDLEWARE_DIRECTION_DOWNWARD]: this._downstream_middlewares
-    }[direction];
+    middlewares[0].write(direction, {buffer, direct, fail});
   }
 
 }

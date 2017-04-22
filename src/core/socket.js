@@ -97,14 +97,6 @@ export class Socket {
     return `${this._remoteAddress}:${this._remotePort}`;
   }
 
-  get isPipable() {
-    return (
-      !this._isRedirect &&
-      this._bsocket !== null && !this._bsocket.destroyed &&
-      this._fsocket !== null && !this._fsocket.destroyed
-    );
-  }
-
   // events
 
   onForward(buffer) {
@@ -212,7 +204,7 @@ export class Socket {
       }
     }
 
-    if (this.isPipable) {
+    if (this._fsocket !== null && !this._fsocket.destroyed) {
       try {
         this._pipe.feed(MIDDLEWARE_DIRECTION_UPWARD, _buffer);
       } catch (err) {
@@ -222,7 +214,7 @@ export class Socket {
   }
 
   serverIn(buffer) {
-    if (this.isPipable || !this._isHandshakeDone) {
+    if ((this._fsocket !== null && !this._fsocket.destroyed) || !this._isHandshakeDone) {
       try {
         this._pipe.feed(MIDDLEWARE_DIRECTION_DOWNWARD, buffer);
         this._tracks.push(TRACK_CHAR_DOWNLOAD);
@@ -234,7 +226,7 @@ export class Socket {
   }
 
   serverOut(buffer) {
-    if (this.isPipable) {
+    if (this._bsocket !== null && !this._bsocket.destroyed) {
       try {
         this._pipe.feed(MIDDLEWARE_DIRECTION_UPWARD, buffer);
       } catch (err) {
@@ -244,7 +236,7 @@ export class Socket {
   }
 
   clientIn(buffer) {
-    if (this.isPipable) {
+    if (this._bsocket !== null && !this._bsocket.destroyed) {
       try {
         this._pipe.feed(MIDDLEWARE_DIRECTION_DOWNWARD, buffer);
         this._tracks.push(TRACK_CHAR_DOWNLOAD);
@@ -278,7 +270,7 @@ export class Socket {
   }
 
   clientForward(buffer) {
-    if (this.isPipable) {
+    if (this._fsocket !== null && !this._fsocket.destroyed) {
       this._fsocket.write(buffer);
       this._tracks.push(TRACK_CHAR_UPLOAD);
       this._tracks.push(buffer.length);
@@ -286,13 +278,13 @@ export class Socket {
   }
 
   serverForward(buffer) {
-    if (this.isPipable) {
+    if (this._fsocket !== null && !this._fsocket.destroyed) {
       this._fsocket.write(buffer);
     }
   }
 
   serverBackward(buffer) {
-    if (this.isPipable) {
+    if (this._bsocket !== null && !this._bsocket.destroyed) {
       this._bsocket.write(buffer);
       this._tracks.push(TRACK_CHAR_UPLOAD);
       this._tracks.push(buffer.length);
@@ -300,7 +292,7 @@ export class Socket {
   }
 
   clientBackward(buffer) {
-    if (this.isPipable) {
+    if (this._bsocket !== null && !this._bsocket.destroyed) {
       this._bsocket.write(buffer);
     }
   }
