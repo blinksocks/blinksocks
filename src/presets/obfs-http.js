@@ -65,7 +65,7 @@ class Faker {
  *
  * @examples
  *   {
- *     "name": "http",
+ *     "name": "obfs-http",
  *     "params": {
  *       "file": "http-fake.txt"
  *     }
@@ -87,7 +87,7 @@ class Faker {
  *   |         Variable           |
  *   +----------------------------+
  */
-export default class HttpPreset extends IPreset {
+export default class ObfsHttpPreset extends IPreset {
 
   _isHandshakeDone = false;
 
@@ -127,7 +127,7 @@ export default class HttpPreset extends IPreset {
           this._response = found.response;
           next(buffer.slice(found.request.length));
         } else {
-          fail('obfs header mismatch');
+          fail('http header mismatch');
         }
       });
     }
@@ -153,7 +153,7 @@ export default class HttpPreset extends IPreset {
         if (typeof found !== 'undefined') {
           next(buffer.slice(found.response.length));
         } else {
-          fail('obfs header mismatch');
+          fail('http header mismatch');
         }
       });
       this._isHandshakeDone = true;
