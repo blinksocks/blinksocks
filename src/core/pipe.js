@@ -57,10 +57,9 @@ export class Pipe extends EventEmitter {
     const middlewares = this.getMiddlewares(direction);
 
     // methods to be injected
-    const direct = (buf, isReverse = false) => this.emit(
-      isReverse ? `next_${-direction}` : eventName,
-      buf
-    );
+    const direct = (buf, isReverse = false) => {
+      this.emit(isReverse ? `next_${-direction}` : eventName, buf);
+    };
     const fail = (message) => this.onBroadcast(direction, {
       type: PROCESSING_FAILED,
       payload: {
