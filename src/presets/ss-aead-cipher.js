@@ -5,7 +5,7 @@ import {Utils, BYTE_ORDER_LE, AdvancedBuffer} from '../utils';
 const NONCE_LEN = 12;
 const TAG_LEN = 16;
 const MIN_CHUNK_LEN = TAG_LEN * 2 + 3;
-const MIN_CHUNK_SPLIT_LEN = 0x07FF;
+const MIN_CHUNK_SPLIT_LEN = 0x0800;
 const MAX_CHUNK_SPLIT_LEN = 0x3FFF;
 
 // available ciphers
