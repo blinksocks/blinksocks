@@ -16,39 +16,6 @@ const ciphers = [
 const HKDF_HASH_ALGORITHM = 'sha1';
 
 /**
- * calculate the HMAC from key and message
- * @param key
- * @param buffer
- * @returns {Buffer}
- */
-function hmac(key, buffer) {
-  const hmac = crypto.createHmac(HKDF_HASH_ALGORITHM, key);
-  return hmac.update(buffer).digest();
-}
-
-/**
- * HMAC-based Extract-and-Expand Key Derivation Function
- * @param salt, a non-secret random value
- * @param ikm, input keying material
- * @param info, optional context and application specific information
- * @param length, length of output keying material in octets
- * @returns {Buffer}
- */
-function HKDF(salt, ikm, info, length) {
-  // Step 1: "extract" to fixed length pseudo-random key(prk)
-  const prk = hmac(salt, ikm);
-  // Step 2: "expand" prk to several pseudo-random keys(okm)
-  let t = Buffer.alloc(0);
-  let okm = Buffer.alloc(0);
-  for (let i = 0; i < Math.ceil(length / prk.length); ++i) {
-    t = hmac(prk, Buffer.concat([t, info, Buffer.alloc(1, i + 1)]));
-    okm = Buffer.concat([okm, t]);
-  }
-  // Step 3: crop okm to desired length
-  return okm.slice(0, length);
-}
-
-/**
  * @description
  *   AEAD ciphers simultaneously provide confidentiality, integrity, and authenticity.
  *
@@ -136,7 +103,7 @@ export default class SSAeadCipherPreset extends IPreset {
     if (this._cipherKey === null) {
       const size = this._cipherName.split('-')[1] / 8; // key and salt size
       salt = crypto.randomBytes(size);
-      this._cipherKey = HKDF(salt, Utils.EVP_BytesToKey(__KEY__, size, 16), this._info, size);
+      this._cipherKey = Utils.HKDF(HKDF_HASH_ALGORITHM, salt, Utils.EVP_BytesToKey(__KEY__, size, 16), this._info, size);
     }
     const chunks = Utils.getRandomChunks(buffer, MIN_CHUNK_SPLIT_LEN, MAX_CHUNK_SPLIT_LEN).map((chunk) => {
       const dataLen = Utils.numberToUInt(chunk.length);
@@ -162,7 +129,7 @@ export default class SSAeadCipherPreset extends IPreset {
         return; // too short to get salt
       }
       const salt = buffer.slice(0, size);
-      this._decipherKey = HKDF(salt, Utils.EVP_BytesToKey(__KEY__, size, 16), this._info, size);
+      this._decipherKey = Utils.HKDF(HKDF_HASH_ALGORITHM, salt, Utils.EVP_BytesToKey(__KEY__, size, 16), this._info, size);
       return buffer.slice(size); // drop salt
     }
 

@@ -2,20 +2,7 @@ import crypto from 'crypto';
 import {IPreset} from './defs';
 import {Utils, AdvancedBuffer} from '../utils';
 
-function getUTC() {
-  const ts = Math.floor((new Date()).getTime() / 1e3);
-  const buf = Buffer.alloc(4);
-  buf.writeInt32BE(ts, 0);
-  return buf;
-}
-
-function stb(str) {
-  return Buffer.from(str, 'hex');
-}
-
-function len(bufArray) {
-  return bufArray.reduce((prev, next) => prev + next.length, 0);
-}
+const stb = Utils.stringToBuffer;
 
 const TLS_STAGE_HELLO = 1;
 const TLS_STAGE_CHANGE_CIPHER_SPEC = 2;

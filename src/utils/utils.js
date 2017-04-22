@@ -2,11 +2,10 @@ import net from 'net';
 import url from 'url';
 import crypto from 'crypto';
 import ip from 'ip';
-import {
-  ATYP_DOMAIN,
-  ATYP_V4,
-  ATYP_V6
-} from '../proxies/common';
+
+export const ATYP_V4 = 1;
+export const ATYP_DOMAIN = 3;
+export const ATYP_V6 = 4;
 
 export const BYTE_ORDER_BE = 0;
 export const BYTE_ORDER_LE = 1;
@@ -120,6 +119,24 @@ export class Utils {
   }
 
   /**
+   * return UTC timestamp as buffer
+   * @returns {Buffer}
+   */
+  static getUTC() {
+    const ts = Math.floor((new Date()).getTime() / 1e3);
+    return this.numberToUInt(ts, 4, BYTE_ORDER_BE);
+  }
+
+  /**
+   * convert string to buffer
+   * @param str
+   * @returns {Buffer}
+   */
+  static stringToBuffer(str) {
+    return Buffer.from(str, 'hex');
+  }
+
+  /**
    * verify hostname
    *
    * @param hostname
@@ -171,6 +188,18 @@ export class Utils {
   }
 
   /**
+   * calculate the HMAC from key and message
+   * @param algorithm
+   * @param key
+   * @param buffer
+   * @returns {Buffer}
+   */
+  static hmac(algorithm, key, buffer) {
+    const hmac = crypto.createHmac(algorithm, key);
+    return hmac.update(buffer).digest();
+  }
+
+  /**
    * EVP_BytesToKey with the digest algorithm set to MD5, one iteration, and no salt
    *
    * @algorithm
@@ -188,6 +217,29 @@ export class Utils {
       i += 1;
     }
     return Buffer.concat(bufs).slice(0, keyLen);
+  }
+
+  /**
+   * HMAC-based Extract-and-Expand Key Derivation Function
+   * @param hash, the message digest algorithm
+   * @param salt, a non-secret random value
+   * @param ikm, input keying material
+   * @param info, optional context and application specific information
+   * @param length, length of output keying material in octets
+   * @returns {Buffer}
+   */
+  static HKDF(hash, salt, ikm, info, length) {
+    // Step 1: "extract" to fixed length pseudo-random key(prk)
+    const prk = this.hmac(hash, salt, ikm);
+    // Step 2: "expand" prk to several pseudo-random keys(okm)
+    let t = Buffer.alloc(0);
+    let okm = Buffer.alloc(0);
+    for (let i = 0; i < Math.ceil(length / prk.length); ++i) {
+      t = this.hmac(hash, prk, Buffer.concat([t, info, Buffer.alloc(1, i + 1)]));
+      okm = Buffer.concat([okm, t]);
+    }
+    // Step 3: crop okm to desired length
+    return okm.slice(0, length);
   }
 
 }
