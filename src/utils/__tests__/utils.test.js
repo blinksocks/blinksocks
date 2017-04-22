@@ -59,7 +59,7 @@ describe('Utils#getRandomInt', function () {
   it('should return a number', function () {
     const number = Utils.getRandomInt(1, 2);
     expect(number).toBeGreaterThanOrEqual(1);
-    expect(number).toBeLessThan(2);
+    expect(number).toBeLessThanOrEqual(2);
   });
 
 });
@@ -82,6 +82,24 @@ describe('Utils#getChunks', function () {
     expect(chunks[0]).toEqual([1]);
     expect(chunks[1]).toEqual([2]);
     expect(chunks[2]).toEqual([3]);
+  });
+
+});
+
+describe('Utils#getUTC', function () {
+
+  it('should return 4 bytes', function () {
+    const utc = Utils.getUTC();
+    expect(utc.length).toBe(4);
+  });
+
+});
+
+describe('Utils#hexStringToBuffer', function () {
+
+  it('should return expected buffer', function () {
+    const buffer = Utils.hexStringToBuffer('abcd');
+    expect(buffer.equals(Buffer.from([0xab, 0xcd]))).toBe(true);
   });
 
 });
@@ -132,6 +150,16 @@ describe('Utils#md5', function () {
 
 });
 
+describe('Utils#hmac', function () {
+
+  it('should return expected buffer', function () {
+    const src = Buffer.from([1, 2, 3, 4]);
+    const dst = Buffer.from('7f8adea19a1ac02186fa895af72a7fa1', 'hex');
+    expect(Utils.hmac('md5', '', src).equals(dst)).toBe(true);
+  });
+
+});
+
 describe('Utils#EVP_BytesToKey', function () {
 
   it('should return true', function () {
@@ -140,6 +168,20 @@ describe('Utils#EVP_BytesToKey', function () {
     const ivLen = 16;
     const dst = Buffer.from('5f4dcc3b5aa765d61d8327deb882cf99', 'hex');
     expect(Utils.EVP_BytesToKey(password, keyLen, ivLen).equals(dst)).toBe(true);
+  });
+
+});
+
+describe('Utils#HKDF', function () {
+
+  it('should return expected buffer', function () {
+    const hash = 'md5';
+    const salt = Buffer.alloc(0);
+    const ikm = Buffer.from([1, 2, 3, 4]);
+    const info = Buffer.alloc(0);
+    const length = 16;
+    const dst = Buffer.from('160ade10f83c4275fca1c8cd0583e4e6', 'hex');
+    expect(Utils.HKDF(hash, salt, ikm, info, length).equals(dst)).toBe(true);
   });
 
 });
