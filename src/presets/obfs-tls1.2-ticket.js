@@ -22,6 +22,31 @@ function ApplicationData(buffer) {
   return Buffer.concat([stb('170303'), len, buffer]);
 }
 
+/**
+ * @description
+ *   Do TLS handshake using SessionTicket TLS mechanism, transfer data inside of Application Data.
+ *
+ * @params
+ *   sni: Server Name Indication.
+ *
+ * @examples
+ *   {
+ *     "name": "obfs-tls1.2-ticket",
+ *     "params": {
+ *       "sni": "www.bing.com"
+ *     }
+ *   }
+ *
+ * @protocol
+ *   C ---- Client Hello ---> S
+ *   C <--- Server Hello, Change Cipher Spec, Finished --- S
+ *   C ---- Change Cipher Spec, Finished, Application Data, Application Data, ... ---> S
+ *   C <--- Application Data, Application Data, ... ---> S
+ *
+ * @reference
+ *   [1] SNI
+ *       https://en.wikipedia.org/wiki/Server_Name_Indication
+ */
 export default class ObfsTLS12TicketPreset extends IPreset {
 
   _sni = null;
