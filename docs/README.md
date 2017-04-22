@@ -5,6 +5,7 @@
 1. [Getting Started](tutorials)
 2. [Usage](usage)
 3. [Configuration](config)
+4. [Presets](presets)
 
 ## For Developers
 

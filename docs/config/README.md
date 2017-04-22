@@ -165,7 +165,7 @@ Blinksocks will detect which server is the fastest in intervals using [balancer.
 
 `presets` are chaining from the first to the last, and are almost free to compose.
 
-Please check out relevant [presets](../../src/presets), they are documented well.
+For more information about presets, please check out [presets](../presets).
 
 * Log Levels
 
@@ -203,47 +203,3 @@ from client.
 ```
 
 If `redirect` is not provided, connection will be closed after random seconds when server fail to process.
-
-## Work with shadowsocks
-
-To work with **shadowsocks**, please choose one of the following configuration:
-
-**Steam Ciphers(Older Versions)**
-
-```
-{
-  ...
-  "presets": [{
-    "name": "ss-base",
-    "params": {}
-  }, {
-    "name": "ss-stream-cipher",
-    "params": {
-      "method": "aes-256-cfb"
-    }
-  }],
-  ...
-}
-```
-
-**AEAD Ciphers(Newer Versions)**
-
-```
-{
-  ...
-  "presets": [{
-    "name": "ss-base",
-    "params": {}
-  }, {
-    "name": "ss-aead-cipher",
-    "params": {
-      "method": "aes-256-gcm",
-      "info": "ss-subkey"
-    }
-  }],
-  ...
-}
-```
-
-Please also check out [#27](https://github.com/blinksocks/blinksocks/issues/27) for ciphers we've
-already implemented.

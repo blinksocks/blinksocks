@@ -43,7 +43,7 @@ module.exports = {
     transport: 'tcp',
     host: "bs.example.com",
     port: 6858,
-    key: "j+b3)I<h#c1_Jl^c",
+    key: "qtPb2edK7yd7e]<K",
     presets: [
       {name: "ss-base", params: {}},
       {name: "ss-aead-cipher", params: {method: "aes-256-gcm", info: "ss-subkey"}}
@@ -58,11 +58,19 @@ module.exports = {
 
 ## Documents
 
+### For Users
+
 1. [Getting Started](docs/tutorials)
 2. [Usage](docs/usage)
 3. [Configuration](docs/config)
-4. [Development](docs/development)
-5. [Performance](docs/performance)
+4. [Presets](docs/presets)
+
+### For Developers
+
+1. [Preparation](docs/development/preparation)
+2. [Principle](docs/development/principle)
+3. [Architecture](docs/development/architecture)
+4. [Performance](docs/performance)
 
 ## Contributors
 
