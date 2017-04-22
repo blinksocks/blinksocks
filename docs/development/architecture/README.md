@@ -91,6 +91,8 @@ Store target address for further use:
 
 ```js
 // presets/ss-base.js
+import {IPreset} from './defs';
+
 export default class SSBasePreset extends IPreset {
 
   _atyp = ATYP_V4;
@@ -121,49 +123,52 @@ there are several built-in presets already.
 
 ### Custom Preset
 
-A typical preset must implement four methods of IPreset interface:
+A typical preset should extends **IPreset** interface:
 
 ```js
 // custom.js
+import {IPreset} from './defs';
+
 export default class CustomPreset extends IPreset {
 
-  clientOut({buffer/* , next, broadcast, fail */}) {
+  clientOut({buffer/* , next, broadcast, direct, fail */}) {
     // next(buffer); async
     return buffer; // sync
   }
 
-  serverIn({buffer/* , next, broadcast, fail */}) {
+  serverIn({buffer/* , next, broadcast, direct, fail */}) {
     return buffer;
   }
 
-  serverOut({buffer/* , next, broadcast, fail */}) {
+  serverOut({buffer/* , next, broadcast, direct, fail */}) {
     return buffer;
   }
 
-  clientIn({buffer/* , next, broadcast, fail */}) {
+  clientIn({buffer/* , next, broadcast, direct, fail */}) {
     return buffer;
   }
 
 }
 ```
 
-| METHODS   | DESCRIPTION                          |
-| :-------- | :----------------------------------- |
-| clientOut | client will send data to server      |
-| serverIn  | server received data from client     |
-| serverOut | server will send back data to client |
-| clientIn  | client received data from server     |
+| METHODS   | DESCRIPTION                                                                      |
+| :-------- | :------------------------------------------------------------------------------- |
+| clientOut | client received data from application, and ready to forward data to server       |
+| serverIn  | server received data from client, and ready to forward data to real destination  |
+| serverOut | server received data from real destination, and ready to backward data to client |
+| clientIn  | client received data from server, and ready to backward data to application      |
 
 > NOTE: `server*` are used on the server side while `client*` are used on the client side.
 
 Every method gets an object which contains three parameters you need:
 
-| PARAM     | DESCRIPTION                                                                |
-| :-------- | :------------------------------------------------------------------------- |
-| buffer    | output from the previous middleware                                        |
-| next      | call it with a new buffer once **async** process done                      |
-| broadcast | call it with an action to notify other middlewares                         |
-| fail      | call it once handshake failed, connection will be closed in random seconds |
+| PARAM                     | DESCRIPTION                                                                |
+| :------------------------ | :------------------------------------------------------------------------- |
+| buffer                    | output from the previous preset                                            |
+| next(buffer)              | asynchronously process buffer to the next preset                           |
+| broadcast(action)         | broadcast an action to other middlewares                                   |
+| direct(buffer, isReverse) | ignore the following presets, send data directly to fsocket or bsocket     |
+| fail(message)             | report that the preset is fail to process                                  |
 
 ### Presets Decoupling
 
@@ -175,7 +180,7 @@ Action is a plain object which only requires a `type` field:
 // action
 {
   type: <string>,
-  payload: <any>
+  ...
 }
 ```
 
@@ -183,6 +188,8 @@ Once broadcast, **all** other middlewares will receive the action in **onNotifie
 
 ```js
 // custom.js
+import {IPreset} from './defs';
+
 export default class CustomPreset extends IPreset {
 
   /**
@@ -206,13 +213,15 @@ There are two hooks available:
 
 ```js
 // custom.js
+import {IPreset} from './defs';
+
 export default class CustomPreset extends IPreset {
 
-  beforeOut({buffer/* , next, broadcast, fail */}) {
+  beforeOut({buffer/* , next, broadcast, direct, fail */}) {
     return buffer;
   }
 
-  beforeIn({buffer/* , next, broadcast, fail */}) {
+  beforeIn({buffer/* , next, broadcast, direct, fail */}) {
     return buffer;
   }
 
@@ -231,6 +240,8 @@ export default class CustomPreset extends IPreset {
 You can access user configuration from your preset:
 
 ```js
+import {IPreset} from './defs';
+
 export default class CustomPreset extends IPreset {
   
   constructor() {

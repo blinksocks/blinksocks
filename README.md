@@ -40,6 +40,7 @@ module.exports = {
   port: 1080,
   servers: [{
     enabled: true,
+    transport: 'tcp',
     host: "bs.example.com",
     port: 6858,
     key: "j+b3)I<h#c1_Jl^c",
