@@ -1,5 +1,7 @@
 # blinksocks
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/blinksocks/blinksocks.svg)](https://greenkeeper.io/)
+
 [![version](https://img.shields.io/npm/v/blinksocks.svg)](https://www.npmjs.com/package/blinksocks)
 [![downloads](https://img.shields.io/npm/dt/blinksocks.svg)](https://www.npmjs.com/package/blinksocks)
 [![license](https://img.shields.io/npm/l/blinksocks.svg)](https://github.com/blinksocks/blinksocks/blob/master/LICENSE)
