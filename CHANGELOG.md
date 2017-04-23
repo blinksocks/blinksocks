@@ -1,5 +1,16 @@
 # Change Log
 
+## [v2.4.0-beta.4](https://github.com/blinksocks/blinksocks/tree/v2.4.0-beta.4) (2017-04-23)
+[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.0-beta.3...v2.4.0-beta.4)
+
+**Implemented enhancements:**
+
+- Presets: add TLS obfuscator [\#52](https://github.com/blinksocks/blinksocks/issues/52)
+
+**Fixed bugs:**
+
+- connection terminated while downloading a large file [\#51](https://github.com/blinksocks/blinksocks/issues/51)
+
 ## [v2.4.0-beta.3](https://github.com/blinksocks/blinksocks/tree/v2.4.0-beta.3) (2017-04-17)
 [Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.0-beta.2...v2.4.0-beta.3)
 
