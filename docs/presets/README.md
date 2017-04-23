@@ -1,7 +1,7 @@
 # Presets
 
 Presets are chaining and composable, built-in presets are listed here.
-If you want custom a preset, feel free to read [this](../development/architecture#Preset) first.
+If you want custom a preset, feel free to read [this](../development/architecture#preset) first.
 
 ## [ss-base](../../src/presets/ss-base.js)
 
@@ -156,3 +156,29 @@ You can use **http** or **tls** obfuscator to avoid bad [QoS](https://en.wikiped
   }
 }]
 ```
+
+## Try other compositions
+
+If you don't want to encrypt all your data, just remove **cipher** preset, the followings should work:
+
+The fastest one:
+
+```json
+"presets": [{
+  "name": "ss-base",
+  "params": {}
+}]
+```
+
+Make some cheat:
+
+```json
+"presets": [{
+  "name": "ss-base",
+  "params": {}
+}, {
+  "name": "obfs-tls1.2-ticket",
+  "params": {
+    "sni": "www.bing.com"
+  }
+}]
