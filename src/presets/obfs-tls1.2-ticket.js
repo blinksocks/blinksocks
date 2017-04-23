@@ -39,7 +39,7 @@ function ApplicationData(buffer) {
  *
  * @protocol
  *   C ---- Client Hello ---> S
- *   C <--- Server Hello, Change Cipher Spec, Finished --- S
+ *   C <--- Server Hello, New Session Ticket, Change Cipher Spec, Finished --- S
  *   C ---- Change Cipher Spec, Finished, Application Data, Application Data, ... ---> S
  *   C <--- Application Data, Application Data, ... ---> S
  *
@@ -180,7 +180,9 @@ export default class ObfsTLS12TicketPreset extends IPreset {
         return;
       }
 
-      // 2. Send Server Hello, Change Cipher Spec, Finished
+      // 2. Send Server Hello, New Session Ticket, Change Cipher Spec, Finished
+
+      // Server Hello
 
       // Random
       const random = [
@@ -199,6 +201,31 @@ export default class ObfsTLS12TicketPreset extends IPreset {
         ...stb('00170000')    // Extension: Extended Master Secret
       ];
 
+      const body = [
+        ...stb('0303'),                     // Version: TLS 1.2
+        ...random,                          // Random
+        ...session,                         // Session
+        ...stb('c02f'),                     // Cipher Suite
+        ...stb('00'),                       // Compression Method
+        ...Utils.numberToUInt(exts.length), // Extension Length
+        ...exts                             // Extensions
+      ];
+
+      const header = [
+        ...stb('16'),                               // Content Type: Handshake
+        ...stb('0303'),                             // Version: TLS 1.2
+        ...Utils.numberToUInt(1 + 3 + body.length), // Length
+        ...stb('02'),                               // Handshake Type: Server Hello
+        ...Utils.numberToUInt(body.length, 3)       // Length
+      ];
+
+      const server_hello = [...header, ...body];
+
+      // TODO: New Session Ticket
+      // const new_session_ticket = [
+      //
+      // ];
+
       // Change Cipher Spec
       const change_cipher_spec = [
         ...stb('140303000101')
@@ -213,24 +240,7 @@ export default class ObfsTLS12TicketPreset extends IPreset {
         ...crypto.randomBytes(finishedLen)
       ];
 
-      const body = [
-        ...stb('0303'),                     // Version: TLS 1.2
-        ...random,                          // Random
-        ...session,                         // Session
-        ...stb('c02f'),                     // Cipher Suite
-        ...stb('00'),                       // Compression Method
-        ...Utils.numberToUInt(exts.length), // Extension Length
-        ...exts                             // Extensions
-      ];
-      const header = [
-        ...stb('16'),                               // Content Type: Handshake
-        ...stb('0303'),                             // Version: TLS 1.2
-        ...Utils.numberToUInt(1 + 3 + body.length), // Length
-        ...stb('02'),                               // Handshake Type: Server Hello
-        ...Utils.numberToUInt(body.length, 3)       // Length
-      ];
-
-      return direct(Buffer.from([...header, ...body, ...change_cipher_spec, ...finished]), true);
+      return direct(Buffer.from([...server_hello, ...change_cipher_spec, ...finished]), true);
     }
 
     let _buffer = buffer;
