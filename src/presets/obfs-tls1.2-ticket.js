@@ -1,8 +1,13 @@
 import crypto from 'crypto';
+import {
+  hexStringToBuffer as stb,
+  numberToBuffer,
+  getUTC,
+  getRandomInt,
+  getRandomChunks,
+  AdvancedBuffer
+} from 'blinksocks-utils';
 import {IPreset} from './defs';
-import {Utils, AdvancedBuffer} from '../utils';
-
-const stb = Utils.hexStringToBuffer;
 
 const TLS_STAGE_HELLO = 1;
 const TLS_STAGE_CHANGE_CIPHER_SPEC = 2;
@@ -18,7 +23,7 @@ const MAX_AD_PAYLOAD_LEN = 0x3FFF;
  * @constructor
  */
 function ApplicationData(buffer) {
-  const len = Utils.numberToUInt(buffer.length);
+  const len = numberToBuffer(buffer.length);
   return Buffer.concat([stb('170303'), len, buffer]);
 }
 
@@ -74,8 +79,8 @@ export default class ObfsTLS12TicketPreset extends IPreset {
 
       // Random
       const random = [
-        ...Utils.getUTC(),                  // GMT Unix Time
-        ...crypto.randomBytes(28),          // Random Bytes
+        ...getUTC(),                 // GMT Unix Time
+        ...crypto.randomBytes(28),   // Random Bytes
       ];
       // Session
       const session = [
@@ -101,18 +106,18 @@ export default class ObfsTLS12TicketPreset extends IPreset {
       ];
       // Extension: server_name
       const ext_server_name = [
-        ...stb('0000'),                                      // Type: server_name
-        ...Utils.numberToUInt(2 + 1 + 2 + this._sni.length), // Length
-        ...Utils.numberToUInt(1 + 2 + this._sni.length),     // Server Name List length
-        ...stb('00'),                                        // Server Name Type: host_name(0)
-        ...Utils.numberToUInt(this._sni.length),             // Server Name length
-        ...this._sni,                                        // Server Name
+        ...stb('0000'),                                  // Type: server_name
+        ...numberToBuffer(2 + 1 + 2 + this._sni.length), // Length
+        ...numberToBuffer(1 + 2 + this._sni.length),     // Server Name List length
+        ...stb('00'),                                    // Server Name Type: host_name(0)
+        ...numberToBuffer(this._sni.length),             // Server Name length
+        ...this._sni,                                    // Server Name
       ];
       // Extension: SessionTicket TLS
-      const ticketLen = Utils.getRandomInt(200, 400);
+      const ticketLen = getRandomInt(200, 400);
       const session_ticket = [
         ...stb('0023'),                   // Type: SessionTicket TLS
-        ...Utils.numberToUInt(ticketLen), // Length
+        ...numberToBuffer(ticketLen),     // Length
         ...crypto.randomBytes(ticketLen), // Data
       ];
       // Extensions
@@ -130,28 +135,28 @@ export default class ObfsTLS12TicketPreset extends IPreset {
       ];
 
       const body = [
-        ...stb('0303'),                     // Version: TLS 1.2
-        ...random,                          // Random
-        ...session,                         // Session
-        ...cipher_suites,                   // Cipher Suites
-        ...stb('01'),                       // Compression Methods Length
-        ...stb('00'),                       // Compression Methods = [null]
-        ...Utils.numberToUInt(exts.length), // Extension Length
-        ...exts                             // Extensions
+        ...stb('0303'),                 // Version: TLS 1.2
+        ...random,                      // Random
+        ...session,                     // Session
+        ...cipher_suites,               // Cipher Suites
+        ...stb('01'),                   // Compression Methods Length
+        ...stb('00'),                   // Compression Methods = [null]
+        ...numberToBuffer(exts.length), // Extension Length
+        ...exts                         // Extensions
       ];
       const header = [
-        ...stb('16'),                               // Content Type: Handshake
-        ...stb('0301'),                             // Version: TLS 1.0
-        ...Utils.numberToUInt(1 + 3 + body.length), // Length
-        ...stb('01'),                               // Handshake Type: ClientHello
-        ...Utils.numberToUInt(body.length, 3)       // Length
+        ...stb('16'),                           // Content Type: Handshake
+        ...stb('0301'),                         // Version: TLS 1.0
+        ...numberToBuffer(1 + 3 + body.length), // Length
+        ...stb('01'),                           // Handshake Type: ClientHello
+        ...numberToBuffer(body.length, 3)       // Length
       ];
       return direct(Buffer.from([...header, ...body]));
     }
 
     if (this._stage === TLS_STAGE_APPLICATION_DATA) {
       // Send Application Data
-      const chunks = Utils.getRandomChunks(buffer, MIN_AD_PAYLOAD_LEN, MAX_AD_PAYLOAD_LEN)
+      const chunks = getRandomChunks(buffer, MIN_AD_PAYLOAD_LEN, MAX_AD_PAYLOAD_LEN)
         .map((chunk) => ApplicationData(chunk));
       return Buffer.concat(chunks);
     }
@@ -186,7 +191,7 @@ export default class ObfsTLS12TicketPreset extends IPreset {
 
       // Random
       const random = [
-        ...Utils.getUTC(),         // GMT Unix Time
+        ...getUTC(),               // GMT Unix Time
         ...crypto.randomBytes(28), // Random Bytes
       ];
       // Session
@@ -202,21 +207,21 @@ export default class ObfsTLS12TicketPreset extends IPreset {
       ];
 
       const body = [
-        ...stb('0303'),                     // Version: TLS 1.2
-        ...random,                          // Random
-        ...session,                         // Session
-        ...stb('c02f'),                     // Cipher Suite
-        ...stb('00'),                       // Compression Method
-        ...Utils.numberToUInt(exts.length), // Extension Length
-        ...exts                             // Extensions
+        ...stb('0303'),                 // Version: TLS 1.2
+        ...random,                      // Random
+        ...session,                     // Session
+        ...stb('c02f'),                 // Cipher Suite
+        ...stb('00'),                   // Compression Method
+        ...numberToBuffer(exts.length), // Extension Length
+        ...exts                         // Extensions
       ];
 
       const header = [
-        ...stb('16'),                               // Content Type: Handshake
-        ...stb('0303'),                             // Version: TLS 1.2
-        ...Utils.numberToUInt(1 + 3 + body.length), // Length
-        ...stb('02'),                               // Handshake Type: Server Hello
-        ...Utils.numberToUInt(body.length, 3)       // Length
+        ...stb('16'),                           // Content Type: Handshake
+        ...stb('0303'),                         // Version: TLS 1.2
+        ...numberToBuffer(1 + 3 + body.length), // Length
+        ...stb('02'),                           // Handshake Type: Server Hello
+        ...numberToBuffer(body.length, 3)       // Length
       ];
 
       const server_hello = [...header, ...body];
@@ -232,11 +237,11 @@ export default class ObfsTLS12TicketPreset extends IPreset {
       ];
 
       // Finished
-      const finishedLen = Utils.getRandomInt(32, 40);
+      const finishedLen = getRandomInt(32, 40);
       const finished = [
-        ...stb('16'),                       // Content Type: Handshake
-        ...stb('0303'),                     // Version: TLS 1.2
-        ...Utils.numberToUInt(finishedLen), // Length
+        ...stb('16'),                   // Content Type: Handshake
+        ...stb('0303'),                 // Version: TLS 1.2
+        ...numberToBuffer(finishedLen), // Length
         ...crypto.randomBytes(finishedLen)
       ];
 
@@ -258,7 +263,7 @@ export default class ObfsTLS12TicketPreset extends IPreset {
 
   serverOut({buffer}) {
     // Send Application Data
-    const chunks = Utils.getRandomChunks(buffer, MIN_AD_PAYLOAD_LEN, MAX_AD_PAYLOAD_LEN)
+    const chunks = getRandomChunks(buffer, MIN_AD_PAYLOAD_LEN, MAX_AD_PAYLOAD_LEN)
       .map((chunk) => ApplicationData(chunk));
     return Buffer.concat(chunks);
   }
@@ -282,7 +287,7 @@ export default class ObfsTLS12TicketPreset extends IPreset {
         ...crypto.randomBytes(0x20),
       ];
       // Application Data
-      const chunks = Utils.getRandomChunks(this._pending, MIN_AD_PAYLOAD_LEN, MAX_AD_PAYLOAD_LEN)
+      const chunks = getRandomChunks(this._pending, MIN_AD_PAYLOAD_LEN, MAX_AD_PAYLOAD_LEN)
         .map((chunk) => ApplicationData(chunk));
       this._pending = null;
       return direct(Buffer.from([...change_cipher_spec, ...finished, ...Buffer.concat(chunks)]), true);
@@ -292,7 +297,7 @@ export default class ObfsTLS12TicketPreset extends IPreset {
 
   onReceiving(buffer, {fail}) {
     if (buffer.length < 5) {
-      fail(`Application Data is too short: ${buffer.length} bytes`);
+      fail(`Application Data is too short: ${buffer.length} bytes, ${buffer.toString('hex')}`);
       return;
     }
     return 5 + buffer.readUInt16BE(3);

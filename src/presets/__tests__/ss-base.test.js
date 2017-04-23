@@ -1,4 +1,4 @@
-import {Utils} from '../../utils';
+import {numberToBuffer} from 'blinksocks-utils';
 import SSBasePreset from '../ss-base';
 
 describe('SSBasePreset#constructor', function () {
@@ -8,7 +8,7 @@ describe('SSBasePreset#constructor', function () {
     const preset = new SSBasePreset({
       type: 1,
       host: Buffer.from('example.com'),
-      port: Utils.numberToUInt(1080)
+      port: numberToBuffer(1080)
     });
     expect(preset._atyp).toBe(1);
     expect(preset._addr.equals(Buffer.from([101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109]))).toBe(true);
@@ -22,7 +22,7 @@ describe('SSBasePreset#clientOut', function () {
   const preset = new SSBasePreset({
     type: 1,
     host: Buffer.from('example.com'),
-    port: Utils.numberToUInt(1080)
+    port: numberToBuffer(1080)
   });
 
   it('should return more than 1 byte', function () {

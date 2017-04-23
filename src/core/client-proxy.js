@@ -1,4 +1,4 @@
-import {Utils} from '../utils';
+import {parseURI} from 'blinksocks-utils';
 
 import {
   IdentifierMessage,
@@ -127,7 +127,7 @@ export class ClientProxy {
     const request = HttpRequestMessage.parse(buffer);
     if (request !== null) {
       const {METHOD, HOST} = request;
-      const addr = Utils.parseURI(HOST.toString());
+      const addr = parseURI(HOST.toString());
 
       this.onHandshakeDone(addr, (onForward) => {
         if (METHOD.toString() === 'CONNECT') {

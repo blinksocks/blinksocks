@@ -1,6 +1,13 @@
 import crypto from 'crypto';
+import {
+  EVP_BytesToKey,
+  HKDF,
+  getRandomChunks,
+  numberToBuffer,
+  BYTE_ORDER_LE,
+  AdvancedBuffer
+} from 'blinksocks-utils';
 import {IPreset} from './defs';
-import {Utils, BYTE_ORDER_LE, AdvancedBuffer} from '../utils';
 
 const NONCE_LEN = 12;
 const TAG_LEN = 16;
@@ -103,10 +110,10 @@ export default class SSAeadCipherPreset extends IPreset {
     if (this._cipherKey === null) {
       const size = this._cipherName.split('-')[1] / 8; // key and salt size
       salt = crypto.randomBytes(size);
-      this._cipherKey = Utils.HKDF(HKDF_HASH_ALGORITHM, salt, Utils.EVP_BytesToKey(__KEY__, size, 16), this._info, size);
+      this._cipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, EVP_BytesToKey(__KEY__, size, 16), this._info, size);
     }
-    const chunks = Utils.getRandomChunks(buffer, MIN_CHUNK_SPLIT_LEN, MAX_CHUNK_SPLIT_LEN).map((chunk) => {
-      const dataLen = Utils.numberToUInt(chunk.length);
+    const chunks = getRandomChunks(buffer, MIN_CHUNK_SPLIT_LEN, MAX_CHUNK_SPLIT_LEN).map((chunk) => {
+      const dataLen = numberToBuffer(chunk.length);
       const [encLen, lenTag] = this.encrypt(dataLen);
       const [encData, dataTag] = this.encrypt(chunk);
       return Buffer.concat([encLen, lenTag, encData, dataTag]);
@@ -129,7 +136,7 @@ export default class SSAeadCipherPreset extends IPreset {
         return; // too short to get salt
       }
       const salt = buffer.slice(0, size);
-      this._decipherKey = Utils.HKDF(HKDF_HASH_ALGORITHM, salt, Utils.EVP_BytesToKey(__KEY__, size, 16), this._info, size);
+      this._decipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, EVP_BytesToKey(__KEY__, size, 16), this._info, size);
       return buffer.slice(size); // drop salt
     }
 
@@ -162,7 +169,7 @@ export default class SSAeadCipherPreset extends IPreset {
     const cipher = crypto.createCipheriv(
       this._cipherName,
       this._cipherKey,
-      Utils.numberToUInt(this._cipherNonce, NONCE_LEN, BYTE_ORDER_LE)
+      numberToBuffer(this._cipherNonce, NONCE_LEN, BYTE_ORDER_LE)
     );
     const encrypted = Buffer.concat([cipher.update(message), cipher.final()]);
     const tag = cipher.getAuthTag();
@@ -174,7 +181,7 @@ export default class SSAeadCipherPreset extends IPreset {
     const decipher = crypto.createDecipheriv(
       this._cipherName,
       this._decipherKey,
-      Utils.numberToUInt(this._decipherNonce, NONCE_LEN, BYTE_ORDER_LE)
+      numberToBuffer(this._decipherNonce, NONCE_LEN, BYTE_ORDER_LE)
     );
     decipher.setAuthTag(tag);
     try {

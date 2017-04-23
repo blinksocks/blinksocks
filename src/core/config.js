@@ -1,6 +1,6 @@
 import fs from 'fs';
 import winston from 'winston';
-import {Utils} from '../utils';
+import {isValidPort} from 'blinksocks-utils';
 
 export const DEFAULT_LOG_LEVEL = 'error';
 
@@ -21,7 +21,7 @@ export class Config {
 
     // port
 
-    if (!Utils.isValidPort(json.port)) {
+    if (!isValidPort(json.port)) {
       throw Error('\'port\' is invalid');
     }
 
@@ -55,7 +55,7 @@ export class Config {
 
     if (typeof json.redirect === 'string' && json.redirect !== '') {
       const address = json.redirect.split(':');
-      if (address.length !== 2 || !Utils.isValidPort(+address[1])) {
+      if (address.length !== 2 || !isValidPort(+address[1])) {
         throw Error('\'redirect\' is an invalid address');
       }
     }
@@ -113,7 +113,7 @@ export class Config {
 
     // port
 
-    if (!Utils.isValidPort(server.port)) {
+    if (!isValidPort(server.port)) {
       throw Error('\'server.port\' is invalid');
     }
 

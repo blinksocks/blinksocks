@@ -1,6 +1,7 @@
 import net from 'net';
 import logger from 'winston';
 import isEqual from 'lodash.isequal';
+import {getRandomInt} from 'blinksocks-utils';
 import {Config} from './config';
 import {ClientProxy} from './client-proxy';
 import {DNSCache} from './dns-cache';
@@ -13,7 +14,6 @@ import {
   createMiddleware
 } from './middleware';
 
-import {Utils} from '../utils';
 import {
   SOCKET_CONNECT_TO_DST,
   PROCESSING_FAILED
@@ -374,7 +374,7 @@ export class Socket {
         this._fsocket.write(orgData);
       });
     } else {
-      const timeout = Utils.getRandomInt(10, 40);
+      const timeout = getRandomInt(10, 40);
       logger.error(`[socket] [${this.remote}] connection will be closed in ${timeout}s due to: ${message}`);
       setTimeout(() => {
         this.onForwardSocketClose();

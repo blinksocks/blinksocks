@@ -1,6 +1,6 @@
 import ip from 'ip';
+import {isValidHostname, numberToBuffer} from 'blinksocks-utils';
 import {IPreset, SOCKET_CONNECT_TO_DST} from './defs';
-import {Utils} from '../utils';
 
 const ATYP_V4 = 0x01;
 const ATYP_V6 = 0x04;
@@ -69,7 +69,7 @@ export default class SSBasePreset extends IPreset {
       this._isHandshakeDone = true;
       return Buffer.from([
         this._atyp,
-        ...(this._atyp === ATYP_DOMAIN) ? Utils.numberToUInt(this._addr.length, 1) : [],
+        ...(this._atyp === ATYP_DOMAIN) ? numberToBuffer(this._addr.length, 1) : [],
         ...this._addr,
         ...this._port,
         ...buffer
@@ -122,7 +122,7 @@ export default class SSBasePreset extends IPreset {
             return;
           }
           addr = buffer.slice(2, 2 + domainLen).toString();
-          if (!Utils.isValidHostname(addr)) {
+          if (!isValidHostname(addr)) {
             fail(`addr=${addr} is an invalid hostname`);
             return;
           }

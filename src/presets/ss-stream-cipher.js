@@ -1,6 +1,6 @@
 import crypto from 'crypto';
+import {EVP_BytesToKey} from 'blinksocks-utils';
 import {IPreset} from './defs';
-import {Utils} from '../utils';
 
 const IV_LEN = 16;
 
@@ -76,7 +76,7 @@ export default class SSStreamCipherPreset extends IPreset {
     }
     this._cipherName = method;
     if (global.__KEY__) {
-      this._key = Utils.EVP_BytesToKey(__KEY__, this._cipherName.split('-')[1] / 8, IV_LEN);
+      this._key = EVP_BytesToKey(__KEY__, this._cipherName.split('-')[1] / 8, IV_LEN);
     }
   }
 
