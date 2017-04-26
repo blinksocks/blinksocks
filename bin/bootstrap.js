@@ -46,9 +46,8 @@ function obtainConfig(type, options) {
       const jsonFile = fs.readFileSync(file);
       json = JSON.parse(jsonFile);
     }
-    // Object.assign(config, json);
   } catch (err) {
-    throw Error(`fail to parse your \'${options.config}\'`);
+    throw Error(`fail to load/parse your '${options.config}': ${err.message}`);
   }
 
   /// post-process
@@ -97,7 +96,10 @@ module.exports = function (type, {Hub, Config, Balancer}) {
 
     const app = new Hub();
     app.run();
-    process.on('SIGINT', () => app.onClose());
+    process.on('SIGINT', () => {
+      app.terminate();
+      process.exit(0);
+    });
   } catch (err) {
     console.error(err);
     process.exit(-1);

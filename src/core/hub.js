@@ -22,15 +22,9 @@ export class Hub {
 
   constructor() {
     this._hub = net.createServer();
-    this._hub.on('error', this.onError.bind(this));
     this._hub.on('close', this.onClose.bind(this));
     this._hub.on('connection', this.onConnect.bind(this));
     this.onSocketClose = this.onSocketClose.bind(this);
-  }
-
-  onError(err) {
-    logger.error(err);
-    this._hub.close();
   }
 
   onClose() {
@@ -45,7 +39,6 @@ export class Hub {
       Profile.stop();
       console.info('==> [profile] stopped');
     }
-    process.exit(0);
   }
 
   onSocketClose(socket) {
@@ -86,6 +79,11 @@ export class Hub {
         Profile.start();
       }
     });
+  }
+
+  terminate() {
+    this._hub.close();
+    this.onClose();
   }
 
 }
