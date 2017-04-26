@@ -20,6 +20,8 @@ export class Hub {
 
   _sockets = []; // instances of our class Socket
 
+  _isClosed = false;
+
   constructor() {
     this._hub = net.createServer();
     this._hub.on('close', this.onClose.bind(this));
@@ -28,16 +30,19 @@ export class Hub {
   }
 
   onClose() {
-    console.info('==> [hub] shutdown');
-    if (__IS_CLIENT__) {
-      Balancer.destroy();
-      console.info('==> [balancer] stopped');
-    }
-    if (__PROFILE__) {
-      console.info('==> [profile] saving...');
-      Profile.save();
-      Profile.stop();
-      console.info('==> [profile] stopped');
+    if (!this._isClosed) {
+      console.info('==> [hub] shutdown');
+      if (__IS_CLIENT__) {
+        Balancer.destroy();
+        console.info('==> [balancer] stopped');
+      }
+      if (__PROFILE__) {
+        console.info('==> [profile] saving...');
+        Profile.save();
+        Profile.stop();
+        console.info('==> [profile] stopped');
+      }
+      this._isClosed = true;
     }
   }
 
