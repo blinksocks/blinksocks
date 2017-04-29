@@ -1,5 +1,6 @@
 import net from 'net';
 import logger from 'winston';
+import {Config} from './config';
 import {Socket} from './socket';
 import {Profile} from './profile';
 import {Balancer} from './balancer';
@@ -22,7 +23,10 @@ export class Hub {
 
   _isClosed = false;
 
-  constructor() {
+  constructor(config) {
+    if (config) {
+      Config.init(config);
+    }
     this._hub = net.createServer();
     this._hub.on('close', this.onClose.bind(this));
     this._hub.on('connection', this.onConnect.bind(this));
