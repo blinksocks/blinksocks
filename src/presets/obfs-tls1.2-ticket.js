@@ -295,9 +295,9 @@ export default class ObfsTLS12TicketPreset extends IPreset {
     this._adBuf.put(buffer, {next, fail});
   }
 
-  onReceiving(buffer, {fail}) {
+  onReceiving(buffer) {
     if (buffer.length < 5) {
-      fail(`Application Data is too short: ${buffer.length} bytes, ${buffer.toString('hex')}`);
+      // fail(`Application Data is too short: ${buffer.length} bytes, ${buffer.toString('hex')}`);
       return;
     }
     return 5 + buffer.readUInt16BE(3);
