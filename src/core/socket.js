@@ -437,4 +437,12 @@ export class Socket {
     this._tracks = [];
   }
 
+  /**
+   * close both sides
+   */
+  destroy() {
+    this.onForwardSocketClose();
+    this.onBackwardSocketClose();
+  }
+
 }

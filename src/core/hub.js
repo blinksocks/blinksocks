@@ -43,6 +43,8 @@ export class Hub {
         console.info('==> [profile] stopped');
       }
       this._isClosed = true;
+      this._sockets.forEach((socket) => socket.destroy());
+      this._sockets = [];
     }
   }
 
