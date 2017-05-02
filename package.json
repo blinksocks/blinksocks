@@ -1,6 +1,6 @@
 {
   "name": "blinksocks",
-  "version": "2.4.0-beta.4",
+  "version": "2.4.0",
   "description": "Yet another secure proxy, designed for speed.",
   "main": "lib/index.js",
   "bin": {
