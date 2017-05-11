@@ -48,7 +48,7 @@
     "eslint-plugin-babel": "^4.1.1",
     "eslint-plugin-flowtype": "^2.32.1",
     "husky": "^0.13.3",
-    "jest": "^19.0.2"
+    "jest": "^20.0.1"
   },
   "repository": {
     "url": "https://github.com/blinksocks/blinksocks",
