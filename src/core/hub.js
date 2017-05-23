@@ -71,7 +71,7 @@ export class Hub {
     Profile.connections += 1;
   }
 
-  run() {
+  run(callback) {
     const options = {
       host: __LOCAL_HOST__,
       port: __LOCAL_PORT__
@@ -88,6 +88,9 @@ export class Hub {
       if (__PROFILE__) {
         console.info('==> [profile] started');
         Profile.start();
+      }
+      if (typeof callback === 'function') {
+        callback();
       }
     });
   }
