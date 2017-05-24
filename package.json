@@ -3,6 +3,11 @@
   "version": "2.4.0",
   "description": "Yet another secure proxy, designed for speed.",
   "main": "lib/index.js",
+  "files": [
+    "bin",
+    "lib",
+    "AUTHORS"
+  ],
   "bin": {
     "blinksocks": "bin/cli.js",
     "blinksocks-init": "bin/cli-init.js",
@@ -19,13 +24,6 @@
     "server:prod": "node bin/cli.js --config server.config.json",
     "client:prod": "node bin/cli.js --config client.config.json",
     "precommit": "npm test"
-  },
-  "jest": {
-    "testPathIgnorePatterns": [
-      "<rootDir>/lib/"
-    ],
-    "coverageDirectory": "./coverage/",
-    "collectCoverage": true
   },
   "dependencies": {
     "babel-polyfill": "^6.23.0",
@@ -54,6 +52,10 @@
     "url": "https://github.com/blinksocks/blinksocks",
     "type": "git"
   },
+  "bugs": {
+    "url": "https://github.com/blinksocks/blinksocks/issues"
+  },
+  "homepage": "https://github.com/blinksocks/blinksocks",
   "keywords": [
     "socks5",
     "socks4",
@@ -73,5 +75,12 @@
   "license": "Apache-2.0",
   "engines": {
     "node": ">= 6"
+  },
+  "jest": {
+    "testPathIgnorePatterns": [
+      "<rootDir>/lib/"
+    ],
+    "coverageDirectory": "./coverage/",
+    "collectCoverage": true
   }
 }
