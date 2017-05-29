@@ -1,6 +1,12 @@
 import fs from 'fs';
+import os from 'os';
+import path from 'path';
 import winston from 'winston';
 import {isValidPort} from 'blinksocks-utils';
+
+const HOME_DIR = os.homedir();
+const BLINKSOCKS_DIR = path.join(HOME_DIR, '.blinksocks');
+const LOG_PATH = path.join(BLINKSOCKS_DIR, 'logs');
 
 export const DEFAULT_LOG_LEVEL = 'error';
 
@@ -167,10 +173,10 @@ export class Config {
   static setUpLogger(level = '') {
     // create logs directory
     try {
-      fs.lstatSync('logs');
+      fs.lstatSync(LOG_PATH);
     } catch (err) {
       if (err.code === 'ENOENT') {
-        fs.mkdirSync('logs');
+        fs.mkdirSync(LOG_PATH);
       }
     }
 
@@ -198,7 +204,7 @@ export class Config {
           prettyPrint: true
         }),
         new (winston.transports.File)({
-          filename: `logs/blinksocks-${__IS_CLIENT__ ? 'client' : 'server'}.log`,
+          filename: path.join(LOG_PATH, `blinksocks-${__IS_CLIENT__ ? 'client' : 'server'}.log`),
           maxsize: 2 * 1024 * 1024, // 2MB
           silent: ['test', 'debug'].includes(process.env.NODE_ENV)
         })
