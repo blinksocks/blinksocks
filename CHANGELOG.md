@@ -2,6 +2,13 @@
 
 
 
+## [v2.4.2](https://github.com/blinksocks/blinksocks/tree/v2.4.2) (2017-05-29)
+[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.1...v2.4.2)
+
+#### Fixes (bugs & defects):
+
+- Write logs to home directory [#55](https://github.com/blinksocks/blinksocks/issues/55)
+
 ## [v2.4.1](https://github.com/blinksocks/blinksocks/tree/v2.4.1) (2017-05-24)
 [Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.0...v2.4.1)
 
