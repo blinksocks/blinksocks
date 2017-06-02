@@ -2,6 +2,17 @@
 
 
 
+## [v2.4.3](https://github.com/blinksocks/blinksocks/tree/v2.4.3) (2017-06-02)
+[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.2...v2.4.3)
+
+#### Fixes (bugs & defects):
+
+- ENOENT: no such file or directory, mkdir '~/.blinksocks/logs' [#58](https://github.com/blinksocks/blinksocks/issues/58)
+
+#### Features:
+
+- Log request address when applications connected to the client [#57](https://github.com/blinksocks/blinksocks/issues/57)
+
 ## [v2.4.2](https://github.com/blinksocks/blinksocks/tree/v2.4.2) (2017-05-29)
 [Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.1...v2.4.2)
 
@@ -115,36 +126,3 @@
 - Proposal: refactor crypto stuff in utils/crypto.js [#16](https://github.com/blinksocks/blinksocks/issues/16)
 
 ## [v2.2.0-beta.3](https://github.com/blinksocks/blinksocks/tree/v2.2.0-beta.3) (2017-03-02)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.2.0-beta.2...v2.2.0-beta.3)
-
-## [v2.2.0-beta.2](https://github.com/blinksocks/blinksocks/tree/v2.2.0-beta.2) (2017-03-02)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.1.0-beta.3...v2.2.0-beta.2)
-
-## [v2.1.0-beta.3](https://github.com/blinksocks/blinksocks/tree/v2.1.0-beta.3) (2017-01-11)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.1.0-beta.2...v2.1.0-beta.3)
-
-## [v2.1.0-beta.2](https://github.com/blinksocks/blinksocks/tree/v2.1.0-beta.2) (2017-01-10)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.1.0-beta.1...v2.1.0-beta.2)
-
-## [v2.1.0-beta.1](https://github.com/blinksocks/blinksocks/tree/v2.1.0-beta.1) (2017-01-07)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.0.0...v2.1.0-beta.1)
-
-## [v2.0.0](https://github.com/blinksocks/blinksocks/tree/v2.0.0) (2017-01-02)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.0.0-beta.5...v2.0.0)
-
-## [v2.0.0-beta.5](https://github.com/blinksocks/blinksocks/tree/v2.0.0-beta.5) (2017-01-01)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.0.0-beta.4...v2.0.0-beta.5)
-
-## [v2.0.0-beta.4](https://github.com/blinksocks/blinksocks/tree/v2.0.0-beta.4) (2016-12-14)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.0.0-beta.3...v2.0.0-beta.4)
-
-## [v2.0.0-beta.3](https://github.com/blinksocks/blinksocks/tree/v2.0.0-beta.3) (2016-12-13)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.0.0-beta.2...v2.0.0-beta.3)
-
-## [v2.0.0-beta.2](https://github.com/blinksocks/blinksocks/tree/v2.0.0-beta.2) (2016-12-11)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.0.0-beta.1...v2.0.0-beta.2)
-
-## [v2.0.0-beta.1](https://github.com/blinksocks/blinksocks/tree/v2.0.0-beta.1) (2016-12-11)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v1.0.1...v2.0.0-beta.1)
-
-## [v1.0.1](https://github.com/blinksocks/blinksocks/tree/v1.0.1) (2016-12-09)
