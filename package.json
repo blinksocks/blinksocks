@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "babel-polyfill": "^6.23.0",
-    "blinksocks-utils": "^0.0.2",
+    "blinksocks-utils": "^0.0.3",
     "commander": "^2.9.0",
     "ip": "^1.1.5",
     "lodash.isequal": "^4.5.0",
