@@ -739,11 +739,12 @@ binary-extensions@^1.0.0:
   version "1.8.0"
   resolved "https://registry.yarnpkg.com/binary-extensions/-/binary-extensions-1.8.0.tgz#48ec8d16df4377eae5fa5884682480af4d95c774"
 
-blinksocks-utils@^0.0.2:
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/blinksocks-utils/-/blinksocks-utils-0.0.2.tgz#e1826bc2d2f3d57f541ad7d594f7aacd9b5ccf34"
+blinksocks-utils@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/blinksocks-utils/-/blinksocks-utils-0.0.3.tgz#80976a67c85959e23dc0698bbb3ebb46d672aac6"
   dependencies:
     ip "^1.1.5"
+    urijs "^1.18.10"
 
 block-stream@*:
   version "0.0.9"
@@ -1166,9 +1167,9 @@ eslint-plugin-babel@^4.1.1:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/eslint-plugin-babel/-/eslint-plugin-babel-4.1.1.tgz#ef285c87039b67beb3bbd227f5b0eed4fb376b87"
 
-eslint-plugin-flowtype@^2.33.0:
-  version "2.33.0"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-flowtype/-/eslint-plugin-flowtype-2.33.0.tgz#b2783814ed2ddcf729953b8f65ff73c90cabee4b"
+eslint-plugin-flowtype@^2.34.0:
+  version "2.34.0"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-flowtype/-/eslint-plugin-flowtype-2.34.0.tgz#b9875f314652e5081623c9d2b18a346bbb759c09"
   dependencies:
     lodash "^4.15.0"
 
@@ -3096,6 +3097,10 @@ uglify-to-browserify@~1.0.0:
 uid-number@^0.0.6:
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/uid-number/-/uid-number-0.0.6.tgz#0ea10e8035e8eb5b8e4449f06da1c730663baa81"
+
+urijs@^1.18.10:
+  version "1.18.10"
+  resolved "https://registry.yarnpkg.com/urijs/-/urijs-1.18.10.tgz#b94463eaba59a1a796036a467bb633c667f221ab"
 
 user-home@^1.1.1:
   version "1.1.1"
