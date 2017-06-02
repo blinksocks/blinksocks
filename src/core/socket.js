@@ -180,9 +180,10 @@ export class Socket {
       logger.info(`[balancer] use: ${__SERVER_HOST__}:${__SERVER_PORT__}`);
     }
     // connect to our server
-    return this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__}, () => {
+    const [dstHost, dstPort] = [addr.host.toString(), addr.port.readUInt16BE(0)];
+    return this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__, dstHost, dstPort}, () => {
       this.createPipe(addr);
-      this._tracks.push(`${addr.host.toString()}:${addr.port.readUInt16BE(0)}`);
+      this._tracks.push(`${dstHost}:${dstPort}`);
       this._isHandshakeDone = true;
       callback(this.onForward);
     });
@@ -301,13 +302,19 @@ export class Socket {
    * connect to a server, for both client and server
    * @param host
    * @param port
+   * @param dstHost
+   * @param dstPort
    * @param callback
    * @returns {Promise.<void>}
    */
-  async connect({host, port}, callback) {
+  async connect({host, port, dstHost, dstPort}, callback) {
     // host could be empty, see https://github.com/blinksocks/blinksocks/issues/34
     if (host && port) {
-      logger.info(`[socket] [${this.remote}] connecting to: ${host}:${port}`);
+      if (__IS_CLIENT__) {
+        logger.info(`[socket] [${this.remote}] request: ${dstHost}:${dstPort}, connecting to: ${host}:${port}`);
+      } else {
+        logger.info(`[socket] [${this.remote}] connecting to: ${host}:${port}`);
+      }
       this._tracks.push(`${host}:${port}`);
       try {
         const ip = await dnsCache.get(host);
