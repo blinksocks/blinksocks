@@ -10,6 +10,20 @@ const LOG_PATH = path.join(BLINKSOCKS_DIR, 'logs');
 
 export const DEFAULT_LOG_LEVEL = 'error';
 
+/**
+ * make directory if not exist
+ * @param dir
+ */
+function mkdir(dir) {
+  try {
+    fs.lstatSync(dir);
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      fs.mkdirSync(dir);
+    }
+  }
+}
+
 export class Config {
 
   static init(json) {
@@ -171,14 +185,11 @@ export class Config {
   }
 
   static setUpLogger(level = '') {
-    // create logs directory
-    try {
-      fs.lstatSync(LOG_PATH);
-    } catch (err) {
-      if (err.code === 'ENOENT') {
-        fs.mkdirSync(LOG_PATH);
-      }
-    }
+    // create ~/.blinksocks directory
+    mkdir(BLINKSOCKS_DIR);
+
+    // create ~/.blinksocks/logs directory
+    mkdir(LOG_PATH);
 
     // determine log level
     let _level = level.toLowerCase();
