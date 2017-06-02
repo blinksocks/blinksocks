@@ -43,6 +43,7 @@ describe('Config#init', function () {
         host: 'localhost',
         port: 1080,
         servers: [{
+          transport: 'tcp',
           enabled: true,
           host: 'abc.com',
           port: 443,
@@ -116,6 +117,31 @@ describe('Config#init', function () {
     expect(__IS_SERVER__).toBe(true);
   });
 
+  it('should __IS_CLIENT__ set to true, if servers provided', function () {
+    Config.init({
+      host: 'localhost',
+      port: 1080,
+      servers: [{
+        enabled: true,
+        transport: 'tcp',
+        host: 'localhost',
+        port: 1081,
+        key: 'abc',
+        presets: [{
+          name: 'ss-base',
+          params: {}
+        }, {
+          name: 'ss-stream-cipher',
+          params: {
+            method: 'aes-128-cfb'
+          }
+        }]
+      }],
+      timeout: 300
+    });
+    expect(__IS_CLIENT__).toBe(true);
+  });
+
 });
 
 describe('Config#initServer', function () {
@@ -180,7 +206,23 @@ describe('Config#initServer', function () {
         port: 123,
         key: 'secret',
         presets: [{
-          name: ''
+          name: '',
+          params: {}
+        }]
+      });
+    }).toThrow();
+  });
+
+  it('should throw when server.preset[].params is not an object', function () {
+    expect(function () {
+      Config.initServer({
+        transport: 'tcp',
+        host: 'abc',
+        port: 123,
+        key: 'secret',
+        presets: [{
+          name: 'a',
+          params: ''
         }]
       });
     }).toThrow();

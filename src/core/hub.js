@@ -24,7 +24,7 @@ export class Hub {
   _isClosed = false;
 
   constructor(config) {
-    if (config) {
+    if (typeof config !== 'undefined') {
       Config.init(config);
     }
     this._hub = net.createServer();

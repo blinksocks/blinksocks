@@ -26,29 +26,22 @@ function mkdir(dir) {
 
 export class Config {
 
-  static init(json) {
+  static validate(json) {
     if (typeof json !== 'object' || Array.isArray(json)) {
       throw Error('Invalid configuration file');
     }
 
     // host
-
     if (typeof json.host !== 'string' || json.host === '') {
       throw Error('\'host\' must be provided and is not empty');
     }
 
-    global.__LOCAL_HOST__ = json.host;
-
     // port
-
     if (!isValidPort(json.port)) {
       throw Error('\'port\' is invalid');
     }
 
-    global.__LOCAL_PORT__ = json.port;
-
     // servers
-
     if (typeof json.servers !== 'undefined') {
 
       if (!Array.isArray(json.servers)) {
@@ -61,18 +54,13 @@ export class Config {
         throw Error('\'servers\' must have at least one enabled item');
       }
 
-      global.__SERVERS__ = servers;
+      servers.forEach(this.validateServer);
 
-      global.__IS_SERVER__ = false;
-      global.__IS_CLIENT__ = true;
     } else {
-      global.__IS_SERVER__ = true;
-      global.__IS_CLIENT__ = false;
-      this.initServer(json);
+      this.validateServer(json);
     }
 
     // redirect
-
     if (typeof json.redirect === 'string' && json.redirect !== '') {
       const address = json.redirect.split(':');
       if (address.length !== 2 || !isValidPort(+address[1])) {
@@ -80,10 +68,7 @@ export class Config {
       }
     }
 
-    global.__REDIRECT__ = json.redirect;
-
     // timeout
-
     if (typeof json.timeout !== 'number') {
       throw Error('\'timeout\' must be a number');
     }
@@ -95,24 +80,10 @@ export class Config {
     if (json.timeout < 60) {
       console.warn(`==> [config] 'timeout' is too short, is ${json.timeout}s expected?`);
     }
-
-    global.__TIMEOUT__ = json.timeout;
-
-    // profile
-    global.__PROFILE__ = !!json.profile;
-
-    // watch
-    global.__IS_WATCH__ = !!json.watch;
-
-    // log_level
-    global.__LOG_LEVEL__ = this.setUpLogger(json.log_level || DEFAULT_LOG_LEVEL);
-
-    global.__ALL_CONFIG__ = json;
   }
 
-  static initServer(server) {
+  static validateServer(server) {
     // transport
-
     if (typeof server.transport !== 'string') {
       throw Error('\'server.transport\' must be a string');
     }
@@ -121,26 +92,17 @@ export class Config {
       throw Error('\'server.transport\' must be one of "tcp" or "udp"');
     }
 
-    global.__TRANSPORT__ = server.transport;
-
     // host
-
     if (typeof server.host !== 'string' || server.host === '') {
       throw Error('\'server.host\' must be provided and is not empty');
     }
 
-    global.__SERVER_HOST__ = server.host;
-
     // port
-
     if (!isValidPort(server.port)) {
       throw Error('\'server.port\' is invalid');
     }
 
-    global.__SERVER_PORT__ = server.port;
-
     // key
-
     if (typeof server.key !== 'string') {
       throw Error('\'server.key\' must be a string');
     }
@@ -149,10 +111,7 @@ export class Config {
       throw Error('\'server.key\' cannot be empty');
     }
 
-    global.__KEY__ = server.key;
-
-    // presets & presets' parameters
-
+    // presets
     if (!Array.isArray(server.presets)) {
       throw Error('\'server.presets\' must be an array');
     }
@@ -161,6 +120,7 @@ export class Config {
       throw Error('\'server.presets\' must contain at least one preset');
     }
 
+    // presets[].parameters
     for (const preset of server.presets) {
       const {name, params} = preset;
 
@@ -172,6 +132,10 @@ export class Config {
         throw Error('\'server.presets[].name\' cannot be empty');
       }
 
+      if (typeof params !== 'object') {
+        throw Error('\'server.presets[].params\' must be an object');
+      }
+
       // 1. check for the existence of the preset
       const ps = require(`../presets/${preset.name}`).default;
 
@@ -180,7 +144,39 @@ export class Config {
         delete new ps(params || {});
       }
     }
+  }
 
+  static init(json) {
+    this.validate(json);
+
+    global.__LOCAL_HOST__ = json.host;
+    global.__LOCAL_PORT__ = json.port;
+
+    if (typeof json.servers !== 'undefined') {
+      global.__SERVERS__ = json.servers;
+      global.__IS_SERVER__ = false;
+      global.__IS_CLIENT__ = true;
+    } else {
+      global.__IS_SERVER__ = true;
+      global.__IS_CLIENT__ = false;
+      this.initServer(json);
+    }
+
+    global.__REDIRECT__ = json.redirect;
+    global.__TIMEOUT__ = json.timeout;
+    global.__PROFILE__ = !!json.profile;
+    global.__IS_WATCH__ = !!json.watch;
+    global.__LOG_LEVEL__ = this.setUpLogger(json.log_level || DEFAULT_LOG_LEVEL);
+    global.__ALL_CONFIG__ = json;
+  }
+
+  static initServer(server) {
+    this.validateServer(server);
+
+    global.__TRANSPORT__ = server.transport;
+    global.__SERVER_HOST__ = server.host;
+    global.__SERVER_PORT__ = server.port;
+    global.__KEY__ = server.key;
     global.__PRESETS__ = server.presets;
   }
 
