@@ -5,6 +5,7 @@ import {Message} from '../common';
 // |  Host: www.bing.com:443\r\n            |
 // |  [...Headers]                          |
 // |  \r\n                                  |
+// |  \r\n                                  |
 // +----------------------------------------+
 export class HttpRequestMessage extends Message {
 
@@ -34,7 +35,7 @@ export class HttpRequestMessage extends Message {
     const str = buffer.toString();
     const lines = str.split('\r\n');
 
-    if (lines.length < 2) {
+    if (lines.length < 4) {
       return null;
     }
 
@@ -44,13 +45,18 @@ export class HttpRequestMessage extends Message {
       'PUT', 'DELETE', 'TRACE', 'CONNECT'
     ];
     if (methods.includes(method)) {
-      const host = lines[1].split(' ')[1];
-      return new HttpRequestMessage({
-        METHOD: Buffer.from(method),
-        URI: Buffer.from(uri),
-        VERSION: Buffer.from(version),
-        HOST: Buffer.from(host)
-      });
+      const headers = lines.slice(1, -2);
+      for (const header of headers) {
+        if (header.startsWith('Host: ')) {
+          const host = header.split(' ')[1];
+          return new HttpRequestMessage({
+            METHOD: Buffer.from(method),
+            URI: Buffer.from(uri),
+            VERSION: Buffer.from(version),
+            HOST: Buffer.from(host)
+          });
+        }
+      }
     }
     return null;
   }
