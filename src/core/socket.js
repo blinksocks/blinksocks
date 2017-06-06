@@ -58,33 +58,35 @@ export class Socket {
   // +---+-----------------------+---+
   _tracks = []; // [`target`, 'u', '20', 'u', '20', 'd', '10', ...]
 
-  _timeout = 0;
-
-  _timeout_timer = null;
-
   constructor({id, socket, onClose}) {
     this.onError = this.onError.bind(this);
+    this.onBackwardSocketTimeout = this.onBackwardSocketTimeout.bind(this);
+    this.onForwardSocketTimeout = this.onForwardSocketTimeout.bind(this);
     this.onBackwardSocketClose = this.onBackwardSocketClose.bind(this);
     this.onForwardSocketClose = this.onForwardSocketClose.bind(this);
     this.onForward = this.onForward.bind(this);
     this.onBackward = this.onBackward.bind(this);
     this._id = id;
     this._onClose = onClose;
+    this._remoteAddress = socket.remoteAddress;
+    this._remotePort = socket.remotePort;
     this._bsocket = socket;
     this._bsocket.on('error', this.onError);
     this._bsocket.on('close', this.onBackwardSocketClose);
+    this._bsocket.on('timeout', this.onBackwardSocketTimeout.bind(this, {
+      host: this._remoteAddress,
+      port: this._remotePort
+    }));
     this._bsocket.on('data', this.onForward);
-    this._remoteAddress = socket.remoteAddress;
-    this._remotePort = socket.remotePort;
+    this._bsocket.setTimeout(__TIMEOUT__ * 1e3);
     if (__IS_SERVER__) {
-      this._tracks.push(`${socket.remoteAddress}:${socket.remotePort}`);
+      this._tracks.push(`${this._remoteAddress}:${this._remotePort}`);
       this.createPipe();
     } else {
       this._proxy = new ClientProxy({
         onHandshakeDone: this.onHandshakeDone.bind(this)
       });
     }
-    this.setupTimeout();
   }
 
   // getters
@@ -100,9 +102,6 @@ export class Socket {
   // events
 
   onForward(buffer) {
-    // reset timeout
-    this._timeout = __TIMEOUT__;
-
     if (__IS_CLIENT__) {
       if (!this._proxy.isDone()) {
         // client handshake(multiple-protocols)
@@ -122,9 +121,6 @@ export class Socket {
   }
 
   onBackward(buffer) {
-    // reset timeout
-    this._timeout = __TIMEOUT__;
-
     if (__IS_CLIENT__) {
       this.clientIn(buffer);
     } else {
@@ -142,6 +138,11 @@ export class Socket {
     Profile.errors += 1;
   }
 
+  onForwardSocketTimeout({host, port}) {
+    logger.warn(`[socket] [${host}:${port}] timeout: no I/O on the connection for ${__TIMEOUT__}s`);
+    this.onForwardSocketClose();
+  }
+
   onForwardSocketClose() {
     if (this._fsocket !== null && !this._fsocket.destroyed) {
       this._fsocket.destroy();
@@ -152,15 +153,20 @@ export class Socket {
     this._fsocket = null;
   }
 
+  onBackwardSocketTimeout({host, port}) {
+    logger.warn(`[socket] [${host}:${port}] timeout: no I/O on the connection for ${__TIMEOUT__}s`);
+    this.onBackwardSocketClose();
+  }
+
   onBackwardSocketClose() {
     if (this._bsocket !== null && !this._bsocket.destroyed) {
       this._bsocket.destroy();
     }
+    // NOTE: close forward socket when backward socket is closed, does it matter?
     this.onForwardSocketClose();
     if (__IS_SERVER__ && this._tracks.length > 0) {
       this.dumpTrack();
     }
-    clearInterval(this._timeout_timer);
     this._bsocket = null;
     this._onClose(this); // notify hub to remove this one
   }
@@ -251,9 +257,6 @@ export class Socket {
   // fsocket and bsocket
 
   send(direction, buffer) {
-    // reset timeout
-    this._timeout = __TIMEOUT__;
-
     if (direction === MIDDLEWARE_DIRECTION_UPWARD) {
       if (__IS_CLIENT__) {
         this.clientForward(buffer);
@@ -321,7 +324,9 @@ export class Socket {
         this._fsocket = net.connect({host: ip, port}, callback);
         this._fsocket.on('error', this.onError);
         this._fsocket.on('close', this.onForwardSocketClose);
+        this._fsocket.on('timeout', this.onForwardSocketTimeout.bind(this, {host, port}));
         this._fsocket.on('data', this.onBackward);
+        this._fsocket.setTimeout(__TIMEOUT__ * 1e3);
       } catch (err) {
         logger.error(`[socket] [${this.remote}] connect to ${host}:${port} failed due to: ${err.message}`);
       }
@@ -392,20 +397,6 @@ export class Socket {
   }
 
   // methods
-
-  /**
-   * initialize timeout
-   */
-  setupTimeout() {
-    this._timeout = __TIMEOUT__;
-    this._timeout_timer = setInterval(() => {
-      if (--this._timeout < 1) {
-        logger.warn(`[socket] [${this.remote}] timeout: no I/O on the connection for ${__TIMEOUT__}s`);
-        this.onForwardSocketClose();
-        this.onBackwardSocketClose();
-      }
-    }, 1e3);
-  }
 
   /**
    * print connection track string, and only record the
