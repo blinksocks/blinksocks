@@ -10,8 +10,6 @@
 [![Coverage](https://img.shields.io/codecov/c/github/blinksocks/blinksocks/master.svg)](https://codecov.io/gh/blinksocks/blinksocks)
 [![%e2%9d%a4](https://img.shields.io/badge/made%20with-%e2%9d%a4-ff69b4.svg)](https://github.com/blinksocks/blinksocks)
 
-[![micooz/blinksocks](http://dockeri.co/image/micooz/blinksocks)](https://hub.docker.com/r/micooz/blinksocks/)
-
 Yet another secure proxy, designed for speed :zap:. Inspired by [Shadowsocks](https://shadowsocks.org),
 and [ShadowsocksR](https://github.com/shadowsocksr/shadowsocksr).
 
@@ -23,9 +21,13 @@ and [ShadowsocksR](https://github.com/shadowsocksr/shadowsocksr).
 * Partially compatible with **shadowsocks** [#27](https://github.com/blinksocks/blinksocks/issues/27)
 * Flexible, customizable and pluggable
 * Running on Linux based, Windows and macOS
-* Docker integration
 * Dynamic server switch
 * Presets composition
+
+## GUI ready
+
+For desktop use, you can download official [blinksocks-desktop](https://github.com/blinksocks/blinksocks-desktop),
+a cross-platform GUI for blinksocks.
 
 ## Quick Start
 
