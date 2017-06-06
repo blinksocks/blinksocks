@@ -28,6 +28,7 @@ const dnsCache = DNSCache.create();
 const TRACK_CHAR_UPLOAD = '↑';
 const TRACK_CHAR_DOWNLOAD = '↓';
 const TRACK_MAX_SIZE = 40;
+const MAX_BUFFERED_SIZE = 1024 * 1024; // 1MB
 
 let lastServer = null;
 
@@ -59,13 +60,15 @@ export class Socket {
   _tracks = []; // [`target`, 'u', '20', 'u', '20', 'd', '10', ...]
 
   constructor({id, socket, onClose}) {
-    this.onError = this.onError.bind(this);
-    this.onBackwardSocketTimeout = this.onBackwardSocketTimeout.bind(this);
-    this.onForwardSocketTimeout = this.onForwardSocketTimeout.bind(this);
-    this.onBackwardSocketClose = this.onBackwardSocketClose.bind(this);
-    this.onForwardSocketClose = this.onForwardSocketClose.bind(this);
     this.onForward = this.onForward.bind(this);
     this.onBackward = this.onBackward.bind(this);
+    this.onError = this.onError.bind(this);
+    this.onBackwardSocketDrain = this.onBackwardSocketDrain.bind(this);
+    this.onBackwardSocketTimeout = this.onBackwardSocketTimeout.bind(this);
+    this.onBackwardSocketClose = this.onBackwardSocketClose.bind(this);
+    this.onForwardSocketDrain = this.onForwardSocketDrain.bind(this);
+    this.onForwardSocketTimeout = this.onForwardSocketTimeout.bind(this);
+    this.onForwardSocketClose = this.onForwardSocketClose.bind(this);
     this._id = id;
     this._onClose = onClose;
     this._remoteAddress = socket.remoteAddress;
@@ -78,6 +81,7 @@ export class Socket {
       port: this._remotePort
     }));
     this._bsocket.on('data', this.onForward);
+    this._bsocket.on('drain', this.onBackwardSocketDrain);
     this._bsocket.setTimeout(__TIMEOUT__ * 1e3);
     if (__IS_SERVER__) {
       this._tracks.push(`${this._remoteAddress}:${this._remotePort}`);
@@ -118,6 +122,11 @@ export class Socket {
       this.serverIn(buffer);
     }
     Profile.totalIn += buffer.length;
+    // throttle receiving data to reduce memory grow:
+    // https://github.com/blinksocks/blinksocks/issues/60
+    if (this._fsocket.bufferSize >= MAX_BUFFERED_SIZE) {
+      this._bsocket.pause();
+    }
   }
 
   onBackward(buffer) {
@@ -131,11 +140,22 @@ export class Socket {
       }
       this.serverOut(buffer);
     }
+    // throttle receiving data to reduce memory grow:
+    // https://github.com/blinksocks/blinksocks/issues/60
+    if (this._bsocket.bufferSize >= MAX_BUFFERED_SIZE) {
+      this._fsocket.pause();
+    }
   }
 
   onError(err) {
     logger.warn(`[socket] [${this.remote}] ${err.code} - ${err.message}`);
     Profile.errors += 1;
+  }
+
+  onForwardSocketDrain() {
+    if (this._bsocket !== null && !this._bsocket.destroyed) {
+      this._bsocket.resume();
+    }
   }
 
   onForwardSocketTimeout({host, port}) {
@@ -151,6 +171,12 @@ export class Socket {
       this.dumpTrack();
     }
     this._fsocket = null;
+  }
+
+  onBackwardSocketDrain() {
+    if (this._fsocket !== null && !this._fsocket.destroyed) {
+      this._fsocket.resume();
+    }
   }
 
   onBackwardSocketTimeout({host, port}) {
@@ -274,7 +300,7 @@ export class Socket {
   }
 
   clientForward(buffer) {
-    if (this._fsocket !== null && !this._fsocket.destroyed) {
+    if (this._fsocket !== null && !this._fsocket.destroyed && this._fsocket.writable) {
       this._fsocket.write(buffer);
       this._tracks.push(TRACK_CHAR_UPLOAD);
       this._tracks.push(buffer.length);
@@ -282,13 +308,13 @@ export class Socket {
   }
 
   serverForward(buffer) {
-    if (this._fsocket !== null && !this._fsocket.destroyed) {
+    if (this._fsocket !== null && !this._fsocket.destroyed && this._fsocket.writable) {
       this._fsocket.write(buffer);
     }
   }
 
   serverBackward(buffer) {
-    if (this._bsocket !== null && !this._bsocket.destroyed) {
+    if (this._bsocket !== null && !this._bsocket.destroyed && this._bsocket.writable) {
       this._bsocket.write(buffer);
       this._tracks.push(TRACK_CHAR_UPLOAD);
       this._tracks.push(buffer.length);
@@ -296,7 +322,7 @@ export class Socket {
   }
 
   clientBackward(buffer) {
-    if (this._bsocket !== null && !this._bsocket.destroyed) {
+    if (this._bsocket !== null && !this._bsocket.destroyed && this._bsocket.writable) {
       this._bsocket.write(buffer);
     }
   }
@@ -326,6 +352,7 @@ export class Socket {
         this._fsocket.on('close', this.onForwardSocketClose);
         this._fsocket.on('timeout', this.onForwardSocketTimeout.bind(this, {host, port}));
         this._fsocket.on('data', this.onBackward);
+        this._fsocket.on('drain', this.onForwardSocketDrain);
         this._fsocket.setTimeout(__TIMEOUT__ * 1e3);
       } catch (err) {
         logger.error(`[socket] [${this.remote}] connect to ${host}:${port} failed due to: ${err.message}`);
