@@ -103,6 +103,14 @@ export class Socket {
     return `${this._remoteAddress}:${this._remotePort}`;
   }
 
+  get fsocketWritable() {
+    return this._fsocket !== null && !this._fsocket.destroyed && this._fsocket.writable;
+  }
+
+  get bsocketWritable() {
+    return this._bsocket !== null && !this._bsocket.destroyed && this._bsocket.writable;
+  }
+
   // events
 
   onForward(buffer) {
@@ -116,7 +124,7 @@ export class Socket {
     } else {
       if (this._isRedirect) {
         // server redirect
-        this._fsocket && this._fsocket.write(buffer);
+        this.fsocketWritable && this._fsocket.write(buffer);
         return;
       }
       this.serverIn(buffer);
@@ -135,7 +143,7 @@ export class Socket {
     } else {
       if (this._isRedirect) {
         // server redirect
-        this._bsocket && this._bsocket.write(buffer);
+        this.bsocketWritable && this._bsocket.write(buffer);
         return;
       }
       this.serverOut(buffer);
@@ -226,18 +234,18 @@ export class Socket {
   clientOut(buffer) {
     let _buffer = buffer;
 
-    // udp compatible
-    if (this._socksUdpReady) {
-      const request = UdpRequestMessage.parse(buffer);
-      if (request !== null) {
-        _buffer = request.DATA; // just drop RSV and FRAG
-      } else {
-        logger.warn(`[socket] [${this.remote}] -x-> dropped unidentified packet ${buffer.length} bytes`);
-        return;
-      }
-    }
+    // TODO: udp compatible
+    // if (this._socksUdpReady) {
+    //   const request = UdpRequestMessage.parse(buffer);
+    //   if (request !== null) {
+    //     _buffer = request.DATA; // just drop RSV and FRAG
+    //   } else {
+    //     logger.warn(`[socket] [${this.remote}] -x-> dropped unidentified packet ${buffer.length} bytes`);
+    //     return;
+    //   }
+    // }
 
-    if (this._fsocket !== null && !this._fsocket.destroyed) {
+    if (this.fsocketWritable) {
       try {
         this._pipe.feed(MIDDLEWARE_DIRECTION_UPWARD, _buffer);
       } catch (err) {
@@ -247,7 +255,7 @@ export class Socket {
   }
 
   serverIn(buffer) {
-    if ((this._fsocket !== null && !this._fsocket.destroyed) || !this._isHandshakeDone) {
+    if (this.fsocketWritable || !this._isHandshakeDone) {
       try {
         this._pipe.feed(MIDDLEWARE_DIRECTION_DOWNWARD, buffer);
         this._tracks.push(TRACK_CHAR_DOWNLOAD);
@@ -259,7 +267,7 @@ export class Socket {
   }
 
   serverOut(buffer) {
-    if (this._bsocket !== null && !this._bsocket.destroyed) {
+    if (this.bsocketWritable) {
       try {
         this._pipe.feed(MIDDLEWARE_DIRECTION_UPWARD, buffer);
       } catch (err) {
@@ -269,7 +277,7 @@ export class Socket {
   }
 
   clientIn(buffer) {
-    if (this._bsocket !== null && !this._bsocket.destroyed) {
+    if (this.bsocketWritable) {
       try {
         this._pipe.feed(MIDDLEWARE_DIRECTION_DOWNWARD, buffer);
         this._tracks.push(TRACK_CHAR_DOWNLOAD);
@@ -300,7 +308,7 @@ export class Socket {
   }
 
   clientForward(buffer) {
-    if (this._fsocket !== null && !this._fsocket.destroyed && this._fsocket.writable) {
+    if (this.fsocketWritable) {
       this._fsocket.write(buffer);
       this._tracks.push(TRACK_CHAR_UPLOAD);
       this._tracks.push(buffer.length);
@@ -308,13 +316,13 @@ export class Socket {
   }
 
   serverForward(buffer) {
-    if (this._fsocket !== null && !this._fsocket.destroyed && this._fsocket.writable) {
+    if (this.fsocketWritable) {
       this._fsocket.write(buffer);
     }
   }
 
   serverBackward(buffer) {
-    if (this._bsocket !== null && !this._bsocket.destroyed && this._bsocket.writable) {
+    if (this.bsocketWritable) {
       this._bsocket.write(buffer);
       this._tracks.push(TRACK_CHAR_UPLOAD);
       this._tracks.push(buffer.length);
@@ -322,7 +330,7 @@ export class Socket {
   }
 
   clientBackward(buffer) {
-    if (this._bsocket !== null && !this._bsocket.destroyed && this._bsocket.writable) {
+    if (this.bsocketWritable) {
       this._bsocket.write(buffer);
     }
   }
@@ -410,7 +418,7 @@ export class Socket {
       logger.error(`[socket] [${this.remote}] connection is redirected to ${host}:${port} due to: ${message}`);
       this.connect({host, port}, () => {
         this._isRedirect = true;
-        this._fsocket.write(orgData);
+        this.fsocketWritable && this._fsocket.write(orgData);
       });
     } else {
       const timeout = getRandomInt(10, 40);
