@@ -38,7 +38,7 @@
     "babel-jest": "^20.0.3",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-object-rest-spread": "^6.23.0",
-    "babel-preset-env": "^1.5.1",
+    "babel-preset-env": "^1.5.2",
     "babel-register": "^6.24.1",
     "eslint": "^3.19.0",
     "eslint-config-babel": "^6.0.0",
