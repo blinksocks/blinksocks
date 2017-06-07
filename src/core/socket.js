@@ -19,9 +19,9 @@ import {
   PROCESSING_FAILED
 } from '../presets/defs';
 
-import {
-  UdpRequestMessage
-} from '../proxies/socks5';
+// import {
+//   UdpRequestMessage
+// } from '../proxies/socks5';
 
 const dnsCache = DNSCache.create();
 
@@ -232,7 +232,7 @@ export class Socket {
   // pipe chain
 
   clientOut(buffer) {
-    let _buffer = buffer;
+    // let _buffer = buffer;
 
     // TODO: udp compatible
     // if (this._socksUdpReady) {
@@ -247,7 +247,7 @@ export class Socket {
 
     if (this.fsocketWritable) {
       try {
-        this._pipe.feed(MIDDLEWARE_DIRECTION_UPWARD, _buffer);
+        this._pipe.feed(MIDDLEWARE_DIRECTION_UPWARD, buffer);
       } catch (err) {
         logger.error(`[socket] [${this.remote}]`, err);
       }
