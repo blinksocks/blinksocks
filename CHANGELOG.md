@@ -2,12 +2,20 @@
 
 
 
+## [v2.4.5](https://github.com/blinksocks/blinksocks/tree/v2.4.5) (2017-06-08)
+[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.4...v2.4.5)
+
+#### Features:
+
+- Use socket.setTimeout to detect connection timeout [#61](https://github.com/blinksocks/blinksocks/issues/61)
+- Throttle uploads to reduce memory grow heavily when upload/download large files [#60](https://github.com/blinksocks/blinksocks/issues/60)
+
 ## [v2.4.4](https://github.com/blinksocks/blinksocks/tree/v2.4.4) (2017-06-03)
 [Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.3...v2.4.4)
 
 #### Fixes (bugs & defects):
 
-- HTTP proxy doesn't work on Windows [#59](https://github.com/blinksocks/blinksocks/issues/59)
+- HTTP proxy dosen't work on Windows [#59](https://github.com/blinksocks/blinksocks/issues/59)
 
 ## [v2.4.3](https://github.com/blinksocks/blinksocks/tree/v2.4.3) (2017-06-02)
 [Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.2...v2.4.3)
