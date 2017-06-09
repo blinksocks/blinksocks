@@ -2,6 +2,13 @@
 
 
 
+## [v2.4.6](https://github.com/blinksocks/blinksocks/tree/v2.4.6) (2017-06-09)
+[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.5...v2.4.6)
+
+#### Fixes (bugs & defects):
+
+- TypeError: Cannot read property 'bufferSize' of null [#64](https://github.com/blinksocks/blinksocks/issues/64)
+
 ## [v2.4.5](https://github.com/blinksocks/blinksocks/tree/v2.4.5) (2017-06-08)
 [Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.4...v2.4.5)
 
