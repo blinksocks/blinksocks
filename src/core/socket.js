@@ -132,7 +132,7 @@ export class Socket {
     Profile.totalIn += buffer.length;
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
-    if (this._fsocket.bufferSize >= MAX_BUFFERED_SIZE) {
+    if (this._fsocket && this._fsocket.bufferSize >= MAX_BUFFERED_SIZE) {
       this._bsocket.pause();
     }
   }
@@ -150,7 +150,7 @@ export class Socket {
     }
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
-    if (this._bsocket.bufferSize >= MAX_BUFFERED_SIZE) {
+    if (this._bsocket && this._bsocket.bufferSize >= MAX_BUFFERED_SIZE) {
       this._fsocket.pause();
     }
   }
