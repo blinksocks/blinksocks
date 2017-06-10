@@ -18,7 +18,7 @@
     "test": "npm run lint && npm run test:coverage",
     "test:coverage": "jest --coverage",
     "lint": "eslint bin src",
-    "compile": "babel src --out-dir lib --minified --ignore spec.js,test.js",
+    "compile": "babel src --out-dir lib --minified --ignore __tests__,__mocks__",
     "server:dev": "babel-node bin/bootstrap.js --config server.config.json",
     "client:dev": "babel-node bin/bootstrap.js --config client.config.json",
     "server:prod": "node bin/cli.js --config server.config.json",
