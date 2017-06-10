@@ -1,16 +1,6 @@
 jest.mock('fs');
 
 import {Config} from '../config';
-import {DEFAULT_LOG_LEVEL} from '../constants';
-
-beforeEach(function () {
-  const fs = require('fs');
-  fs.lstatSync = () => {
-    const err = new Error();
-    err.code = 'ENOENT';
-    throw err;
-  };
-});
 
 describe('Config#init', function () {
 
@@ -227,18 +217,6 @@ describe('Config#initServer', function () {
         }]
       });
     }).toThrow();
-  });
-
-});
-
-describe('Config#setUpLogger', function () {
-
-  it('should set log level to DEFAULT_LOG_LEVEL', function () {
-    expect(Config.setUpLogger()).toBe(DEFAULT_LOG_LEVEL);
-  });
-
-  it('should set log level to silly', function () {
-    expect(Config.setUpLogger('silly')).toBe('silly');
   });
 
 });
