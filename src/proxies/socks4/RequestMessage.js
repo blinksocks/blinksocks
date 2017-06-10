@@ -96,7 +96,7 @@ export class RequestMessage extends Message {
         return null;
       }
       USERID = fields[0];
-      DSTADDR = fields[1];
+      DSTADDR = Buffer.from(fields[1]);
     }
 
     return new RequestMessage({
