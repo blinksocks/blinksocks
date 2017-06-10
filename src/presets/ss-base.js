@@ -48,7 +48,7 @@ export default class SSBasePreset extends IPreset {
 
   _atyp = ATYP_V4;
 
-  _addr = null; // buffer
+  _host = null; // buffer
 
   _port = null; // buffer
 
@@ -59,8 +59,15 @@ export default class SSBasePreset extends IPreset {
     if (__IS_CLIENT__) {
       const {type, host, port} = addr;
       this._atyp = type;
-      this._addr = host;
       this._port = port;
+      this._host = host;
+      if (!(host instanceof Buffer)) {
+        if (type === ATYP_DOMAIN) {
+          this._host = Buffer.from(host);
+        } else {
+          this._host = ip.toBuffer(host);
+        }
+      }
     }
   }
 
@@ -69,8 +76,8 @@ export default class SSBasePreset extends IPreset {
       this._isHandshakeDone = true;
       return Buffer.from([
         this._atyp,
-        ...(this._atyp === ATYP_DOMAIN) ? numberToBuffer(this._addr.length, 1) : [],
-        ...this._addr,
+        ...(this._atyp === ATYP_DOMAIN) ? numberToBuffer(this._host.length, 1) : [],
+        ...this._host,
         ...this._port,
         ...buffer
       ]);

@@ -1,3 +1,4 @@
+import ip from 'ip';
 import {parseURI} from 'blinksocks-utils';
 
 import {
@@ -70,6 +71,9 @@ export class ClientProxy {
           host: DSTADDR.length > 0 ? DSTADDR : DSTIP,
           port: DSTPORT
         };
+        if (addr.type !== ATYP_DOMAIN) {
+          addr.host = ip.toString(addr.host);
+        }
         this.onHandshakeDone(addr, () => {
           // reply success
           const message = new Socks4ReplyMessage({CMD: REPLY_GRANTED});
@@ -101,6 +105,9 @@ export class ClientProxy {
             host: request.DSTADDR,
             port: request.DSTPORT
           };
+          if (addr.type !== ATYP_DOMAIN) {
+            addr.host = ip.toString(addr.host);
+          }
           this.onHandshakeDone(addr, () => {
             // reply success
             const message = new Socks5ReplyMessage({REP: REPLY_SUCCEEDED});
@@ -128,7 +135,6 @@ export class ClientProxy {
     if (request !== null) {
       const {METHOD, HOST} = request;
       const addr = parseURI(HOST.toString());
-
       this.onHandshakeDone(addr, (onForward) => {
         if (METHOD.toString() === 'CONNECT') {
           const message = new ConnectReplyMessage();

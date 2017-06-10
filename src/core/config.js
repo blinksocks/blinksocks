@@ -163,9 +163,8 @@ export class Config {
     global.__TIMEOUT__ = json.timeout;
     global.__PROFILE__ = !!json.profile;
     global.__IS_WATCH__ = !!json.watch;
-    global.__LOG_LEVEL__ = this.getLogLevel(json.log_level);
+    global.__LOG_LEVEL__ = json.log_level || DEFAULT_LOG_LEVEL;
     global.__ALL_CONFIG__ = json;
-
   }
 
   static initServer(server) {
@@ -176,23 +175,6 @@ export class Config {
     global.__SERVER_PORT__ = server.port;
     global.__KEY__ = server.key;
     global.__PRESETS__ = server.presets;
-  }
-
-  static getLogLevel(level = DEFAULT_LOG_LEVEL) {
-    let _level = level.toLowerCase();
-    switch (_level) {
-      case 'silly':
-      case 'debug':
-      case 'verbose':
-      case 'info':
-      case 'warn':
-      case 'error':
-        break;
-      default:
-        _level = DEFAULT_LOG_LEVEL;
-        break;
-    }
-    return _level;
   }
 
 }
