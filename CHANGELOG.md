@@ -2,6 +2,13 @@
 
 
 
+## [v2.4.7](https://github.com/blinksocks/blinksocks/tree/v2.4.7) (2017-06-10)
+[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.6...v2.4.7)
+
+#### Features:
+
+- Instantiating winston logger to improve integration [#65](https://github.com/blinksocks/blinksocks/issues/65)
+
 ## [v2.4.6](https://github.com/blinksocks/blinksocks/tree/v2.4.6) (2017-06-09)
 [Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.5...v2.4.6)
 
