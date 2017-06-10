@@ -22,6 +22,15 @@ $ NODE_ENV=development bin/cli-client.js -c blinksocks.config.js
 $ NODE_ENV=development bin/cli-server.js -c blinksocks.config.js
 ```
 
+Notice that you can change program behaviour using the following environment variants:
+
+| NAME      | VALUE                       |
+| :-------- | :-------------------------- |
+| NODE_ENV  | "development", "production" |
+| RUN_AS    | "server", "client"          |
+
+If **RUN_AS** provided, log file name will be **blinksocks-[RUN_AS].log**, otherwise **blinksocks.log**.
+
 ## Verify
 
 Any application support HTTP/Socks5/Socks4/Socks4a can be used for verification.
