@@ -1,5 +1,5 @@
 import net from 'net';
-import logger from 'winston';
+import logger from './logger';
 
 const QUERY_INTERVAL = 12e4; // 2min
 

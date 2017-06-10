@@ -1,7 +1,7 @@
 import net from 'net';
-import logger from 'winston';
 import isEqual from 'lodash.isequal';
 import {getRandomInt} from 'blinksocks-utils';
+import logger from './logger';
 import {Config} from './config';
 import {ClientProxy} from './client-proxy';
 import {DNSCache} from './dns-cache';
@@ -160,9 +160,14 @@ export class Socket {
     Profile.errors += 1;
   }
 
+  /**
+   * when client/server has no data to forward
+   */
   onForwardSocketDrain() {
     if (this._bsocket !== null && !this._bsocket.destroyed) {
       this._bsocket.resume();
+    } else {
+      this.onForwardSocketClose();
     }
   }
 
@@ -171,9 +176,15 @@ export class Socket {
     this.onForwardSocketClose();
   }
 
+  /**
+   * when server/destination want to close then connection
+   */
   onForwardSocketClose() {
     if (this._fsocket !== null && !this._fsocket.destroyed) {
       this._fsocket.destroy();
+    }
+    if (this._bsocket && this._bsocket.bufferSize <= 0) {
+      this.onBackwardSocketClose();
     }
     if (__IS_CLIENT__ && this._tracks.length > 0) {
       this.dumpTrack();
@@ -181,9 +192,14 @@ export class Socket {
     this._fsocket = null;
   }
 
+  /**
+   * when no incoming data send to client/server
+   */
   onBackwardSocketDrain() {
     if (this._fsocket !== null && !this._fsocket.destroyed) {
       this._fsocket.resume();
+    } else {
+      this.onBackwardSocketClose();
     }
   }
 
@@ -192,12 +208,16 @@ export class Socket {
     this.onBackwardSocketClose();
   }
 
+  /**
+   * when application/client want to close the connection
+   */
   onBackwardSocketClose() {
     if (this._bsocket !== null && !this._bsocket.destroyed) {
       this._bsocket.destroy();
     }
-    // NOTE: close forward socket when backward socket is closed, does it matter?
-    this.onForwardSocketClose();
+    if (this._fsocket && this._fsocket.bufferSize <= 0) {
+      this.onForwardSocketClose();
+    }
     if (__IS_SERVER__ && this._tracks.length > 0) {
       this.dumpTrack();
     }

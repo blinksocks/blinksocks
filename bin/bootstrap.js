@@ -86,7 +86,7 @@ module.exports = function (type, {Hub, Config, Balancer}) {
               console.info('==> [balancer] restarted');
               Balancer.start(__SERVERS__);
             }
-            console.info(JSON.stringify(__ALL_CONFIG__, null, '  '));
+            console.info(JSON.stringify(__ALL_CONFIG__));
           } catch (err) {
             console.error(err);
           }

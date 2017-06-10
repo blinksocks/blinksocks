@@ -1,5 +1,5 @@
 import EventEmitter from 'events';
-import logger from 'winston';
+import logger from './logger';
 
 export const MIDDLEWARE_DIRECTION_UPWARD = 1;
 export const MIDDLEWARE_DIRECTION_DOWNWARD = -1;

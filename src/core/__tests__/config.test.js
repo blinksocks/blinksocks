@@ -1,6 +1,7 @@
 jest.mock('fs');
 
-import {Config, DEFAULT_LOG_LEVEL} from '../config';
+import {Config} from '../config';
+import {DEFAULT_LOG_LEVEL} from '../constants';
 
 beforeEach(function () {
   const fs = require('fs');
