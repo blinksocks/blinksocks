@@ -1,5 +1,5 @@
 import ip from 'ip';
-import {isValidHostname, numberToBuffer} from 'blinksocks-utils';
+import {isValidHostname, numberToBuffer} from '../utils';
 import {IPreset, SOCKET_CONNECT_TO_DST} from './defs';
 
 const ATYP_V4 = 0x01;

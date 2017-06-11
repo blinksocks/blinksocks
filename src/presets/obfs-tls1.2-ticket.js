@@ -6,7 +6,7 @@ import {
   getRandomInt,
   getRandomChunks,
   AdvancedBuffer
-} from 'blinksocks-utils';
+} from '../utils';
 import {IPreset} from './defs';
 
 const TLS_STAGE_HELLO = 1;

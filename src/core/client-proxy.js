@@ -1,5 +1,5 @@
 import ip from 'ip';
-import {parseURI} from 'blinksocks-utils';
+import {parseURI} from '../utils';
 
 import {
   IdentifierMessage,

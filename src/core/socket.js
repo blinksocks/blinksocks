@@ -1,6 +1,6 @@
 import net from 'net';
 import isEqual from 'lodash.isequal';
-import {getRandomInt} from 'blinksocks-utils';
+import {getRandomInt} from '../utils';
 import logger from './logger';
 import {Config} from './config';
 import {ClientProxy} from './client-proxy';

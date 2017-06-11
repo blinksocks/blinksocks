@@ -6,7 +6,7 @@ import {
   numberToBuffer,
   BYTE_ORDER_LE,
   AdvancedBuffer
-} from 'blinksocks-utils';
+} from '../utils';
 import {IPreset} from './defs';
 
 const NONCE_LEN = 12;

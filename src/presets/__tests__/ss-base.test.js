@@ -1,4 +1,4 @@
-import {numberToBuffer} from 'blinksocks-utils';
+import {numberToBuffer} from '../../utils';
 import SSBasePreset from '../ss-base';
 
 describe('SSBasePreset#constructor', function () {

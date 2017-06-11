@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import {EVP_BytesToKey} from 'blinksocks-utils';
+import {EVP_BytesToKey} from '../utils';
 import {IPreset} from './defs';
 
 const IV_LEN = 16;

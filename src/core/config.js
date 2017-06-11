@@ -1,7 +1,7 @@
 import dns from 'dns';
 import fs from 'fs';
 import net from 'net';
-import {isValidPort} from 'blinksocks-utils';
+import {isValidPort} from '../utils';
 import {BLINKSOCKS_DIR, LOG_DIR, DEFAULT_LOG_LEVEL} from './constants';
 
 /**

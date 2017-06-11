@@ -26,10 +26,10 @@
     "precommit": "npm test"
   },
   "dependencies": {
-    "blinksocks-utils": "^0.0.3",
     "commander": "^2.9.0",
     "ip": "^1.1.5",
     "lodash.isequal": "^4.5.0",
+    "urijs": "^1.18.10",
     "winston": "^2.3.1"
   },
   "devDependencies": {
