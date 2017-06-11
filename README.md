@@ -51,6 +51,7 @@ module.exports = {
       {name: "ss-aead-cipher", params: {method: "aes-256-gcm", info: "ss-subkey"}}
     ]
   }],
+  dns: ['8.8.8.8'],
   timeout: 600,
   profile: false,
   watch: true,

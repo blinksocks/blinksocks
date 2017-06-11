@@ -61,6 +61,9 @@ module.exports = {
     }
   ],
 
+  // an ip list of DNS server
+  dns: [],
+
   // close inactive connection after timeout seconds
   timeout: 600,
 
@@ -114,6 +117,9 @@ module.exports = {
       }
     }
   ],
+
+  // an ip list of DNS server
+  dns: [],
 
   // redirect data to here once preset fail to process(server side only)
   // Should be formed with "host:port".
@@ -203,3 +209,19 @@ from client.
 ```
 
 If `redirect` is not provided, connection will be closed after random seconds when server fail to process.
+
+## Custom DNS servers
+
+If you encounter **ENOTFOUND** every now and then, you would better custom dns servers via `dns` options:
+
+```
+{
+  ...
+  "dns": ["8.8.8.8"]
+  ...
+}
+```
+
+If no `dns` option or no ip provided in `dns`, blinksocks use system dns settings as usual.
+
+See: https://github.com/blinksocks/blinksocks/issues/66

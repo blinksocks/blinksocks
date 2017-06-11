@@ -1,4 +1,6 @@
+import dns from 'dns';
 import fs from 'fs';
+import net from 'net';
 import {isValidPort} from 'blinksocks-utils';
 import {BLINKSOCKS_DIR, LOG_DIR, DEFAULT_LOG_LEVEL} from './constants';
 
@@ -56,6 +58,17 @@ export class Config {
 
     } else {
       this.validateServer(json);
+    }
+
+    if (typeof json.dns !== 'undefined') {
+      if (!Array.isArray(json.dns)) {
+        throw Error('\'dns\' must be an array');
+      }
+      for (const ip of json.dns) {
+        if (!net.isIP(ip)) {
+          throw Error(`"${ip}" is not an ip address`);
+        }
+      }
     }
 
     // redirect
@@ -165,6 +178,11 @@ export class Config {
     global.__IS_WATCH__ = !!json.watch;
     global.__LOG_LEVEL__ = json.log_level || DEFAULT_LOG_LEVEL;
     global.__ALL_CONFIG__ = json;
+
+    if (typeof json.dns !== 'undefined' && json.dns.length > 0) {
+      global.__DNS__ = json.dns;
+      dns.setServers(json.dns);
+    }
   }
 
   static initServer(server) {

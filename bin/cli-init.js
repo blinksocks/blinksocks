@@ -68,6 +68,9 @@ const clientJs = `module.exports = {
     }
   ],
 
+  // an ip list of DNS server
+  dns: [],
+
   // close inactive connection after timeout seconds
   timeout: 600,
 
@@ -118,6 +121,9 @@ const serverJs = `module.exports = {
       }
     }
   ],
+
+  // an ip list of DNS server
+  dns: [],
 
   // redirect data to here once preset fail to process(server side only)
   // Should be formed with "host:port".

@@ -85,6 +85,23 @@ describe('Config#init', function () {
     }).not.toThrow();
   });
 
+  it('should throw when dns is provided but invalid', function () {
+    const conf = {
+      transport: 'tcp',
+      host: 'localhost',
+      port: 1080,
+      key: 'abc',
+      presets: [{name: 'ss-base', params: {}}],
+      timeout: 600
+    };
+    expect(() => Config.init({...conf, dns: null})).toThrow();
+    expect(() => Config.init({...conf, dns: ['']})).toThrow();
+    expect(() => Config.init({...conf, dns: ['localhost']})).toThrow();
+
+    expect(() => Config.init({...conf, dns: []})).not.toThrow();
+    expect(() => Config.init({...conf, dns: ['8.8.8.8']})).not.toThrow();
+  });
+
   // others
 
   it('should __IS_SERVER__ set to true, if no servers provided', function () {
