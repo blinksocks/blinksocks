@@ -88,7 +88,7 @@ export default class AeadRandomCipherPreset extends IPreset {
   _decipherNonce = 0;
 
   // sorry for bad naming,
-  // this is used for determining if the current chunk had dropped random padding or not.
+  // this is used for determining if the current chunk had dropped random padding.
   // please check out onReceiving()
   _nextExpectDecipherNonce = 0;
 
@@ -108,8 +108,8 @@ export default class AeadRandomCipherPreset extends IPreset {
     if (typeof factor === 'undefined') {
       factor = DEFAULT_FACTOR;
     } else {
-      if (typeof factor !== 'number') {
-        throw Error('\'factor\' must be a number.');
+      if (!Number.isInteger(factor)) {
+        throw Error('\'factor\' must be an integer.');
       }
       if (factor < 1 || factor > 10) {
         throw Error('\'factor\' must be in [1, 10].');
