@@ -44,6 +44,17 @@ aes-128-gcm, aes-192-gcm, aes-256-gcm
 If you want to work with shadowsocks client/server, the `info` must be **"ss-subkey"** without quotes.
 Otherwise, it can be any string.
 
+## [aead-random-cipher](../../src/presets/aead-random-cipher.js)
+
+This preset is based on **ss-aead-cipher**, but added random padding in the front of **each chunk**. This preset inherited
+all features from **ss-aead-cipher** and prevent server from being detected by packet length statistics analysis.
+
+| PARAMS           | DESCRIPTION                              |
+| :--------------- | :--------------------------------------- |
+| method           | encryption and decryption method         |
+| info             | a string to generate subkey              |
+| factor(optional) | random padding length = (0-255) * factor |
+
 ## [obfs-http](../../src/presets/obfs-http.js)
 
 A http obfuscator, the first round after TCP handshake will wrap data within a random http header
