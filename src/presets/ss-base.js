@@ -61,13 +61,6 @@ export default class SSBasePreset extends IPreset {
       this._atyp = type;
       this._port = port;
       this._host = host;
-      if (!(host instanceof Buffer)) {
-        if (type === ATYP_DOMAIN) {
-          this._host = Buffer.from(host);
-        } else {
-          this._host = ip.toBuffer(host);
-        }
-      }
     }
   }
 

@@ -1,34 +1,6 @@
 import {numberToBuffer} from '../../utils';
 import SSBasePreset from '../ss-base';
 
-describe('SSBasePreset#constructor', function () {
-
-  it('should initialize address correctly', function () {
-    global.__IS_CLIENT__ = true;
-    const preset = new SSBasePreset({
-      type: 3,
-      host: 'example.com',
-      port: numberToBuffer(1080)
-    });
-    expect(preset._atyp).toBe(3);
-    expect(preset._host.equals(Buffer.from([101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109]))).toBe(true);
-    expect(preset._port.equals(Buffer.from([4, 56]))).toBe(true);
-  });
-
-  it('should initialize address correctly', function () {
-    global.__IS_CLIENT__ = true;
-    const preset = new SSBasePreset({
-      type: 1,
-      host: '192.168.1.1',
-      port: numberToBuffer(80)
-    });
-    expect(preset._atyp).toBe(1);
-    expect(preset._host.equals(Buffer.from('c0a80101', 'hex'))).toBe(true);
-    expect(preset._port.equals(Buffer.from('0050', 'hex'))).toBe(true);
-  });
-
-});
-
 describe('SSBasePreset#clientOut', function () {
   global.__IS_CLIENT__ = true;
   const preset = new SSBasePreset({

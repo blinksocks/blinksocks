@@ -2,7 +2,7 @@ import {Message} from '../common';
 
 // +----------------------------------------+
 // |  CONNECT www.bing.com:443 HTTP/1.1\r\n |
-// |  Host: www.bing.com:443\r\n            |
+// |  Host: www.bing.com\r\n                |
 // |  [...Headers]                          |
 // |  \r\n                                  |
 // |  \r\n                                  |

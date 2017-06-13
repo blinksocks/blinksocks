@@ -1,3 +1,4 @@
+import net from 'net';
 import ip from 'ip';
 import {parseURI} from '../utils';
 
@@ -21,6 +22,7 @@ import {
 
 import {
   ATYP_V4,
+  ATYP_V6,
   ATYP_DOMAIN,
   REQUEST_COMMAND_CONNECT,
   REQUEST_COMMAND_UDP,
@@ -71,9 +73,6 @@ export class ClientProxy {
           host: DSTADDR.length > 0 ? DSTADDR : DSTIP,
           port: DSTPORT
         };
-        if (addr.type !== ATYP_DOMAIN) {
-          addr.host = ip.toString(addr.host);
-        }
         this.onHandshakeDone(addr, () => {
           // reply success
           const message = new Socks4ReplyMessage({CMD: REPLY_GRANTED});
@@ -105,9 +104,6 @@ export class ClientProxy {
             host: request.DSTADDR,
             port: request.DSTPORT
           };
-          if (addr.type !== ATYP_DOMAIN) {
-            addr.host = ip.toString(addr.host);
-          }
           this.onHandshakeDone(addr, () => {
             // reply success
             const message = new Socks5ReplyMessage({REP: REPLY_SUCCEEDED});
@@ -133,10 +129,29 @@ export class ClientProxy {
   _tryHttpHandshake(socket, buffer) {
     const request = HttpRequestMessage.parse(buffer);
     if (request !== null) {
-      const {METHOD, HOST} = request;
-      const addr = parseURI(HOST.toString());
+      const {METHOD, URI, HOST} = request;
+      const method = METHOD.toString();
+      let addr = {};
+      if (method === 'CONNECT') {
+        addr = parseURI(URI.toString());
+      } else {
+        let type = null;
+        let host = HOST.toString();
+        if (net.isIP(host)) {
+          if (net.isIPv4(host)) {
+            type = ATYP_V4;
+          } else {
+            type = ATYP_V6;
+          }
+          host = ip.toBuffer(host);
+        } else {
+          type = ATYP_DOMAIN;
+          host = HOST;
+        }
+        addr = {type, host, port: Buffer.from([0x00, 0x50])};
+      }
       this.onHandshakeDone(addr, (onForward) => {
-        if (METHOD.toString() === 'CONNECT') {
+        if (method === 'CONNECT') {
           const message = new ConnectReplyMessage();
           socket.write(message.toBuffer());
         } else {

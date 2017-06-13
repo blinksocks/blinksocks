@@ -1,4 +1,5 @@
 import net from 'net';
+import ip from 'ip';
 import isEqual from 'lodash.isequal';
 import {getRandomInt} from '../utils';
 import logger from './logger';
@@ -18,6 +19,8 @@ import {
   SOCKET_CONNECT_TO_DST,
   PROCESSING_FAILED
 } from '../presets/defs';
+
+import {ATYP_DOMAIN} from '../proxies/common';
 
 // import {
 //   UdpRequestMessage
@@ -240,7 +243,10 @@ export class Socket {
       logger.info(`[balancer] use: ${__SERVER_HOST__}:${__SERVER_PORT__}`);
     }
     // connect to our server
-    const [dstHost, dstPort] = [addr.host.toString(), addr.port.readUInt16BE(0)];
+    const [dstHost, dstPort] = [
+      (addr.type === ATYP_DOMAIN) ? addr.host.toString() : ip.toString(addr.host),
+      addr.port.readUInt16BE(0)
+    ];
     return this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__, dstHost, dstPort}, () => {
       this.createPipe(addr);
       this._tracks.push(`${dstHost}:${dstPort}`);
