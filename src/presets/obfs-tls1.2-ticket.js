@@ -203,7 +203,7 @@ export default class ObfsTLS12TicketPreset extends IPreset {
 
       // 2. Send Server Hello, New Session Ticket, Change Cipher Spec, Finished
 
-      // Server Hello
+      // [Server Hello]
 
       // Random
       const random = [
@@ -242,17 +242,30 @@ export default class ObfsTLS12TicketPreset extends IPreset {
 
       const server_hello = [...header, ...body];
 
-      // TODO: New Session Ticket
-      // const new_session_ticket = [
-      //
-      // ];
+      // [New Session Ticket]
+      const ticket = crypto.randomBytes(getRandomInt(200, 255));
+      const session_ticket = [
+        ...stb('000004b0'),               // Session Ticket Lifetime Hint: 1200 sec, 32-bit unsigned integer in network byte order
+        ...numberToBuffer(ticket.length), // Session Ticket Length
+        ...ticket                         // Session Ticket
+      ];
+      const new_session_ticket_body = [
+        ...stb('04'),                                // New Session Ticket
+        ...numberToBuffer(session_ticket.length, 3), // New Session Ticket Length, 3 bytes
+        ...session_ticket
+      ];
+      const new_session_ticket = [
+        ...stb('160303'),
+        ...numberToBuffer(new_session_ticket_body.length), // Length
+        ...new_session_ticket_body
+      ];
 
-      // Change Cipher Spec
+      // [Change Cipher Spec]
       const change_cipher_spec = [
         ...stb('140303000101')
       ];
 
-      // Finished
+      // [Finished]
       const finishedLen = getRandomInt(32, 40);
       const finished = [
         ...stb('16'),                   // Content Type: Handshake
@@ -261,7 +274,7 @@ export default class ObfsTLS12TicketPreset extends IPreset {
         ...crypto.randomBytes(finishedLen)
       ];
 
-      return direct(Buffer.from([...server_hello, ...change_cipher_spec, ...finished]), true);
+      return direct(Buffer.from([...server_hello, ...new_session_ticket, ...change_cipher_spec, ...finished]), true);
     }
 
     let _buffer = buffer;
