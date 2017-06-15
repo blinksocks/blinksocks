@@ -8,7 +8,7 @@ const ATYP_DOMAIN = 0x03;
 
 /**
  * @description
- *   Tell server where is the destination.
+ *   Carry the destination address(ip/hostname, and port) that needs to be relayed.
  *
  * @params
  *   no
@@ -21,14 +21,14 @@ const ATYP_DOMAIN = 0x03;
  *
  * @protocol
  *
- *   # TCP handshake
- *   +------+----------+----------+----------+
- *   | ATYP | DST.ADDR | DST.PORT |   DATA   |
- *   +------+----------+----------+----------+
- *   |  1   | Variable |    2     | Variable |
- *   +------+----------+----------+----------+
+ *   # TCP stream
+ *   +------+----------+----------+----------+---------+
+ *   | ATYP | DST.ADDR | DST.PORT |   DATA   |   ...   |
+ *   +------+----------+----------+----------+---------+
+ *   |  1   | Variable |    2     | Variable |   ...   |
+ *   +------+----------+----------+----------+---------+
  *
- *   # TCP chunk
+ *   # TCP chunks
  *   +----------+
  *   |   DATA   |
  *   +----------+
@@ -37,8 +37,9 @@ const ATYP_DOMAIN = 0x03;
  *
  * @explain
  *   1. ATYP is one of [0x01(ipv4), 0x03(hostname), 0x04(ipv6)].
- *   2. When ATYP is 0x03, DST.ADDR[0] is len(DST.ADDR).
- *   3. When ATYP is 0x04, DST.ADDR is a 16 bytes ipv6 address.
+ *   2. If ATYP is 0x03, DST.ADDR[0] is len(DST.ADDR).
+ *   3. If ATYP is 0x04, DST.ADDR must be a 16 bytes ipv6 address.
+ *   4. The initial stream MUST contain a DATA chunk followed by [ATYP, DST.ADDR, DST.PORT].
  */
 export default class SSBasePreset extends IPreset {
 
