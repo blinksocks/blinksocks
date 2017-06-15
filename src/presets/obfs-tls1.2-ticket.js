@@ -38,7 +38,7 @@ function ApplicationData(buffer) {
  *   {
  *     "name": "obfs-tls1.2-ticket",
  *     "params": {
- *       "sni": "www.bing.com"
+ *       "sni": ["www.bing.com"]
  *     }
  *   }
  *
@@ -54,7 +54,7 @@ function ApplicationData(buffer) {
  */
 export default class ObfsTLS12TicketPreset extends IPreset {
 
-  _sni = null;
+  _sni = [];
 
   _stage = TLS_STAGE_HELLO;
 
@@ -64,11 +64,25 @@ export default class ObfsTLS12TicketPreset extends IPreset {
 
   constructor({sni}) {
     super();
+    if (typeof sni === 'undefined') {
+      throw Error('\'sni\' must be set');
+    }
+    if (!Array.isArray(sni)) {
+      sni = [sni];
+    }
+    if (sni.some((s) => typeof s !== 'string' || s.length < 1)) {
+      throw Error('\'sni\' must be a non-empty string or an array without empty strings');
+    }
     this.onReceiving = this.onReceiving.bind(this);
     this.onChunkReceived = this.onChunkReceived.bind(this);
-    this._sni = Buffer.from(sni || '');
+    this._sni = Array.isArray(sni) ? sni : [sni];
     this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving});
     this._adBuf.on('data', this.onChunkReceived);
+  }
+
+  getRandomSNI() {
+    const index = crypto.randomBytes(1)[0] % this._sni.length;
+    return Buffer.from(this._sni[index]);
   }
 
   clientOut({buffer, direct}) {
@@ -76,6 +90,8 @@ export default class ObfsTLS12TicketPreset extends IPreset {
       this._stage = TLS_STAGE_CHANGE_CIPHER_SPEC;
       this._pending = buffer;
       // Send Client Hello
+
+      const sni = this.getRandomSNI();
 
       // Random
       const random = [
@@ -106,12 +122,12 @@ export default class ObfsTLS12TicketPreset extends IPreset {
       ];
       // Extension: server_name
       const ext_server_name = [
-        ...stb('0000'),                                  // Type: server_name
-        ...numberToBuffer(2 + 1 + 2 + this._sni.length), // Length
-        ...numberToBuffer(1 + 2 + this._sni.length),     // Server Name List length
-        ...stb('00'),                                    // Server Name Type: host_name(0)
-        ...numberToBuffer(this._sni.length),             // Server Name length
-        ...this._sni,                                    // Server Name
+        ...stb('0000'),                            // Type: server_name
+        ...numberToBuffer(2 + 1 + 2 + sni.length), // Length
+        ...numberToBuffer(1 + 2 + sni.length),     // Server Name List length
+        ...stb('00'),                              // Server Name Type: host_name(0)
+        ...numberToBuffer(sni.length),             // Server Name length
+        ...sni,                                    // Server Name
       ];
       // Extension: SessionTicket TLS
       const ticketLen = getRandomInt(200, 400);
