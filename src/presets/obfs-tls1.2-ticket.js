@@ -38,7 +38,7 @@ function ApplicationData(buffer) {
  *   {
  *     "name": "obfs-tls1.2-ticket",
  *     "params": {
- *       "sni": "www.bing.com"
+ *       "sni": ["www.bing.com"]
  *     }
  *   }
  *
@@ -54,7 +54,7 @@ function ApplicationData(buffer) {
  */
 export default class ObfsTLS12TicketPreset extends IPreset {
 
-  _sni = null;
+  _sni = [];
 
   _stage = TLS_STAGE_HELLO;
 
@@ -64,11 +64,25 @@ export default class ObfsTLS12TicketPreset extends IPreset {
 
   constructor({sni}) {
     super();
+    if (typeof sni === 'undefined') {
+      throw Error('\'sni\' must be set');
+    }
+    if (!Array.isArray(sni)) {
+      sni = [sni];
+    }
+    if (sni.some((s) => typeof s !== 'string' || s.length < 1)) {
+      throw Error('\'sni\' must be a non-empty string or an array without empty strings');
+    }
     this.onReceiving = this.onReceiving.bind(this);
     this.onChunkReceived = this.onChunkReceived.bind(this);
-    this._sni = Buffer.from(sni || '');
+    this._sni = Array.isArray(sni) ? sni : [sni];
     this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving});
     this._adBuf.on('data', this.onChunkReceived);
+  }
+
+  getRandomSNI() {
+    const index = crypto.randomBytes(1)[0] % this._sni.length;
+    return Buffer.from(this._sni[index]);
   }
 
   clientOut({buffer, direct}) {
@@ -76,6 +90,8 @@ export default class ObfsTLS12TicketPreset extends IPreset {
       this._stage = TLS_STAGE_CHANGE_CIPHER_SPEC;
       this._pending = buffer;
       // Send Client Hello
+
+      const sni = this.getRandomSNI();
 
       // Random
       const random = [
@@ -106,12 +122,12 @@ export default class ObfsTLS12TicketPreset extends IPreset {
       ];
       // Extension: server_name
       const ext_server_name = [
-        ...stb('0000'),                                  // Type: server_name
-        ...numberToBuffer(2 + 1 + 2 + this._sni.length), // Length
-        ...numberToBuffer(1 + 2 + this._sni.length),     // Server Name List length
-        ...stb('00'),                                    // Server Name Type: host_name(0)
-        ...numberToBuffer(this._sni.length),             // Server Name length
-        ...this._sni,                                    // Server Name
+        ...stb('0000'),                            // Type: server_name
+        ...numberToBuffer(2 + 1 + 2 + sni.length), // Length
+        ...numberToBuffer(1 + 2 + sni.length),     // Server Name List length
+        ...stb('00'),                              // Server Name Type: host_name(0)
+        ...numberToBuffer(sni.length),             // Server Name length
+        ...sni,                                    // Server Name
       ];
       // Extension: SessionTicket TLS
       const ticketLen = getRandomInt(200, 400);
@@ -187,7 +203,7 @@ export default class ObfsTLS12TicketPreset extends IPreset {
 
       // 2. Send Server Hello, New Session Ticket, Change Cipher Spec, Finished
 
-      // Server Hello
+      // [Server Hello]
 
       // Random
       const random = [
@@ -226,17 +242,30 @@ export default class ObfsTLS12TicketPreset extends IPreset {
 
       const server_hello = [...header, ...body];
 
-      // TODO: New Session Ticket
-      // const new_session_ticket = [
-      //
-      // ];
+      // [New Session Ticket]
+      const ticket = crypto.randomBytes(getRandomInt(200, 255));
+      const session_ticket = [
+        ...stb('000004b0'),               // Session Ticket Lifetime Hint: 1200 sec, 32-bit unsigned integer in network byte order
+        ...numberToBuffer(ticket.length), // Session Ticket Length
+        ...ticket                         // Session Ticket
+      ];
+      const new_session_ticket_body = [
+        ...stb('04'),                                // New Session Ticket
+        ...numberToBuffer(session_ticket.length, 3), // New Session Ticket Length, 3 bytes
+        ...session_ticket
+      ];
+      const new_session_ticket = [
+        ...stb('160303'),
+        ...numberToBuffer(new_session_ticket_body.length), // Length
+        ...new_session_ticket_body
+      ];
 
-      // Change Cipher Spec
+      // [Change Cipher Spec]
       const change_cipher_spec = [
         ...stb('140303000101')
       ];
 
-      // Finished
+      // [Finished]
       const finishedLen = getRandomInt(32, 40);
       const finished = [
         ...stb('16'),                   // Content Type: Handshake
@@ -245,7 +274,7 @@ export default class ObfsTLS12TicketPreset extends IPreset {
         ...crypto.randomBytes(finishedLen)
       ];
 
-      return direct(Buffer.from([...server_hello, ...change_cipher_spec, ...finished]), true);
+      return direct(Buffer.from([...server_hello, ...new_session_ticket, ...change_cipher_spec, ...finished]), true);
     }
 
     let _buffer = buffer;
