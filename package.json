@@ -19,10 +19,10 @@
     "test:coverage": "jest --coverage",
     "lint": "eslint bin src",
     "compile": "babel src --out-dir lib --minified --ignore __tests__,__mocks__",
-    "server:dev": "babel-node bin/bootstrap.js --config server.config.json",
-    "client:dev": "babel-node bin/bootstrap.js --config client.config.json",
-    "server:prod": "node bin/cli.js --config server.config.json",
-    "client:prod": "node bin/cli.js --config client.config.json",
+    "debug:client": "env NODE_ENV=development node --inspect bin/cli-client.js --config blinksocks.client.js",
+    "debug:server": "env NODE_ENV=development node --inspect bin/cli-server.js --config blinksocks.server.js",
+    "client": "node bin/cli-client.js --config blinksocks.client.js",
+    "server": "node bin/cli-server.js --config blinksocks.server.js",
     "precommit": "npm test"
   },
   "dependencies": {
