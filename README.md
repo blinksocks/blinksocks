@@ -70,7 +70,7 @@ module.exports = {
 
 ### For Developers
 
-1. [Preparation](docs/development/preparation)
+1. [Steps](docs/development/steps)
 2. [Principle](docs/development/principle)
 3. [Architecture](docs/development/architecture)
 4. [Performance](docs/performance)

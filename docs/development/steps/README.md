@@ -14,13 +14,28 @@ $ cd blinksocks && npm install
 
 ## Start blinksocks
 
-Prepare your configurations and start to test:
+Prepare your configurations(**blinksocks.client.js** and **blinksocks.server.js**) in the project root folder, then start to test:
+
+### Debug Mode(Use Chrome Debugger)
+
+Debug in Chrome requires Node.js v6 and Chrome 57 or later.
 
 ```
-$ bin/cli-init.js
-$ NODE_ENV=development bin/cli-client.js -c blinksocks.config.js
-$ NODE_ENV=development bin/cli-server.js -c blinksocks.config.js
+$ npm run debug:client
+$ npm run debug:server
 ```
+
+Then open **chrome://inspect/#devices** in Chrome. Click **inspect** under **bin/cli-client.js**.
+
+### Production Mode
+
+```
+$ npm run compile
+$ npm run client
+$ npm run server
+```
+
+This will run compiled code under **lib/**.
 
 Notice that you can change program behaviour using the following environment variants:
 
@@ -29,7 +44,8 @@ Notice that you can change program behaviour using the following environment var
 | NODE_ENV  | "development", "production" |
 | RUN_AS    | "server", "client"          |
 
-If **RUN_AS** provided, log file name will be **blinksocks-[RUN_AS].log**, otherwise **blinksocks.log**.
+If **RUN_AS** provided, log file name will be **blinksocks-[RUN_AS].log**, otherwise **blinksocks.log**. This is useful
+to distinguish log files in different roles.
 
 ## Verify
 
