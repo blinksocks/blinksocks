@@ -100,7 +100,7 @@ export default class AeadRandomCipherPreset extends IPreset {
       throw Error('\'method\' must be set.');
     }
     if (!ciphers.includes(method)) {
-      throw Error(`method \'${method}\' is not supported.`);
+      throw Error(`method '${method}' is not supported.`);
     }
     if (typeof info !== 'string' || info.length <= 0) {
       throw Error('\'info\' must be a non-empty string.');

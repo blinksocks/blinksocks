@@ -158,7 +158,7 @@ describe('Config#initServer', function () {
     expect(() => Config.initServer({transport: null})).toThrow();
   });
 
-  it('should throw when server.transport is not \"tcp\" or \"udp\"', function () {
+  it('should throw when server.transport is not "tcp" or "udp"', function () {
     expect(() => Config.initServer({transport: ''})).toThrow();
   });
 

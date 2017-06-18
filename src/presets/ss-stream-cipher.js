@@ -72,7 +72,7 @@ export default class SSStreamCipherPreset extends IPreset {
       throw Error('\'method\' must be set');
     }
     if (!ciphers.includes(method)) {
-      throw Error(`method \'${method}\' is not supported.`);
+      throw Error(`method '${method}' is not supported.`);
     }
     this._cipherName = method;
     if (global.__KEY__) {

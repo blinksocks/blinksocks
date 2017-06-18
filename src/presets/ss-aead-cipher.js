@@ -97,7 +97,7 @@ export default class SSAeadCipherPreset extends IPreset {
       throw Error('\'method\' must be set.');
     }
     if (!ciphers.includes(method)) {
-      throw Error(`method \'${method}\' is not supported.`);
+      throw Error(`method '${method}' is not supported.`);
     }
     this._cipherName = method;
     this._info = Buffer.from(info);
