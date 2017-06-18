@@ -18,11 +18,10 @@ and [ShadowsocksR](https://github.com/shadowsocksr/shadowsocksr).
 ## Features
 
 * HTTP/Socks5/Socks4/Socks4a using the same port
+* Customizable Protocols([presets](docs/presets)): simple, composable, and flexible
+* Cross-platform: running on Linux based, Windows and macOS
 * Partially compatible with **shadowsocks** [#27](https://github.com/blinksocks/blinksocks/issues/27)
-* Flexible, customizable and pluggable
-* Running on Linux based, Windows and macOS
 * Dynamic server switch
-* Presets composition
 
 ## GUI ready
 
@@ -73,7 +72,7 @@ module.exports = {
 1. [Steps](docs/development/steps)
 2. [Principle](docs/development/principle)
 3. [Architecture](docs/development/architecture)
-4. [Performance](docs/performance)
+4. [Performance (outdated)](docs/performance)
 
 ## Contributors
 
