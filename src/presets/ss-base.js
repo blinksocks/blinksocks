@@ -113,7 +113,7 @@ export default class SSBasePreset extends IPreset {
             return;
           }
           addr = ip.toString(buffer.slice(1, 17));
-          port = buffer.slice(16, 18).readUInt16BE(0);
+          port = buffer.slice(17, 19).readUInt16BE(0);
           offset += 16;
           break;
         case ATYP_DOMAIN:

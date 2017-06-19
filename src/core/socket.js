@@ -362,7 +362,7 @@ export class Socket {
   }
 
   /**
-   * connect to a server, for both client and server
+   * connect to another endpoint, for both client and server
    * @param host
    * @param port
    * @param dstHost
