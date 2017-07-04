@@ -26,7 +26,7 @@
     "precommit": "npm test"
   },
   "dependencies": {
-    "commander": "^2.9.0",
+    "commander": "^2.11.0",
     "ip": "^1.1.5",
     "lodash.isequal": "^4.5.0",
     "urijs": "^1.18.10",
@@ -40,11 +40,11 @@
     "babel-plugin-transform-object-rest-spread": "^6.23.0",
     "babel-preset-env": "^1.5.2",
     "babel-register": "^6.24.1",
-    "eslint": "^4.0.0",
+    "eslint": "^4.1.1",
     "eslint-config-babel": "^7.0.1",
     "eslint-plugin-babel": "^4.1.1",
-    "eslint-plugin-flowtype": "^2.34.0",
-    "husky": "^0.13.4",
+    "eslint-plugin-flowtype": "^2.34.1",
+    "husky": "^0.14.2",
     "jest": "^20.0.4"
   },
   "repository": {
