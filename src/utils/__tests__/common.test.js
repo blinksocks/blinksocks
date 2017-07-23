@@ -9,7 +9,7 @@ import {
   hexStringToBuffer,
   isValidHostname,
   isValidPort,
-  md5,
+  hash,
   hmac,
   EVP_BytesToKey,
   HKDF,
@@ -175,12 +175,12 @@ describe('isValidPort', function () {
 
 });
 
-describe('md5', function () {
+describe('hash', function () {
 
   it('should return expected buffer', function () {
     const src = Buffer.from([1, 2, 3, 4]);
     const dst = Buffer.from('08d6c05a21512a79a1dfeb9d2a8f262f', 'hex');
-    expect(md5(src).equals(dst)).toBe(true);
+    expect(hash('md5', src).equals(dst)).toBe(true);
   });
 
 });

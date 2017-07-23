@@ -181,14 +181,15 @@ export function isValidPort(port) {
 }
 
 /**
- * md5 message digest
+ * message digest
+ * @param algorithm
  * @param buffer
  * @returns {*}
  */
-export function md5(buffer) {
-  const md5 = crypto.createHash('md5');
-  md5.update(buffer);
-  return md5.digest();
+export function hash(algorithm, buffer) {
+  const hs = crypto.createHash(algorithm);
+  hs.update(buffer);
+  return hs.digest();
 }
 
 /**
@@ -217,7 +218,7 @@ export function EVP_BytesToKey(password, keyLen, ivLen) {
     if (i > 0) {
       _data = Buffer.concat([bufs[i - 1], Buffer.from(password)]);
     }
-    bufs.push(md5(_data));
+    bufs.push(hash('md5', _data));
     i += 1;
   }
   return Buffer.concat(bufs).slice(0, keyLen);
