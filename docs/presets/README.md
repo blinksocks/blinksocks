@@ -3,10 +3,45 @@
 Presets are chaining and composable, built-in presets are listed here.
 If you want custom a preset, feel free to read [this](../development/architecture#preset) first.
 
+## NOTICE
+
+You **MUST** put [ss-base] or [exp-base-with-padding] to the first in presets list.
+
 ## [ss-base]
 
-This is a very basic preset which delivers the real destination address from
-blinksocks client to blinksocks server, and **MUST BE** the first one in the presets list.
+This is a very basic preset which delivers the real destination address from blinksocks client to blinksocks server.
+
+```json
+"presets": [{
+  "name": "ss-base",
+  "params": {}
+}]
+```
+
+## [exp-base-with-padding]
+
+An experimental and advanced preset based on [ss-base], **SHOULD BE** used with ciphers in **cfb** operation mode.
+It can prevent address from being tampered.
+
+NOTE: Using [exp-base-with-padding] with non-cfb ciphers will lose protection. 
+
+| PARAMS    | DESCRIPTION                     |
+| :-------- | :------------------------------ |
+| salt      | a string for generating padding |
+
+```json
+"presets": [{
+  "name": "exp-base-with-padding",
+  "params": {
+    "salt": "any string"
+  }
+}, {
+  "name": "ss-stream-cipher",
+  "params": {
+    "method": "aes-256-cfb"
+  }
+}]
+```
 
 ## [ss-stream-cipher]
 
@@ -28,6 +63,18 @@ aes-128-cbc, aes-192-cbc, aes-256-cbc
 
 camellia-128-cfb, camellia-192-cfb, camellia-256-cfb
 
+```json
+"presets": [
+  ...,
+  {
+    "name": "ss-stream-cipher",
+    "params": {
+      "method": "camellia-256-cfb"
+    }
+  }
+]
+```
+
 ## [ss-aead-cipher]
 
 The shadowsocks's [aead cipher](https://shadowsocks.org/en/spec/AEAD-Ciphers.html).
@@ -44,6 +91,19 @@ aes-128-gcm, aes-192-gcm, aes-256-gcm
 If you want to work with shadowsocks client/server, the `info` must be **"ss-subkey"** without quotes.
 Otherwise, it can be any string.
 
+```json
+"presets": [
+  ...,
+  {
+    "name": "ss-aead-cipher",
+    "params": {
+      "method": "aes-256-gcm",
+      "info": "ss-subkey"
+    }
+  }
+]
+```
+
 ## [aead-random-cipher]
 
 This preset is based on **ss-aead-cipher**, but added random padding in the front of **each chunk**. This preset inherited
@@ -54,6 +114,20 @@ all features from **ss-aead-cipher** and prevent server from being detected by p
 | method           | encryption and decryption method         |
 | info             | a string to generate subkey              |
 | factor(optional) | random padding length = (0-255) * factor |
+
+```json
+"presets": [
+  ...,
+  {
+    "name": "aead-random-cipher",
+    "params": {
+      "method": "aes-256-gcm",
+      "info": "bs-subkey",
+      "factor": 2
+    }
+  }
+]
+```
 
 ## [obfs-http]
 
@@ -83,6 +157,18 @@ HTTP/1.1 200 OK
 ======================
 ```
 
+```json
+"presets": [
+  ...,
+  {
+    "name": "obfs-http",
+    "params": {
+      "file": "path/to/fake.txt"
+    }
+  }
+]
+```
+
 ## [obfs-tls1.2-ticket]
 
 A TLS obfuscator, do TLS handshake using SessionTicket TLS mechanism, transfer data inside of Application Data.
@@ -90,6 +176,18 @@ A TLS obfuscator, do TLS handshake using SessionTicket TLS mechanism, transfer d
 | PARAMS    | DESCRIPTION                                                      |
 | :-------- | :--------------------------------------------------------------- |
 | sni       | [Server Name Indication], a server name or a list of server name |
+
+```json
+"presets": [
+  ...,
+  {
+    "name": "obfs-tls1.2-ticket",
+    "params": {
+      "sni": ["cloudfront.net"]
+    }
+  }
+]
+```
 
 # Recommended Combinations
 
@@ -196,6 +294,7 @@ Make some cheat:
 ```
 
 [ss-base]: ../../src/presets/ss-base.js
+[exp-base-with-padding]: ../../src/presets/exp-base-with-padding.js
 [ss-stream-cipher]: ../../src/presets/ss-stream-cipher.js
 [ss-aead-cipher]: ../../src/presets/ss-aead-cipher.js
 [aead-random-cipher]: ../../src/presets/aead-random-cipher.js
