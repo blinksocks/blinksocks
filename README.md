@@ -10,10 +10,8 @@
 [![Coverage](https://img.shields.io/codecov/c/github/blinksocks/blinksocks/master.svg)](https://codecov.io/gh/blinksocks/blinksocks)
 [![%e2%9d%a4](https://img.shields.io/badge/made%20with-%e2%9d%a4-ff69b4.svg)](https://github.com/blinksocks/blinksocks)
 
-Yet another secure proxy, designed for speed :zap:. Inspired by [Shadowsocks](https://shadowsocks.org),
+A proxy framework for building composable protocol stack. Inspired by [Shadowsocks](https://shadowsocks.org),
 and [ShadowsocksR](https://github.com/shadowsocksr/shadowsocksr).
-
-> Across the Great Wall we can reach every corner in the world.
 
 ## Features
 
