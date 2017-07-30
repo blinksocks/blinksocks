@@ -38,13 +38,13 @@
     "babel-jest": "^20.0.3",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-object-rest-spread": "^6.23.0",
-    "babel-preset-env": "^1.5.2",
+    "babel-preset-env": "^1.6.0",
     "babel-register": "^6.24.1",
-    "eslint": "^4.1.1",
+    "eslint": "^4.3.0",
     "eslint-config-babel": "^7.0.1",
-    "eslint-plugin-babel": "^4.1.1",
-    "eslint-plugin-flowtype": "^2.34.1",
-    "husky": "^0.14.2",
+    "eslint-plugin-babel": "^4.1.2",
+    "eslint-plugin-flowtype": "^2.35.0",
+    "husky": "^0.14.3",
     "jest": "^20.0.4"
   },
   "repository": {
