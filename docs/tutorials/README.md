@@ -2,7 +2,7 @@
 
 ## Requirements
 
-blinksocks is built on top of [Node.js](https://nodejs.org), so please install Node.js properly
+blinksocks is built on top of [Node.js](https://nodejs.org), so please install Node.js(**greater than v6.x**) properly
 on your operating system.
 
 ## Install

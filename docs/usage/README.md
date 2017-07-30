@@ -26,11 +26,26 @@ $ blinksocks --help
 
 There are threes commands to do different tasks:
 
-### blinksocks init
+### * blinksocks init
 
 This will generate `blinksocks.client.js` and `blinksocks.server.js` with a random key and default settings.
 
-### blinksocks client/server
+Then you should edit `blinksocks.client.js` to tell blinksocks client where is the server:
+
+```
+{
+  // server host name or ip address
+  host: "example.com",
+
+  // server port
+  port: 5678,
+}
+```
+
+> You may also want to change default protocol stack(presets) or other settings, please check out [--config](../config)
+for explanation of every option.
+
+### * blinksocks client/server
 
 ```
 $ blinksocks server --help
@@ -50,8 +65,6 @@ $ blinksocks server --help
     $ blinksocks server -c blinksocks.server.js
 
 ```
-
-> Please check out [--config](../config) for detailed explanation of every options.
 
 ## Run in production
 
@@ -79,7 +92,8 @@ $ pm2 start blinksocks-server -i 2 -- -c blinksocks.server.js
 
 You may want to use blinksocks to surf the Internet with **browsers**, so I give an advise here.
 
-For Google Chrome, [SwitchyOmega](https://github.com/FelisCatus/SwitchyOmega) extension is a great approach to use socks5 service.
+For Google Chrome, [SwitchyOmega](https://github.com/FelisCatus/SwitchyOmega) extension is a great approach to proxy your
+connections by rules to blinksocks via socks5/socks4(a)/http.
 
 For FireFox, you can configure proxy at `Preferences - Advanced - Network - Settings`.
 
