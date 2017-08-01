@@ -185,19 +185,19 @@ export default class ObfsTLS12TicketPreset extends IPreset {
       // 1. Check Client Hello
 
       if (buffer.length < 200) {
-        fail(`TLS handshake header(${buffer.length} bytes) is too short`);
+        fail(`TLS handshake header is too short, length=${buffer.length} dump=${buffer.slice(0, 100).toString('hex')}`);
         return;
       }
 
       if (!buffer.slice(0, 3).equals(stb('160301'))) {
-        fail('invalid TLS handshake header');
+        fail(`invalid TLS handshake header=${buffer.slice(0, 3).toString('hex')}, want=160301, dump=${buffer.slice(0, 100).toString('hex')}`);
         return;
       }
 
       const tlsLen = buffer.slice(3, 5).readUInt16BE(0);
 
       if (tlsLen !== buffer.length - 5) {
-        fail('unexpected TLS handshake header length');
+        fail(`unexpected TLS handshake body length=${buffer.length - 5}, want=${tlsLen}, dump=${buffer.slice(0, 100).toString('hex')}`);
         return;
       }
 
