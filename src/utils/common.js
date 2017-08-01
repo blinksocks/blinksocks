@@ -246,3 +246,24 @@ export function HKDF(hash, salt, ikm, info, length) {
   // Step 3: crop okm to desired length
   return okm.slice(0, length);
 }
+
+/**
+ * xor two Buffer/Array
+ * @param buf1
+ * @param buf2
+ * @returns {*}
+ */
+export function Xor(buf1, buf2) {
+  if (buf1.length === buf2.length) {
+    const outBuf = [];
+    for (let i = 0; i < buf1.length; ++i) {
+      outBuf[i] = buf1[i] ^ buf2[i];
+    }
+    if (buf1 instanceof Buffer) {
+      return Buffer.from(outBuf);
+    } else {
+      return outBuf;
+    }
+  }
+  return null;
+}
