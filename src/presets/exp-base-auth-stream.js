@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import ip from 'ip';
-import {EVP_BytesToKey, numberToBuffer, hmac} from '../utils';
+import {EVP_BytesToKey, numberToBuffer, hmac, Xor} from '../utils';
 import {IPreset, SOCKET_CONNECT_TO_DST} from './defs';
 
 const ATYP_V4 = 0x01;
@@ -39,6 +39,7 @@ const ciphers = [
  *   +----------+-----------+------+----------+----------+----------+---------+
  *   |    16    |    16     |  1   | Variable |    2     | Variable |   ...   |
  *   +----------+-----------+------+----------+----------+----------+---------+
+ *                          |<------------------ encrypted ------------------>|
  *
  *   # After handshake
  *   +----------+
@@ -48,9 +49,9 @@ const ciphers = [
  *   +----------+
  *
  * @explain
- *   1. HMAC-SHA1 = HMAC(ALEN + DST.ADDR + DST.PORT), key is (IV ^ EVP_BytesToKey(rawKey, keyLen, 16)).
+ *   1. HMAC-SHA1 = HMAC(ALEN + DST.ADDR + DST.PORT), key is (IV ^ EVP_BytesToKey(rawKey, keyLen, 16).slice(0, IV_LEN)).
  *   2. ALEN = len(DST.ADDR).
- *   3. Encrypt-then-Mac(EtM) is performed to calculate HMAC.
+ *   3. Encrypt-then-Mac(EtM) is performed to calculate HMAC-SHA1.
  *   4. The initial stream MUST contain a DATA chunk followed by [ALEN, DST.ADDR, DST.PORT].
  */
 export default class ExpBaseAuthStreamPreset extends IPreset {
@@ -62,8 +63,6 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
   _port = null; // buffer
 
   _cipherName = '';
-
-  _key = null;
 
   _cipher = null;
 
@@ -85,24 +84,23 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
       }
     }
     this._cipherName = method;
-    if (global.__KEY__) {
-      this._key = EVP_BytesToKey(__KEY__, this._cipherName.split('-')[1] / 8, IV_LEN);
-    }
   }
 
   clientOut({buffer}) {
     if (!this._isHandshakeDone) {
       this._isHandshakeDone = true;
 
-      // initialize (de)cipher
+      // prepare
       const iv = crypto.randomBytes(IV_LEN);
-      this._cipher = crypto.createCipheriv(this._cipherName, this._key, iv);
-      this._decipher = crypto.createDecipheriv(this._cipherName, this._key, iv);
+      const keyForEncryption = EVP_BytesToKey(__KEY__, this._cipherName.split('-')[1] / 8, IV_LEN);
+      const keyForHMAC = Xor(iv, keyForEncryption.slice(0, IV_LEN));
 
-      const encBuf = this.encrypt(
-        Buffer.concat([numberToBuffer(this._host.length, 1), this._host, this._port, buffer])
-      );
-      const hmacEncAddr = hmac('sha1', this._key, encBuf.slice(0, -buffer.length)).slice(0, HMAC_LEN);
+      // initialize cipher/decipher
+      this._cipher = crypto.createCipheriv(this._cipherName, keyForEncryption, iv);
+      this._decipher = crypto.createDecipheriv(this._cipherName, keyForEncryption, iv);
+
+      const encBuf = this.encrypt(Buffer.concat([numberToBuffer(this._host.length, 1), this._host, this._port, buffer]));
+      const hmacEncAddr = hmac('sha1', keyForHMAC, encBuf.slice(0, -buffer.length)).slice(0, HMAC_LEN);
 
       return Buffer.concat([iv, hmacEncAddr, encBuf]);
     } else {
@@ -117,16 +115,18 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
         return fail(`unexpected buffer length_1: ${buffer.length}, buffer=${buffer.toString('hex')}`);
       }
 
-      // initialize (de)cipher
+      // obtain IV and initialize cipher/decipher
       const iv = buffer.slice(0, IV_LEN);
-      this._cipher = crypto.createCipheriv(this._cipherName, this._key, iv);
-      this._decipher = crypto.createDecipheriv(this._cipherName, this._key, iv);
+      const keyForEncryption = EVP_BytesToKey(__KEY__, this._cipherName.split('-')[1] / 8, IV_LEN);
+
+      this._cipher = crypto.createCipheriv(this._cipherName, keyForEncryption, iv);
+      this._decipher = crypto.createDecipheriv(this._cipherName, keyForEncryption, iv);
 
       // decrypt tail
       const tailBuffer = this.decrypt(buffer.slice(32));
 
       // obtain HMAC and ALEN
-      const hmacTag = buffer.slice(16, 32);
+      const providedHmac = buffer.slice(16, 32);
       const alen = tailBuffer[0];
 
       // verify length
@@ -135,9 +135,10 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
       }
 
       // verify HMAC
-      const expHmac = hmac('sha1', this._key, buffer.slice(32, 35 + alen)).slice(0, HMAC_LEN);
-      if (!expHmac.equals(hmacTag)) {
-        return fail(`unexpected HMAC-SHA1=${hmacTag.toString('hex')} want=${expHmac.toString('hex')}`);
+      const keyForHMAC = Xor(iv, keyForEncryption.slice(0, IV_LEN));
+      const expHmac = hmac('sha1', keyForHMAC, buffer.slice(32, 35 + alen)).slice(0, HMAC_LEN);
+      if (!expHmac.equals(providedHmac)) {
+        return fail(`unexpected HMAC-SHA1=${providedHmac.toString('hex')} want=${expHmac.toString('hex')}`);
       }
 
       // obtain addr, port and data
