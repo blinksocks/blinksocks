@@ -14,6 +14,7 @@ import {
   EVP_BytesToKey,
   HKDF,
   Xor,
+  kebabCase,
   BYTE_ORDER_LE
 } from '../common';
 
@@ -242,6 +243,14 @@ describe('Xor', function () {
     const b = [4, 5, 6];
     const dst = [5, 7, 5];
     expect(Xor(a, b)).toEqual(dst);
+  });
+
+});
+
+describe('kebabCase', function () {
+
+  it('should return kebab case string', function () {
+    expect(kebabCase('AbcDef')).toBe('abc-def');
   });
 
 });
