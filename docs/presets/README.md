@@ -5,7 +5,7 @@ If you want custom a preset, feel free to read [this](../development/architectur
 
 ## NOTICE
 
-You **MUST** put [ss-base] or [exp-base-with-padding] to the first in presets list.
+> You **MUST** put [ss-base] or [exp-base-with-padding] or [exp-base-auth-stream] to the first in presets list.
 
 ## [ss-base]
 
@@ -23,7 +23,7 @@ This is a very basic preset which delivers the real destination address from bli
 An experimental and advanced preset based on [ss-base], **SHOULD BE** used with ciphers in **cfb** operation mode.
 It can prevent address from being tampered.
 
-NOTE: Using [exp-base-with-padding] with non-cfb ciphers will lose protection. 
+**NOTE**: Using [exp-base-with-padding] with non-cfb ciphers will lose protection. 
 
 | PARAMS    | DESCRIPTION                     |
 | :-------- | :------------------------------ |
@@ -37,6 +37,31 @@ NOTE: Using [exp-base-with-padding] with non-cfb ciphers will lose protection.
   }
 }, {
   "name": "ss-stream-cipher",
+  "params": {
+    "method": "aes-256-cfb"
+  }
+}]
+```
+
+## [exp-base-auth-stream]
+
+An experimental preset combines HMAC and stream encryption. HMAC only guarantees integrity for addressing part.
+
+| PARAMS    | DESCRIPTION                      |
+| :-------- | :------------------------------- |
+| method    | encryption and decryption method |
+
+`method` can be one of:
+
+aes-128-ctr, aes-192-ctr, aes-256-ctr,
+
+aes-128-cfb, aes-192-cfb, aes-256-cfb,
+
+camellia-128-cfb, camellia-192-cfb, camellia-256-cfb
+
+```json
+"presets": [{
+  "name": "exp-base-auth-stream",
   "params": {
     "method": "aes-256-cfb"
   }
@@ -295,6 +320,7 @@ Make some cheat:
 
 [ss-base]: ../../src/presets/ss-base.js
 [exp-base-with-padding]: ../../src/presets/exp-base-with-padding.js
+[exp-base-auth-stream]: ../../src/presets/exp-base-auth-stream.js
 [ss-stream-cipher]: ../../src/presets/ss-stream-cipher.js
 [ss-aead-cipher]: ../../src/presets/ss-aead-cipher.js
 [aead-random-cipher]: ../../src/presets/aead-random-cipher.js
