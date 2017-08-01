@@ -60,9 +60,10 @@ export class Pipe extends EventEmitter {
     const direct = (buf, isReverse = false) => {
       this.emit(isReverse ? `next_${-direction}` : eventName, buf);
     };
-    const fail = (message) => this.onBroadcast(direction, {
+    const fail = (name, message) => this.onBroadcast(direction, {
       type: PROCESSING_FAILED,
       payload: {
+        name,
         message,
         orgData: buffer
       }

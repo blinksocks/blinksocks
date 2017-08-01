@@ -438,21 +438,19 @@ export class Socket {
    * @param action
    */
   onPresetFailed(action) {
-    const {message, orgData} = action.payload;
+    const {name, message, orgData} = action.payload;
+    logger.error(`[socket] [${this.remote}] preset "${name}" fail to process: ${message}`);
     if (__IS_SERVER__ && __REDIRECT__ !== '' && this._fsocket === null) {
       const [host, port] = __REDIRECT__.split(':');
-      logger.error(`[socket] [${this.remote}] connection is redirected to ${host}:${port} due to: ${message}`);
+      logger.warn(`[socket] [${this.remote}] connection is redirecting to ${host}:${port}...`);
       this.connect({host, port}, () => {
         this._isRedirect = true;
         this.fsocketWritable && this._fsocket.write(orgData);
       });
     } else {
       const timeout = getRandomInt(10, 40);
-      logger.error(`[socket] [${this.remote}] connection will be closed in ${timeout}s due to: ${message}`);
-      setTimeout(() => {
-        this.onForwardSocketClose();
-        this.onBackwardSocketClose();
-      }, timeout * 1e3);
+      logger.warn(`[socket] [${this.remote}] connection will be closed in ${timeout}s...`);
+      setTimeout(this.destroy.bind(this), timeout * 1e3);
     }
     Profile.fatals += 1;
   }

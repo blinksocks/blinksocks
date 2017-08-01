@@ -1,5 +1,6 @@
 import EventEmitter from 'events';
 import logger from './logger';
+import {kebabCase} from '../utils';
 
 export const MIDDLEWARE_DIRECTION_UPWARD = 1;
 export const MIDDLEWARE_DIRECTION_DOWNWARD = -1;
@@ -16,6 +17,10 @@ export class Middleware extends EventEmitter {
   constructor(impl) {
     super();
     this._impl = impl;
+  }
+
+  getName() {
+    return kebabCase(this._impl.constructor.name).replace(/(.*)-preset/i, '$1');
   }
 
   subscribe(receiver) {
@@ -40,13 +45,14 @@ export class Middleware extends EventEmitter {
     }[direction];
     const broadcast = this._broadcast;
 
+    const _fail = (message) => fail(this.getName(), message);
     const next = (buf) => {
       const args = {
         buffer: buf,
         next: (processed) => this.emit(`next_${direction}`, processed),
         broadcast,
         direct,
-        fail
+        fail: _fail
       };
       // clientOut, serverOut, clientIn, serverIn
       const ret = __IS_CLIENT__ ? this._impl[`client${type}`](args) : this._impl[`server${type}`](args);
@@ -56,7 +62,7 @@ export class Middleware extends EventEmitter {
     };
 
     // beforeOut, beforeIn
-    const r = this._impl[`before${type}`]({buffer, next, broadcast, direct, fail});
+    const r = this._impl[`before${type}`]({buffer, next, broadcast, direct, fail: _fail});
     if (typeof r !== 'undefined') {
       next(r);
     }
