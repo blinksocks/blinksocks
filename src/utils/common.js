@@ -181,14 +181,15 @@ export function isValidPort(port) {
 }
 
 /**
- * md5 message digest
+ * message digest
+ * @param algorithm
  * @param buffer
  * @returns {*}
  */
-export function md5(buffer) {
-  const md5 = crypto.createHash('md5');
-  md5.update(buffer);
-  return md5.digest();
+export function hash(algorithm, buffer) {
+  const hs = crypto.createHash(algorithm);
+  hs.update(buffer);
+  return hs.digest();
 }
 
 /**
@@ -217,7 +218,7 @@ export function EVP_BytesToKey(password, keyLen, ivLen) {
     if (i > 0) {
       _data = Buffer.concat([bufs[i - 1], Buffer.from(password)]);
     }
-    bufs.push(md5(_data));
+    bufs.push(hash('md5', _data));
     i += 1;
   }
   return Buffer.concat(bufs).slice(0, keyLen);
@@ -244,4 +245,25 @@ export function HKDF(hash, salt, ikm, info, length) {
   }
   // Step 3: crop okm to desired length
   return okm.slice(0, length);
+}
+
+/**
+ * xor two Buffer/Array
+ * @param buf1
+ * @param buf2
+ * @returns {*}
+ */
+export function Xor(buf1, buf2) {
+  if (buf1.length === buf2.length) {
+    const outBuf = [];
+    for (let i = 0; i < buf1.length; ++i) {
+      outBuf[i] = buf1[i] ^ buf2[i];
+    }
+    if (buf1 instanceof Buffer) {
+      return Buffer.from(outBuf);
+    } else {
+      return outBuf;
+    }
+  }
+  return null;
 }

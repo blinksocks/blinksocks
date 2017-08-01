@@ -19,8 +19,8 @@
     "test:coverage": "jest --coverage",
     "lint": "eslint bin src",
     "compile": "babel src --out-dir lib --minified --ignore __tests__,__mocks__",
-    "debug:client": "env NODE_ENV=development node --inspect bin/cli-client.js --config blinksocks.client.js",
-    "debug:server": "env NODE_ENV=development node --inspect bin/cli-server.js --config blinksocks.server.js",
+    "debug:client": "env NODE_ENV=development node --inspect --inspect-port=9229 bin/cli-client.js --config blinksocks.client.js",
+    "debug:server": "env NODE_ENV=development node --inspect --inspect-port=9230 bin/cli-server.js --config blinksocks.server.js",
     "client": "node bin/cli-client.js --config blinksocks.client.js",
     "server": "node bin/cli-server.js --config blinksocks.server.js",
     "precommit": "npm test"
