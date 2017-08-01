@@ -13,6 +13,7 @@ import {
   hmac,
   EVP_BytesToKey,
   HKDF,
+  Xor,
   BYTE_ORDER_LE
 } from '../common';
 
@@ -217,6 +218,30 @@ describe('HKDF', function () {
     const length = 16;
     const dst = Buffer.from('160ade10f83c4275fca1c8cd0583e4e6', 'hex');
     expect(HKDF(hash, salt, ikm, info, length).equals(dst)).toBe(true);
+  });
+
+});
+
+describe('Xor', function () {
+
+  it('should return null', function () {
+    const a = Buffer.from([1, 2]);
+    const b = Buffer.from([4, 5, 6]);
+    expect(Xor(a, b)).toBe(null);
+  });
+
+  it('should return expected buffer', function () {
+    const a = Buffer.from([1, 2, 3]);
+    const b = Buffer.from([4, 5, 6]);
+    const dst = Buffer.from([5, 7, 5]);
+    expect(Xor(a, b).equals(dst)).toBe(true);
+  });
+
+  it('should return expected array', function () {
+    const a = [1, 2, 3];
+    const b = [4, 5, 6];
+    const dst = [5, 7, 5];
+    expect(Xor(a, b)).toEqual(dst);
   });
 
 });
