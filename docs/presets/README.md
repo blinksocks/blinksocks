@@ -82,10 +82,6 @@ aes-128-ctr, aes-192-ctr, aes-256-ctr,
 
 aes-128-cfb, aes-192-cfb, aes-256-cfb,
 
-aes-128-ofb, aes-192-ofb, aes-256-ofb,
-
-aes-128-cbc, aes-192-cbc, aes-256-cbc
-
 camellia-128-cfb, camellia-192-cfb, camellia-256-cfb
 
 ```json
