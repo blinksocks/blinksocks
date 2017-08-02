@@ -12,33 +12,25 @@ $ blinksocks init
 
 ```js
 module.exports = {
-
   // local hostname or ip address
   // For client, act as a Socks5/Socks4/HTTP server.
   // For server, act as a blinksocks server.
   host: "localhost",
-
   // local port to be listen on
   port: 1080,
-
   // a list of blinksocks/shadowsocks server(client side only)
   servers: [
     {
       // allow to use this server or not
       enabled: true,
-
       // the transport layer, "tcp" or "udp"
-      transport: 'tcp',
-
+      transport: "tcp",
       // server host name or ip address
       host: "example.com",
-
       // server port
-      port: 5678,
-
+      port: 4321,
       // a secret key for encryption/description
-      key: "qtPb2edK7yd7e]<K",
-
+      key: "(9%4})P47F%]E:f+",
       // presets to process data stream
       // DO NOT modify the first preset if you don't know what it is.
       // Take care the order of those presets, read the docs before changing them.
@@ -46,7 +38,6 @@ module.exports = {
         {
           // preset name
           name: "ss-base",
-
           // preset parameters
           params: {}
         },
@@ -60,22 +51,18 @@ module.exports = {
       ]
     }
   ],
-
   // an ip list of DNS server
   dns: [],
-
+  // DNS cache expiration time in seconds
+  dns_expire: 3600,
   // close inactive connection after timeout seconds
   timeout: 600,
-
   // collect performance statistics
   profile: false,
-
   // hot-reload when this file changed
   watch: true,
-
   // log at the level, "error", "warn", "info", "verbose", "debug" or "silly"
   log_level: "info"
-
 };
 ```
 
@@ -83,21 +70,16 @@ module.exports = {
 
 ```js
 module.exports = {
-
   // local hostname or ip address
   // For client, act as a Socks5/Socks4/HTTP server.
   // For server, act as a blinksocks server.
   host: "0.0.0.0",
-
   // local port to be listen on
-  port: 5678,
-
+  port: 4321,
   // the transport layer, "tcp" or "udp"
-  transport: 'tcp',
-
+  transport: "tcp",
   // a secret key for encryption/description
-  key: "qtPb2edK7yd7e]<K",
-
+  key: "(9%4})P47F%]E:f+",
   // presets to process data stream
   // DO NOT modify the first preset if you don't know what it is.
   // Take care the order of those presets, read the docs before changing them.
@@ -105,7 +87,6 @@ module.exports = {
     {
       // preset name
       name: "ss-base",
-
       // preset parameters
       params: {}
     },
@@ -117,26 +98,21 @@ module.exports = {
       }
     }
   ],
-
   // an ip list of DNS server
   dns: [],
-
+  // DNS cache expiration time in seconds
+  dns_expire: 3600,
   // redirect data to here once preset fail to process(server side only)
   // Should be formed with "host:port".
   redirect: "",
-
   // close inactive connection after timeout seconds
   timeout: 600,
-
   // collect performance statistics
   profile: false,
-
   // hot-reload when this file changed
   watch: true,
-
   // log at the level, "error", "warn", "info", "verbose", "debug" or "silly"
   log_level: "info"
-
 };
 ```
 
