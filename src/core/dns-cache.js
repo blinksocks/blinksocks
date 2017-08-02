@@ -1,14 +1,18 @@
 import dns from 'dns';
 import net from 'net';
 
-export const DNS_SURVIVAL_TIME = 3600000;
+export const DNS_DEFAULT_EXPIRE = 3600000;
 
 export class DNSCache {
 
   _pool = {};
 
-  static create() {
-    return new DNSCache();
+  _expire = DNS_DEFAULT_EXPIRE;
+
+  constructor({expire} = {}) {
+    if (expire !== undefined) {
+      this._expire = expire;
+    }
   }
 
   _now() {
@@ -28,8 +32,10 @@ export class DNSCache {
   }
 
   _put(hostname, address) {
-    const expire = this._now() + DNS_SURVIVAL_TIME;
-    this._pool[hostname] = [address, expire];
+    if (this._expire > 0) {
+      const expire = this._now() + this._expire;
+      this._pool[hostname] = [address, expire];
+    }
   }
 
   async get(hostname) {
