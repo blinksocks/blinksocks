@@ -5,7 +5,8 @@ If you want custom a preset, feel free to read [this](../development/architectur
 
 ## NOTICE
 
-> You **MUST** put [ss-base] or [exp-base-with-padding] or [exp-base-auth-stream] to the first in presets list.
+> You **MUST** put [ss-base] or [exp-base-with-padding] or [exp-base-auth-stream] to the first in presets list if you
+want to relay data to blinksocks server.
 
 ## [ss-base]
 
@@ -210,6 +211,31 @@ A TLS obfuscator, do TLS handshake using SessionTicket TLS mechanism, transfer d
 ]
 ```
 
+# Special Presets
+
+## [proxy]
+
+This preset turns blinksocks to a proxy server. This is useful to setup a network middleware(act as Man-in-the-middle) to do traffic analysis.
+
+For example, setup a local proxy server using **blinksocks server** at 1080:
+
+> applications ---Socks5/HTTP---> **[blinksocks server]** ------> destinations
+
+```js
+// blinksocks.server.js
+module.exports = {
+  host: "localhost",
+  port: 1080,
+  presets: [
+    {
+      name: "proxy",
+      params: {}
+    }
+  ],
+  ...
+};
+```
+
 # Recommended Combinations
 
 ## Work with shadowsocks
@@ -322,5 +348,6 @@ Make some cheat:
 [aead-random-cipher]: ../../src/presets/aead-random-cipher.js
 [obfs-http]: ../../src/presets/obfs-http.js
 [obfs-tls1.2-ticket]: ../../src/presets/obfs-tls1.2-ticket.js
+[proxy]: ../../src/presets/proxy.js
 [Server Name Indication]: https://en.wikipedia.org/wiki/Server_Name_Indication
 [QoS]: https://en.wikipedia.org/wiki/Quality_of_service
