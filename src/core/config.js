@@ -3,6 +3,7 @@ import fs from 'fs';
 import net from 'net';
 import {isValidPort} from '../utils';
 import {BLINKSOCKS_DIR, LOG_DIR, DEFAULT_LOG_LEVEL} from './constants';
+import {DNS_DEFAULT_EXPIRE} from './dns-cache';
 
 /**
  * make directory if not exist
@@ -91,6 +92,19 @@ export class Config {
     if (json.timeout < 60) {
       console.warn(`==> [config] 'timeout' is too short, is ${json.timeout}s expected?`);
     }
+
+    // dns_expire
+    if (typeof json.dns_expire !== 'undefined') {
+      if (typeof json.dns_expire !== 'number') {
+        throw Error('\'dns_expire\' must be a number');
+      }
+      if (json.dns_expire < 0) {
+        throw Error('\'dns_expire\' must be greater or equal to 0');
+      }
+      if (json.dns_expire > 24 * 60 * 60) {
+        console.warn(`==> [config] 'dns_expire' is too long, is ${json.dns_expire}s expected?`);
+      }
+    }
   }
 
   static validateServer(server) {
@@ -173,10 +187,11 @@ export class Config {
 
     global.__IS_SERVER__ = !global.__IS_CLIENT__;
     global.__REDIRECT__ = json.redirect;
-    global.__TIMEOUT__ = json.timeout;
+    global.__TIMEOUT__ = json.timeout * 1e3;
     global.__PROFILE__ = !!json.profile;
     global.__IS_WATCH__ = !!json.watch;
     global.__LOG_LEVEL__ = json.log_level || DEFAULT_LOG_LEVEL;
+    global.__DNS_EXPIRE__ = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
     global.__ALL_CONFIG__ = json;
 
     if (typeof json.dns !== 'undefined' && json.dns.length > 0) {

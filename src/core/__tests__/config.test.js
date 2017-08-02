@@ -85,6 +85,38 @@ describe('Config#init', function () {
     }).not.toThrow();
   });
 
+  it('should throw when dns_expire is provided but invalid', function () {
+    const conf = {
+      transport: 'tcp',
+      host: 'localhost',
+      port: 1080,
+      key: 'abc',
+      presets: [{
+        name: 'ss-base',
+        params: {}
+      }, {
+        name: 'ss-stream-cipher',
+        params: {
+          method: 'aes-128-cfb'
+        }
+      }],
+      redirect: 'test.com:443',
+      timeout: 600
+    };
+
+    expect(function () {
+      Config.init({...conf, dns_expire: '0'});
+    }).toThrow();
+
+    expect(function () {
+      Config.init({...conf, dns_expire: -1});
+    }).toThrow();
+
+    expect(function () {
+      Config.init({...conf, dns_expire: 24 * 60 * 60 + 1});
+    }).not.toThrow();
+  });
+
   it('should throw when dns is provided but invalid', function () {
     const conf = {
       transport: 'tcp',
