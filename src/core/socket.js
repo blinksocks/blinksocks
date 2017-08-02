@@ -2,9 +2,9 @@ import net from 'net';
 import ip from 'ip';
 import isEqual from 'lodash.isequal';
 import {getRandomInt} from '../utils';
+import {Proxifier} from '../proxies';
 import logger from './logger';
 import {Config} from './config';
-import {ClientProxy} from './client-proxy';
 import {DNSCache} from './dns-cache';
 import {Balancer} from './balancer';
 import {Pipe} from './pipe';
@@ -90,7 +90,7 @@ export class Socket {
       this._tracks.push(`${this._remoteAddress}:${this._remotePort}`);
       this.createPipe();
     } else {
-      this._proxy = new ClientProxy({
+      this._proxy = new Proxifier({
         onHandshakeDone: this.onHandshakeDone.bind(this)
       });
     }
@@ -120,7 +120,7 @@ export class Socket {
     if (__IS_CLIENT__) {
       if (!this._proxy.isDone()) {
         // client handshake(multiple-protocols)
-        this._proxy.makeHandshake(this._bsocket, buffer);
+        this._proxy.makeHandshake((buf) => this._bsocket.write(buf), buffer);
         return;
       }
       this.clientOut(buffer);
@@ -425,7 +425,7 @@ export class Socket {
       const {targetAddress, onConnected} = action.payload;
       return this.connect(targetAddress, () => {
         this._isHandshakeDone = true;
-        onConnected();
+        (typeof onConnected === 'function') && onConnected();
       });
     }
     if (action.type === PROCESSING_FAILED) {

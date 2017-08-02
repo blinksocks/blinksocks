@@ -8,17 +8,17 @@ import {
   RequestMessage as Socks5RequestMessage,
   ReplyMessage as Socks5ReplyMessage,
   // UdpRequestMessage
-} from '../proxies/socks5';
+} from './socks5';
 
 import {
   RequestMessage as Socks4RequestMessage,
   ReplyMessage as Socks4ReplyMessage
-} from '../proxies/socks4';
+} from './socks4';
 
 import {
   HttpRequestMessage,
   ConnectReplyMessage
-} from '../proxies/http';
+} from './http';
 
 import {
   ATYP_V4,
@@ -29,9 +29,9 @@ import {
   REPLY_GRANTED,
   REPLY_SUCCEEDED,
   REPLY_COMMAND_NOT_SUPPORTED
-} from '../proxies/common';
+} from './common';
 
-export class ClientProxy {
+export class Proxifier {
 
   _socksTcpReady = false;
 
@@ -44,26 +44,26 @@ export class ClientProxy {
   }
 
   isDone() {
-    return [this._socksTcpReady, this._socksUdpReady, this._httpReady].some((v) => !!v);
+    return this._socksTcpReady || this._socksUdpReady || this._httpReady;
   }
 
-  makeHandshake(socket, buffer) {
-    this._trySocksHandshake(socket, buffer);
+  makeHandshake(feedback, buffer) {
+    this._trySocksHandshake(feedback, buffer);
     if (!this.isDone()) {
-      this._tryHttpHandshake(socket, buffer);
+      this._tryHttpHandshake(feedback, buffer);
     }
   }
 
-  _trySocksHandshake(socket, buffer) {
+  _trySocksHandshake(feedback, buffer) {
     if (!this.isDone()) {
-      this._trySocks5Handshake(socket, buffer);
+      this._trySocks5Handshake(feedback, buffer);
     }
     if (!this.isDone()) {
-      this._trySocks4Handshake(socket, buffer);
+      this._trySocks4Handshake(feedback, buffer);
     }
   }
 
-  _trySocks4Handshake(socket, buffer) {
+  _trySocks4Handshake(feedback, buffer) {
     const request = Socks4RequestMessage.parse(buffer);
     if (request !== null) {
       const {CMD, DSTIP, DSTADDR, DSTPORT} = request;
@@ -76,19 +76,19 @@ export class ClientProxy {
         this.onHandshakeDone(addr, () => {
           // reply success
           const message = new Socks4ReplyMessage({CMD: REPLY_GRANTED});
-          socket.write(message.toBuffer());
+          feedback(message.toBuffer());
           this._socksTcpReady = true;
         });
       }
     }
   }
 
-  _trySocks5Handshake(socket, buffer) {
+  _trySocks5Handshake(feedback, buffer) {
     // 1. IDENTIFY
     const identifier = IdentifierMessage.parse(buffer);
     if (identifier !== null) {
       const message = new SelectMessage();
-      socket.write(message.toBuffer());
+      feedback(message.toBuffer());
       return;
     }
 
@@ -107,7 +107,7 @@ export class ClientProxy {
           this.onHandshakeDone(addr, () => {
             // reply success
             const message = new Socks5ReplyMessage({REP: REPLY_SUCCEEDED});
-            socket.write(message.toBuffer());
+            feedback(message.toBuffer());
 
             if (type === REQUEST_COMMAND_CONNECT) {
               this._socksTcpReady = true;
@@ -119,14 +119,14 @@ export class ClientProxy {
         }
         default: {
           const message = new Socks5ReplyMessage({REP: REPLY_COMMAND_NOT_SUPPORTED});
-          socket.write(message.toBuffer());
+          feedback(message.toBuffer());
           break;
         }
       }
     }
   }
 
-  _tryHttpHandshake(socket, buffer) {
+  _tryHttpHandshake(feedback, buffer) {
     const request = HttpRequestMessage.parse(buffer);
     if (request !== null) {
       const {METHOD, URI, HOST} = request;
@@ -153,7 +153,7 @@ export class ClientProxy {
       this.onHandshakeDone(addr, (onForward) => {
         if (method === 'CONNECT') {
           const message = new ConnectReplyMessage();
-          socket.write(message.toBuffer());
+          feedback(message.toBuffer());
         } else {
           // for clients who haven't sent CONNECT, should begin to relay immediately
           onForward(buffer);
