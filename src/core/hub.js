@@ -1,3 +1,4 @@
+import EventEmitter from 'events';
 import net from 'net';
 import logger from './logger';
 import {Config} from './config';
@@ -15,7 +16,16 @@ const nextId = (function () {
   };
 })();
 
-export class Hub {
+/**
+ * @description
+ *   gather and manage connections.
+ *
+ * @events
+ *   .on('close', () => {});
+ *   .on('socketClose', () => {});
+ *   .on('socketStat', ({stat}) => {});
+ */
+export class Hub extends EventEmitter {
 
   _hub = null; // instance of class net.Server
 
@@ -24,6 +34,7 @@ export class Hub {
   _isClosed = false;
 
   constructor(config) {
+    super();
     if (typeof config !== 'undefined') {
       Config.init(config);
     }
@@ -50,11 +61,13 @@ export class Hub {
       this._isClosed = true;
       this._sockets.forEach((socket) => socket.destroy());
       this._sockets = [];
+      this.emit('close');
     }
   }
 
-  onSocketClose(socket) {
-    this._sockets = this._sockets.filter(({id}) => id !== socket.id);
+  onSocketClose(_id) {
+    this._sockets = this._sockets.filter(({id}) => _id !== id);
+    this.emit('socketClose');
     Profile.connections = this._sockets.length;
     // NOTE: would better not force gc manually
     // global.gc && global.gc();
@@ -62,12 +75,10 @@ export class Hub {
 
   onConnect(socket) {
     const id = nextId();
-    const instance = new Socket({
-      id,
-      socket,
-      onClose: this.onSocketClose
-    });
-    this._sockets.push(instance);
+    const sok = new Socket({id, socket});
+    sok.on('close', () => this.onSocketClose(id));
+    sok.on('stat', (...props) => this.emit('socketStat', ...props));
+    this._sockets.push(sok);
     logger.info(`[hub] [${socket.remoteAddress}:${socket.remotePort}] connected`);
     Profile.connections += 1;
   }

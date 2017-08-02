@@ -1,3 +1,4 @@
+import EventEmitter from 'events';
 import net from 'net';
 import ip from 'ip';
 import isEqual from 'lodash.isequal';
@@ -26,8 +27,6 @@ import {ATYP_DOMAIN} from '../proxies/common';
 //   UdpRequestMessage
 // } from '../proxies/socks5';
 
-const dnsCache = DNSCache.create();
-
 const TRACK_CHAR_UPLOAD = '↑';
 const TRACK_CHAR_DOWNLOAD = '↓';
 const TRACK_MAX_SIZE = 40;
@@ -35,11 +34,19 @@ const MAX_BUFFERED_SIZE = 1024 * 1024; // 1MB
 
 let lastServer = null;
 
-export class Socket {
+/**
+ * @description
+ *   socket layer which handles both backward socket and forward socket.
+ *
+ * @events
+ *   .on('close', () => {});
+ *   .on('stat', ({stat}) => {});
+ */
+export class Socket extends EventEmitter {
 
   _id = null;
 
-  _onClose = null;
+  _dnsCache = null;
 
   _isHandshakeDone = false;
 
@@ -60,9 +67,10 @@ export class Socket {
   // +---+-----------------------+---+
   // | C | d <--> u     u <--> d | S |
   // +---+-----------------------+---+
-  _tracks = []; // [`target`, 'u', '20', 'u', '20', 'd', '10', ...]
+  _tracks = []; // ['source', 'target', 'u', '20', 'u', '20', 'd', '10', ...]
 
-  constructor({id, socket, onClose}) {
+  constructor({id, socket}) {
+    super();
     this.onForward = this.onForward.bind(this);
     this.onBackward = this.onBackward.bind(this);
     this.onError = this.onError.bind(this);
@@ -73,7 +81,7 @@ export class Socket {
     this.onForwardSocketTimeout = this.onForwardSocketTimeout.bind(this);
     this.onForwardSocketClose = this.onForwardSocketClose.bind(this);
     this._id = id;
-    this._onClose = onClose;
+    this._dnsCache = new DNSCache({expire: __DNS_EXPIRE__});
     this._remoteAddress = socket.remoteAddress;
     this._remotePort = socket.remotePort;
     this._bsocket = socket;
@@ -85,7 +93,7 @@ export class Socket {
     }));
     this._bsocket.on('data', this.onForward);
     this._bsocket.on('drain', this.onBackwardSocketDrain);
-    this._bsocket.setTimeout(__TIMEOUT__ * 1e3);
+    this._bsocket.setTimeout(__TIMEOUT__);
     if (__IS_SERVER__) {
       this._tracks.push(`${this._remoteAddress}:${this._remotePort}`);
       this.createPipe();
@@ -175,7 +183,7 @@ export class Socket {
   }
 
   onForwardSocketTimeout({host, port}) {
-    logger.warn(`[socket] [${host}:${port}] timeout: no I/O on the connection for ${__TIMEOUT__}s`);
+    logger.warn(`[socket] [${host}:${port}] timeout: no I/O on the connection for ${__TIMEOUT__ / 1e3}s`);
     this.onForwardSocketClose();
   }
 
@@ -190,6 +198,7 @@ export class Socket {
       this.onBackwardSocketClose();
     }
     if (__IS_CLIENT__ && this._tracks.length > 0) {
+      this.emit('stat', {stat: [].concat(this._tracks)});
       this.dumpTrack();
     }
     this._fsocket = null;
@@ -207,7 +216,7 @@ export class Socket {
   }
 
   onBackwardSocketTimeout({host, port}) {
-    logger.warn(`[socket] [${host}:${port}] timeout: no I/O on the connection for ${__TIMEOUT__}s`);
+    logger.warn(`[socket] [${host}:${port}] timeout: no I/O on the connection for ${__TIMEOUT__ / 1e3}s`);
     this.onBackwardSocketClose();
   }
 
@@ -222,10 +231,11 @@ export class Socket {
       this.onForwardSocketClose();
     }
     if (__IS_SERVER__ && this._tracks.length > 0) {
+      this.emit('stat', {stat: [].concat(this._tracks)});
       this.dumpTrack();
     }
     this._bsocket = null;
-    this._onClose(this); // notify hub to remove this one
+    this.emit('close');
   }
 
   /**
@@ -380,14 +390,14 @@ export class Socket {
       }
       this._tracks.push(`${host}:${port}`);
       try {
-        const ip = await dnsCache.get(host);
+        const ip = await this._dnsCache.get(host);
         this._fsocket = net.connect({host: ip, port}, callback);
         this._fsocket.on('error', this.onError);
         this._fsocket.on('close', this.onForwardSocketClose);
         this._fsocket.on('timeout', this.onForwardSocketTimeout.bind(this, {host, port}));
         this._fsocket.on('data', this.onBackward);
         this._fsocket.on('drain', this.onForwardSocketDrain);
-        this._fsocket.setTimeout(__TIMEOUT__ * 1e3);
+        this._fsocket.setTimeout(__TIMEOUT__);
       } catch (err) {
         logger.error(`[socket] [${this.remote}] connect to ${host}:${port} failed due to: ${err.message}`);
       }
