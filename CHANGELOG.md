@@ -2,6 +2,21 @@
 
 
 
+## [v2.4.9](https://github.com/blinksocks/blinksocks/tree/v2.4.9) (2017-08-04)
+[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.8...v2.4.9)
+
+#### Features:
+
+- add "dns_expire" option to configuration [#77](https://github.com/blinksocks/blinksocks/issues/77)
+- add proxy preset [#76](https://github.com/blinksocks/blinksocks/issues/76)
+- add noop preset for special use [#75](https://github.com/blinksocks/blinksocks/issues/75)
+- display error buffer in hex for obfs-tls1.2-ticket [#73](https://github.com/blinksocks/blinksocks/issues/73)
+- display preset name in error log [#72](https://github.com/blinksocks/blinksocks/issues/72)
+
+#### Fixes (bugs & defects):
+
+- Destination port is wrong when relay ipv6 address [#68](https://github.com/blinksocks/blinksocks/issues/68)
+
 ## [v2.4.8](https://github.com/blinksocks/blinksocks/tree/v2.4.8) (2017-06-18)
 [Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.7...v2.4.8)
 
@@ -13,7 +28,7 @@
 
 #### Fixes (bugs & defects):
 
-- HTTP proxy dosen't work on Windows [#59](https://github.com/blinksocks/blinksocks/issues/59)
+- HTTP proxy doesn't work on Windows [#59](https://github.com/blinksocks/blinksocks/issues/59)
 
 ## [v2.4.7](https://github.com/blinksocks/blinksocks/tree/v2.4.7) (2017-06-10)
 [Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.6...v2.4.7)
