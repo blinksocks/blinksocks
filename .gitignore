@@ -19,5 +19,7 @@ coverage/
 
 # others
 blinksocks*.json
-blinksocks*.js
+blinksocks.client.js
+blinksocks.server.js
 blinksocks*.log
+/build/blinksocks.js.map

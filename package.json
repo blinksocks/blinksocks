@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "files": [
     "bin",
-    "lib",
+    "build",
     "AUTHORS"
   ],
   "bin": {
@@ -19,6 +19,7 @@
     "test:coverage": "jest --coverage",
     "lint": "eslint bin src",
     "compile": "cross-env NODE_ENV=production babel src --out-dir build --minified --ignore __tests__,__mocks__",
+    "pack": "cross-env NODE_ENV=production webpack --config webpack.config.js",
     "debug:client": "cross-env NODE_ENV=development node --inspect --inspect-port=9229 bin/cli-client.js --config blinksocks.client.js",
     "debug:server": "cross-env NODE_ENV=development node --inspect --inspect-port=9230 bin/cli-server.js --config blinksocks.server.js",
     "client": "node bin/cli-client.js --config blinksocks.client.js",
@@ -36,17 +37,21 @@
     "babel-cli": "^6.24.1",
     "babel-eslint": "^7.2.3",
     "babel-jest": "^20.0.3",
+    "babel-loader": "^7.1.1",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-object-rest-spread": "^6.23.0",
     "babel-preset-env": "^1.6.0",
     "babel-register": "^6.24.1",
+    "babili-webpack-plugin": "^0.1.2",
     "cross-env": "^5.0.4",
     "eslint": "^4.3.0",
     "eslint-config-babel": "^7.0.1",
+    "eslint-loader": "^1.9.0",
     "eslint-plugin-babel": "^4.1.2",
     "eslint-plugin-flowtype": "^2.35.0",
     "husky": "^0.14.3",
-    "jest": "^20.0.4"
+    "jest": "^20.0.4",
+    "webpack": "^3.4.1"
   },
   "repository": {
     "url": "https://github.com/blinksocks/blinksocks",
