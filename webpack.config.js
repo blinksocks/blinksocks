@@ -1,7 +1,10 @@
 const path = require('path');
 const webpack = require('webpack');
 const BabiliPlugin = require('babili-webpack-plugin');
+const packageJson = require('./package.json');
 
+// TODO: prevent packing src/presets/__tests__/*.test.js into blinksocks.js
+// ./src/presets ^\.\/.*$ 789 bytes {0} [optional] [built]
 module.exports = {
 
   bail: true,
@@ -39,12 +42,7 @@ module.exports = {
       },
       {
         test: /\.js$/,
-        loader: require.resolve('babel-loader'),
-        exclude: [
-          /node_modules/,
-          /__mocks__/,
-          /__tests__/
-        ]
+        loader: require.resolve('babel-loader')
       }
     ]
 
@@ -56,8 +54,18 @@ module.exports = {
 
   plugins: [
     new BabiliPlugin(),
+    new webpack.DefinePlugin({
+      'process.env.NODE_ENV': JSON.stringify('production'),
+      'global.__WEBPACK__': JSON.stringify(true)
+    }),
+    new webpack.IgnorePlugin(/__mocks__/, /__tests__/),
     new webpack.BannerPlugin({
-      banner: 'Copyright (c) 2016-present, [name]. All rights reserved.\n\nname: [file]\nhash: [hash]',
+      banner: [
+        'Copyright (c) 2016-present, [name]. All rights reserved.\n',
+        'name: [file]',
+        `version: v${packageJson.version}`,
+        'hash: [hash]'
+      ].join('\n'),
       entryOnly: true
     })
   ]
