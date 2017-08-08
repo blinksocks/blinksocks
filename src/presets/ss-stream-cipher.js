@@ -53,7 +53,7 @@ const ciphers = [
  *       https://www.openssl.org/docs/man1.0.2/crypto/EVP_BytesToKey.html
  *       https://github.com/shadowsocks/shadowsocks/blob/master/shadowsocks/cryptor.py#L53
  */
-export default class SSStreamCipherPreset extends IPreset {
+export default class SsStreamCipherPreset extends IPreset {
 
   _cipherName = '';
 

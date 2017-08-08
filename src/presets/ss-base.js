@@ -41,7 +41,7 @@ const ATYP_DOMAIN = 0x03;
  *   3. If ATYP is 0x04, DST.ADDR must be a 16 bytes ipv6 address.
  *   4. The initial stream MUST contain a DATA chunk followed by [ATYP, DST.ADDR, DST.PORT].
  */
-export default class SSBasePreset extends IPreset {
+export default class SsBasePreset extends IPreset {
 
   _isHandshakeDone = false;
 

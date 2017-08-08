@@ -75,7 +75,7 @@ const HKDF_HASH_ALGORITHM = 'sha1';
  *       https://nodejs.org/dist/latest-v6.x/docs/api/crypto.html#crypto_cipher_getauthtag
  *       https://nodejs.org/dist/latest-v6.x/docs/api/crypto.html#crypto_decipher_setauthtag_buffer
  */
-export default class SSAeadCipherPreset extends IPreset {
+export default class SsAeadCipherPreset extends IPreset {
 
   _cipherName = '';
 
