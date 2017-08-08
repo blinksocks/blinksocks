@@ -160,7 +160,7 @@ npm logging levels by default, you can choose one of them demand:
 
 ## Hot reload
 
-`--watch` is enabled by default, this means when file specified by `-c` or `--config` has been modified,
+`watch` is enabled by default, this means when file specified by `-c` or `--config` has been modified,
 blinksocks will hot-reload it without stop-the-world.
 
 ```

@@ -2,10 +2,9 @@
 
 ## For Users
 
-1. [Getting Started](tutorials)
-2. [Usage](usage)
-3. [Configuration](config)
-4. [Presets](presets)
+1. [Usage](usage)
+2. [Configuration](config)
+3. [Presets](presets)
 
 ## For Developers
 

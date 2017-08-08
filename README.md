@@ -26,44 +26,49 @@ and [ShadowsocksR](https://github.com/shadowsocksr/shadowsocksr).
 For desktop use, you can download official [blinksocks-desktop](https://github.com/blinksocks/blinksocks-desktop),
 a cross-platform GUI for blinksocks.
 
-## Quick Start
+## Getting Started
+
+### Requirements
+
+blinksocks is built on top of [Node.js](https://nodejs.org), so please install Node.js(**greater than v6.x**) on your operating system.
+
+### Install or Upgrade
+
+You can get the latest pre-compiled library(including executables) of blinksocks from **yarn** or **npm**.
+
+> NOTE: Node.js comes with npm installed so you don't have to install npm individually.
+
+```
+$ npm install -g blinksocks
+```
+
+### Without Install?
+
+If you hate to install and want to get a even more portable version, we have one:
+
+```
+$ wget https://raw.githubusercontent.com/blinksocks/blinksocks/master/build/blinksocks.js
+```
+
+## Run blinksocks
 
 ```
 $ blinksocks client -c blinksocks.client.js
 ```
 
-```js
-// blinksocks.client.js
-module.exports = {
-  host: "localhost",
-  port: 1080,
-  servers: [{
-    enabled: true,
-    transport: 'tcp',
-    host: "bs.example.com",
-    port: 6858,
-    key: "qtPb2edK7yd7e]<K",
-    presets: [
-      {name: "ss-base", params: {}},
-      {name: "ss-aead-cipher", params: {method: "aes-256-gcm", info: "ss-subkey"}}
-    ]
-  }],
-  dns: ['8.8.8.8'],
-  timeout: 600,
-  profile: false,
-  watch: true,
-  log_level: "info"
-};
+Or
+
+```
+$ node blinksocks.js -c blinksocks.client.js
 ```
 
 ## Documents
 
 ### For Users
 
-1. [Getting Started](docs/tutorials)
-2. [Usage](docs/usage)
-3. [Configuration](docs/config)
-4. [Presets](docs/presets)
+1. [Usage](docs/usage)
+2. [Configuration](docs/config)
+3. [Presets](docs/presets)
 
 ### For Developers
 
