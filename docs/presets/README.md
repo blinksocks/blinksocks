@@ -221,19 +221,19 @@ For example, setup a local proxy server using **blinksocks server** at 1080:
 
 > applications ---Socks5/HTTP---> **[blinksocks server]** ------> destinations
 
-```js
-// blinksocks.server.js
-module.exports = {
-  host: "localhost",
-  port: 1080,
-  presets: [
+```json
+// blinksocks.server.json
+{
+  "host": "localhost",
+  "port": 1080,
+  "presets": [
     {
-      name: "proxy",
-      params: {}
+      "name": "proxy",
+      "params": {}
     }
   ],
   ...
-};
+}
 ```
 
 # Recommended Combinations

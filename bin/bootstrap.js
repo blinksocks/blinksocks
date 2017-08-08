@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const program = require('commander');
+const chalk = require('chalk');
 const packageJson = require('../package.json');
 
 // const BOOTSTRAP_TYPE_CLIENT = 0;
@@ -16,8 +17,8 @@ const options = [
 const examples = `
   Examples:
 
-    $ blinksocks client -c blinksocks.client.js
-    $ blinksocks server -c blinksocks.server.js
+    $ blinksocks client -c blinksocks.client.json
+    $ blinksocks server -c blinksocks.server.json
 `;
 
 /**
@@ -37,10 +38,12 @@ function obtainConfig(type, options) {
   const file = path.resolve(process.cwd(), options.config);
   try {
     const ext = path.extname(file);
+    // TODO: remove .js support in v2.6.x for security reason
     if (ext === '.js') {
       // require .js directly
       delete require.cache[require.resolve(file)];
       json = require(file);
+      console.warn(chalk.yellow.underline('\n>> WARN: using .js configuration will be deprecated in v2.6.x, please use .json instead. <<\n'));
     } else {
       // others are treated as .json
       const jsonFile = fs.readFileSync(file);
@@ -95,11 +98,10 @@ module.exports = function (type, {Hub, Config, Balancer}) {
     }
 
     const app = new Hub();
+    app.on('close', () => process.exit(0));
     app.run();
-    process.on('SIGINT', () => {
-      app.terminate();
-      process.exit(0);
-    });
+
+    process.on('SIGINT', () => app.terminate());
   } catch (err) {
     console.error(err);
     process.exit(-1);

@@ -14,7 +14,7 @@ $ cd blinksocks && npm install
 
 ## Start blinksocks
 
-Prepare your configurations(**blinksocks.client.js** and **blinksocks.server.js**) in the project root folder, then start to test:
+Prepare your configurations(**blinksocks.client.json** and **blinksocks.server.json**) in the project root folder, then start to test:
 
 ### Debug Mode(Use Chrome Debugger)
 

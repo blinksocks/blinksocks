@@ -28,9 +28,9 @@ There are threes commands to do different tasks:
 
 ### * blinksocks init
 
-This will generate `blinksocks.client.js` and `blinksocks.server.js` with a random key and default settings.
+This will generate `blinksocks.client.json` and `blinksocks.server.json` with a random key and default settings.
 
-Then you should edit `blinksocks.client.js` to tell blinksocks client where is the server:
+Then you should edit `blinksocks.client.json` to tell blinksocks client where is the server:
 
 ```
 {
@@ -61,8 +61,8 @@ $ blinksocks server --help
 
   Examples:
 
-    $ blinksocks client -c blinksocks.client.js
-    $ blinksocks server -c blinksocks.server.js
+    $ blinksocks client -c blinksocks.client.json
+    $ blinksocks server -c blinksocks.server.json
 
 ```
 
@@ -79,13 +79,13 @@ $ npm install -g pm2
 ### Daemon mode
 
 ```
-$ pm2 start blinksocks-client -- -c blinksocks.client.js
+$ pm2 start blinksocks-client -- -c blinksocks.client.json
 ```
 
 ### Cluster mode
 
 ```
-$ pm2 start blinksocks-server -i 2 -- -c blinksocks.server.js
+$ pm2 start blinksocks-server -i 2 -- -c blinksocks.server.json
 ```
 
 ## For Firefox/Google Chrome and more...
