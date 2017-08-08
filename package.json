@@ -1,8 +1,8 @@
 {
   "name": "blinksocks",
   "version": "2.4.9",
-  "description": "Yet another secure proxy, designed for speed.",
-  "main": "lib/index.js",
+  "description": "A framework for building composable proxy protocol stack",
+  "main": "build/index.js",
   "files": [
     "bin",
     "build",
@@ -67,15 +67,19 @@
     "socks4",
     "socks4a",
     "http",
+    "protocol",
     "proxy",
     "nodejs",
+    "node",
     "blinksocks",
     "shadowsocks",
     "shadowsocksr",
     "middleware",
     "flexible",
+    "composable",
     "customizable",
-    "aead"
+    "aead",
+    "obfs"
   ],
   "author": "Micooz <micooz@hotmail.com>",
   "license": "Apache-2.0",
@@ -84,7 +88,7 @@
   },
   "jest": {
     "testPathIgnorePatterns": [
-      "<rootDir>/lib/"
+      "<rootDir>/build/"
     ],
     "coverageDirectory": "./coverage/",
     "collectCoverage": true
