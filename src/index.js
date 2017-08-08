@@ -7,13 +7,7 @@ if (global.__WEBPACK__) {
   const argv = process.argv;
   const usage = 'Usage: node blinksocks.js -c/--config <json_file>';
 
-  const conditions = [
-    argv.length !== 4,
-    (argv[2] !== '-c' && argv[2] !== '--config'),
-    !argv[3].endsWith('.json')
-  ];
-
-  if (conditions.some((c) => c)) {
+  if (argv.length !== 4 || (argv[2] !== '-c' && argv[2] !== '--config') || !argv[3].endsWith('.json')) {
     console.log(usage);
     process.exit(0);
   }
