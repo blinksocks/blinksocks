@@ -10,7 +10,7 @@ $ blinksocks init
 
 **blinksocks.client.json**
 
-```json
+```js
 {
   // local hostname or ip address
   // For client, act as a Socks5/Socks4/HTTP server.
@@ -68,7 +68,7 @@ $ blinksocks init
 
 **blinksocks.server.json**
 
-```json
+```js
 {
   // local hostname or ip address
   // For client, act as a Socks5/Socks4/HTTP server.
