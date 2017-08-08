@@ -52,15 +52,19 @@ $ wget https://raw.githubusercontent.com/blinksocks/blinksocks/master/build/blin
 
 ## Run blinksocks
 
-```
-$ blinksocks client -c blinksocks.client.js
-```
-
-Or
+**installed version**
 
 ```
-$ node blinksocks.js -c blinksocks.client.js
+$ blinksocks client -c blinksocks.client.json
 ```
+
+**portable version**
+
+```
+$ node blinksocks.js -c blinksocks.client.json
+```
+
+For configuring blinksocks, please refer to [Configuration](docs/config).
 
 ## Documents
 

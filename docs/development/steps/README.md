@@ -16,7 +16,7 @@ $ cd blinksocks && npm install
 
 Prepare your configurations(**blinksocks.client.json** and **blinksocks.server.json**) in the project root folder, then start to test:
 
-### Debug Mode(Use Chrome Debugger)
+### Debug Mode(Use Chrome Developer Tool)
 
 Debug in Chrome requires Node.js v6 and Chrome 57 or later.
 
@@ -25,7 +25,7 @@ $ npm run debug:client
 $ npm run debug:server
 ```
 
-Then open **chrome://inspect/#devices** in Chrome. Click **inspect** under **bin/cli-client.js**.
+Then open **chrome://inspect/#devices** in Chrome. Click **inspect** under **bin/cli-client.js** or **bin/cli-server.js**.
 
 ### Production Mode
 
@@ -35,7 +35,7 @@ $ npm run client
 $ npm run server
 ```
 
-This will run compiled code under **lib/**.
+This will run compiled code under **build/**.
 
 Notice that you can change program behaviour using the following environment variants:
 
@@ -70,7 +70,7 @@ $ curl -L -x http://localhost:1080 https://www.google.com
 
 ## Compile
 
-For production use, we are running our code under `lib` not `src`, so compilation is necessary.
+For production use, we are running our code under `build` not `src`, so compilation is necessary.
 
 Compilation of blinksocks is ultra easy:
 
@@ -78,7 +78,15 @@ Compilation of blinksocks is ultra easy:
 $ npm run compile
 ```
 
-This will compile `src` to `lib`.
+This will compile `src` to `build`.
+
+## Bundle
+
+For portable use, we use **webpack** to compile, bundle and compress `src` into `build/blinksocks.js`:
+
+```
+$ npm run pack
+```
 
 ## Profile
 
