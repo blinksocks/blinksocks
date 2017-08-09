@@ -1,6 +1,6 @@
 import ip from 'ip';
 import {isValidHostname, numberToBuffer} from '../utils';
-import {IPreset, SOCKET_CONNECT_TO_DST} from './defs';
+import {IPreset, SOCKET_CONNECT_TO_DST, PROXY_HANDSHAKE_DONE} from './defs';
 
 const ATYP_V4 = 0x01;
 const ATYP_V6 = 0x04;
@@ -15,8 +15,7 @@ const ATYP_DOMAIN = 0x03;
  *
  * @examples
  *   {
- *     "name": "ss-base",
- *     "params": {}
+ *     "name": "ss-base"
  *   }
  *
  * @protocol
@@ -55,13 +54,12 @@ export default class SsBasePreset extends IPreset {
 
   _staging = Buffer.alloc(0);
 
-  constructor(addr) {
-    super();
-    if (__IS_CLIENT__) {
-      const {type, host, port} = addr;
+  onNotified(action) {
+    if (__IS_CLIENT__ && action.type === PROXY_HANDSHAKE_DONE) {
+      const {type, host, port} = action.payload.targetAddress;
       this._atyp = type;
-      this._port = port;
-      this._host = host;
+      this._port = numberToBuffer(port);
+      this._host = type === ATYP_DOMAIN ? Buffer.from(host) : ip.toBuffer(host);
     }
   }
 

@@ -87,8 +87,11 @@ export default class SsStreamCipherPreset extends IPreset {
     }
   }
 
-  beforeIn({buffer}) {
+  beforeIn({buffer, fail}) {
     if (!this._decipher) {
+      if (buffer.length < IV_LEN) {
+        return fail(`cannot get iv, buffer is too short(${buffer.length}bytes): ${buffer.toString('hex')}`);
+      }
       const iv = buffer.slice(0, IV_LEN);
       this._decipher = crypto.createDecipheriv(this._cipherName, this._key, iv);
       return this.decrypt(buffer.slice(IV_LEN));

@@ -1,7 +1,7 @@
 import net from 'net';
 import ip from 'ip';
 import {isValidHostname, numberToBuffer, hash} from '../utils';
-import {IPreset, SOCKET_CONNECT_TO_DST} from './defs';
+import {IPreset, SOCKET_CONNECT_TO_DST, PROXY_HANDSHAKE_DONE} from './defs';
 
 const ATYP_V4 = 0x01;
 const ATYP_V6 = 0x04;
@@ -59,19 +59,25 @@ export default class ExpBaseWithPaddingPreset extends IPreset {
 
   _staging = Buffer.alloc(0);
 
-  constructor({type, host, port, salt}) {
+  constructor({salt}) {
     super();
     if (typeof salt !== 'string' || salt === '') {
       throw Error('\'salt\' must be set to a non-empty string');
     }
-    if (__IS_CLIENT__) {
-      this._host = host;
-      this._port = port;
-      if (type === ATYP_V4 || type === ATYP_V6) {
-        this._host = Buffer.from(ip.toString(host));
-      }
-    }
     this._padding = hash('sha256', salt).slice(0, 15);
+  }
+
+  onNotified(action) {
+    if (__IS_CLIENT__ && action.type === PROXY_HANDSHAKE_DONE) {
+      const {type, host, port} = action.payload.targetAddress;
+      if (type === ATYP_V4 || type === ATYP_V6) {
+        // convert ip to ascii string
+        this._host = Buffer.from(ip.toString(host));
+      } else {
+        this._host = Buffer.from(host);
+      }
+      this._port = numberToBuffer(port);
+    }
   }
 
   clientOut({buffer}) {

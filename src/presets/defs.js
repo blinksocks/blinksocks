@@ -1,10 +1,11 @@
 export const SOCKET_CONNECT_TO_DST = 'socket/connect/to/dst';
+export const PROXY_HANDSHAKE_DONE = 'socket/handshake/done';
 export const PROCESSING_FAILED = 'processing/failed';
 
 export class IPreset {
 
   /**
-   * how to deal with the action, return false to ignore
+   * how to deal with the action, return false/undefined to ignore/continue broadcast
    * @returns {boolean}
    */
   onNotified(/* action */) {

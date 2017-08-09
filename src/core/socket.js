@@ -1,9 +1,6 @@
 import EventEmitter from 'events';
 import net from 'net';
-import ip from 'ip';
-import isEqual from 'lodash.isequal';
 import {getRandomInt} from '../utils';
-import {Proxifier} from '../proxies';
 import logger from './logger';
 import {Config} from './config';
 import {DNSCache} from './dns-cache';
@@ -18,14 +15,9 @@ import {
 
 import {
   SOCKET_CONNECT_TO_DST,
-  PROCESSING_FAILED
+  PROCESSING_FAILED,
+  PROXY_HANDSHAKE_DONE
 } from '../presets/defs';
-
-import {ATYP_DOMAIN} from '../proxies/common';
-
-// import {
-//   UdpRequestMessage
-// } from '../proxies/socks5';
 
 const TRACK_CHAR_UPLOAD = '↑';
 const TRACK_CHAR_DOWNLOAD = '↓';
@@ -33,6 +25,15 @@ const TRACK_MAX_SIZE = 40;
 const MAX_BUFFERED_SIZE = 1024 * 1024; // 1MB
 
 let lastServer = null;
+
+function selectServer() {
+  const server = Balancer.getFastest();
+  if (lastServer === null || server.id !== lastServer.id) {
+    Config.initServer(server);
+    lastServer = server;
+    logger.info(`[balancer] use: ${server.host}:${server.port}`);
+  }
+}
 
 /**
  * @description
@@ -48,7 +49,7 @@ export class Socket extends EventEmitter {
 
   _dnsCache = null;
 
-  _isHandshakeDone = false;
+  _isConnectedToDst = false;
 
   _remoteAddress = '';
 
@@ -61,8 +62,6 @@ export class Socket extends EventEmitter {
   _pipe = null;
 
   _isRedirect = false; // server only
-
-  _proxy = null; // client only
 
   // +---+-----------------------+---+
   // | C | d <--> u     u <--> d | S |
@@ -96,12 +95,10 @@ export class Socket extends EventEmitter {
     this._bsocket.setTimeout(__TIMEOUT__);
     if (__IS_SERVER__) {
       this._tracks.push(`${this._remoteAddress}:${this._remotePort}`);
-      this.createPipe();
     } else {
-      this._proxy = new Proxifier({
-        onHandshakeDone: this.onHandshakeDone.bind(this)
-      });
+      selectServer();
     }
+    this._pipe = this.createPipe();
   }
 
   // getters
@@ -126,11 +123,6 @@ export class Socket extends EventEmitter {
 
   onForward(buffer) {
     if (__IS_CLIENT__) {
-      if (!this._proxy.isDone()) {
-        // client handshake(multiple-protocols)
-        this._proxy.makeHandshake((buf) => this._bsocket.write(buf), buffer);
-        return;
-      }
       this.clientOut(buffer);
     } else {
       if (this._isRedirect) {
@@ -238,50 +230,10 @@ export class Socket extends EventEmitter {
     this.emit('close');
   }
 
-  /**
-   * client handshake
-   * @param addr
-   * @param callback
-   * @returns {Promise.<void>}
-   */
-  onHandshakeDone(addr, callback) {
-    // select a server via Balancer
-    const server = Balancer.getFastest();
-    if (lastServer === null || !isEqual(server, lastServer)) {
-      Config.initServer(server);
-      lastServer = server;
-      logger.info(`[balancer] use: ${__SERVER_HOST__}:${__SERVER_PORT__}`);
-    }
-    // connect to our server
-    const [dstHost, dstPort] = [
-      (addr.type === ATYP_DOMAIN) ? addr.host.toString() : ip.toString(addr.host),
-      addr.port.readUInt16BE(0)
-    ];
-    return this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__, dstHost, dstPort}, () => {
-      this.createPipe(addr);
-      this._tracks.push(`${dstHost}:${dstPort}`);
-      this._isHandshakeDone = true;
-      callback(this.onForward);
-    });
-  }
-
   // pipe chain
 
   clientOut(buffer) {
-    // let _buffer = buffer;
-
-    // TODO: udp compatible
-    // if (this._socksUdpReady) {
-    //   const request = UdpRequestMessage.parse(buffer);
-    //   if (request !== null) {
-    //     _buffer = request.DATA; // just drop RSV and FRAG
-    //   } else {
-    //     logger.warn(`[socket] [${this.remote}] -x-> dropped unidentified packet ${buffer.length} bytes`);
-    //     return;
-    //   }
-    // }
-
-    if (this.fsocketWritable) {
+    if (this.fsocketWritable || !this._isConnectedToDst) {
       try {
         this._pipe.feed(MIDDLEWARE_DIRECTION_UPWARD, buffer);
       } catch (err) {
@@ -291,7 +243,7 @@ export class Socket extends EventEmitter {
   }
 
   serverIn(buffer) {
-    if (this.fsocketWritable || !this._isHandshakeDone) {
+    if (this.fsocketWritable || !this._isConnectedToDst) {
       try {
         this._pipe.feed(MIDDLEWARE_DIRECTION_DOWNWARD, buffer);
         this._tracks.push(TRACK_CHAR_DOWNLOAD);
@@ -412,17 +364,19 @@ export class Socket extends EventEmitter {
   /**
    * create pipes for both data forward and backward
    */
-  createPipe(addr) {
-    const presets = __PRESETS__.map(
-      (preset, i) => createMiddleware(preset.name, {
-        ...preset.params,
-        ...(i === 0 ? addr : {})
-      })
-    );
-    this._pipe = new Pipe({onNotified: this.onPipeNotified.bind(this)});
-    this._pipe.setMiddlewares(MIDDLEWARE_DIRECTION_UPWARD, presets);
-    this._pipe.on(`next_${MIDDLEWARE_DIRECTION_UPWARD}`, (buf) => this.send(MIDDLEWARE_DIRECTION_UPWARD, buf));
-    this._pipe.on(`next_${MIDDLEWARE_DIRECTION_DOWNWARD}`, (buf) => this.send(MIDDLEWARE_DIRECTION_DOWNWARD, buf));
+  createPipe() {
+    let presets = __PRESETS__;
+    // prepend "proxy" preset to the top of presets on client side
+    if (__IS_CLIENT__ && presets[0].name !== 'proxy') {
+      presets = [{name: 'proxy'}].concat(presets);
+    }
+    // create middlewares and pipe
+    const middlewares = presets.map((preset) => createMiddleware(preset.name, preset.params || {}));
+    const pipe = new Pipe({onNotified: this.onPipeNotified.bind(this)});
+    pipe.setMiddlewares(MIDDLEWARE_DIRECTION_UPWARD, middlewares);
+    pipe.on(`next_${MIDDLEWARE_DIRECTION_UPWARD}`, (buf) => this.send(MIDDLEWARE_DIRECTION_UPWARD, buf));
+    pipe.on(`next_${MIDDLEWARE_DIRECTION_DOWNWARD}`, (buf) => this.send(MIDDLEWARE_DIRECTION_DOWNWARD, buf));
+    return pipe;
   }
 
   /**
@@ -431,15 +385,35 @@ export class Socket extends EventEmitter {
    * @returns {*}
    */
   onPipeNotified(action) {
-    if (__IS_SERVER__ && action.type === SOCKET_CONNECT_TO_DST) {
-      const {targetAddress, onConnected} = action.payload;
-      return this.connect(targetAddress, () => {
-        this._isHandshakeDone = true;
-        (typeof onConnected === 'function') && onConnected();
-      });
-    }
-    if (action.type === PROCESSING_FAILED) {
-      return this.onPresetFailed(action);
+    switch (action.type) {
+      case PROXY_HANDSHAKE_DONE:
+      case SOCKET_CONNECT_TO_DST: {
+        const {targetAddress, onConnected} = action.payload;
+        if (__IS_SERVER__) {
+          // connect to destination
+          this.connect(targetAddress, () => {
+            this._isConnectedToDst = true;
+            (typeof onConnected === 'function') && onConnected();
+          });
+        }
+        if (__IS_CLIENT__) {
+          // select a server via Balancer
+          selectServer();
+          // connect to our server
+          const [dstHost, dstPort] = [targetAddress.host, targetAddress.port];
+          this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__, dstHost, dstPort}, () => {
+            this._tracks.push(`${dstHost}:${dstPort}`);
+            this._isConnectedToDst = true;
+            (typeof onConnected === 'function') && onConnected();
+          });
+        }
+        break;
+      }
+      case PROCESSING_FAILED:
+        this.onPresetFailed(action);
+        break;
+      default:
+        break;
     }
   }
 

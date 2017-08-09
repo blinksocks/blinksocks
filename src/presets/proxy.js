@@ -1,13 +1,10 @@
 import ip from 'ip';
-import {IPreset, SOCKET_CONNECT_TO_DST} from './defs';
+import {IPreset, SOCKET_CONNECT_TO_DST, PROXY_HANDSHAKE_DONE} from './defs';
 import {Proxifier, ATYP_DOMAIN} from '../proxies';
 
 /**
  * @description
- *   proxy traffic using Socks5/Socks4(a)/HTTP
- *
- * @note
- *   should only be used in blinksocks server
+ *   proxy traffic using proxies/proxifier.js
  *
  * @examples
  *
@@ -17,8 +14,7 @@ import {Proxifier, ATYP_DOMAIN} from '../proxies';
  *     "port": 1080,
  *     "presets": [
  *       {
- *         "name": "proxy",
- *         "params": {}
+ *         "name": "proxy"
  *       }
  *     ],
  *     ...
@@ -31,18 +27,19 @@ export default class ProxyPreset extends IPreset {
 
   _proxy = null;
 
-  beforeIn({buffer, direct, broadcast}) {
+  handleProxy({buffer, direct, broadcast}) {
     if (this._proxy === null) {
       this._proxy = new Proxifier({
         onHandshakeDone: (addr, callback) => {
-          const [host, port] = [
+          const [type, host, port] = [
+            addr.type,
             (addr.type === ATYP_DOMAIN) ? addr.host.toString() : ip.toString(addr.host),
             addr.port.readUInt16BE(0)
           ];
           broadcast({
-            type: SOCKET_CONNECT_TO_DST,
+            type: __IS_CLIENT__ ? PROXY_HANDSHAKE_DONE : SOCKET_CONNECT_TO_DST,
             payload: {
-              targetAddress: {host, port},
+              targetAddress: {type, host, port},
               onConnected: () => callback(direct)
             }
           });
@@ -54,6 +51,14 @@ export default class ProxyPreset extends IPreset {
     } else {
       return buffer;
     }
+  }
+
+  clientOut(props) {
+    return this.handleProxy(props);
+  }
+
+  serverIn(props) {
+    return this.handleProxy(props);
   }
 
 }
