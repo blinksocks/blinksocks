@@ -2,6 +2,13 @@
 
 
 
+## [v2.5.0](https://github.com/blinksocks/blinksocks/tree/v2.5.0) (2017-08-09)
+[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.9...v2.5.0)
+
+#### Features:
+
+- pack src into a single file using webpack [#78](https://github.com/blinksocks/blinksocks/issues/78)
+
 ## [v2.4.9](https://github.com/blinksocks/blinksocks/tree/v2.4.9) (2017-08-04)
 [Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.8...v2.4.9)
 
