@@ -30,7 +30,6 @@
     "chalk": "^2.1.0",
     "commander": "^2.11.0",
     "ip": "^1.1.5",
-    "lodash.isequal": "^4.5.0",
     "urijs": "^1.18.10",
     "winston": "^2.3.1"
   },
@@ -52,6 +51,8 @@
     "eslint-plugin-flowtype": "^2.35.0",
     "husky": "^0.14.3",
     "jest": "^20.0.4",
+    "pkg": "^4.2.2",
+    "rimraf": "^2.6.1",
     "webpack": "^3.4.1"
   },
   "repository": {
