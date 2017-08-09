@@ -16,22 +16,35 @@ function random(array, len) {
   return randomIndexes.map((char) => array[char % size]).join('');
 }
 
-const key = random('abcdefghjklmnpqrstuvwxyz23456789!@#$%^&*()_+<>?:|{}-=[];,./ABCDEFGHJKLMNPQRSTUVWXYZ', 16);
+/**
+ * returns a random integer in [min, max].
+ * @param min
+ * @param max
+ * @returns {Number}
+ */
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.ceil(max);
+  return Math.floor(crypto.randomBytes(1)[0] / 0xff * (max - min + 1)) + min;
+}
+
+const key = random('abcdefghjkmnpqrstuvwxyz23456789!@#$%^&*()_+<>?:|{}-=[];,./ABCDEFGHJKLMNPQRSTUVWXYZ', 16);
+const port = getRandomInt(1024, 65535);
+const timeout = getRandomInt(200, 1000);
 
 const clientJs = `{
-  "host": "localhost",
+  "host": "127.0.0.1",
   "port": 1080,
   "servers": [
     {
       "enabled": true,
       "transport": "tcp",
       "host": "example.com",
-      "port": 4321,
+      "port": ${port},
       "key": "${key}",
       "presets": [
         {
-          "name": "ss-base",
-          "params": {}
+          "name": "ss-base"
         },
         {
           "name": "ss-aead-cipher",
@@ -45,7 +58,7 @@ const clientJs = `{
   ],
   "dns": [],
   "dns_expire": 3600,
-  "timeout": 600,
+  "timeout": ${timeout},
   "profile": false,
   "watch": false,
   "log_level": "info"
@@ -53,13 +66,12 @@ const clientJs = `{
 
 const serverJs = `{
   "host": "0.0.0.0",
-  "port": 4321,
+  "port": ${port},
   "transport": "tcp",
   "key": "${key}",
   "presets": [
     {
-      "name": "ss-base",
-      "params": {}
+      "name": "ss-base"
     },
     {
       "name": "ss-aead-cipher",
@@ -72,7 +84,7 @@ const serverJs = `{
   "dns": [],
   "dns_expire": 3600,
   "redirect": "",
-  "timeout": 600,
+  "timeout": ${timeout},
   "profile": false,
   "watch": false,
   "log_level": "info"
