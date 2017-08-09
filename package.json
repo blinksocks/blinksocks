@@ -28,7 +28,6 @@
   },
   "dependencies": {
     "chalk": "^2.1.0",
-    "commander": "^2.11.0",
     "ip": "^1.1.5",
     "urijs": "^1.18.10",
     "winston": "^2.3.1"
