@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /* eslint-disable quotes */
 const fs = require('fs');
 const crypto = require('crypto');
@@ -28,11 +26,12 @@ function getRandomInt(min, max) {
   return Math.floor(crypto.randomBytes(1)[0] / 0xff * (max - min + 1)) + min;
 }
 
-const key = random('abcdefghjkmnpqrstuvwxyz23456789!@#$%^&*()_+<>?:|{}-=[];,./ABCDEFGHJKLMNPQRSTUVWXYZ', 16);
-const port = getRandomInt(1024, 65535);
-const timeout = getRandomInt(200, 1000);
+module.exports = function init() {
+  const key = random('abcdefghjkmnpqrstuvwxyz23456789!@#$%^&*()_+<>?:|{}-=[];,./ABCDEFGHJKLMNPQRSTUVWXYZ', 16);
+  const port = getRandomInt(1024, 65535);
+  const timeout = getRandomInt(200, 1000);
 
-const clientJs = `{
+  const clientJs = `{
   "host": "127.0.0.1",
   "port": 1080,
   "servers": [
@@ -64,7 +63,7 @@ const clientJs = `{
   "log_level": "info"
 }`;
 
-const serverJs = `{
+  const serverJs = `{
   "host": "0.0.0.0",
   "port": ${port},
   "transport": "tcp",
@@ -90,8 +89,9 @@ const serverJs = `{
   "log_level": "info"
 }`;
 
-fs.writeFileSync('blinksocks.client.json', clientJs);
-fs.writeFileSync('blinksocks.server.json', serverJs);
+  fs.writeFileSync('blinksocks.client.json', clientJs);
+  fs.writeFileSync('blinksocks.server.json', serverJs);
 
-console.log('> Generated blinksocks.client.json and blinksocks.server.json');
-console.log('> For explanation to each option, please refer to docs/config/README.md');
+  console.log('> Generated blinksocks.client.json and blinksocks.server.json');
+  console.log('> For explanation to each option, please refer to docs/config/README.md');
+};
