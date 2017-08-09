@@ -88,12 +88,12 @@ For portable use, we use **webpack** to compile, bundle and compress `src` into 
 $ npm run bundle
 ```
 
-## Pack
+## Package
 
-For users don't have Node.js installed, we use **zeit/pkg** to prepare compiled executables:
+For users don't have Node.js installed, we use [zeit/pkg](https://github.com/zeit/pkg) to prepare compiled executables:
 
 ```
-$ npm run pack
+$ npm run pkg
 ```
 
 This will generate compressed executables for different platforms named `blinksocks-{platform}-${arch}-${version}.gz`.
