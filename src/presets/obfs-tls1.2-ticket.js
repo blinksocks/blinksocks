@@ -52,7 +52,7 @@ function ApplicationData(buffer) {
  *   [1] SNI
  *       https://en.wikipedia.org/wiki/Server_Name_Indication
  */
-export default class ObfsTLS12TicketPreset extends IPreset {
+export default class ObfsTls12TicketPreset extends IPreset {
 
   _sni = [];
 

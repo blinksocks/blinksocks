@@ -1,10 +1,6 @@
 import crypto from 'crypto';
-import ip from 'ip';
 import {EVP_BytesToKey, numberToBuffer, hmac, Xor} from '../utils';
 import {IPreset, SOCKET_CONNECT_TO_DST, PROXY_HANDSHAKE_DONE} from './defs';
-
-const ATYP_V4 = 0x01;
-const ATYP_V6 = 0x04;
 
 const IV_LEN = 16;
 const HMAC_LEN = 16;
@@ -81,13 +77,8 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
 
   onNotified(action) {
     if (__IS_CLIENT__ && action.type === PROXY_HANDSHAKE_DONE) {
-      const {type, host, port} = action.payload.targetAddress;
-      if (type === ATYP_V4 || type === ATYP_V6) {
-        // convert ip to ascii string
-        this._host = Buffer.from(ip.toString(host));
-      } else {
-        this._host = Buffer.from(host);
-      }
+      const {host, port} = action.payload.targetAddress;
+      this._host = Buffer.from(host);
       this._port = numberToBuffer(port);
     }
   }
