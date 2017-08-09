@@ -37,7 +37,8 @@ module.exports = {
         loader: require.resolve('eslint-loader'),
         include: [
           path.resolve(__dirname, 'bin'),
-          path.resolve(__dirname, 'src')
+          path.resolve(__dirname, 'src'),
+          path.resolve(__dirname, 'pkg')
         ]
       },
       {
