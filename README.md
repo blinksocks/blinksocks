@@ -29,7 +29,7 @@ a cross-platform GUI for blinksocks.
 
 You can download precompiled executables for different platforms and use it directly without having Node.js installed:
 
-[Download](https://github.com/blinksocks/blinksocks/releases).
+[Download](https://github.com/blinksocks/blinksocks/releases)
 
 ## Getting Started
 
