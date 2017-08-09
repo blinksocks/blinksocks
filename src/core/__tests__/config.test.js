@@ -253,7 +253,7 @@ describe('Config#initServer', function () {
     }).toThrow();
   });
 
-  it('should throw when server.preset[].params is not an object', function () {
+  it('should not throw when server.preset[].params is not provided', function () {
     expect(function () {
       Config.initServer({
         transport: 'tcp',
@@ -261,7 +261,21 @@ describe('Config#initServer', function () {
         port: 123,
         key: 'secret',
         presets: [{
-          name: 'a',
+          name: 'ss-base'
+        }]
+      });
+    }).not.toThrow();
+  });
+
+  it('should throw when server.preset[].params is provided but is not an object', function () {
+    expect(function () {
+      Config.initServer({
+        transport: 'tcp',
+        host: 'abc',
+        port: 123,
+        key: 'secret',
+        presets: [{
+          name: 'ss-base',
           params: ''
         }]
       });

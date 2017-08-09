@@ -157,8 +157,10 @@ export class Config {
         throw Error('\'server.presets[].name\' cannot be empty');
       }
 
-      if (typeof params !== 'object' || params === null) {
-        throw Error('\'server.presets[].params\' must be an object and not null');
+      if (typeof params !== 'undefined') {
+        if (typeof params !== 'object' || params === null) {
+          throw Error('\'server.presets[].params\' must be an object and not null');
+        }
       }
 
       // 1. check for the existence of the preset
