@@ -71,20 +71,22 @@ These two presets act as two middlewares, processing data from the bottom to the
                                       +-----------+
 ```
 
-Ordinarily, `DST.ADDR` and `DST.PORT` is required to be sent to server(like "origin" preset),
+Ordinarily, `DST.ADDR` and `DST.PORT` is required to be sent to server(like "ss-base" preset),
 otherwise server cannot figure out where to send data to.
 
-Blinksocks will pass **target address** to the first preset once a connection between application
-and blinksocks client was constructed, so you can obtain that address in your frame preset.
+The framework will prepend `proxy` preset to the preset list on client side. Action(PROXY_HANDSHAKE_DONE) is fired
+once this preset resolved the target address. Other presets(such as "ss-base") who want to use the address should implement
+`onNotified(action)` method, the address is stored in `action.payload.targetAddress`.
 
 ```js
 // core/socket.js
-const presets = __PRESETS__.map(
-  (preset, i) => createMiddleware(preset.name, {
-    ...preset.params,
-    ...(i === 0 ? addr : {})
-  })
-);
+let presets = __PRESETS__;
+// prepend "proxy" preset to the top of presets on client side
+if (__IS_CLIENT__ && presets[0].name !== 'proxy') {
+  presets = [{name: 'proxy'}].concat(presets);
+}
+// create middlewares and pipe
+const middlewares = presets.map((preset) => createMiddleware(preset.name, preset.params || {}));
 ```
 
 Store target address for further use:
@@ -93,21 +95,20 @@ Store target address for further use:
 // presets/ss-base.js
 import {IPreset} from './defs';
 
-export default class SSBasePreset extends IPreset {
+export default class SsBasePreset extends IPreset {
 
   _atyp = ATYP_V4;
 
-  _addr = null; // buffer
+  _host = null; // buffer
 
   _port = null; // buffer
 
-  constructor(addr) {
-    super();
-    if (__IS_CLIENT__) {
-      const {type, host, port} = addr;
+  onNotified(action) {
+    if (__IS_CLIENT__ && action.type === PROXY_HANDSHAKE_DONE) {
+      const {type, host, port} = action.payload.targetAddress;
       this._atyp = type;
-      this._addr = host;
-      this._port = port;
+      this._port = numberToBuffer(port);
+      this._host = type === ATYP_DOMAIN ? Buffer.from(host) : ip.toBuffer(host);
     }
   }
 

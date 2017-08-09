@@ -8,14 +8,36 @@ If you want custom a preset, feel free to read [this](../development/architectur
 > You **MUST** put [ss-base] or [exp-base-with-padding] or [exp-base-auth-stream] to the first in presets list if you
 want to relay data to blinksocks server.
 
+## [proxy]
+
+This preset turns blinksocks to a proxy server, works on both client and server side.
+
+* For client side, this preset is added by default on **client side**, so you don't have to put it into preset list.
+* For server side, this preset is useful to setup a network middleware(act as Man-in-the-middle) to do traffic analysis.
+
+For example, setup a local proxy server using **blinksocks server** at 1080:
+
+> applications ---Socks5/HTTP---> **[blinksocks server]** ------> destinations
+
+```json
+// blinksocks.server.json
+{
+  "host": "localhost",
+  "port": 1080,
+  "presets": [{
+    "name": "proxy"
+  }],
+  ...
+}
+```
+
 ## [ss-base]
 
 This is a very basic preset which delivers the real destination address from blinksocks client to blinksocks server.
 
 ```json
 "presets": [{
-  "name": "ss-base",
-  "params": {}
+  "name": "ss-base"
 }]
 ```
 
@@ -211,31 +233,6 @@ A TLS obfuscator, do TLS handshake using SessionTicket TLS mechanism, transfer d
 ]
 ```
 
-# Special Presets
-
-## [proxy]
-
-This preset turns blinksocks to a proxy server. This is useful to setup a network middleware(act as Man-in-the-middle) to do traffic analysis.
-
-For example, setup a local proxy server using **blinksocks server** at 1080:
-
-> applications ---Socks5/HTTP---> **[blinksocks server]** ------> destinations
-
-```json
-// blinksocks.server.json
-{
-  "host": "localhost",
-  "port": 1080,
-  "presets": [
-    {
-      "name": "proxy",
-      "params": {}
-    }
-  ],
-  ...
-}
-```
-
 # Recommended Combinations
 
 ## Work with shadowsocks
@@ -246,8 +243,7 @@ To work with **shadowsocks**, please choose one of the following configuration:
 
 ```json
 "presets": [{
-  "name": "ss-base",
-  "params": {}
+  "name": "ss-base"
 }, {
   "name": "ss-stream-cipher",
   "params": {
@@ -260,8 +256,7 @@ To work with **shadowsocks**, please choose one of the following configuration:
 
 ```json
 "presets": [{
-  "name": "ss-base",
-  "params": {}
+  "name": "ss-base"
 }, {
   "name": "ss-aead-cipher",
   "params": {
@@ -279,8 +274,7 @@ You can use **http** or **tls** obfuscator to avoid bad [QoS], **tls** is recomm
 
 ```json
 "presets": [{
-  "name": "ss-base",
-  "params": {}
+  "name": "ss-base"
 }, {
   "name": "ss-aead-cipher",
   "params": {
@@ -297,8 +291,7 @@ You can use **http** or **tls** obfuscator to avoid bad [QoS], **tls** is recomm
 
 ```json
 "presets": [{
-  "name": "ss-base",
-  "params": {}
+  "name": "ss-base"
 }, {
   "name": "ss-aead-cipher",
   "params": {
@@ -321,8 +314,7 @@ The fastest one:
 
 ```json
 "presets": [{
-  "name": "ss-base",
-  "params": {}
+  "name": "ss-base"
 }]
 ```
 
@@ -330,8 +322,7 @@ Make some cheat:
 
 ```json
 "presets": [{
-  "name": "ss-base",
-  "params": {}
+  "name": "ss-base"
 }, {
   "name": "obfs-tls1.2-ticket",
   "params": {

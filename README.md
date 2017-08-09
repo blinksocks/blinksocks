@@ -10,31 +10,37 @@
 [![Coverage](https://img.shields.io/codecov/c/github/blinksocks/blinksocks/master.svg)](https://codecov.io/gh/blinksocks/blinksocks)
 [![%e2%9d%a4](https://img.shields.io/badge/made%20with-%e2%9d%a4-ff69b4.svg)](https://github.com/blinksocks/blinksocks)
 
-A framework for building composable proxy protocol stack. Inspired by [Shadowsocks](https://shadowsocks.org),
-and [ShadowsocksR](https://github.com/shadowsocksr/shadowsocksr).
+A framework for building composable proxy protocol stack.
 
 ## Features
 
-* HTTP/Socks5/Socks4/Socks4a using the same port
-* Customizable Protocols([presets](docs/presets)): simple, composable, and flexible
+* Simple proxy interfaces for Socks5/Socks4/Socks4a and HTTP
+* Customizable Protocols(using [presets](docs/presets)): simple, composable, and flexible
 * Cross-platform: running on Linux based, Windows and macOS
+* Portable/Executable versions available
 * Partially compatible with **shadowsocks** [#27](https://github.com/blinksocks/blinksocks/issues/27)
-* Dynamic server switch
 
 ## GUI ready
 
 For desktop use, you can download official [blinksocks-desktop](https://github.com/blinksocks/blinksocks-desktop),
 a cross-platform GUI for blinksocks.
 
+## Executables ready(Not GUI)
+
+You can download precompiled executables for different platforms and use it directly without having Node.js installed:
+
+[Download](https://github.com/blinksocks/blinksocks/releases).
+
 ## Getting Started
 
 ### Requirements
 
-blinksocks is built on top of [Node.js](https://nodejs.org), so please install Node.js(**greater than v6.x**) on your operating system.
+blinksocks is built on top of [Node.js](https://nodejs.org), if you want to use it in an ordinary way or do some hacking,
+please install Node.js(**v6.x and above**) on your operating system.
 
 ### Install or Upgrade
 
-You can get the latest pre-compiled library(including executables) of blinksocks from **yarn** or **npm**.
+You can get the latest blinksocks via package manager **yarn** or **npm**.
 
 > NOTE: Node.js comes with npm installed so you don't have to install npm individually.
 
@@ -42,7 +48,7 @@ You can get the latest pre-compiled library(including executables) of blinksocks
 $ npm install -g blinksocks
 ```
 
-### Without Install?
+### Without yarn or npm?
 
 If you hate to install and want to get a even more portable version, we have one:
 
@@ -52,16 +58,22 @@ $ wget https://raw.githubusercontent.com/blinksocks/blinksocks/master/build/blin
 
 ## Run blinksocks
 
-**installed version**
+**installed version(require Node.js)**
 
 ```
 $ blinksocks client -c blinksocks.client.json
 ```
 
-**portable version**
+**portable version(require Node.js)**
 
 ```
 $ node blinksocks.js -c blinksocks.client.json
+```
+
+**executable version(~~Node.js~~)**
+
+```
+$ ./blinksocks(.exe) --help
 ```
 
 For configuring blinksocks, please refer to [Configuration](docs/config).

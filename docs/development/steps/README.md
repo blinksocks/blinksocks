@@ -78,15 +78,26 @@ Compilation of blinksocks is ultra easy:
 $ npm run compile
 ```
 
-This will compile `src` to `build`.
+This will compile `src/*` to `build/*`.
 
 ## Bundle
 
 For portable use, we use **webpack** to compile, bundle and compress `src` into `build/blinksocks.js`:
 
 ```
+$ npm run bundle
+```
+
+## Pack
+
+For users don't have Node.js installed, we use **zeit/pkg** to prepare compiled executables:
+
+```
 $ npm run pack
 ```
+
+This will generate compressed executables for different platforms named `blinksocks-{platform}-${arch}-${version}.gz`.
+And can be distribute to target platform and architecture at once.
 
 ## Profile
 
