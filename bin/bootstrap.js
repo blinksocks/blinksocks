@@ -28,7 +28,7 @@ function obtainConfig(file) {
   return json;
 }
 
-module.exports = function (configPath, {Hub, Config, Balancer}) {
+module.exports = function bootstrap(configPath, {Hub, Config, Balancer}) {
   try {
     Config.init(obtainConfig(configPath));
 
