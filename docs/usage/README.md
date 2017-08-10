@@ -5,68 +5,46 @@ Once installed, you can access blinksocks via CLI:
 ```
 $ blinksocks --help
 
-  Usage: blinksocks [command] [options]
-
+  Usage: blinksocks [command] [options] ...
 
   Commands:
 
-    init              generate configurations with random key
-    client [options]  start a client
-    server [options]  start a server
-    help [cmd]        display help for [cmd]
+    init           generate a pair of json file
 
   Options:
 
     -h, --help     output usage information
-    -V, --version  output the version number
+    -v, --version  output blinksocks version
+    -c, --config   file with configuration, usually a json file
+
+  Examples:
+
+  - Generate json file
+    $ blinksocks init
+  - Start blinksocks client
+    $ blinksocks --config blinksocks.client.json
+  - Start blinksocks server
+    $ blinksocks --config blinksocks.server.json
 
 ```
 
-## Git-style sub-command
+`blinksocks init` will generate `blinksocks.client.json` and `blinksocks.server.json` with a random key/port/timeout and default settings.
 
-There are threes commands to do different tasks:
-
-### * blinksocks init
-
-This will generate `blinksocks.client.json` and `blinksocks.server.json` with a random key and default settings.
-
-Then you should edit `blinksocks.client.json` to tell blinksocks client where is the server:
+After init, you should edit `blinksocks.client.json` to tell blinksocks client where is the server:
 
 ```
 {
   // server host name or ip address
-  host: "example.com",
-
-  // server port
-  port: 5678,
+  host: "example.com"
 }
 ```
 
 > You may also want to change default protocol stack(presets) or other settings, please check out [--config](../config)
 for explanation of every option.
 
-### * blinksocks client/server
-
-```
-$ blinksocks server --help
-
-  Usage: blinksocks-server --config <file> [...]
-
-  Options:
-
-    -h, --help           output usage information
-    -V, --version        output the version number
-    -c, --config <file>  a json/js format configuration file
-
-
-  Examples:
-
-    $ blinksocks client -c blinksocks.client.json
-    $ blinksocks server -c blinksocks.server.json
-
-```
-
 ## Run in production
+
+### Using pm2
 
 You can take advantages of [pm2](https://github.com/unitech/pm2) to run blinksocks in the production.
 
@@ -76,16 +54,42 @@ Install `pm2` before running blinksocks in the production:
 $ npm install -g pm2
 ```
 
-### Daemon mode
+**Daemon mode**
 
 ```
-$ pm2 start blinksocks-client -- -c blinksocks.client.json
+$ pm2 start blinksocks -- -c blinksocks.client.json
 ```
 
-### Cluster mode
+**Cluster mode**
 
 ```
-$ pm2 start blinksocks-server -i 2 -- -c blinksocks.server.json
+$ pm2 start blinksocks -i 2 -- -c blinksocks.server.json
+```
+
+### Using node interpreter
+
+```
+$ wget https://raw.githubusercontent.com/blinksocks/blinksocks/master/build/blinksocks.js
+$ node blinksocks.js
+```
+
+### Using executables
+
+```
+// download archive
+$ wget https://github.com/blinksocks/blinksocks/releases/download/v2.5.1/blinksocks-linux-x64-v2.5.1.gz
+
+// you'd better check sha256sum listed in sha256sum.txt
+$ wget https://github.com/blinksocks/blinksocks/releases/download/v2.5.1/sha256sum.txt
+
+// decompress
+$ gunzip blinksocks-linux-x64-v2.5.1.gz
+
+// grant executable permission
+$ chmod +x blinksocks-linux-x64-v2.5.1
+
+// run directly
+$ ./blinksocks-linux-x64-v2.5.1 --help
 ```
 
 ## For Firefox/Google Chrome and more...

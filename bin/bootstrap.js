@@ -1,41 +1,14 @@
 const fs = require('fs');
 const path = require('path');
-const program = require('commander');
 const chalk = require('chalk');
-const packageJson = require('../package.json');
-
-// const BOOTSTRAP_TYPE_CLIENT = 0;
-const BOOTSTRAP_TYPE_SERVER = 1;
-
-const version = packageJson.version;
-const usage = '--config <file> [...]';
-
-const options = [
-  ['-c, --config <file>', 'a json/js format configuration file', '']
-];
-
-const examples = `
-  Examples:
-
-    $ blinksocks client -c blinksocks.client.json
-    $ blinksocks server -c blinksocks.server.json
-`;
 
 /**
  * get raw config object from js or json
- * @param type, BOOTSTRAP_TYPE_CLIENT or BOOTSTRAP_TYPE_SERVER
- * @param options
+ * @param file
  * @returns {object}
  */
-function obtainConfig(type, options) {
-  if (options.config === '') {
-    throw Error('-c/--config is required');
-  }
-
+function obtainConfig(file) {
   let json;
-
-  // resolve to absolute path
-  const file = path.resolve(process.cwd(), options.config);
   try {
     const ext = path.extname(file);
     // TODO: remove .js support in v2.6.x for security reason
@@ -50,41 +23,21 @@ function obtainConfig(type, options) {
       json = JSON.parse(jsonFile);
     }
   } catch (err) {
-    throw Error(`fail to load/parse your '${options.config}': ${err.message}`);
-  }
-
-  /// post-process
-  if (type === BOOTSTRAP_TYPE_SERVER) {
-    delete json.servers;
+    throw Error(`fail to load/parse your '${file}': ${err.message}`);
   }
   return json;
 }
 
-module.exports = function (type, {Hub, Config, Balancer}) {
-  const pg = program.version(version).usage(usage);
-
-  for (const option of options) {
-    pg.option(...option);
-  }
-
-  program.on('--help', () => console.log(examples));
-  program.parse(process.argv);
-
-  // no options provided
-  if (process.argv.length < 3) {
-    program.help();
-    process.exit(0);
-  }
-
+module.exports = function bootstrap(configPath, {Hub, Config, Balancer}) {
   try {
-    Config.init(obtainConfig(type, program));
+    Config.init(obtainConfig(configPath));
 
     if (__IS_WATCH__) {
-      fs.watchFile(program.config, function (curr, prev) {
+      fs.watchFile(configPath, function (curr, prev) {
         if (curr.mtime > prev.mtime) {
-          console.log(`==> [bootstrap] ${program.config} has changed, reload`);
+          console.log(`==> [bootstrap] ${path.basename(configPath)} has changed, reload`);
           try {
-            Config.init(obtainConfig(type, program));
+            Config.init(obtainConfig(configPath));
             if (__IS_CLIENT__) {
               console.info('==> [balancer] restarted');
               Balancer.start(__SERVERS__);

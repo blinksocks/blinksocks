@@ -61,7 +61,7 @@ $ wget https://raw.githubusercontent.com/blinksocks/blinksocks/master/build/blin
 **installed version(require Node.js)**
 
 ```
-$ blinksocks client -c blinksocks.client.json
+$ blinksocks -c blinksocks.client.json
 ```
 
 **portable version(require Node.js)**

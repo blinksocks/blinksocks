@@ -121,7 +121,7 @@ $ blinksocks init
 To start a server or a client, you prepare a json or js file first, then supply it to `--config` or `-c`:
 
 ```
-$ blinksocks client -c blinksocks.client.json
+$ blinksocks -c blinksocks.client.json
 ```
 
 * Servers(Client Side Only)
@@ -164,7 +164,7 @@ npm logging levels by default, you can choose one of them demand:
 blinksocks will hot-reload it without stop-the-world.
 
 ```
-$ blinksocks client -c config.json --watch
+$ blinksocks -c config.json --watch
 ```
 
 > NOTE that if you change `host` or `port`, a restart is required.

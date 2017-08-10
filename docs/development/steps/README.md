@@ -105,7 +105,7 @@ By adding `--profile` option in the command line, you will get a report named `b
 the program was terminated.
 
 ```
-$ blinksocks client ... --profile
+$ blinksocks ... --profile
 ```
 
 The report contains several indicators grouped by different types:

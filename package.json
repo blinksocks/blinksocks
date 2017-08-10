@@ -9,10 +9,7 @@
     "AUTHORS"
   ],
   "bin": {
-    "blinksocks": "bin/cli.js",
-    "blinksocks-init": "bin/cli-init.js",
-    "blinksocks-client": "bin/cli-client.js",
-    "blinksocks-server": "bin/cli-server.js"
+    "blinksocks": "bin/cli.js"
   },
   "scripts": {
     "test": "npm run lint && npm run test:coverage",
@@ -23,15 +20,14 @@
     "prepkg": "rimraf build/blinksocks.js.map pkg/blinksocks-* pkg/sha256sum.txt",
     "pkg": "pkg --out-path pkg/ .",
     "postpkg": "node pkg/postpkg.js",
-    "debug:client": "cross-env NODE_ENV=development node --inspect --inspect-port=9229 bin/cli-client.js --config blinksocks.client.json",
-    "debug:server": "cross-env NODE_ENV=development node --inspect --inspect-port=9230 bin/cli-server.js --config blinksocks.server.json",
-    "client": "node bin/cli-client.js --config blinksocks.client.json",
-    "server": "node bin/cli-server.js --config blinksocks.server.json",
+    "debug:client": "cross-env NODE_ENV=development node --inspect --inspect-port=9229 bin/cli.js --config blinksocks.client.json",
+    "debug:server": "cross-env NODE_ENV=development node --inspect --inspect-port=9230 bin/cli.js --config blinksocks.server.json",
+    "client": "node bin/cli.js --config blinksocks.client.json",
+    "server": "node bin/cli.js --config blinksocks.server.json",
     "precommit": "npm test"
   },
   "dependencies": {
     "chalk": "^2.1.0",
-    "commander": "^2.11.0",
     "ip": "^1.1.5",
     "urijs": "^1.18.10",
     "winston": "^2.3.1"
