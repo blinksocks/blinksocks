@@ -166,10 +166,8 @@ export class Config {
       // 1. check for the existence of the preset
       const ps = require(`../presets/${preset.name}`).default;
 
-      // 2. check parameters, but ignore the first preset
-      if (name !== server.presets[0].name) {
-        delete new ps(params || {});
-      }
+      // 2. check parameters
+      delete new ps(params || {});
     }
   }
 

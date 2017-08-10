@@ -13,9 +13,8 @@ import {
 } from './middleware';
 
 import {
-  SOCKET_CONNECT_TO_DST,
-  PROCESSING_FAILED,
-  PROXY_HANDSHAKE_DONE
+  SOCKET_CONNECT_TO_REMOTE,
+  PROCESSING_FAILED
 } from '../presets/defs';
 
 const TRACK_CHAR_UPLOAD = '↑';
@@ -382,8 +381,7 @@ export class Socket extends EventEmitter {
    */
   onPipeNotified(action) {
     switch (action.type) {
-      case PROXY_HANDSHAKE_DONE:
-      case SOCKET_CONNECT_TO_DST: {
+      case SOCKET_CONNECT_TO_REMOTE: {
         const {targetAddress, onConnected} = action.payload;
         if (__IS_SERVER__) {
           // connect to destination

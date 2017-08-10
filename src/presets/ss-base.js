@@ -1,6 +1,6 @@
 import ip from 'ip';
 import {isValidHostname, numberToBuffer} from '../utils';
-import {IPreset, SOCKET_CONNECT_TO_DST, PROXY_HANDSHAKE_DONE} from './defs';
+import {IPreset, SOCKET_CONNECT_TO_REMOTE} from './defs';
 
 const ATYP_V4 = 0x01;
 const ATYP_V6 = 0x04;
@@ -55,7 +55,7 @@ export default class SsBasePreset extends IPreset {
   _staging = Buffer.alloc(0);
 
   onNotified(action) {
-    if (__IS_CLIENT__ && action.type === PROXY_HANDSHAKE_DONE) {
+    if (__IS_CLIENT__ && action.type === SOCKET_CONNECT_TO_REMOTE) {
       const {type, host, port} = action.payload.targetAddress;
       this._atyp = type;
       this._port = numberToBuffer(port);
@@ -137,7 +137,7 @@ export default class SsBasePreset extends IPreset {
 
       // notify to connect to the real server
       broadcast({
-        type: SOCKET_CONNECT_TO_DST,
+        type: SOCKET_CONNECT_TO_REMOTE,
         payload: {
           targetAddress: {
             type: atyp,
