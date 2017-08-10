@@ -1,10 +1,21 @@
+import net from 'net';
 import ip from 'ip';
-import {IPreset, SOCKET_CONNECT_TO_DST, PROXY_HANDSHAKE_DONE} from './defs';
-import {Proxifier, ATYP_DOMAIN} from '../proxies';
+import {IPreset, SOCKET_CONNECT_TO_REMOTE} from './defs';
+import {Proxifier, ATYP_DOMAIN, ATYP_V4, ATYP_V6} from '../proxies';
 import {isValidHostname, isValidPort} from '../utils';
 
 const MODE_PROXY = 0;
 const MODE_TUNNEL = 1;
+
+function getHostType(host) {
+  if (net.isIPv4(host)) {
+    return ATYP_V4;
+  }
+  if (net.isIPv6(host)) {
+    return ATYP_V6;
+  }
+  return ATYP_DOMAIN;
+}
 
 /**
  * @description
@@ -39,6 +50,10 @@ export default class ProxyPreset extends IPreset {
 
   _isTunnelReady = false;
 
+  _isBroadCasting = false;
+
+  _staging = Buffer.alloc(0);
+
   constructor({host, port}) {
     super();
     if (typeof host !== 'undefined' && !isValidHostname(host)) {
@@ -64,7 +79,7 @@ export default class ProxyPreset extends IPreset {
             addr.port.readUInt16BE(0)
           ];
           broadcast({
-            type: __IS_CLIENT__ ? PROXY_HANDSHAKE_DONE : SOCKET_CONNECT_TO_DST,
+            type: SOCKET_CONNECT_TO_REMOTE,
             payload: {
               targetAddress: {type, host, port},
               onConnected: () => callback(next)
@@ -81,22 +96,45 @@ export default class ProxyPreset extends IPreset {
     }
   }
 
-  clientOut(props) {
-    if (this._mode === MODE_TUNNEL && !this._isTunnelReady) {
-      const {buffer, broadcast, next} = props;
-      broadcast({
-        type: SOCKET_CONNECT_TO_DST,
-        payload: {
-          targetAddress: {type: null, host: this._host, port: this._port},
-          onConnected: () => next(buffer)
-        }
-      });
+  handleTunnel({buffer, next, broadcast}) {
+    if (!this._isTunnelReady) {
+      if (this._isBroadCasting) {
+        this._staging = Buffer.concat([this._staging, buffer]);
+      } else {
+        broadcast({
+          type: SOCKET_CONNECT_TO_REMOTE,
+          payload: {
+            targetAddress: {type: getHostType(this._host), host: this._host, port: this._port},
+            onConnected: () => {
+              this._isTunnelReady = true;
+              this._isBroadCasting = false;
+              next(Buffer.concat([this._staging, buffer]));
+            }
+          }
+        });
+        this._isBroadCasting = true;
+      }
+    } else {
+      return buffer;
     }
-    return this.handleProxy(props);
+  }
+
+  clientOut(props) {
+    if (this._mode === MODE_PROXY) {
+      return this.handleProxy(props);
+    }
+    if (this._mode === MODE_TUNNEL) {
+      return this.handleTunnel(props);
+    }
   }
 
   serverIn(props) {
-    return this.handleProxy(props);
+    if (this._mode === MODE_PROXY) {
+      return this.handleProxy(props);
+    }
+    if (this._mode === MODE_TUNNEL) {
+      return this.handleTunnel(props);
+    }
   }
 
 }
