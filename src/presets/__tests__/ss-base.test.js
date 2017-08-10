@@ -1,4 +1,4 @@
-import {PROXY_HANDSHAKE_DONE} from '../defs';
+import {SOCKET_CONNECT_TO_REMOTE} from '../defs';
 import SsBasePreset from '../ss-base';
 
 describe('SsBasePreset#clientOut', function () {
@@ -6,7 +6,7 @@ describe('SsBasePreset#clientOut', function () {
   const preset = new SsBasePreset();
 
   preset.onNotified({
-    type: PROXY_HANDSHAKE_DONE,
+    type: SOCKET_CONNECT_TO_REMOTE,
     payload: {
       targetAddress: {
         type: 3,
