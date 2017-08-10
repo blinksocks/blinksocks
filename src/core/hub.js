@@ -3,7 +3,6 @@ import net from 'net';
 import logger from './logger';
 import {Config} from './config';
 import {Socket} from './socket';
-import {Profile} from './profile';
 import {Balancer} from './balancer';
 
 const nextId = (function () {
@@ -52,12 +51,6 @@ export class Hub extends EventEmitter {
         Balancer.destroy();
         logger.info('==> [balancer] stopped');
       }
-      if (__PROFILE__) {
-        logger.info('==> [profile] saving...');
-        Profile.save();
-        Profile.stop();
-        logger.info('==> [profile] stopped');
-      }
       this._isClosed = true;
       this._sockets.forEach((socket) => socket.destroy());
       this._sockets = [];
@@ -68,7 +61,6 @@ export class Hub extends EventEmitter {
   onSocketClose(_id) {
     this._sockets = this._sockets.filter(({id}) => _id !== id);
     this.emit('socketClose');
-    Profile.connections = this._sockets.length;
     // NOTE: would better not force gc manually
     // global.gc && global.gc();
   }
@@ -80,7 +72,6 @@ export class Hub extends EventEmitter {
     sok.on('stat', (...props) => this.emit('socketStat', ...props));
     this._sockets.push(sok);
     logger.info(`[hub] [${socket.remoteAddress}:${socket.remotePort}] connected`);
-    Profile.connections += 1;
   }
 
   run(callback) {
@@ -95,10 +86,6 @@ export class Hub extends EventEmitter {
       if (__IS_CLIENT__) {
         logger.info('==> [balancer] started');
         Balancer.start(__SERVERS__);
-      }
-      if (__PROFILE__) {
-        logger.info('==> [profile] started');
-        Profile.start();
       }
       if (typeof callback === 'function') {
         callback();

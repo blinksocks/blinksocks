@@ -190,7 +190,6 @@ export class Config {
     global.__IS_SERVER__ = !global.__IS_CLIENT__;
     global.__REDIRECT__ = json.redirect;
     global.__TIMEOUT__ = json.timeout * 1e3;
-    global.__PROFILE__ = !!json.profile;
     global.__IS_WATCH__ = !!json.watch;
     global.__LOG_LEVEL__ = json.log_level || DEFAULT_LOG_LEVEL;
     global.__DNS_EXPIRE__ = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;

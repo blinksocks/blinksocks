@@ -58,7 +58,6 @@ module.exports = function init() {
   "dns": [],
   "dns_expire": 3600,
   "timeout": ${timeout},
-  "profile": false,
   "watch": false,
   "log_level": "info"
 }`;
@@ -84,7 +83,6 @@ module.exports = function init() {
   "dns_expire": 3600,
   "redirect": "",
   "timeout": ${timeout},
-  "profile": false,
   "watch": false,
   "log_level": "info"
 }`;

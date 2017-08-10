@@ -6,7 +6,6 @@ import {Config} from './config';
 import {DNSCache} from './dns-cache';
 import {Balancer} from './balancer';
 import {Pipe} from './pipe';
-import {Profile} from './profile';
 import {
   MIDDLEWARE_DIRECTION_UPWARD,
   MIDDLEWARE_DIRECTION_DOWNWARD,
@@ -132,7 +131,6 @@ export class Socket extends EventEmitter {
       }
       this.serverIn(buffer);
     }
-    Profile.totalIn += buffer.length;
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
     if (this._fsocket && this._fsocket.bufferSize >= MAX_BUFFERED_SIZE) {
@@ -160,7 +158,6 @@ export class Socket extends EventEmitter {
 
   onError(err) {
     logger.warn(`[socket] [${this.remote}] ${err.code} - ${err.message}`);
-    Profile.errors += 1;
   }
 
   /**
@@ -292,7 +289,6 @@ export class Socket extends EventEmitter {
         this.serverForward(buffer);
       }
     }
-    Profile.totalOut += buffer.length;
   }
 
   clientForward(buffer) {
@@ -436,7 +432,6 @@ export class Socket extends EventEmitter {
       logger.warn(`[socket] [${this.remote}] connection will be closed in ${timeout}s...`);
       setTimeout(this.destroy.bind(this), timeout * 1e3);
     }
-    Profile.fatals += 1;
   }
 
   // methods
