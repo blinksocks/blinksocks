@@ -12,12 +12,17 @@ want to relay data to blinksocks server.
 
 This preset turns blinksocks to a proxy server, works on both client and server side.
 
-* For client side, this preset is added by default on **client side**, so you don't have to put it into preset list.
+| PARAMS         | DESCRIPTION      | DEFAULT |
+| :------------- | :--------------- | :------ |
+| host(optional) | destination host | -       |
+| port(optional) | destination port | -       |
+
+**proxy mode(default)**
+
+* For client side, this preset is added by default on **client side**, so you don't have to put it into preset list if you are setting up a proxy service.
 * For server side, this preset is useful to setup a network middleware(act as Man-in-the-middle) to do traffic analysis.
 
 For example, setup a local proxy server using **blinksocks server** at 1080:
-
-> applications ---Socks5/HTTP---> **[blinksocks server]** ------> destinations
 
 ```
 // blinksocks.server.json
@@ -30,6 +35,48 @@ For example, setup a local proxy server using **blinksocks server** at 1080:
   ...
 }
 ```
+
+```
+applications <---Socks/HTTP---> [blinksocks server] <------> destinations
+```
+
+```
+$ blinksocks --config blinksocks.server.json
+$ curl -L --socks5-hostname localhost:1080 https://www.bing.com
+```
+
+**tunnel mode**
+
+You can enable tunnel mode by providing `host` and `port` parameters:
+
+```
+// blinksocks.client.json
+{
+  "host": "localhost",
+  "port": 1080,
+  "servers": [{
+    "enabled": true,
+    "host": "localhost",
+    "port": 1081,
+    "presets": [{
+      "name": "proxy",
+      "params": {
+        "host": "localhost",
+        "port": "1082"
+      }
+    }],
+    ...
+  }],
+  ...
+}
+```
+
+```
+applications <----> [blinksocks client] <----> [blinksocks server] <----> localhost:1082
+ (iperf -c)           localhost:1080             localhost:1081             (iperf -s)
+```
+
+In this case, it's useful to test network performance between client and server using [iperf](https://en.wikipedia.org/wiki/Iperf).
 
 ## [stats]
 

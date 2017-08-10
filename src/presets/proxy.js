@@ -4,24 +4,24 @@ import {Proxifier, ATYP_DOMAIN} from '../proxies';
 
 /**
  * @description
- *   proxy traffic using proxies/proxifier.js
+ *   proxy traffic
+ *
+ * @params
+ *   host(optional): destination host
+ *   port(optional): destination port
  *
  * @examples
+ *   proxy mode, using proxifier
+ *   {"name": "proxy"}
  *
- *   // blinksocks.server.json
+ *   tunnel mode, relay directly
  *   {
- *     "host": "localhost",
- *     "port": 1080,
- *     "presets": [
- *       {
- *         "name": "proxy"
- *       }
- *     ],
- *     ...
+ *     "name": "proxy",
+ *     "params": {
+ *       "host": "localhost",
+ *       "port": 1082
+ *     }
  *   }
- *
- *   $ blinksocks server --config blinksocks.server.json
- *   $ curl -L --socks5-hostname localhost:1080 https://www.bing.com
  */
 export default class ProxyPreset extends IPreset {
 
