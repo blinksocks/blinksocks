@@ -27,7 +27,7 @@ export default class ProxyPreset extends IPreset {
 
   _proxy = null;
 
-  handleProxy({buffer, direct, broadcast}) {
+  handleProxy({buffer, next, broadcast}) {
     if (this._proxy === null) {
       this._proxy = new Proxifier({
         onHandshakeDone: (addr, callback) => {
@@ -40,14 +40,15 @@ export default class ProxyPreset extends IPreset {
             type: __IS_CLIENT__ ? PROXY_HANDSHAKE_DONE : SOCKET_CONNECT_TO_DST,
             payload: {
               targetAddress: {type, host, port},
-              onConnected: () => callback(direct)
+              onConnected: () => callback(next)
             }
           });
         }
       });
     }
     if (!this._proxy.isDone()) {
-      this._proxy.makeHandshake((buf) => direct(buf, true), buffer);
+      const feedback = (buf) => next(buf, true);
+      this._proxy.makeHandshake(feedback, buffer);
     } else {
       return buffer;
     }

@@ -85,7 +85,7 @@ export default class ObfsTls12TicketPreset extends IPreset {
     return Buffer.from(this._sni[index]);
   }
 
-  clientOut({buffer, direct}) {
+  clientOut({buffer, next}) {
     if (this._stage === TLS_STAGE_HELLO) {
       this._stage = TLS_STAGE_CHANGE_CIPHER_SPEC;
       this._pending = buffer;
@@ -167,7 +167,7 @@ export default class ObfsTls12TicketPreset extends IPreset {
         ...stb('01'),                           // Handshake Type: ClientHello
         ...numberToBuffer(body.length, 3)       // Length
       ];
-      return direct(Buffer.from([...header, ...body]));
+      return next(Buffer.from([...header, ...body]));
     }
 
     if (this._stage === TLS_STAGE_APPLICATION_DATA) {
@@ -178,7 +178,7 @@ export default class ObfsTls12TicketPreset extends IPreset {
     }
   }
 
-  serverIn({buffer, next, direct, fail}) {
+  serverIn({buffer, next, fail}) {
     if (this._stage === TLS_STAGE_HELLO) {
       this._stage = TLS_STAGE_CHANGE_CIPHER_SPEC;
 
@@ -274,7 +274,7 @@ export default class ObfsTls12TicketPreset extends IPreset {
         ...crypto.randomBytes(finishedLen)
       ];
 
-      return direct(Buffer.from([...server_hello, ...new_session_ticket, ...change_cipher_spec, ...finished]), true);
+      return next(Buffer.from([...server_hello, ...new_session_ticket, ...change_cipher_spec, ...finished]), true);
     }
 
     let _buffer = buffer;
@@ -297,7 +297,7 @@ export default class ObfsTls12TicketPreset extends IPreset {
     return Buffer.concat(chunks);
   }
 
-  clientIn({buffer, next, direct, fail}) {
+  clientIn({buffer, next, fail}) {
     if (this._stage === TLS_STAGE_CHANGE_CIPHER_SPEC) {
       this._stage = TLS_STAGE_APPLICATION_DATA;
       // TODO: 1. Check Server Hello
@@ -319,7 +319,7 @@ export default class ObfsTls12TicketPreset extends IPreset {
       const chunks = getRandomChunks(this._pending, MIN_AD_PAYLOAD_LEN, MAX_AD_PAYLOAD_LEN)
         .map((chunk) => ApplicationData(chunk));
       this._pending = null;
-      return direct(Buffer.from([...change_cipher_spec, ...finished, ...Buffer.concat(chunks)]), true);
+      return next(Buffer.from([...change_cipher_spec, ...finished, ...Buffer.concat(chunks)]), true);
     }
     this._adBuf.put(buffer, {next, fail});
   }
