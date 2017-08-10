@@ -163,13 +163,13 @@ export default class CustomPreset extends IPreset {
 
 Every method gets an object which contains three parameters you need:
 
-| PARAM                     | DESCRIPTION                                                                |
-| :------------------------ | :------------------------------------------------------------------------- |
-| buffer                    | output from the previous preset                                            |
-| next(buffer)              | asynchronously process buffer to the next preset                           |
-| broadcast(action)         | broadcast an action to other middlewares                                   |
-| direct(buffer, isReverse) | ignore the following presets, send data directly to fsocket or bsocket     |
-| fail(message)             | report that the preset is fail to process                                  |
+| PARAM                     | DESCRIPTION                                                                                                        |
+| :------------------------ | :----------------------------------------------------------------------------------------------------------------- |
+| buffer                    | output from the previous preset                                                                                    |
+| next(buffer, isReverse)   | asynchronously process buffer to the next preset, if isReverse is true, then send data back to the previous preset |
+| broadcast(action)         | broadcast an action to other middlewares                                                                           |
+| direct(buffer, isReverse) | ignore the following presets, send data directly to fsocket or bsocket                                             |
+| fail(message)             | report that the preset is fail to process                                                                          |
 
 ### Presets Decoupling
 

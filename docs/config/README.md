@@ -57,8 +57,6 @@ $ blinksocks init
   "dns_expire": 3600,
   // close inactive connection after timeout seconds
   "timeout": 600,
-  // collect performance statistics
-  "profile": false,
   // hot-reload when this file changed
   "watch": false,
   // log at the level, "error", "warn", "info", "verbose", "debug" or "silly"
@@ -107,8 +105,6 @@ $ blinksocks init
   "redirect": "",
   // close inactive connection after timeout seconds
   "timeout": 600,
-  // collect performance statistics
-  "profile": false,
   // hot-reload when this file changed
   "watch": false,
   // log at the level, "error", "warn", "info", "verbose", "debug" or "silly"
