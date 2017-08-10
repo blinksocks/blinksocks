@@ -46,24 +46,32 @@ export class Middleware extends EventEmitter {
     const broadcast = this._broadcast;
 
     const _fail = (message) => fail(this.getName(), message);
-    const next = (buf) => {
+
+    // NOTE: next(buf, isReverse) is not available in beforeOut/beforeIn
+    const next = (buf/* , isReverse = false */) => {
       const args = {
         buffer: buf,
-        next: (processed) => this.emit(`next_${direction}`, processed),
+        next: (processed, isReverse = false) => {
+          const hasListener = this.emit(`next_${isReverse ? -direction : direction}`, processed);
+          // oh my nice hack to deal with reverse pipeline if haven't been created
+          if (!hasListener) {
+            direct(processed, isReverse);
+          }
+        },
         broadcast,
         direct,
         fail: _fail
       };
       // clientOut, serverOut, clientIn, serverIn
       const ret = __IS_CLIENT__ ? this._impl[`client${type}`](args) : this._impl[`server${type}`](args);
-      if (typeof ret !== 'undefined') {
+      if (ret instanceof Buffer) {
         args.next(ret);
       }
     };
 
     // beforeOut, beforeIn
     const r = this._impl[`before${type}`]({buffer, next, broadcast, direct, fail: _fail});
-    if (typeof r !== 'undefined') {
+    if (r instanceof Buffer) {
       next(r);
     }
   }

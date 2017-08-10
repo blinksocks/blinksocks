@@ -57,9 +57,7 @@ export class Pipe extends EventEmitter {
     const middlewares = this.getMiddlewares(direction);
 
     // methods to be injected
-    const direct = (buf, isReverse = false) => {
-      this.emit(isReverse ? `next_${-direction}` : eventName, buf);
-    };
+    const direct = (buf, isReverse = false) => this.emit(isReverse ? `next_${-direction}` : eventName, buf);
     const fail = (name, message) => this.onBroadcast(direction, {
       type: PROCESSING_FAILED,
       payload: {
@@ -77,7 +75,7 @@ export class Pipe extends EventEmitter {
       return next;
     });
 
-    // the last middleware send data out via direct(buf)
+    // the last middleware send data out via direct(buf, false)
     if (last.listenerCount(eventName) < 1) {
       last.on(eventName, direct);
     }
