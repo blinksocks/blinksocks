@@ -101,18 +101,19 @@ export default class ProxyPreset extends IPreset {
       if (this._isBroadCasting) {
         this._staging = Buffer.concat([this._staging, buffer]);
       } else {
+        this._isBroadCasting = true;
         broadcast({
           type: SOCKET_CONNECT_TO_REMOTE,
           payload: {
             targetAddress: {type: getHostType(this._host), host: this._host, port: this._port},
             onConnected: () => {
+              next(Buffer.concat([buffer, this._staging]));
               this._isTunnelReady = true;
               this._isBroadCasting = false;
-              next(Buffer.concat([this._staging, buffer]));
+              this._staging = null;
             }
           }
         });
-        this._isBroadCasting = true;
       }
     } else {
       return buffer;

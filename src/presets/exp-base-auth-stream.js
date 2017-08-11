@@ -54,6 +54,10 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
 
   _isHandshakeDone = false;
 
+  _isBroadCasting = false;
+
+  _staging = Buffer.alloc(0);
+
   _host = null; // buffer
 
   _port = null; // buffer
@@ -107,6 +111,12 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
 
   serverIn({buffer, next, broadcast, fail}) {
     if (!this._isHandshakeDone) {
+
+      if (this._isBroadCasting) {
+        this._staging = Buffer.concat([this._staging, buffer]);
+        return;
+      }
+
       // minimal length required
       if (buffer.length < 37) {
         return fail(`unexpected buffer length_1: ${buffer.length}, buffer=${buffer.toString('hex')}`);
@@ -144,6 +154,7 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
       const data = tailBuffer.slice(alen + 3);
 
       // notify to connect to the real server
+      this._isBroadCasting = true;
       broadcast({
         type: SOCKET_CONNECT_TO_REMOTE,
         payload: {
@@ -153,8 +164,10 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
           },
           // once connected
           onConnected: () => {
-            next(data);
+            next(Buffer.concat([data, this._staging]));
             this._isHandshakeDone = true;
+            this._isBroadCasting = false;
+            this._staging = null;
           }
         }
       });

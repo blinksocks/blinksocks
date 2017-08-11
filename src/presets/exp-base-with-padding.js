@@ -46,15 +46,15 @@ export default class ExpBaseWithPaddingPreset extends IPreset {
 
   _isHandshakeDone = false;
 
-  _isAddressReceived = false;
+  _isBroadCasting = false;
+
+  _staging = Buffer.alloc(0);
 
   _host = null; // buffer
 
   _port = null; // buffer
 
   _padding = null; // buffer
-
-  _staging = Buffer.alloc(0);
 
   constructor({salt}) {
     super();
@@ -86,9 +86,9 @@ export default class ExpBaseWithPaddingPreset extends IPreset {
   serverIn({buffer, next, broadcast, fail}) {
     if (!this._isHandshakeDone) {
 
-      // shadowsocks aead cipher put "addressing" part into the first chunk
+      // shadowsocks(python) aead cipher put [atyp][dst.addr][dst.port] into the first chunk
       // we must wait onConnected() before next().
-      if (this._isAddressReceived) {
+      if (this._isBroadCasting) {
         this._staging = Buffer.concat([this._staging, buffer]);
         return;
       }
@@ -126,6 +126,7 @@ export default class ExpBaseWithPaddingPreset extends IPreset {
       const data = buffer.slice(alen + 18);
 
       // notify to connect to the real server
+      this._isBroadCasting = true;
       broadcast({
         type: SOCKET_CONNECT_TO_REMOTE,
         payload: {
@@ -135,13 +136,13 @@ export default class ExpBaseWithPaddingPreset extends IPreset {
           },
           // once connected
           onConnected: () => {
-            next(Buffer.concat([this._staging, data]));
+            next(Buffer.concat([data, this._staging]));
             this._isHandshakeDone = true;
+            this._isBroadCasting = false;
             this._staging = null;
           }
         }
       });
-      this._isAddressReceived = true;
     } else {
       return buffer;
     }
