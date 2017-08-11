@@ -47,7 +47,7 @@ module.exports = [
   {
     presets: [
       {"name": "ss-base"},
-      {"name": "obfs-tls1.2-ticket", "params": {"sni": ['test.com']}}
+      {"name": "obfs-tls1.2-ticket", "params": {"sni": ["test.com"]}}
     ]
   },
   // ss-stream-cipher + obfs-tls1.2-ticket
@@ -55,7 +55,7 @@ module.exports = [
     presets: [
       {"name": "ss-base"},
       {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}},
-      {"name": "obfs-tls1.2-ticket", "params": {"sni": ['test.com']}}
+      {"name": "obfs-tls1.2-ticket", "params": {"sni": ["test.com"]}}
     ]
   },
   // ss-aead-cipher + obfs-tls1.2-ticket
@@ -63,7 +63,7 @@ module.exports = [
     presets: [
       {"name": "ss-base"},
       {"name": "ss-aead-cipher", "params": {"method": "aes-256-gcm", "info": "ss-subkey"}},
-      {"name": "obfs-tls1.2-ticket", "params": {"sni": ['test.com']}}
+      {"name": "obfs-tls1.2-ticket", "params": {"sni": ["test.com"]}}
     ]
   },
   // blinksocks aead-random-cipher
@@ -78,7 +78,7 @@ module.exports = [
     presets: [
       {"name": "ss-base"},
       {"name": "aead-random-cipher", "params": {"method": "aes-256-gcm", "info": "bs-subkey", "factor": 2}},
-      {"name": "obfs-tls1.2-ticket", "params": {"sni": ['test.com']}}
+      {"name": "obfs-tls1.2-ticket", "params": {"sni": ["test.com"]}}
     ]
   },
   // blinksocks exp-base-with-padding + ss-stream-cipher
@@ -93,7 +93,7 @@ module.exports = [
     presets: [
       {"name": "exp-base-with-padding", "params": {"salt": "any string"}},
       {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}},
-      {"name": "obfs-tls1.2-ticket", "params": {"sni": ['test.com']}}
+      {"name": "obfs-tls1.2-ticket", "params": {"sni": ["test.com"]}}
     ]
   },
   // blinksocks exp-base-with-padding + ss-aead-cipher
@@ -108,7 +108,7 @@ module.exports = [
     presets: [
       {"name": "exp-base-with-padding", "params": {"salt": "any string"}},
       {"name": "ss-aead-cipher", "params": {"method": "aes-256-gcm", "info": "ss-subkey"}},
-      {"name": "obfs-tls1.2-ticket", "params": {"sni": ['test.com']}}
+      {"name": "obfs-tls1.2-ticket", "params": {"sni": ["test.com"]}}
     ]
   },
   // blinksocks exp-base-with-padding + aead-random-cipher
@@ -123,14 +123,14 @@ module.exports = [
     presets: [
       {"name": "exp-base-with-padding", "params": {"salt": "any string"}},
       {"name": "aead-random-cipher", "params": {"method": "aes-256-gcm", "info": "bs-subkey", "factor": 2}},
-      {"name": "obfs-tls1.2-ticket", "params": {"sni": ['test.com']}}
+      {"name": "obfs-tls1.2-ticket", "params": {"sni": ["test.com"]}}
     ]
   },
   // blinksocks exp-base-auth-stream + obfs-tls1.2-ticket
   {
     presets: [
       {"name": "exp-base-auth-stream", "params": {"method": "aes-256-ctr"}},
-      {"name": "obfs-tls1.2-ticket", "params": {"sni": ['test.com']}}
+      {"name": "obfs-tls1.2-ticket", "params": {"sni": ["test.com"]}}
     ]
   }
 ];
