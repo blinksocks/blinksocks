@@ -66,7 +66,7 @@ if (hasOption('-c') || hasOption('--config')) {
     return console.log(chalk.red('config file must be provided'));
   }
 
-  configPath = path.join(process.cwd(), configPath);
+  configPath = path.resolve(process.cwd(), configPath);
 
   if (!fs.existsSync(configPath)) {
     return console.log(chalk.red('config file is not found'));
