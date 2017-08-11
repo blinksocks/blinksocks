@@ -3,7 +3,7 @@ import {
   MIDDLEWARE_DIRECTION_UPWARD,
   MIDDLEWARE_DIRECTION_DOWNWARD
 } from './middleware';
-import {PROCESSING_FAILED} from '../presets/defs';
+import {PRESET_INIT, PROCESSING_FAILED} from '../presets/defs';
 
 export class Pipe extends EventEmitter {
 
@@ -32,9 +32,10 @@ export class Pipe extends EventEmitter {
   }
 
   setMiddlewares(direction, middlewares) {
+    const onBroadcast = (action) => this.onBroadcast(direction, action);
     for (const middleware of middlewares) {
       middleware.setMaxListeners(2);
-      middleware.subscribe((action) => this.onBroadcast(direction, action));
+      middleware.subscribe(onBroadcast);
     }
     if (direction === MIDDLEWARE_DIRECTION_UPWARD) {
       this._upstream_middlewares = middlewares;
@@ -43,6 +44,8 @@ export class Pipe extends EventEmitter {
       this._downstream_middlewares = middlewares;
       this._upstream_middlewares = [].concat(middlewares).reverse();
     }
+    // make initial broadcast to all presets
+    this.onBroadcast(direction, {type: PRESET_INIT, payload: {broadcast: onBroadcast}});
   }
 
   getMiddlewares(direction) {

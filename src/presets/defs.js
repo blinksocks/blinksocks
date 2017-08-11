@@ -1,3 +1,4 @@
+export const PRESET_INIT = 'preset/init';
 export const SOCKET_CONNECT_TO_REMOTE = 'socket/connect/to/remote';
 export const PROCESSING_FAILED = 'processing/failed';
 
@@ -40,3 +41,38 @@ export class IPreset {
   }
 
 }
+
+// actions may be received by built-in presets in onNotified(action):
+
+/**
+ * @action PRESET_INIT
+ *   {
+ *     type: PRESET_INIT,
+ *     payload: {
+ *       broadcast: (action) => {}
+ *     }
+ *   }
+ */
+
+/**
+ * @action SOCKET_CONNECT_TO_REMOTE
+ *   {
+ *     type: SOCKET_CONNECT_TO_REMOTE,
+ *     payload: {
+ *       targetAddress: {type, host, port},
+ *       onConnected: () => {}
+ *     }
+ *   }
+ */
+
+/**
+ * @action PROCESSING_FAILED
+ *   {
+ *     type: PROCESSING_FAILED,
+ *     payload: {
+ *       name: 'custom' or null,
+ *       message: 'explain',
+ *       orgData: <Buffer> or null
+ *     }
+ *   }
+ */
