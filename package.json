@@ -24,7 +24,7 @@
     "debug:server": "cross-env NODE_ENV=development node --inspect --inspect-port=9230 bin/cli.js --config blinksocks.server.json",
     "client": "node bin/cli.js --config blinksocks.client.json",
     "server": "node bin/cli.js --config blinksocks.server.json",
-    "iperf": "scripts/iperf.sh blinksocks.client.json blinksocks.server.json 10",
+    "benchmark": "node benchmark/bootstrap.js",
     "precommit": "npm test"
   },
   "dependencies": {
