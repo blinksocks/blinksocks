@@ -418,7 +418,7 @@ export class Socket extends EventEmitter {
   onPresetFailed(action) {
     const {name, message, orgData} = action.payload;
     logger.error(`[socket] [${this.remote}] preset "${name}" fail to process: ${message}`);
-    if (__IS_SERVER__ && __REDIRECT__ !== '' && this._fsocket === null) {
+    if (__IS_SERVER__ && __REDIRECT__ && this._fsocket === null) {
       const [host, port] = __REDIRECT__.split(':');
       logger.warn(`[socket] [${this.remote}] connection is redirecting to ${host}:${port}...`);
       this.connect({host, port}, () => {
