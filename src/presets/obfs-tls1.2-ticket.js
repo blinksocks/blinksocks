@@ -58,7 +58,7 @@ export default class ObfsTls12TicketPreset extends IPreset {
 
   _stage = TLS_STAGE_HELLO;
 
-  _pending = null;
+  _staging = Buffer.alloc(0);
 
   _adBuf = null;
 
@@ -88,7 +88,7 @@ export default class ObfsTls12TicketPreset extends IPreset {
   clientOut({buffer, next}) {
     if (this._stage === TLS_STAGE_HELLO) {
       this._stage = TLS_STAGE_CHANGE_CIPHER_SPEC;
-      this._pending = buffer;
+      this._staging = buffer;
       // Send Client Hello
 
       const sni = this.getRandomSNI();
@@ -168,6 +168,10 @@ export default class ObfsTls12TicketPreset extends IPreset {
         ...numberToBuffer(body.length, 3)       // Length
       ];
       return next(Buffer.from([...header, ...body]));
+    }
+
+    if (this._stage === TLS_STAGE_CHANGE_CIPHER_SPEC) {
+      this._staging = Buffer.concat([this._staging, buffer]);
     }
 
     if (this._stage === TLS_STAGE_APPLICATION_DATA) {
@@ -316,9 +320,9 @@ export default class ObfsTls12TicketPreset extends IPreset {
         ...crypto.randomBytes(0x20),
       ];
       // Application Data
-      const chunks = getRandomChunks(this._pending, MIN_AD_PAYLOAD_LEN, MAX_AD_PAYLOAD_LEN)
+      const chunks = getRandomChunks(this._staging, MIN_AD_PAYLOAD_LEN, MAX_AD_PAYLOAD_LEN)
         .map((chunk) => ApplicationData(chunk));
-      this._pending = null;
+      this._staging = null;
       return next(Buffer.from([...change_cipher_spec, ...finished, ...Buffer.concat(chunks)]), true);
     }
     this._adBuf.put(buffer, {next, fail});
