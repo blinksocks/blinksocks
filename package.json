@@ -30,7 +30,7 @@
   "dependencies": {
     "chalk": "^2.1.0",
     "ip": "^1.1.5",
-    "urijs": "^1.18.10",
+    "urijs": "^1.18.12",
     "winston": "^2.3.1"
   },
   "devDependencies": {
@@ -43,7 +43,7 @@
     "babel-preset-env": "^1.6.0",
     "babel-register": "^6.24.1",
     "babili-webpack-plugin": "^0.1.2",
-    "cross-env": "^5.0.4",
+    "cross-env": "^5.0.5",
     "eslint": "^4.3.0",
     "eslint-config-babel": "^7.0.1",
     "eslint-loader": "^1.9.0",
@@ -53,7 +53,7 @@
     "jest": "^20.0.4",
     "pkg": "^4.2.2",
     "rimraf": "^2.6.1",
-    "webpack": "^3.4.1"
+    "webpack": "^3.5.3"
   },
   "repository": {
     "url": "https://github.com/blinksocks/blinksocks",
