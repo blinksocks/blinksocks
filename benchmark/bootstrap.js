@@ -63,13 +63,14 @@ function parseStdout(stdout) {
 
 function run(cases) {
   const results = [];
-  for (const {id, presets} of cases) {
-    const [clientJson, serverJson] = writeConfs(id, presets);
+  for (let i = 0; i < cases.length; ++i) {
+    const {presets} = cases[i];
+    const [clientJson, serverJson] = writeConfs(i, presets);
     try {
       const stdout = child_process.execFileSync(
         IPERF_PATH, [clientJson, serverJson, SEC_PER_CASE.toString()], {encoding: 'utf-8'}
       );
-      const result = {id, itb: parseStdout(stdout)};
+      const result = {id: i, itb: parseStdout(stdout)};
       results.push(result);
       printTable(result);
     } catch (err) {
