@@ -1,4 +1,3 @@
-/* eslint-disable quotes */
 const fs = require('fs');
 const crypto = require('crypto');
 
@@ -31,65 +30,65 @@ module.exports = function init() {
   const port = getRandomInt(1024, 65535);
   const timeout = getRandomInt(200, 1000);
 
-  const clientJs = `{
-  "host": "127.0.0.1",
-  "port": 1080,
-  "servers": [
-    {
-      "enabled": true,
-      "transport": "tcp",
-      "host": "example.com",
-      "port": ${port},
-      "key": "${key}",
-      "presets": [
-        {
-          "name": "ss-base"
-        },
-        {
-          "name": "ss-aead-cipher",
-          "params": {
-            "method": "aes-256-gcm",
-            "info": "ss-subkey"
+  const clientJson = {
+    'host': '127.0.0.1',
+    'port': 1080,
+    'servers': [
+      {
+        'enabled': true,
+        'transport': 'tcp',
+        'host': 'example.com',
+        'port': port,
+        'key': key,
+        'presets': [
+          {
+            'name': 'ss-base'
+          },
+          {
+            'name': 'ss-aead-cipher',
+            'params': {
+              'method': 'aes-256-gcm',
+              'info': 'ss-subkey'
+            }
           }
-        }
-      ]
-    }
-  ],
-  "dns": [],
-  "dns_expire": 3600,
-  "timeout": ${timeout},
-  "watch": false,
-  "log_level": "info"
-}`;
-
-  const serverJs = `{
-  "host": "0.0.0.0",
-  "port": ${port},
-  "transport": "tcp",
-  "key": "${key}",
-  "presets": [
-    {
-      "name": "ss-base"
-    },
-    {
-      "name": "ss-aead-cipher",
-      "params": {
-        "method": "aes-256-gcm",
-        "info": "ss-subkey"
+        ]
       }
-    }
-  ],
-  "dns": [],
-  "dns_expire": 3600,
-  "redirect": "",
-  "timeout": ${timeout},
-  "watch": false,
-  "log_level": "info"
-}`;
+    ],
+    'dns': [],
+    'dns_expire': 3600,
+    'timeout': timeout,
+    'watch': false,
+    'log_level': 'info'
+  };
 
-  fs.writeFileSync('blinksocks.client.json', clientJs);
-  fs.writeFileSync('blinksocks.server.json', serverJs);
+  const serverJson = {
+    'host': '0.0.0.0',
+    'port': port,
+    'transport': 'tcp',
+    'key': key,
+    'presets': [
+      {
+        'name': 'ss-base'
+      },
+      {
+        'name': 'ss-aead-cipher',
+        'params': {
+          'method': 'aes-256-gcm',
+          'info': 'ss-subkey'
+        }
+      }
+    ],
+    'dns': [],
+    'dns_expire': 3600,
+    'redirect': '',
+    'timeout': timeout,
+    'watch': false,
+    'log_level': 'info'
+  };
+
+  fs.writeFileSync('blinksocks.client.json', JSON.stringify(clientJson, null, '  '));
+  fs.writeFileSync('blinksocks.server.json', JSON.stringify(serverJson, null, '  '));
 
   console.log('> Generated blinksocks.client.json and blinksocks.server.json');
-  console.log('> For explanation to each option, please refer to docs/config/README.md');
+  console.log('> Check out https://github.com/blinksocks/blinksocks/tree/master/docs/config for explanation to each option');
 };
