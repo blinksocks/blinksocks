@@ -15,12 +15,12 @@ bs_client_pid=$!
 blinksocks -c ${server_conf} > /dev/null &
 bs_server_pid=$!
 
-iperf3 -s -p 1083 &
+iperf3 -s -p 1083 > /dev/null &
 iperf_pid=$!
 
 sleep 1
 
-iperf3 -c 127.0.0.1 -p 1081 -t ${seconds}
+iperf3 -c 127.0.0.1 -p 1081 -t ${seconds} -P 20
 
 # Wait for iperf server to receive all data.
 # One second should be enough in most cases.
