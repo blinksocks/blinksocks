@@ -7,7 +7,7 @@ const chalk = require('chalk');
 const testCases = require('./cases');
 
 const IPERF_PATH = path.join(__dirname, 'iperf.sh');
-const SEC_PER_CASE = 3;
+const SEC_PER_CASE = 5;
 
 function makeConfs(presets) {
   const common = {
@@ -54,50 +54,21 @@ function writeConfs(caseId, presets) {
 }
 
 function parseStdout(stdout) {
-  const matches = stdout.match(/\[\s{2}\d].*sec/g);
-  return matches.map((line) => {
-    const [interval, transfer, bandwidth] = line.match(/\d+[.\d\-\s]+\w+[\/\w]+/g);
-    return {interval, transfer, bandwidth};
+  const matches = stdout.match(/\[SUM].*sec/g);
+  return matches.slice(-2).map((line) => {
+    const [interval, transfer, bitrate] = line.match(/\d+[.\d\-\s]+\w+[\/\w]+/g);
+    return {interval, transfer, bitrate};
   });
 }
 
-function run(cases) {
-  const results = [];
-  for (let i = 0; i < cases.length; ++i) {
-    const {presets} = cases[i];
-    const [clientJson, serverJson] = writeConfs(i, presets);
-    try {
-      const stdout = child_process.execFileSync(
-        IPERF_PATH, [clientJson, serverJson, SEC_PER_CASE.toString()], {encoding: 'utf-8'}
-      );
-      const result = {id: i, itb: parseStdout(stdout)};
-      results.push(result);
-      printTable(result);
-    } catch (err) {
-      console.error(err);
-    }
-  }
-  return results;
-}
-
-function parseBandwidth(bandwidth) {
-  const [num, unit] = bandwidth.split(' ');
+function convertTransferToKBytes(transfer) {
+  const [num, unit] = transfer.split(' ');
   const factor = {
-    'Gbits/sec': 1024 * 1024,
-    'Mbits/sec': 1024,
-    'Kbits/sec': 1
+    'GBytes': 1024 * 1024,
+    'MBytes': 1024,
+    'KBytes': 1
   }[unit];
   return num * factor;
-}
-
-function printTable(result) {
-  const {id, itb: [a, b]} = result;
-  console.log(`------------ ${chalk.green(`Test Case ${id}`)} ----------------`);
-  console.log(JSON.stringify(testCases[id].presets));
-  console.log('Interval       Transfer       Bandwidth');
-  console.log(`${a.interval}  ${a.transfer}  ${a.bandwidth}`);
-  console.log(`${b.interval}  ${b.transfer}  ${b.bandwidth}`);
-  console.log('-----------------------------------------\n');
 }
 
 function printSystemConf() {
@@ -122,29 +93,52 @@ function printSystemConf() {
   console.log('');
 }
 
-function summary(results) {
-  let maxBandwidth = 0;
-  let bestCaseId = 0;
-  for (const result of results) {
-    const {id, itb: [a, b]} = result;
-    const ba = parseBandwidth(a.bandwidth);
-    const bb = parseBandwidth(b.bandwidth);
-    if (ba > maxBandwidth) {
-      maxBandwidth = ba;
-      bestCaseId = id;
+function run(cases) {
+  const results = [];
+  for (let i = 0; i < cases.length; ++i) {
+    const {presets} = cases[i];
+    const [clientJson, serverJson] = writeConfs(i, presets);
+    try {
+      const stdout = child_process.execFileSync(
+        IPERF_PATH, [clientJson, serverJson, SEC_PER_CASE.toString()], {encoding: 'utf-8'}
+      );
+      const [a, b] = parseStdout(stdout);
+      console.log(`------------ ${chalk.green(`Test Case ${i}`)} ----------------`);
+      console.log(JSON.stringify(testCases[i].presets));
+      console.log('Interval         Transfer    Bitrate');
+      console.log(`${a.interval}  ${a.transfer}  ${a.bitrate}  sender`);
+      console.log(`${b.interval}  ${b.transfer}  ${b.bitrate}  receiver`);
+      console.log('-----------------------------------------');
+      console.log('');
+      const conv = convertTransferToKBytes;
+      results.push({
+        id: i,
+        transfers: [a.transfer, b.transfer],
+        // NOTE: take average of sender transfer and receiver transfer to sort
+        avgTransfer: (conv(a.transfer) + conv(b.transfer)) / 2,
+        conf: JSON.stringify(presets)
+      });
+    } catch (err) {
+      console.error(err);
     }
-    if (bb > maxBandwidth) {
-      maxBandwidth = bb;
-      bestCaseId = id;
-    }
-    // printTable(result);
   }
-  console.log('(best):\n');
-  printTable(results[bestCaseId]);
+  return results;
+}
+
+function summary(results) {
+  const sorted = [].concat(results).sort((a, b) => b.avgTransfer - a.avgTransfer);
+  console.log('(ranking):');
+  console.log('');
+  for (let i = 0; i < sorted.length; ++i) {
+    const {id, transfers, conf} = sorted[i];
+    console.log(`${(i + 1).toString().padStart(2)}: Test Case ${id}, Transfer=[${transfers.join(', ')}], ${conf}`);
+  }
+  console.log('');
 }
 
 printSystemConf();
 
-console.log('running tests...\n');
+console.log('running tests...');
+console.log('');
 
 summary(run(testCases));
