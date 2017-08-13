@@ -25,12 +25,6 @@ A framework for building composable proxy protocol stack.
 For desktop use, you can download official [blinksocks-desktop](https://github.com/blinksocks/blinksocks-desktop),
 a cross-platform GUI for blinksocks.
 
-## Executables ready(Not GUI)
-
-You can download precompiled executables for different platforms and use it directly without having Node.js installed:
-
-[Download](https://github.com/blinksocks/blinksocks/releases)
-
 ## Getting Started
 
 ### Requirements
@@ -44,21 +38,37 @@ You can get the latest blinksocks via package manager **yarn** or **npm**.
 
 > NOTE: Node.js comes with npm installed so you don't have to install npm individually.
 
+**stable version**
+
 ```
 $ npm install -g blinksocks
 ```
 
+**unstable version**
+
+```
+$ npm install -g blinksocks@next
+```
+
 ### Without yarn or npm?
 
-If you hate to install and want to get a even more portable version, we have one:
+If you hate to install and want to get a even more portable version, we have all in one script:
+
+**the latest build(maybe unstable)**
 
 ```
 $ wget https://raw.githubusercontent.com/blinksocks/blinksocks/master/build/blinksocks.js
 ```
 
+**previous build(with tag in url, stable)**
+
+```
+$ wget https://raw.githubusercontent.com/blinksocks/blinksocks/v2.5.1/build/blinksocks.js
+```
+
 ## Run blinksocks
 
-**installed version(require Node.js)**
+**npm version(require Node.js)**
 
 ```
 $ blinksocks -c blinksocks.client.json
@@ -70,13 +80,15 @@ $ blinksocks -c blinksocks.client.json
 $ node blinksocks.js -c blinksocks.client.json
 ```
 
-**executable version(~~Node.js~~)**
+**executable version(~~Node.js~~, not GUI)**
 
 ```
 $ ./blinksocks(.exe) --help
 ```
 
-For configuring blinksocks, please refer to [Configuration](docs/config).
+You can [download](https://github.com/blinksocks/blinksocks/releases) precompiled executables for different platforms and launch it directly without having Node.js installed.
+
+> For configuring blinksocks, please refer to [Configuration](docs/config).
 
 ## Documents
 
@@ -91,7 +103,7 @@ For configuring blinksocks, please refer to [Configuration](docs/config).
 1. [Steps](docs/development/steps)
 2. [Principle](docs/development/principle)
 3. [Architecture](docs/development/architecture)
-4. [Performance (outdated)](docs/performance)
+4. [Benchmark](docs/benchmark)
 
 ## Contributors
 
