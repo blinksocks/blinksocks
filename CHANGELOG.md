@@ -2,6 +2,21 @@
 
 
 
+## [v2.5.2](https://github.com/blinksocks/blinksocks/tree/v2.5.2) (2017-08-13)
+[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.5.1...v2.5.2)
+
+#### Features:
+
+- add an initial broadcast to all presets when pipeline created [#85](https://github.com/blinksocks/blinksocks/issues/85)
+- add a benchmark utility iperf [#84](https://github.com/blinksocks/blinksocks/issues/84)
+- improve "proxy" preset to support tunnel mode for testing [#83](https://github.com/blinksocks/blinksocks/issues/83)
+- refactor tasteless profile, using stats.js preset to achieve [#81](https://github.com/blinksocks/blinksocks/issues/81)
+- deprecated cli-server.js and cli-client.js [#80](https://github.com/blinksocks/blinksocks/issues/80)
+- generate port and timeout randomly in cli-init.js [#79](https://github.com/blinksocks/blinksocks/issues/79)
+
+## [v2.5.1](https://github.com/blinksocks/blinksocks/tree/v2.5.1) (2017-08-09)
+[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.5.0...v2.5.1)
+
 ## [v2.5.0](https://github.com/blinksocks/blinksocks/tree/v2.5.0) (2017-08-09)
 [Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.9...v2.5.0)
 
