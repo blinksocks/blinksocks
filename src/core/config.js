@@ -99,8 +99,8 @@ export class Config {
       if (typeof json.workers !== 'number') {
         throw Error('\'workers\' must be a number');
       }
-      if (json.workers < 1) {
-        throw Error('\'workers\' must be greater than 0');
+      if (json.workers < 0) {
+        throw Error('\'workers\' must be an integer');
       }
       if (json.workers > os.cpus().length) {
         console.warn(`==> [config] 'workers' is greater than the number of cpus, is ${json.workers} workers expected?`);
@@ -202,7 +202,7 @@ export class Config {
     global.__IS_SERVER__ = !global.__IS_CLIENT__;
     global.__REDIRECT__ = json.redirect;
     global.__TIMEOUT__ = json.timeout * 1e3;
-    global.__WORKERS__ = json.workers || DEFAULT_WORKERS;
+    global.__WORKERS__ = (json.workers !== undefined) ? json.workers : DEFAULT_WORKERS;
     global.__LOG_LEVEL__ = json.log_level || DEFAULT_LOG_LEVEL;
     global.__DNS_EXPIRE__ = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
     global.__ALL_CONFIG__ = json;

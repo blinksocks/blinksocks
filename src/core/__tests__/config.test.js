@@ -109,11 +109,11 @@ describe('Config#init', function () {
     }).toThrow();
 
     expect(function () {
-      Config.init({...conf, workers: 0});
+      Config.init({...conf, workers: -1});
     }).toThrow();
 
     expect(function () {
-      Config.init({...conf, workers: 1});
+      Config.init({...conf, workers: 0});
     }).not.toThrow();
 
     expect(function () {

@@ -32,7 +32,7 @@ function obtainConfig(file) {
 module.exports = function bootstrap(configPath, {Hub, Config}) {
   try {
     Config.init(obtainConfig(configPath));
-    if (cluster.isMaster) {
+    if (cluster.isMaster && __WORKERS__ > 0) {
       for (let i = 0; i < __WORKERS__; ++i) {
         cluster.fork();
       }

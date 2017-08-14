@@ -27,7 +27,7 @@ const nextId = (function () {
  */
 export class Hub extends EventEmitter {
 
-  _isFirstWorker = cluster.worker.id <= 1;
+  _isFirstWorker = cluster.worker ? (cluster.worker.id <= 1) : true;
 
   _hub = null; // instance of class net.Server
 
