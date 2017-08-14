@@ -9,7 +9,7 @@
     "AUTHORS"
   ],
   "bin": {
-    "blinksocks": "bin/cli.js"
+    "blinksocks": "bin/start.js"
   },
   "scripts": {
     "test": "npm run lint && npm run test:coverage",

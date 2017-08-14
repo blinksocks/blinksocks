@@ -1,11 +1,10 @@
-#!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
 const init = require('./init');
 const bootstrap = require('./bootstrap');
 const modules = require('./modules');
-const {version} = require('../package.json');
+const version = global.__WEBPACK__ ? global.__VERSION__ : require('../package.json').version;
 
 const examples = [
   ['Generate json file', '$ blinksocks init'],
@@ -33,51 +32,53 @@ ${examples.map(([description, example]) => `  ${chalk.gray('-')} ${description}\
 
 const argv = process.argv;
 
-if (argv.length < 3) {
-  return console.log(usage);
-}
-
-const options = argv.slice(2);
-
-function hasOption(opt) {
-  return options.indexOf(opt) !== -1;
-}
-
-function getOptionValue(opt) {
-  const index = options.indexOf(opt);
-  if (index !== -1) {
-    return options[index + 1];
-  }
-  return undefined;
-}
-
-if (hasOption('-h') || hasOption('--help')) {
-  return console.log(usage);
-}
-
-if (hasOption('-v') || hasOption('--version')) {
-  return console.log(version);
-}
-
-if (hasOption('-c') || hasOption('--config')) {
-  let configPath = getOptionValue('-c') || getOptionValue('--config');
-
-  if (configPath === undefined) {
-    return console.log(chalk.red('config file must be provided'));
+(function main() {
+  if (argv.length < 3) {
+    return console.log(usage);
   }
 
-  configPath = path.resolve(process.cwd(), configPath);
+  const options = argv.slice(2);
 
-  if (!fs.existsSync(configPath)) {
-    return console.log(chalk.red('config file is not found'));
+  function hasOption(opt) {
+    return options.indexOf(opt) !== -1;
   }
 
-  return bootstrap(configPath, modules);
-}
+  function getOptionValue(opt) {
+    const index = options.indexOf(opt);
+    if (index !== -1) {
+      return options[index + 1];
+    }
+    return undefined;
+  }
 
-if (options[0] === 'init') {
-  return init();
-}
+  if (hasOption('-h') || hasOption('--help')) {
+    return console.log(usage);
+  }
 
-// other cases
-console.log(usage);
+  if (hasOption('-v') || hasOption('--version')) {
+    return console.log(version);
+  }
+
+  if (hasOption('-c') || hasOption('--config')) {
+    let configPath = getOptionValue('-c') || getOptionValue('--config');
+
+    if (configPath === undefined) {
+      return console.log(chalk.red('config file must be provided'));
+    }
+
+    configPath = path.resolve(process.cwd(), configPath);
+
+    if (!fs.existsSync(configPath)) {
+      return console.log(chalk.red('config file is not found'));
+    }
+
+    return bootstrap(configPath, modules);
+  }
+
+  if (options[0] === 'init') {
+    return init();
+  }
+
+  // other cases
+  console.log(usage);
+})();
