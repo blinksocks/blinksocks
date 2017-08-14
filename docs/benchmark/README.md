@@ -114,7 +114,9 @@ The first line of results represents traffic from `iperf -c` to `bs-client` whil
 
 ## History Reports
 
-* [2017-8-11.txt](./reports/2017-8-11.txt)
+* [2017-8-11.txt](../../benchmark/reports/2017-8-11.txt)
+* [2017-8-13.txt](../../benchmark/reports/2017-8-13.txt)
+* [2017-8-14.txt](../../benchmark/reports/2017-8-14.txt)
 
 [benchmark/cases.js]: ./cases.js
 [benchmark/iperf.sh]: ./iperf.sh

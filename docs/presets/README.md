@@ -466,6 +466,8 @@ Make some cheat:
 }]
 ```
 
+> You can also see [benchmark] reports then choose a combination you want.
+
 [proxy]: ../../src/presets/proxy.js
 [stats]: ../../src/presets/stats.js
 [ss-base]: ../../src/presets/ss-base.js
@@ -478,3 +480,4 @@ Make some cheat:
 [obfs-tls1.2-ticket]: ../../src/presets/obfs-tls1.2-ticket.js
 [Server Name Indication]: https://en.wikipedia.org/wiki/Server_Name_Indication
 [QoS]: https://en.wikipedia.org/wiki/Quality_of_service
+[benchmark]: ../../docs/benchmark
