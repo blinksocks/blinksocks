@@ -43,8 +43,6 @@ function selectServer() {
  */
 export class Socket extends EventEmitter {
 
-  _id = null;
-
   _dnsCache = null;
 
   _isConnectedToDst = false;
@@ -66,7 +64,7 @@ export class Socket extends EventEmitter {
   // +---+-----------------------+---+
   _tracks = []; // ['source', 'target', 'u', '20', 'u', '20', 'd', '10', ...]
 
-  constructor({id, socket}) {
+  constructor({socket}) {
     super();
     this.onForward = this.onForward.bind(this);
     this.onBackward = this.onBackward.bind(this);
@@ -77,7 +75,6 @@ export class Socket extends EventEmitter {
     this.onForwardSocketDrain = this.onForwardSocketDrain.bind(this);
     this.onForwardSocketTimeout = this.onForwardSocketTimeout.bind(this);
     this.onForwardSocketClose = this.onForwardSocketClose.bind(this);
-    this._id = id;
     this._dnsCache = new DNSCache({expire: __DNS_EXPIRE__});
     this._remoteAddress = socket.remoteAddress;
     this._remotePort = socket.remotePort;
@@ -100,10 +97,6 @@ export class Socket extends EventEmitter {
   }
 
   // getters
-
-  get id() {
-    return this._id;
-  }
 
   get remote() {
     return `${this._remoteAddress}:${this._remotePort}`;

@@ -67,7 +67,7 @@ export class Hub extends EventEmitter {
 
   onConnect(socket) {
     const id = nextId();
-    const sok = new Socket({id, socket});
+    const sok = new Socket({socket});
     sok.on('close', () => this.onSocketClose(id));
     sok.on('stat', (...props) => this.emit('socketStat', ...props));
     this._sockets.push(sok);
