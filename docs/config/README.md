@@ -57,7 +57,7 @@ $ blinksocks init
   "dns_expire": 3600,
   // close inactive connection after timeout seconds
   "timeout": 600,
-  // how many sub processes to create, default is the number of CPU cores
+  // how many sub processes to create, default is the number of CPU cores, 0 to disable cluster mode
   "workers": 2,
   // log at the level, "error", "warn", "info", "verbose", "debug" or "silly"
   "log_level": "info"
@@ -105,7 +105,7 @@ $ blinksocks init
   "redirect": "",
   // close inactive connection after timeout seconds
   "timeout": 600,
-  // how many sub processes to create, default is the number of CPU cores
+  // how many sub processes to create, default is the number of CPU cores, 0 to disable cluster mode
   "workers": 2,
   // log at the level, "error", "warn", "info", "verbose", "debug" or "silly"
   "log_level": "info"

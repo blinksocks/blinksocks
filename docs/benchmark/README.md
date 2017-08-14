@@ -32,6 +32,12 @@ For usage about each preset, please check out [docs/presets].
 $ npm run benchmark
 ```
 
+Save stdout/stderr to files:
+
+```
+$ npm run benchmark > report.txt 2> error.txt
+```
+
 benchmark will take a few minutes to get a full report, the more test cases you specified in [benchmark/cases.js] the more time it will spend.
 
 ### 4. get report
