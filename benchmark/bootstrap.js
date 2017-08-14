@@ -96,7 +96,7 @@ function printSystemConf() {
 function run(cases) {
   const results = [];
   for (let i = 0; i < cases.length; ++i) {
-    const {presets} = cases[i];
+    const presets = cases[i];
     const [clientJson, serverJson] = writeConfs(i, presets);
     try {
       const stdout = child_process.execFileSync(
@@ -104,8 +104,8 @@ function run(cases) {
       );
       const [a, b] = parseStdout(stdout);
       console.log(`------------ ${chalk.green(`Test Case ${i}`)} ----------------`);
-      console.log(JSON.stringify(testCases[i].presets));
-      console.log('Interval         Transfer    Bitrate');
+      console.log(JSON.stringify(presets));
+      console.log('Interval         Transfer     Bitrate');
       console.log(`${a.interval}  ${a.transfer}  ${a.bitrate}  sender`);
       console.log(`${b.interval}  ${b.transfer}  ${b.bitrate}  receiver`);
       console.log('-----------------------------------------');
