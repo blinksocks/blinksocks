@@ -15,6 +15,9 @@ bs_client_pid=$!
 blinksocks -c ${server_conf} > /dev/null &
 bs_server_pid=$!
 
+# because cluster mode will take a while to start
+sleep 4
+
 iperf3 -s -p 1083 > /dev/null &
 iperf_pid=$!
 
@@ -30,5 +33,6 @@ kill -SIGINT ${bs_client_pid}
 kill -SIGINT ${bs_server_pid}
 kill ${iperf_pid}
 
-sleep 1
+# Wait for system gc
+sleep 5
 echo "Test Finished"
