@@ -3,8 +3,6 @@ const webpack = require('webpack');
 const BabiliPlugin = require('babili-webpack-plugin');
 const {version} = require('./package.json');
 
-// TODO: prevent packing src/presets/__tests__/*.test.js into blinksocks.js
-// ./src/presets ^\.\/.*$ 789 bytes {0} [optional] [built]
 module.exports = {
 
   bail: true,
