@@ -15,7 +15,6 @@ const LOG_FILE_PATH = path.join(LOG_DIR,
 );
 const LOG_FILE_MAX_SIZE = 2 * 1024 * 1024; // 2MB
 const DEFAULT_LOG_LEVEL = 'info';
-const DEFAULT_WORKERS = os.cpus().length;
 
 module.exports = {
   HOME_DIR,
@@ -23,6 +22,5 @@ module.exports = {
   LOG_DIR,
   LOG_FILE_PATH,
   LOG_FILE_MAX_SIZE,
-  DEFAULT_LOG_LEVEL,
-  DEFAULT_WORKERS
+  DEFAULT_LOG_LEVEL
 };

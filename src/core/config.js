@@ -3,7 +3,7 @@ import fs from 'fs';
 import os from 'os';
 import net from 'net';
 import {isValidPort} from '../utils';
-import {BLINKSOCKS_DIR, LOG_DIR, DEFAULT_LOG_LEVEL, DEFAULT_WORKERS} from './constants';
+import {BLINKSOCKS_DIR, LOG_DIR, DEFAULT_LOG_LEVEL} from './constants';
 import {DNS_DEFAULT_EXPIRE} from './dns-cache';
 
 /**
@@ -202,7 +202,7 @@ export class Config {
     global.__IS_SERVER__ = !global.__IS_CLIENT__;
     global.__REDIRECT__ = json.redirect;
     global.__TIMEOUT__ = json.timeout * 1e3;
-    global.__WORKERS__ = (json.workers !== undefined) ? json.workers : DEFAULT_WORKERS;
+    global.__WORKERS__ = (json.workers !== undefined) ? json.workers : 0;
     global.__LOG_LEVEL__ = json.log_level || DEFAULT_LOG_LEVEL;
     global.__DNS_EXPIRE__ = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
     global.__ALL_CONFIG__ = json;

@@ -57,8 +57,8 @@ $ blinksocks init
   "dns_expire": 3600,
   // close inactive connection after timeout seconds
   "timeout": 600,
-  // how many sub processes to create, default is the number of CPU cores, 0 to disable cluster mode
-  "workers": 2,
+  // how many sub processes to create, default is 0(disable cluster mode)
+  "workers": 0,
   // log at the level, "error", "warn", "info", "verbose", "debug" or "silly"
   "log_level": "info"
 }
@@ -105,8 +105,8 @@ $ blinksocks init
   "redirect": "",
   // close inactive connection after timeout seconds
   "timeout": 600,
-  // how many sub processes to create, default is the number of CPU cores, 0 to disable cluster mode
-  "workers": 2,
+  // how many sub processes to create, default is 0(disable cluster mode)
+  "workers": 0,
   // log at the level, "error", "warn", "info", "verbose", "debug" or "silly"
   "log_level": "info"
 }
@@ -186,3 +186,17 @@ If you encounter **ENOTFOUND** every now and then, you would better custom dns s
 If no `dns` option or no ip provided in `dns`, blinksocks use system dns settings as usual.
 
 See: https://github.com/blinksocks/blinksocks/issues/66
+
+## Cluster Mode
+
+You can enable cluster mode by setting `workers` greater than zero, cluster mode can take advantage of multi-core systems to handle the load.
+
+`workers` is usually set to the number of cpu cores:
+
+```
+{
+  ...
+  "workers": 2
+  ...
+}
+```
