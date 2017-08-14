@@ -57,8 +57,8 @@ $ blinksocks init
   "dns_expire": 3600,
   // close inactive connection after timeout seconds
   "timeout": 600,
-  // hot-reload when this file changed
-  "watch": false,
+  // how many sub processes to create, default is the number of CPU cores
+  "workers": 2,
   // log at the level, "error", "warn", "info", "verbose", "debug" or "silly"
   "log_level": "info"
 }
@@ -105,8 +105,8 @@ $ blinksocks init
   "redirect": "",
   // close inactive connection after timeout seconds
   "timeout": 600,
-  // hot-reload when this file changed
-  "watch": false,
+  // how many sub processes to create, default is the number of CPU cores
+  "workers": 2,
   // log at the level, "error", "warn", "info", "verbose", "debug" or "silly"
   "log_level": "info"
 }
@@ -153,17 +153,6 @@ npm logging levels by default, you can choose one of them demand:
 ```
 { error: 0, warn: 1, info: 2, verbose: 3, debug: 4, silly: 5 }
 ```
-
-## Hot reload
-
-`watch` is enabled by default, this means when file specified by `-c` or `--config` has been modified,
-blinksocks will hot-reload it without stop-the-world.
-
-```
-$ blinksocks -c config.json --watch
-```
-
-> NOTE that if you change `host` or `port`, a restart is required.
 
 ## Redirect(Server Side Only)
 

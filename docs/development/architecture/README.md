@@ -269,9 +269,8 @@ export default class CustomPreset extends IPreset {
 | \_\_KEY\_\_         |
 | \_\_PRESETS\_\_     |
 | \_\_DNS\_\_         |
-| \_\_DNS_EXPIRE\_\_ |
+| \_\_DNS_EXPIRE\_\_  |
 | \_\_REDIRECT\_\_    |
 | \_\_TIMEOUT\_\_     |
 | \_\_LOG_LEVEL\_\_   |
-| \_\_PROFILE\_\_     |
-| \_\_IS_WATCH\_\_    |
+| \_\_WORKERS\_\_     |
