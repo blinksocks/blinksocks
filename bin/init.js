@@ -1,4 +1,5 @@
 const fs = require('fs');
+const os = require('os');
 const crypto = require('crypto');
 
 /**
@@ -29,6 +30,7 @@ module.exports = function init() {
   const key = random('abcdefghjkmnpqrstuvwxyz23456789!@#$%^&*()_+<>?:|{}-=[];,./ABCDEFGHJKLMNPQRSTUVWXYZ', 16);
   const port = getRandomInt(1024, 65535);
   const timeout = getRandomInt(200, 1000);
+  const workers = os.cpus().length;
 
   const clientJson = {
     'host': '127.0.0.1',
@@ -57,7 +59,7 @@ module.exports = function init() {
     'dns': [],
     'dns_expire': 3600,
     'timeout': timeout,
-    'watch': false,
+    'workers': workers,
     'log_level': 'info'
   };
 
@@ -82,7 +84,7 @@ module.exports = function init() {
     'dns_expire': 3600,
     'redirect': '',
     'timeout': timeout,
-    'watch': false,
+    'workers': workers,
     'log_level': 'info'
   };
 

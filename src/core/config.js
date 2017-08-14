@@ -1,8 +1,9 @@
 import dns from 'dns';
 import fs from 'fs';
+import os from 'os';
 import net from 'net';
 import {isValidPort} from '../utils';
-import {BLINKSOCKS_DIR, LOG_DIR, DEFAULT_LOG_LEVEL} from './constants';
+import {BLINKSOCKS_DIR, LOG_DIR, DEFAULT_LOG_LEVEL, DEFAULT_WORKERS} from './constants';
 import {DNS_DEFAULT_EXPIRE} from './dns-cache';
 
 /**
@@ -91,6 +92,19 @@ export class Config {
 
     if (json.timeout < 60) {
       console.warn(`==> [config] 'timeout' is too short, is ${json.timeout}s expected?`);
+    }
+
+    // workers
+    if (typeof json.workers !== 'undefined') {
+      if (typeof json.workers !== 'number') {
+        throw Error('\'workers\' must be a number');
+      }
+      if (json.workers < 1) {
+        throw Error('\'workers\' must be greater than 0');
+      }
+      if (json.workers > os.cpus().length) {
+        console.warn(`==> [config] 'workers' is greater than the number of cpus, is ${json.workers} workers expected?`);
+      }
     }
 
     // dns_expire
@@ -188,7 +202,7 @@ export class Config {
     global.__IS_SERVER__ = !global.__IS_CLIENT__;
     global.__REDIRECT__ = json.redirect;
     global.__TIMEOUT__ = json.timeout * 1e3;
-    global.__IS_WATCH__ = !!json.watch;
+    global.__WORKERS__ = json.workers || DEFAULT_WORKERS;
     global.__LOG_LEVEL__ = json.log_level || DEFAULT_LOG_LEVEL;
     global.__DNS_EXPIRE__ = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
     global.__ALL_CONFIG__ = json;

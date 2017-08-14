@@ -1,3 +1,4 @@
+import cluster from 'cluster';
 import EventEmitter from 'events';
 import net from 'net';
 import logger from './logger';
@@ -26,6 +27,8 @@ const nextId = (function () {
  */
 export class Hub extends EventEmitter {
 
+  _isFirstWorker = cluster.worker.id <= 1;
+
   _hub = null; // instance of class net.Server
 
   _sockets = []; // instances of our class Socket
@@ -46,10 +49,10 @@ export class Hub extends EventEmitter {
 
   onClose() {
     if (!this._isClosed) {
-      logger.info('==> [hub] shutdown');
+      this._isFirstWorker && logger.info('==> [hub] shutdown');
       if (__IS_CLIENT__) {
         Balancer.destroy();
-        logger.info('==> [balancer] stopped');
+        this._isFirstWorker && logger.info('==> [balancer] stopped');
       }
       this._isClosed = true;
       this._sockets.forEach((socket) => socket.destroy());
@@ -80,11 +83,13 @@ export class Hub extends EventEmitter {
       port: __LOCAL_PORT__
     };
     this._hub.listen(options, () => {
-      logger.info(`==> [hub] use configuration: ${JSON.stringify(__ALL_CONFIG__)}`);
-      logger.info(`==> [hub] running as: ${__IS_SERVER__ ? 'Server' : 'Client'}`);
-      logger.info(`==> [hub] listening on: ${JSON.stringify(this._hub.address())}`);
+      if (this._isFirstWorker) {
+        logger.info(`==> [hub] use configuration: ${JSON.stringify(__ALL_CONFIG__)}`);
+        logger.info(`==> [hub] running as: ${__IS_SERVER__ ? 'Server' : 'Client'}`);
+        logger.info(`==> [hub] listening on: ${JSON.stringify(this._hub.address())}`);
+      }
       if (__IS_CLIENT__) {
-        logger.info('==> [balancer] started');
+        this._isFirstWorker && logger.info('==> [balancer] started');
         Balancer.start(__SERVERS__);
       }
       if (typeof callback === 'function') {

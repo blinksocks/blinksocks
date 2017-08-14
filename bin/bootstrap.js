@@ -1,3 +1,4 @@
+const cluster = require('cluster');
 const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
@@ -28,33 +29,20 @@ function obtainConfig(file) {
   return json;
 }
 
-module.exports = function bootstrap(configPath, {Hub, Config, Balancer}) {
+module.exports = function bootstrap(configPath, {Hub, Config}) {
   try {
     Config.init(obtainConfig(configPath));
-
-    if (__IS_WATCH__) {
-      fs.watchFile(configPath, function (curr, prev) {
-        if (curr.mtime > prev.mtime) {
-          console.log(`==> [bootstrap] ${path.basename(configPath)} has changed, reload`);
-          try {
-            Config.init(obtainConfig(configPath));
-            if (__IS_CLIENT__) {
-              console.info('==> [balancer] restarted');
-              Balancer.start(__SERVERS__);
-            }
-            console.info(JSON.stringify(__ALL_CONFIG__));
-          } catch (err) {
-            console.error(err);
-          }
-        }
-      });
+    if (cluster.isMaster) {
+      for (let i = 0; i < __WORKERS__; ++i) {
+        cluster.fork();
+      }
+      console.log(`==> [bootstrap] started ${__WORKERS__} workers`);
+    } else {
+      const hub = new Hub();
+      hub.on('close', () => process.exit(0));
+      hub.run();
+      process.on('SIGINT', () => hub.terminate());
     }
-
-    const app = new Hub();
-    app.on('close', () => process.exit(0));
-    app.run();
-
-    process.on('SIGINT', () => app.terminate());
   } catch (err) {
     console.error(err);
     process.exit(-1);
