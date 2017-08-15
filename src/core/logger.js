@@ -1,19 +1,25 @@
 import winston from 'winston';
-import {LOG_FILE_PATH, LOG_FILE_MAX_SIZE} from './constants';
 
-const instance = new (winston.Logger)({
-  transports: [
-    new (winston.transports.Console)({
-      colorize: true,
-      prettyPrint: true
-    }),
-    new (winston.transports.File)({
-      filename: LOG_FILE_PATH,
-      maxsize: LOG_FILE_MAX_SIZE,
-      silent: ['test', 'debug'].includes(process.env.NODE_ENV)
-    })
-  ]
-});
+const LOG_FILE_MAX_SIZE = 2 * 1024 * 1024; // 2MB
 
-export const logger = instance;
-export default instance;
+let instance = null;
+
+export function initLogger({file, level}) {
+  instance = new (winston.Logger)({
+    transports: [
+      new (winston.transports.Console)({
+        colorize: true,
+        prettyPrint: true
+      }),
+      new (winston.transports.File)({
+        filename: file,
+        maxsize: LOG_FILE_MAX_SIZE,
+        silent: ['test', 'debug'].includes(process.env.NODE_ENV)
+      })
+    ]
+  });
+  instance.level = level;
+  return instance;
+}
+
+export default initLogger({file: 'tmp.log', level: 'error'});

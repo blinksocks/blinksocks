@@ -59,6 +59,8 @@ $ blinksocks init
   "timeout": 600,
   // how many sub processes to create, default is 0(disable cluster mode)
   "workers": 0,
+  // where to store log file
+  "log_path": "bs-client.log",
   // log at the level, "error", "warn", "info", "verbose", "debug" or "silly"
   "log_level": "info"
 }
@@ -107,6 +109,8 @@ $ blinksocks init
   "timeout": 600,
   // how many sub processes to create, default is 0(disable cluster mode)
   "workers": 0,
+  // where to store log file
+  "log_path": "bs-server.log",
   // log at the level, "error", "warn", "info", "verbose", "debug" or "silly"
   "log_level": "info"
 }
@@ -144,6 +148,10 @@ Blinksocks will detect which server is the fastest in intervals using [balancer.
 `presets` are chaining from the first to the last, and are almost free to compose.
 
 For more information about presets, please check out [presets](../presets).
+
+* Log Path
+
+Specify a relative or absolute path to store log file, if no `log_path` provided, log file named `bs-[type].log` will be stored in the working directory.
 
 * Log Levels
 
