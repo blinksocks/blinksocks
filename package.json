@@ -18,7 +18,7 @@
     "compile": "cross-env NODE_ENV=production babel src --out-dir build --minified --ignore __tests__,__mocks__",
     "bundle": "cross-env NODE_ENV=production webpack --config webpack.config.js",
     "prepkg": "rimraf build/blinksocks.js.map pkg/blinksocks-* pkg/sha256sum.txt",
-    "pkg": "pkg --out-path pkg/ .",
+    "pkg": "pkg --out-path pkg/ --targets node8.3.0-linux-x64,node8.3.0-macos-x64,node8.3.0-win-x64 .",
     "postpkg": "node pkg/postpkg.js",
     "debug:client": "cross-env NODE_ENV=development node --inspect --inspect-port=9200 bin/cli.js --config blinksocks.client.json",
     "debug:server": "cross-env NODE_ENV=development node --inspect --inspect-port=9300 bin/cli.js --config blinksocks.server.json",
@@ -51,7 +51,7 @@
     "eslint-plugin-flowtype": "^2.35.0",
     "husky": "^0.14.3",
     "jest": "^20.0.4",
-    "pkg": "^4.2.2",
+    "pkg": "^4.2.3",
     "rimraf": "^2.6.1",
     "webpack": "^3.5.4"
   },
