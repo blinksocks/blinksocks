@@ -14,6 +14,7 @@ function makeConfs(presets) {
     "dns": [],
     "dns_expire": 3600,
     "timeout": 600,
+    "log_path": "/dev/null",
     "log_level": "error"
   };
   const server = {

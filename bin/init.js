@@ -58,6 +58,7 @@ module.exports = function init() {
     'dns_expire': 3600,
     'timeout': timeout,
     'workers': 0,
+    'log_path': 'bs-client.log',
     'log_level': 'info'
   };
 
@@ -83,6 +84,7 @@ module.exports = function init() {
     'redirect': '',
     'timeout': timeout,
     'workers': 0,
+    'log_path': 'bs-server.log',
     'log_level': 'info'
   };
 

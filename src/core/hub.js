@@ -1,10 +1,12 @@
 import cluster from 'cluster';
 import EventEmitter from 'events';
 import net from 'net';
-import logger from './logger';
+import {initLogger} from './logger';
 import {Config} from './config';
 import {Socket} from './socket';
 import {Balancer} from './balancer';
+
+let logger = null;
 
 const nextId = (function () {
   let i = 0;
@@ -40,7 +42,7 @@ export class Hub extends EventEmitter {
     if (typeof config !== 'undefined') {
       Config.init(config);
     }
-    logger.level = __LOG_LEVEL__;
+    logger = initLogger({file: __LOG_PATH__, level: __LOG_LEVEL__});
     this._hub = net.createServer();
     this._hub.on('close', this.onClose.bind(this));
     this._hub.on('connection', this.onConnect.bind(this));
