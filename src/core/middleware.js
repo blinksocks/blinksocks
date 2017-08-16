@@ -1,4 +1,5 @@
 import EventEmitter from 'events';
+import {getPresetClassByName} from '../presets';
 import {kebabCase} from '../utils';
 
 export const MIDDLEWARE_DIRECTION_UPWARD = 1;
@@ -85,7 +86,7 @@ export class Middleware extends EventEmitter {
  */
 export function createMiddleware(name, params = {}) {
   try {
-    const ImplClass = require(`../presets/${name}`).default;
+    const ImplClass = getPresetClassByName(name);
     const impl = new ImplClass(params);
 
     checkMiddleware(ImplClass.name, impl);

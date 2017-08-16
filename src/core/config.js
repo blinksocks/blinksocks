@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import net from 'net';
+import {getPresetClassByName} from '../presets';
 import {isValidPort} from '../utils';
 import {DNS_DEFAULT_EXPIRE} from './dns-cache';
 
@@ -176,7 +177,7 @@ export class Config {
       }
 
       // 1. check for the existence of the preset
-      const ps = require(`../presets/${preset.name}`).default;
+      const ps = getPresetClassByName(preset.name);
 
       // 2. check parameters
       delete new ps(params || {});
