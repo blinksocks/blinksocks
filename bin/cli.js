@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const chalk = require('chalk');
 const init = require('./init');
 const bootstrap = require('./bootstrap');
@@ -17,13 +18,14 @@ const usage = `
 
   Commands:
 
-    init           generate a pair of json file
+    init    generate a pair of json file
 
   Options:
 
-    -h, --help     output usage information
-    -v, --version  output blinksocks version
-    -c, --config   file with configuration, usually a json file
+    -h, --help          output usage information
+    -v, --version       output blinksocks version
+    -c, --config        file with configuration, usually a json file
+    -l, --list-presets  list all built-in presets
 
   Examples:
 
@@ -73,6 +75,10 @@ const argv = process.argv;
     }
 
     return bootstrap(configPath, modules);
+  }
+
+  if (hasOption('-l') || hasOption('--list-presets')) {
+    return console.log(modules.presets.join(os.EOL));
   }
 
   if (options[0] === 'init') {
