@@ -30,4 +30,6 @@ function getPresetClassByName(name) {
   return clazz;
 }
 
-export {getPresetClassByName};
+const presets = Object.keys(mapping);
+
+export {getPresetClassByName, presets};
