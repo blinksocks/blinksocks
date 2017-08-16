@@ -2,6 +2,16 @@
 
 
 
+## [v2.5.3](https://github.com/blinksocks/blinksocks/tree/v2.5.3) (2017-08-16)
+[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.5.2...v2.5.3)
+
+#### Features:
+
+- add "-m, --minimal" to generate configs with minimal options [#90](https://github.com/blinksocks/blinksocks/issues/90)
+- add "-l, --list-presets" option to show all built-in presets [#89](https://github.com/blinksocks/blinksocks/issues/89)
+- built-in cluster mode [#88](https://github.com/blinksocks/blinksocks/issues/88)
+- improve json generation for windows [#86](https://github.com/blinksocks/blinksocks/issues/86)
+
 ## [v2.5.2](https://github.com/blinksocks/blinksocks/tree/v2.5.2) (2017-08-13)
 [Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.5.1...v2.5.2)
 
