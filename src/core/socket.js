@@ -1,7 +1,7 @@
 import EventEmitter from 'events';
 import net from 'net';
 import {getRandomInt} from '../utils';
-import logger from './logger';
+import Logger from './logger';
 import {Config} from './config';
 import {DNSCache} from './dns-cache';
 import {Balancer} from './balancer';
@@ -22,6 +22,7 @@ const TRACK_CHAR_DOWNLOAD = '↓';
 const TRACK_MAX_SIZE = 40;
 const MAX_BUFFERED_SIZE = 1024 * 1024; // 1MB
 
+let logger = null;
 let lastServer = null;
 
 function selectServer() {
@@ -66,6 +67,7 @@ export class Socket extends EventEmitter {
 
   constructor({socket}) {
     super();
+    logger = Logger.getInstance();
     this.onForward = this.onForward.bind(this);
     this.onBackward = this.onBackward.bind(this);
     this.onError = this.onError.bind(this);

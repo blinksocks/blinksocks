@@ -1,7 +1,7 @@
 import cluster from 'cluster';
 import EventEmitter from 'events';
 import net from 'net';
-import {initLogger} from './logger';
+import Logger from './logger';
 import {Config} from './config';
 import {Socket} from './socket';
 import {Balancer} from './balancer';
@@ -42,7 +42,8 @@ export class Hub extends EventEmitter {
     if (typeof config !== 'undefined') {
       Config.init(config);
     }
-    logger = initLogger({file: __LOG_PATH__, level: __LOG_LEVEL__});
+    Logger.init({file: __LOG_PATH__, level: __LOG_LEVEL__});
+    logger = Logger.getInstance();
     this._hub = net.createServer();
     this._hub.on('close', this.onClose.bind(this));
     this._hub.on('connection', this.onConnect.bind(this));

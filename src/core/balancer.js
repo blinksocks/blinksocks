@@ -1,5 +1,5 @@
 import net from 'net';
-import logger from './logger';
+import Logger from './logger';
 
 const QUERY_INTERVAL = 12e4; // 2min
 
@@ -70,6 +70,7 @@ export class Balancer {
   }
 
   static _query() {
+    const logger = Logger.getInstance();
     this._servers.map((server, i) => {
       const sstr = `${server.host}:${server.port}`;
       logger.verbose(`[balancer] querying ${sstr}`);

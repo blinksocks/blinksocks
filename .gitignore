@@ -22,4 +22,5 @@ blinksocks*.json
 blinksocks.client.js
 blinksocks.server.js
 blinksocks*.log
+/*.log
 /build/blinksocks.js.map

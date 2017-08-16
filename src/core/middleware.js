@@ -1,5 +1,4 @@
 import EventEmitter from 'events';
-import logger from './logger';
 import {kebabCase} from '../utils';
 
 export const MIDDLEWARE_DIRECTION_UPWARD = 1;
@@ -93,7 +92,7 @@ export function createMiddleware(name, params = {}) {
 
     return new Middleware(impl);
   } catch (err) {
-    logger.error(err.message);
+    console.error(err.message);
     process.exit(-1);
   }
   return null;
