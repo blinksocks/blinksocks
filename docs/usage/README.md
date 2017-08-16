@@ -9,18 +9,22 @@ $ blinksocks --help
 
   Commands:
 
-    init           generate a pair of json file
+    init    generate a pair of json file
 
   Options:
 
-    -h, --help     output usage information
-    -v, --version  output blinksocks version
-    -c, --config   file with configuration, usually a json file
+    -h, --help          output usage information
+    -v, --version       output blinksocks version
+    -c, --config        file with configuration, usually a json file
+    -l, --list-presets  list all built-in presets
+    -m, --minimal       generate minimal json files
 
   Examples:
 
-  - Generate json file
+  - Generate json file with full options
     $ blinksocks init
+  - Generate json file with minimal options
+    $ blinksocks init --minimal
   - Start blinksocks client
     $ blinksocks --config blinksocks.client.json
   - Start blinksocks server
@@ -77,19 +81,19 @@ $ node blinksocks.js
 
 ```
 // download archive
-$ wget https://github.com/blinksocks/blinksocks/releases/download/v2.5.1/blinksocks-linux-x64-v2.5.1.gz
+$ wget https://github.com/blinksocks/blinksocks/releases/download/v2.5.3/blinksocks-linux-x64-v2.5.3.gz
 
 // you'd better check sha256sum listed in sha256sum.txt
-$ wget https://github.com/blinksocks/blinksocks/releases/download/v2.5.1/sha256sum.txt
+$ wget https://github.com/blinksocks/blinksocks/releases/download/v2.5.3/sha256sum.txt
 
 // decompress
-$ gunzip blinksocks-linux-x64-v2.5.1.gz
+$ gunzip blinksocks-linux-x64-v2.5.3.gz
 
 // grant executable permission
-$ chmod +x blinksocks-linux-x64-v2.5.1
+$ chmod +x blinksocks-linux-x64-v2.5.3
 
 // run directly
-$ ./blinksocks-linux-x64-v2.5.1 --help
+$ ./blinksocks-linux-x64-v2.5.3 --help
 ```
 
 ## For Firefox/Google Chrome and more...
