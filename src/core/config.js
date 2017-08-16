@@ -6,7 +6,7 @@ import net from 'net';
 import {isValidPort} from '../utils';
 import {DNS_DEFAULT_EXPIRE} from './dns-cache';
 
-const DEFAULT_LOG_LEVEL = 'info';
+export const DEFAULT_LOG_LEVEL = 'info';
 
 export class Config {
 
@@ -26,7 +26,7 @@ export class Config {
     }
 
     // servers
-    if (typeof json.servers !== 'undefined') {
+    if (json.servers !== undefined) {
 
       if (!Array.isArray(json.servers)) {
         throw Error('\'servers\' must be provided as an array');
@@ -44,19 +44,8 @@ export class Config {
       this.validateServer(json);
     }
 
-    if (typeof json.dns !== 'undefined') {
-      if (!Array.isArray(json.dns)) {
-        throw Error('\'dns\' must be an array');
-      }
-      for (const ip of json.dns) {
-        if (!net.isIP(ip)) {
-          throw Error(`"${ip}" is not an ip address`);
-        }
-      }
-    }
-
     // redirect
-    if (typeof json.redirect !== 'undefined') {
+    if (json.redirect !== undefined) {
       if (typeof json.redirect !== 'string') {
         throw Error('\'redirect\' is must be a string');
       }
@@ -67,7 +56,7 @@ export class Config {
     }
 
     // timeout
-    if (typeof json.timeout !== 'undefined') {
+    if (json.timeout !== undefined) {
       if (typeof json.timeout !== 'number') {
         throw Error('\'timeout\' must be a number');
       }
@@ -80,14 +69,14 @@ export class Config {
     }
 
     // log_path
-    if (typeof json.log_path !== 'undefined') {
+    if (json.log_path !== undefined) {
       if (typeof json.log_path !== 'string') {
         throw Error('\'log_path\' must be a string');
       }
     }
 
     // log_level
-    if (typeof json.log_level !== 'undefined') {
+    if (json.log_level !== undefined) {
       const levels = ['error', 'warn', 'info', 'verbose', 'debug', 'silly'];
       if (!levels.includes(json.log_level)) {
         throw Error(`'log_level' must be one of [${levels.toString()}]`);
@@ -95,7 +84,7 @@ export class Config {
     }
 
     // workers
-    if (typeof json.workers !== 'undefined') {
+    if (json.workers !== undefined) {
       if (typeof json.workers !== 'number') {
         throw Error('\'workers\' must be a number');
       }
@@ -107,8 +96,20 @@ export class Config {
       }
     }
 
+    // dns
+    if (json.dns !== undefined) {
+      if (!Array.isArray(json.dns)) {
+        throw Error('\'dns\' must be an array');
+      }
+      for (const ip of json.dns) {
+        if (!net.isIP(ip)) {
+          throw Error(`"${ip}" is not an ip address`);
+        }
+      }
+    }
+
     // dns_expire
-    if (typeof json.dns_expire !== 'undefined') {
+    if (json.dns_expire !== undefined) {
       if (typeof json.dns_expire !== 'number') {
         throw Error('\'dns_expire\' must be a number');
       }
@@ -123,7 +124,7 @@ export class Config {
 
   static validateServer(server) {
     // transport
-    if (typeof server.transport !== 'undefined') {
+    if (server.transport !== undefined) {
       if (typeof server.transport !== 'string') {
         throw Error('\'server.transport\' must be a string');
       }
@@ -143,12 +144,8 @@ export class Config {
     }
 
     // key
-    if (typeof server.key !== 'string') {
-      throw Error('\'server.key\' must be a string');
-    }
-
-    if (server.key === '') {
-      throw Error('\'server.key\' cannot be empty');
+    if (typeof server.key !== 'string' || server.key === '') {
+      throw Error('\'server.key\' must be a non-empty string');
     }
 
     // presets
@@ -164,7 +161,7 @@ export class Config {
     for (const preset of server.presets) {
       const {name, params} = preset;
 
-      if (typeof name === 'undefined') {
+      if (name === undefined) {
         throw Error('\'server.presets[].name\' must be a string');
       }
 
@@ -172,9 +169,9 @@ export class Config {
         throw Error('\'server.presets[].name\' cannot be empty');
       }
 
-      if (typeof params !== 'undefined') {
-        if (typeof params !== 'object' || params === null) {
-          throw Error('\'server.presets[].params\' must be an object and not null');
+      if (params !== undefined) {
+        if (typeof params !== 'object' || Array.isArray(params) || params === null) {
+          throw Error('\'server.presets[].params\' must be an plain object');
         }
       }
 
@@ -192,7 +189,7 @@ export class Config {
     global.__LOCAL_HOST__ = json.host;
     global.__LOCAL_PORT__ = json.port;
 
-    if (typeof json.servers !== 'undefined') {
+    if (json.servers !== undefined) {
       global.__SERVERS__ = json.servers.filter((server) => server.enabled);
       global.__IS_CLIENT__ = true;
     } else {
@@ -212,7 +209,7 @@ export class Config {
     global.__DNS_EXPIRE__ = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
     global.__ALL_CONFIG__ = json;
 
-    if (typeof json.dns !== 'undefined' && json.dns.length > 0) {
+    if (json.dns !== undefined && json.dns.length > 0) {
       global.__DNS__ = json.dns;
       dns.setServers(json.dns);
     }
