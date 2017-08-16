@@ -8,7 +8,8 @@ const modules = require('./modules');
 const version = global.__WEBPACK__ ? global.__VERSION__ : require('../package.json').version;
 
 const examples = [
-  ['Generate json file', '$ blinksocks init'],
+  ['Generate json file with full options', '$ blinksocks init'],
+  ['Generate json file with minimal options', '$ blinksocks init --minimal'],
   ['Start blinksocks client', '$ blinksocks --config blinksocks.client.json'],
   ['Start blinksocks server', '$ blinksocks --config blinksocks.server.json']
 ];
@@ -26,6 +27,7 @@ const usage = `
     -v, --version       output blinksocks version
     -c, --config        file with configuration, usually a json file
     -l, --list-presets  list all built-in presets
+    -m, --minimal       generate minimal json files
 
   Examples:
 
@@ -82,7 +84,8 @@ const argv = process.argv;
   }
 
   if (options[0] === 'init') {
-    return init();
+    const isMinimal = hasOption('-m') || hasOption('--minimal');
+    return init({isMinimal});
   }
 
   // other cases

@@ -25,7 +25,7 @@ function getRandomInt(min, max) {
   return Math.floor(crypto.randomBytes(1)[0] / 0xff * (max - min + 1)) + min;
 }
 
-module.exports = function init() {
+module.exports = function init({isMinimal}) {
   const key = random('abcdefghjkmnpqrstuvwxyz23456789!@#$%^&*()_+<>?:|{}-=[];,./ABCDEFGHJKLMNPQRSTUVWXYZ', 16);
   const port = getRandomInt(1024, 65535);
   const timeout = getRandomInt(200, 1000);
@@ -62,6 +62,16 @@ module.exports = function init() {
     'log_level': 'info'
   };
 
+  if (isMinimal) {
+    delete clientJson.servers[0].transport;
+    delete clientJson.dns;
+    delete clientJson.dns_expire;
+    delete clientJson.timeout;
+    delete clientJson.workers;
+    delete clientJson.log_path;
+    delete clientJson.log_level;
+  }
+
   const serverJson = {
     'host': '0.0.0.0',
     'port': port,
@@ -87,6 +97,17 @@ module.exports = function init() {
     'log_path': 'bs-server.log',
     'log_level': 'info'
   };
+
+  if (isMinimal) {
+    delete serverJson.transport;
+    delete serverJson.dns;
+    delete serverJson.dns_expire;
+    delete serverJson.redirect;
+    delete serverJson.timeout;
+    delete serverJson.workers;
+    delete serverJson.log_path;
+    delete serverJson.log_level;
+  }
 
   fs.writeFileSync('blinksocks.client.json', JSON.stringify(clientJson, null, '  '));
   fs.writeFileSync('blinksocks.server.json', JSON.stringify(serverJson, null, '  '));
