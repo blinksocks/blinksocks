@@ -3,17 +3,24 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import net from 'net';
+import isPlainObject from 'lodash.isplainobject';
+import {getBehaviourClassByName, BEHAVIOUR_EVENT_ON_PRESET_FAILED, behaviourEvents} from '../behaviours';
 import {getPresetClassByName} from '../presets';
-import {isValidPort} from '../utils';
+import {isValidHostname, isValidPort, Logger} from '../utils';
 import {DNS_DEFAULT_EXPIRE} from './dns-cache';
 
 export const DEFAULT_LOG_LEVEL = 'info';
+export const DEFAULT_BEHAVIOURS = {
+  [BEHAVIOUR_EVENT_ON_PRESET_FAILED]: {
+    'name': 'random-timeout'
+  }
+};
 
 export class Config {
 
   static validate(json) {
-    if (typeof json !== 'object' || Array.isArray(json)) {
-      throw Error('Invalid configuration file');
+    if (!isPlainObject(json)) {
+      throw Error('invalid configuration file');
     }
 
     // host
@@ -24,6 +31,31 @@ export class Config {
     // port
     if (!isValidPort(json.port)) {
       throw Error('\'port\' is invalid');
+    }
+
+    // behaviours
+    if (json.behaviours !== undefined) {
+      if (!isPlainObject(json.behaviours)) {
+        throw Error('\'behaviours\' is invalid');
+      }
+      const events = Object.keys(json.behaviours);
+      for (const event of events) {
+        if (!behaviourEvents.includes(event)) {
+          throw Error(`unrecognized behaviour event: "${event}"`);
+        }
+        const {name, params} = json.behaviours[event];
+        if (typeof name !== 'string') {
+          throw Error('\'behaviours[].name\' must be a string');
+        }
+        if (name === '') {
+          throw Error('\'behaviours[].name\' cannot be empty');
+        }
+        if (params !== undefined && !isPlainObject(params)) {
+          throw Error('\'behaviours[].params\' must be an plain object');
+        }
+        const behaviour = getBehaviourClassByName(name);
+        delete new behaviour(params || {});
+      }
     }
 
     // servers
@@ -135,8 +167,8 @@ export class Config {
     }
 
     // host
-    if (typeof server.host !== 'string' || server.host === '') {
-      throw Error('\'server.host\' must be provided and is not empty');
+    if (!isValidHostname(server.host)) {
+      throw Error('\'server.host\' is invalid');
     }
 
     // port
@@ -162,7 +194,7 @@ export class Config {
     for (const preset of server.presets) {
       const {name, params} = preset;
 
-      if (name === undefined) {
+      if (typeof name !== 'string') {
         throw Error('\'server.presets[].name\' must be a string');
       }
 
@@ -171,7 +203,7 @@ export class Config {
       }
 
       if (params !== undefined) {
-        if (typeof params !== 'object' || Array.isArray(params) || params === null) {
+        if (!isPlainObject(params)) {
           throw Error('\'server.presets[].params\' must be an plain object');
         }
       }
@@ -202,17 +234,32 @@ export class Config {
     global.__REDIRECT__ = (json.redirect !== undefined) ? json.redirect : '';
     global.__TIMEOUT__ = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
     global.__WORKERS__ = (json.workers !== undefined) ? json.workers : 0;
+    global.__DNS_EXPIRE__ = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
+    global.__ALL_CONFIG__ = json;
 
+    // dns
+    if (json.dns !== undefined && json.dns.length > 0) {
+      global.__DNS__ = json.dns;
+      dns.setServers(json.dns);
+    }
+
+    // log_path & log_level
     const absolutePath = path.resolve(process.cwd(), json.log_path || '.');
     const isFile = fs.statSync(absolutePath).isFile();
     global.__LOG_PATH__ = isFile ? absolutePath : path.join(absolutePath, `bs-${__IS_CLIENT__ ? 'client' : 'server'}.log`);
     global.__LOG_LEVEL__ = (json.log_level !== undefined) ? json.log_level : DEFAULT_LOG_LEVEL;
-    global.__DNS_EXPIRE__ = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
-    global.__ALL_CONFIG__ = json;
+    Logger.init({file: __LOG_PATH__, level: __LOG_LEVEL__});
 
-    if (json.dns !== undefined && json.dns.length > 0) {
-      global.__DNS__ = json.dns;
-      dns.setServers(json.dns);
+    // behaviours
+    const behaviours = {
+      ...DEFAULT_BEHAVIOURS,
+      ...(json.behaviours !== undefined ? json.behaviours : {})
+    };
+    const events = Object.keys(behaviours);
+    global.__BEHAVIOURS__ = {};
+    for (const ev of events) {
+      const clazz = getBehaviourClassByName(behaviours[ev].name);
+      global.__BEHAVIOURS__[ev] = new clazz(behaviours[ev].params || {});
     }
   }
 
