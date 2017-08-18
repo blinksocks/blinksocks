@@ -1,7 +1,6 @@
 import EventEmitter from 'events';
 import net from 'net';
-import {getRandomInt} from '../utils';
-import Logger from './logger';
+import {Logger, isValidHostname, isValidPort} from '../utils';
 import {Config} from './config';
 import {DNSCache} from './dns-cache';
 import {Balancer} from './balancer';
@@ -16,6 +15,8 @@ import {
   SOCKET_CONNECT_TO_REMOTE,
   PROCESSING_FAILED
 } from '../presets/defs';
+
+import {BEHAVIOUR_EVENT_ON_PRESET_FAILED} from '../behaviours';
 
 const TRACK_CHAR_UPLOAD = '↑';
 const TRACK_CHAR_DOWNLOAD = '↓';
@@ -57,8 +58,6 @@ export class Socket extends EventEmitter {
   _fsocket = null;
 
   _pipe = null;
-
-  _isRedirect = false; // server only
 
   // +---+-----------------------+---+
   // | C | d <--> u     u <--> d | S |
@@ -118,11 +117,6 @@ export class Socket extends EventEmitter {
     if (__IS_CLIENT__) {
       this.clientOut(buffer);
     } else {
-      if (this._isRedirect) {
-        // server redirect
-        this.fsocketWritable && this._fsocket.write(buffer);
-        return;
-      }
       this.serverIn(buffer);
     }
     // throttle receiving data to reduce memory grow:
@@ -136,11 +130,6 @@ export class Socket extends EventEmitter {
     if (__IS_CLIENT__) {
       this.clientIn(buffer);
     } else {
-      if (this._isRedirect) {
-        // server redirect
-        this.bsocketWritable && this._bsocket.write(buffer);
-        return;
-      }
       this.serverOut(buffer);
     }
     // throttle receiving data to reduce memory grow:
@@ -317,36 +306,33 @@ export class Socket extends EventEmitter {
    * connect to another endpoint, for both client and server
    * @param host
    * @param port
-   * @param dstHost
-   * @param dstPort
-   * @param callback
-   * @returns {Promise.<void>}
+   * @returns {Promise}
    */
-  async connect({host, port, dstHost, dstPort}, callback) {
+  async connect({host, port}) {
     // host could be empty, see https://github.com/blinksocks/blinksocks/issues/34
-    if (host && port) {
-      if (__IS_CLIENT__) {
-        logger.info(`[socket] [${this.remote}] request: ${dstHost}:${dstPort}, connecting to: ${host}:${port}`);
-      } else {
-        logger.info(`[socket] [${this.remote}] connecting to: ${host}:${port}`);
-      }
-      this._tracks.push(`${host}:${port}`);
-      try {
-        const ip = await this._dnsCache.get(host);
-        this._fsocket = net.connect({host: ip, port}, callback);
-        this._fsocket.on('error', this.onError);
-        this._fsocket.on('close', this.onForwardSocketClose);
-        this._fsocket.on('timeout', this.onForwardSocketTimeout.bind(this, {host, port}));
-        this._fsocket.on('data', this.onBackward);
-        this._fsocket.on('drain', this.onForwardSocketDrain);
-        this._fsocket.setTimeout(__TIMEOUT__);
-      } catch (err) {
-        logger.error(`[socket] [${this.remote}] connect to ${host}:${port} failed due to: ${err.message}`);
-      }
-    } else {
+    if (!isValidHostname(host) || !isValidPort(port)) {
       logger.warn(`unexpected host=${host} port=${port}`);
       this.onBackwardSocketClose();
+      return;
     }
+    logger.info(`[socket] [${this.remote}] connecting to: ${host}:${port}`);
+    this._tracks.push(`${host}:${port}`);
+    // resolve host name
+    let ip = null;
+    try {
+      ip = await this._dnsCache.get(host);
+    } catch (err) {
+      logger.error(`[socket] [${this.remote}] fail to resolve host ${host}:${port}: ${err.message}`);
+    }
+    return new Promise((resolve) => {
+      this._fsocket = net.connect({host: ip, port}, () => resolve(this._fsocket));
+      this._fsocket.on('error', this.onError);
+      this._fsocket.on('close', this.onForwardSocketClose);
+      this._fsocket.on('timeout', this.onForwardSocketTimeout.bind(this, {host, port}));
+      this._fsocket.on('data', this.onBackward);
+      this._fsocket.on('drain', this.onForwardSocketDrain);
+      this._fsocket.setTimeout(__TIMEOUT__);
+    });
   }
 
   // pipe
@@ -374,56 +360,44 @@ export class Socket extends EventEmitter {
    * @param action
    * @returns {*}
    */
-  onPipeNotified(action) {
+  async onPipeNotified(action) {
+    const props = {
+      remoteAddr: this.remote,
+      bsocket: this._bsocket,
+      fsocket: this._fsocket,
+      connect: this.connect.bind(this),
+      action: action
+    };
     switch (action.type) {
       case SOCKET_CONNECT_TO_REMOTE: {
         const {targetAddress, onConnected} = action.payload;
         if (__IS_SERVER__) {
           // connect to destination
-          this.connect(targetAddress, () => {
-            this._isConnectedToDst = true;
-            (typeof onConnected === 'function') && onConnected();
-          });
+          await this.connect(targetAddress);
         }
         if (__IS_CLIENT__) {
-          // select a server via Balancer
+          const [dstHost, dstPort] = [targetAddress.host, targetAddress.port];
+          logger.info(`[socket] [${this.remote}] request: ${dstHost}:${dstPort}`);
+          // select a server from Balancer
           selectServer();
           // connect to our server
-          const [dstHost, dstPort] = [targetAddress.host, targetAddress.port];
-          this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__, dstHost, dstPort}, () => {
-            this._tracks.push(`${dstHost}:${dstPort}`);
-            this._isConnectedToDst = true;
-            (typeof onConnected === 'function') && onConnected();
-          });
+          await this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__});
+          this._tracks.push(`${dstHost}:${dstPort}`);
+        }
+        this._isConnectedToDst = true;
+        if (typeof onConnected === 'function') {
+          onConnected();
         }
         break;
       }
-      case PROCESSING_FAILED:
-        this.onPresetFailed(action);
+      case PROCESSING_FAILED: {
+        const {name, message} = action.payload;
+        logger.error(`[socket] [${this.remote}] preset "${name}" fail to process: ${message}`);
+        await __BEHAVIOURS__[BEHAVIOUR_EVENT_ON_PRESET_FAILED].run(props);
         break;
+      }
       default:
         break;
-    }
-  }
-
-  /**
-   * if any preset failed, this function will be called
-   * @param action
-   */
-  onPresetFailed(action) {
-    const {name, message, orgData} = action.payload;
-    logger.error(`[socket] [${this.remote}] preset "${name}" fail to process: ${message}`);
-    if (__IS_SERVER__ && __REDIRECT__ && this._fsocket === null) {
-      const [host, port] = __REDIRECT__.split(':');
-      logger.warn(`[socket] [${this.remote}] connection is redirecting to ${host}:${port}...`);
-      this.connect({host, port}, () => {
-        this._isRedirect = true;
-        this.fsocketWritable && this._fsocket.write(orgData);
-      });
-    } else {
-      const timeout = getRandomInt(10, 40);
-      logger.warn(`[socket] [${this.remote}] connection will be closed in ${timeout}s...`);
-      setTimeout(this.destroy.bind(this), timeout * 1e3);
     }
   }
 
