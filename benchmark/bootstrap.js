@@ -11,14 +11,10 @@ const SEC_PER_CASE = 5;
 
 function makeConfs(presets) {
   const common = {
-    "dns": [],
-    "dns_expire": 3600,
-    "timeout": 600,
     "log_path": "/dev/null",
     "log_level": "error"
   };
   const server = {
-    "transport": "tcp",
     "host": "127.0.0.1",
     "port": 1082,
     "key": "JJ9,$!.!sRG==v7$",
@@ -31,7 +27,7 @@ function makeConfs(presets) {
       Object.assign({}, server, {
         "enabled": true,
         "presets": [{
-          "name": "proxy", // proxy in tunnel mode
+          "name": "tunnel",
           "params": {
             "host": "127.0.0.1",
             "port": 1083
