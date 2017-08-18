@@ -150,6 +150,9 @@ export function hexStringToBuffer(str) {
  *   http://stackoverflow.com/questions/1755144/how-to-validate-domain-name-in-php
  */
 export function isValidHostname(hostname) {
+  if (typeof hostname !== 'string') {
+    return false;
+  }
   // overall length check
   if (hostname.length < 1 || hostname.length > 253) {
     return false;

@@ -4,7 +4,7 @@ const LOG_FILE_MAX_SIZE = 2 * 1024 * 1024; // 2MB
 
 let instance = null;
 
-export default {
+export const Logger = {
 
   init({file, level}) {
     instance = new (winston.Logger)({

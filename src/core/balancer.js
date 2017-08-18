@@ -1,5 +1,5 @@
 import net from 'net';
-import Logger from './logger';
+import {Logger} from '../utils';
 
 const QUERY_INTERVAL = 12e4; // 2min
 

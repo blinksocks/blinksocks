@@ -22,6 +22,8 @@ const mapping = {
   'obfs-tls1.2-ticket': ObfsTls12TicketPreset
 };
 
+const presets = Object.keys(mapping);
+
 function getPresetClassByName(name) {
   const clazz = mapping[name];
   if (clazz === undefined) {
@@ -29,7 +31,5 @@ function getPresetClassByName(name) {
   }
   return clazz;
 }
-
-const presets = Object.keys(mapping);
 
 export {getPresetClassByName, presets};
