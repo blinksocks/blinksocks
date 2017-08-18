@@ -59,7 +59,7 @@ export class IPreset {
  *   {
  *     type: SOCKET_CONNECT_TO_REMOTE,
  *     payload: {
- *       targetAddress: {type, host, port},
+ *       targetAddress: {host, port},
  *       onConnected: () => {}
  *     }
  *   }
