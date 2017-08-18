@@ -1,4 +1,5 @@
 import ProxyPreset from './proxy';
+import TunnelPreset from './tunnel';
 import StatsPreset from './stats';
 import ExpBaseWithPaddingPreset from './exp-base-with-padding';
 import ExpBaseAuthStreamPreset from './exp-base-auth-stream';
@@ -11,6 +12,7 @@ import ObfsTls12TicketPreset from './obfs-tls1.2-ticket';
 
 const mapping = {
   'proxy': ProxyPreset,
+  'tunnel': TunnelPreset,
   'stats': StatsPreset,
   'exp-base-with-padding': ExpBaseWithPaddingPreset,
   'exp-base-auth-stream': ExpBaseAuthStreamPreset,

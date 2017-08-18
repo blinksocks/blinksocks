@@ -12,13 +12,6 @@ want to relay data to blinksocks server.
 
 This preset turns blinksocks to a proxy server, works on both client and server side.
 
-| PARAMS         | DESCRIPTION      | DEFAULT |
-| :------------- | :--------------- | :------ |
-| host(optional) | destination host | -       |
-| port(optional) | destination port | -       |
-
-**proxy mode(default)**
-
 * For client side, this preset is added by default on **client side**, so you don't have to put it into preset list if you are setting up a proxy service.
 * For server side, this preset is useful to setup a network middleware(act as Man-in-the-middle) to do traffic analysis.
 
@@ -45,9 +38,14 @@ $ blinksocks --config blinksocks.server.json
 $ curl -L --socks5-hostname localhost:1080 https://www.bing.com
 ```
 
-**tunnel mode**
+## [tunnel]
 
-You can enable tunnel mode by providing `host` and `port` parameters:
+This proxy does not use any proxy protocols, just proxy original traffic to a fix destination.
+
+| PARAMS         | DESCRIPTION      | DEFAULT |
+| :------------- | :--------------- | :------ |
+| host(optional) | destination host | -       |
+| port(optional) | destination port | -       |
 
 ```
 // blinksocks.client.json
@@ -59,7 +57,7 @@ You can enable tunnel mode by providing `host` and `port` parameters:
     "host": "localhost",
     "port": 1081,
     "presets": [{
-      "name": "proxy",
+      "name": "tunnel",
       "params": {
         "host": "localhost",
         "port": "1082"
@@ -469,6 +467,7 @@ Make some cheat:
 > You can also see [benchmark] reports then choose a combination you want.
 
 [proxy]: ../../src/presets/proxy.js
+[tunnel]: ../../src/presets/tunnel.js
 [stats]: ../../src/presets/stats.js
 [ss-base]: ../../src/presets/ss-base.js
 [exp-base-with-padding]: ../../src/presets/exp-base-with-padding.js

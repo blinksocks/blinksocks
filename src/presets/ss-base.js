@@ -1,3 +1,4 @@
+import net from 'net';
 import ip from 'ip';
 import {isValidHostname, numberToBuffer} from '../utils';
 import {IPreset, SOCKET_CONNECT_TO_REMOTE} from './defs';
@@ -5,6 +6,16 @@ import {IPreset, SOCKET_CONNECT_TO_REMOTE} from './defs';
 const ATYP_V4 = 0x01;
 const ATYP_V6 = 0x04;
 const ATYP_DOMAIN = 0x03;
+
+function getHostType(host) {
+  if (net.isIPv4(host)) {
+    return ATYP_V4;
+  }
+  if (net.isIPv6(host)) {
+    return ATYP_V6;
+  }
+  return ATYP_DOMAIN;
+}
 
 /**
  * @description
@@ -56,7 +67,8 @@ export default class SsBasePreset extends IPreset {
 
   onNotified(action) {
     if (__IS_CLIENT__ && action.type === SOCKET_CONNECT_TO_REMOTE) {
-      const {type, host, port} = action.payload.targetAddress;
+      const {host, port} = action.payload.targetAddress;
+      const type = getHostType(host);
       this._atyp = type;
       this._port = numberToBuffer(port);
       this._host = type === ATYP_DOMAIN ? Buffer.from(host) : ip.toBuffer(host);
