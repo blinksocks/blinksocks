@@ -19,8 +19,8 @@ export class Pipe extends EventEmitter {
     this.onBroadcast = this.onBroadcast.bind(this);
   }
 
-  onBroadcast(direction, action) {
-    const middlewares = this.getMiddlewares(direction);
+  onBroadcast(action) {
+    const middlewares = this.getMiddlewares(MIDDLEWARE_DIRECTION_UPWARD);
     const results = [];
     for (const middleware of middlewares) {
       results.push(middleware.onNotified(action));
@@ -32,10 +32,9 @@ export class Pipe extends EventEmitter {
   }
 
   setMiddlewares(direction, middlewares) {
-    const onBroadcast = (action) => this.onBroadcast(direction, action);
     for (const middleware of middlewares) {
       middleware.setMaxListeners(2);
-      middleware.subscribe(onBroadcast);
+      middleware.subscribe(this.onBroadcast);
     }
     if (direction === MIDDLEWARE_DIRECTION_UPWARD) {
       this._upstream_middlewares = middlewares;
@@ -45,7 +44,7 @@ export class Pipe extends EventEmitter {
       this._upstream_middlewares = [].concat(middlewares).reverse();
     }
     // make initial broadcast to all presets
-    this.onBroadcast(direction, {type: PRESET_INIT, payload: {broadcast: onBroadcast}});
+    this.onBroadcast(direction, {type: PRESET_INIT, payload: {broadcast: this.onBroadcast}});
   }
 
   getMiddlewares(direction) {
@@ -61,7 +60,7 @@ export class Pipe extends EventEmitter {
 
     // methods to be injected
     const direct = (buf, isReverse = false) => this.emit(isReverse ? `next_${-direction}` : eventName, buf);
-    const fail = (name, message) => this.onBroadcast(direction, {
+    const fail = (name, message) => this.onBroadcast({
       type: PROCESSING_FAILED,
       payload: {
         name,
@@ -85,6 +84,11 @@ export class Pipe extends EventEmitter {
 
     // begin pipe
     middlewares[0].write(direction, {buffer, direct, fail});
+  }
+
+  destroy() {
+    this._upstream_middlewares = null;
+    this._downstream_middlewares = null;
   }
 
 }
