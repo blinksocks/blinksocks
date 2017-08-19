@@ -12,15 +12,14 @@ import {
 } from './middleware';
 
 import {
+  CONNECTION_CREATED,
+  CONNECTION_CLOSED,
   SOCKET_CONNECT_TO_REMOTE,
   PROCESSING_FAILED
 } from '../presets/defs';
 
 import {BEHAVIOUR_EVENT_ON_PRESET_FAILED} from '../behaviours';
 
-const TRACK_CHAR_UPLOAD = '↑';
-const TRACK_CHAR_DOWNLOAD = '↓';
-const TRACK_MAX_SIZE = 40;
 const MAX_BUFFERED_SIZE = 1024 * 1024; // 1MB
 
 let logger = null;
@@ -41,7 +40,6 @@ function selectServer() {
  *
  * @events
  *   .on('close', () => {});
- *   .on('stat', ({stat}) => {});
  */
 export class Socket extends EventEmitter {
 
@@ -49,7 +47,7 @@ export class Socket extends EventEmitter {
 
   _isConnectedToDst = false;
 
-  _remoteAddress = '';
+  _remoteHost = '';
 
   _remotePort = '';
 
@@ -58,11 +56,6 @@ export class Socket extends EventEmitter {
   _fsocket = null;
 
   _pipe = null;
-
-  // +---+-----------------------+---+
-  // | C | d <--> u     u <--> d | S |
-  // +---+-----------------------+---+
-  _tracks = []; // ['source', 'target', 'u', '20', 'u', '20', 'd', '10', ...]
 
   constructor({socket}) {
     super();
@@ -77,47 +70,57 @@ export class Socket extends EventEmitter {
     this.onForwardSocketTimeout = this.onForwardSocketTimeout.bind(this);
     this.onForwardSocketClose = this.onForwardSocketClose.bind(this);
     this._dnsCache = new DNSCache({expire: __DNS_EXPIRE__});
-    this._remoteAddress = socket.remoteAddress;
+    this._remoteHost = socket.remoteAddress;
     this._remotePort = socket.remotePort;
     this._bsocket = socket;
     this._bsocket.on('error', this.onError);
     this._bsocket.on('close', this.onBackwardSocketClose);
     this._bsocket.on('timeout', this.onBackwardSocketTimeout.bind(this, {
-      host: this._remoteAddress,
+      host: this._remoteHost,
       port: this._remotePort
     }));
     this._bsocket.on('data', this.onForward);
     this._bsocket.on('drain', this.onBackwardSocketDrain);
     this._bsocket.setTimeout(__TIMEOUT__);
-    if (__IS_SERVER__) {
-      this._tracks.push(`${this._remoteAddress}:${this._remotePort}`);
-    } else {
+    if (__IS_CLIENT__) {
       selectServer();
     }
     this._pipe = this.createPipe();
+    this._pipe.onBroadcast({
+      type: CONNECTION_CREATED,
+      payload: {
+        host: this._remoteHost,
+        port: this._remotePort
+      }
+    });
   }
 
   // getters
 
   get remote() {
-    return `${this._remoteAddress}:${this._remotePort}`;
+    return `${this._remoteHost}:${this._remotePort}`;
   }
 
   get fsocketWritable() {
-    return this._fsocket !== null && !this._fsocket.destroyed && this._fsocket.writable;
+    return this._fsocket && !this._fsocket.destroyed && this._fsocket.writable;
   }
 
   get bsocketWritable() {
-    return this._bsocket !== null && !this._bsocket.destroyed && this._bsocket.writable;
+    return this._bsocket && !this._bsocket.destroyed && this._bsocket.writable;
   }
 
   // events
 
+  onError(err) {
+    logger.warn(`[socket] [${this.remote}] ${err.code} - ${err.message}`);
+  }
+
+  // bsocket
+
   onForward(buffer) {
-    if (__IS_CLIENT__) {
-      this.clientOut(buffer);
-    } else {
-      this.serverIn(buffer);
+    if (this.fsocketWritable || !this._isConnectedToDst) {
+      const direction = __IS_CLIENT__ ? MIDDLEWARE_DIRECTION_UPWARD : MIDDLEWARE_DIRECTION_DOWNWARD;
+      this._pipe.feed(direction, buffer);
     }
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
@@ -126,31 +129,9 @@ export class Socket extends EventEmitter {
     }
   }
 
-  onBackward(buffer) {
-    if (__IS_CLIENT__) {
-      this.clientIn(buffer);
-    } else {
-      this.serverOut(buffer);
-    }
-    // throttle receiving data to reduce memory grow:
-    // https://github.com/blinksocks/blinksocks/issues/60
-    if (this._bsocket && this._bsocket.bufferSize >= MAX_BUFFERED_SIZE) {
-      this._fsocket.pause();
-    }
-  }
-
-  onError(err) {
-    logger.warn(`[socket] [${this.remote}] ${err.code} - ${err.message}`);
-  }
-
-  /**
-   * when client/server has no data to forward
-   */
   onForwardSocketDrain() {
-    if (this._bsocket !== null && !this._bsocket.destroyed) {
+    if (this._bsocket && !this._bsocket.destroyed) {
       this._bsocket.resume();
-    } else {
-      this.onForwardSocketClose();
     }
   }
 
@@ -159,31 +140,37 @@ export class Socket extends EventEmitter {
     this.onForwardSocketClose();
   }
 
-  /**
-   * when server/destination want to close then connection
-   */
   onForwardSocketClose() {
-    if (this._fsocket !== null && !this._fsocket.destroyed) {
+    if (this._fsocket) {
       this._fsocket.destroy();
+      this._fsocket = null;
     }
-    if (this._bsocket && this._bsocket.bufferSize <= 0) {
-      this.onBackwardSocketClose();
+    if (this._bsocket) {
+      if (this._bsocket.bufferSize > 0) {
+        this._bsocket.on('drain', this.onBackwardSocketClose);
+      } else {
+        this.onBackwardSocketClose();
+      }
     }
-    if (__IS_CLIENT__ && this._tracks.length > 0) {
-      this.emit('stat', {stat: [].concat(this._tracks)});
-      this.dumpTrack();
-    }
-    this._fsocket = null;
   }
 
-  /**
-   * when no incoming data send to client/server
-   */
+  // fsocket
+
+  onBackward(buffer) {
+    if (this.bsocketWritable) {
+      const direction = __IS_CLIENT__ ? MIDDLEWARE_DIRECTION_DOWNWARD : MIDDLEWARE_DIRECTION_UPWARD;
+      this._pipe.feed(direction, buffer);
+    }
+    // throttle receiving data to reduce memory grow:
+    // https://github.com/blinksocks/blinksocks/issues/60
+    if (this._bsocket && this._bsocket.bufferSize >= MAX_BUFFERED_SIZE) {
+      this._fsocket.pause();
+    }
+  }
+
   onBackwardSocketDrain() {
-    if (this._fsocket !== null && !this._fsocket.destroyed) {
+    if (this._fsocket && !this._fsocket.destroyed) {
       this._fsocket.resume();
-    } else {
-      this.onBackwardSocketClose();
     }
   }
 
@@ -192,113 +179,45 @@ export class Socket extends EventEmitter {
     this.onBackwardSocketClose();
   }
 
-  /**
-   * when application/client want to close the connection
-   */
   onBackwardSocketClose() {
-    if (this._bsocket !== null && !this._bsocket.destroyed) {
+    if (this._bsocket) {
       this._bsocket.destroy();
+      this._bsocket = null;
+      this._pipe.onBroadcast({
+        type: CONNECTION_CLOSED,
+        payload: {
+          host: this._remoteHost,
+          port: this._remotePort
+        }
+      });
+      this._pipe.destroy();
+      this._pipe = null;
+      this.emit('close');
     }
-    if (this._fsocket && this._fsocket.bufferSize <= 0) {
-      this.onForwardSocketClose();
-    }
-    if (__IS_SERVER__ && this._tracks.length > 0) {
-      this.emit('stat', {stat: [].concat(this._tracks)});
-      this.dumpTrack();
-    }
-    this._bsocket = null;
-    this.emit('close');
-  }
-
-  // pipe chain
-
-  clientOut(buffer) {
-    if (this.fsocketWritable || !this._isConnectedToDst) {
-      try {
-        this._pipe.feed(MIDDLEWARE_DIRECTION_UPWARD, buffer);
-      } catch (err) {
-        logger.error(`[socket] [${this.remote}]`, err);
-      }
-    }
-  }
-
-  serverIn(buffer) {
-    if (this.fsocketWritable || !this._isConnectedToDst) {
-      try {
-        this._pipe.feed(MIDDLEWARE_DIRECTION_DOWNWARD, buffer);
-        this._tracks.push(TRACK_CHAR_DOWNLOAD);
-        this._tracks.push(buffer.length);
-      } catch (err) {
-        logger.error(`[socket] [${this.remote}]`, err);
-      }
-    }
-  }
-
-  serverOut(buffer) {
-    if (this.bsocketWritable) {
-      try {
-        this._pipe.feed(MIDDLEWARE_DIRECTION_UPWARD, buffer);
-      } catch (err) {
-        logger.error(`[socket] [${this.remote}]`, err);
-      }
-    }
-  }
-
-  clientIn(buffer) {
-    if (this.bsocketWritable) {
-      try {
-        this._pipe.feed(MIDDLEWARE_DIRECTION_DOWNWARD, buffer);
-        this._tracks.push(TRACK_CHAR_DOWNLOAD);
-        this._tracks.push(buffer.length);
-      } catch (err) {
-        logger.error(`[socket] [${this.remote}]`, err);
-      }
-    }
-  }
-
-  // fsocket and bsocket
-
-  send(direction, buffer) {
-    if (direction === MIDDLEWARE_DIRECTION_UPWARD) {
-      if (__IS_CLIENT__) {
-        this.clientForward(buffer);
+    if (this._fsocket) {
+      if (this._fsocket.bufferSize > 0) {
+        this._fsocket.on('drain', this.onForwardSocketClose);
       } else {
-        this.serverBackward(buffer);
+        this.onForwardSocketClose();
       }
+    }
+  }
+
+  // methods
+
+  sendForward(buffer) {
+    if (__IS_CLIENT__) {
+      this.fsocketWritable && this._fsocket.write(buffer);
     } else {
-      if (__IS_CLIENT__) {
-        this.clientBackward(buffer);
-      } else {
-        this.serverForward(buffer);
-      }
+      this.bsocketWritable && this._bsocket.write(buffer);
     }
   }
 
-  clientForward(buffer) {
-    if (this.fsocketWritable) {
-      this._fsocket.write(buffer);
-      this._tracks.push(TRACK_CHAR_UPLOAD);
-      this._tracks.push(buffer.length);
-    }
-  }
-
-  serverForward(buffer) {
-    if (this.fsocketWritable) {
-      this._fsocket.write(buffer);
-    }
-  }
-
-  serverBackward(buffer) {
-    if (this.bsocketWritable) {
-      this._bsocket.write(buffer);
-      this._tracks.push(TRACK_CHAR_UPLOAD);
-      this._tracks.push(buffer.length);
-    }
-  }
-
-  clientBackward(buffer) {
-    if (this.bsocketWritable) {
-      this._bsocket.write(buffer);
+  sendBackward(buffer) {
+    if (__IS_CLIENT__) {
+      this.bsocketWritable && this._bsocket.write(buffer);
+    } else {
+      this.fsocketWritable && this._fsocket.write(buffer);
     }
   }
 
@@ -316,7 +235,6 @@ export class Socket extends EventEmitter {
       return;
     }
     logger.info(`[socket] [${this.remote}] connecting to: ${host}:${port}`);
-    this._tracks.push(`${host}:${port}`);
     // resolve host name
     let ip = null;
     try {
@@ -335,8 +253,6 @@ export class Socket extends EventEmitter {
     });
   }
 
-  // pipe
-
   /**
    * create pipes for both data forward and backward
    */
@@ -346,12 +262,16 @@ export class Socket extends EventEmitter {
     if (__IS_CLIENT__ && presets[0].name !== 'proxy') {
       presets = [{name: 'proxy'}].concat(presets);
     }
+    // add "tracker" preset to the preset list on both sides
+    if (presets[presets.length - 1].name !== 'tracker') {
+      presets = presets.concat([{name: 'tracker'}]);
+    }
     // create middlewares and pipe
     const middlewares = presets.map((preset) => createMiddleware(preset.name, preset.params || {}));
     const pipe = new Pipe({onNotified: this.onPipeNotified.bind(this)});
     pipe.setMiddlewares(MIDDLEWARE_DIRECTION_UPWARD, middlewares);
-    pipe.on(`next_${MIDDLEWARE_DIRECTION_UPWARD}`, (buf) => this.send(MIDDLEWARE_DIRECTION_UPWARD, buf));
-    pipe.on(`next_${MIDDLEWARE_DIRECTION_DOWNWARD}`, (buf) => this.send(MIDDLEWARE_DIRECTION_DOWNWARD, buf));
+    pipe.on(`next_${MIDDLEWARE_DIRECTION_UPWARD}`, this.sendForward.bind(this));
+    pipe.on(`next_${MIDDLEWARE_DIRECTION_DOWNWARD}`, this.sendBackward.bind(this));
     return pipe;
   }
 
@@ -370,19 +290,17 @@ export class Socket extends EventEmitter {
     };
     switch (action.type) {
       case SOCKET_CONNECT_TO_REMOTE: {
-        const {targetAddress, onConnected} = action.payload;
+        const {host, port, onConnected} = action.payload;
         if (__IS_SERVER__) {
           // connect to destination
-          await this.connect(targetAddress);
+          await this.connect({host, port});
         }
         if (__IS_CLIENT__) {
-          const [dstHost, dstPort] = [targetAddress.host, targetAddress.port];
-          logger.info(`[socket] [${this.remote}] request: ${dstHost}:${dstPort}`);
+          logger.info(`[socket] [${this.remote}] request: ${host}:${port}`);
           // select a server from Balancer
           selectServer();
           // connect to our server
           await this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__});
-          this._tracks.push(`${dstHost}:${dstPort}`);
         }
         this._isConnectedToDst = true;
         if (typeof onConnected === 'function') {
@@ -399,45 +317,6 @@ export class Socket extends EventEmitter {
       default:
         break;
     }
-  }
-
-  // methods
-
-  /**
-   * print connection track string, and only record the
-   * leading and the trailing TRACK_MAX_SIZE / 2
-   */
-  dumpTrack() {
-    let strs = [];
-    let dp = 0, db = 0;
-    let up = 0, ub = 0;
-    let ud = '';
-    for (const el of this._tracks) {
-      if (el === TRACK_CHAR_UPLOAD || el === TRACK_CHAR_DOWNLOAD) {
-        if (ud === el) {
-          continue;
-        }
-        ud = el;
-      }
-      if (Number.isInteger(el)) {
-        if (ud === TRACK_CHAR_DOWNLOAD) {
-          dp += 1;
-          db += el;
-        }
-        if (ud === TRACK_CHAR_UPLOAD) {
-          up += 1;
-          ub += el;
-        }
-      }
-      strs.push(el);
-    }
-    const perSize = Math.floor(TRACK_MAX_SIZE / 2);
-    if (strs.length > TRACK_MAX_SIZE) {
-      strs = strs.slice(0, perSize).concat([' ... ']).concat(strs.slice(-perSize));
-    }
-    const summary = __IS_CLIENT__ ? `out/in = ${up}/${dp}, ${ub}b/${db}b` : `in/out = ${dp}/${up}, ${db}b/${ub}b`;
-    logger.info(`[socket] [${this.remote}] closed with summary(${summary}) abstract(${strs.join(' ')})`);
-    this._tracks = [];
   }
 
   /**
