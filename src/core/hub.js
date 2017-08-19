@@ -25,7 +25,6 @@ const nextId = (function () {
  * @events
  *   .on('close', () => {});
  *   .on('socketClose', () => {});
- *   .on('socketStat', ({stat}) => {});
  */
 export class Hub extends EventEmitter {
 
@@ -63,18 +62,16 @@ export class Hub extends EventEmitter {
     }
   }
 
-  onSocketClose(_id) {
-    this._sockets = this._sockets.filter(({id}) => _id !== id);
+  onSocketClose(id) {
+    this._sockets = this._sockets.filter(({_id}) => _id !== id);
     this.emit('socketClose');
-    // NOTE: would better not force gc manually
-    // global.gc && global.gc();
   }
 
   onConnect(socket) {
     const id = nextId();
     const sok = new Socket({socket});
+    sok._id = id;
     sok.on('close', () => this.onSocketClose(id));
-    sok.on('stat', (...props) => this.emit('socketStat', ...props));
     this._sockets.push(sok);
     logger.info(`[hub] [${socket.remoteAddress}:${socket.remotePort}] connected`);
   }
