@@ -81,7 +81,7 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
 
   onNotified(action) {
     if (__IS_CLIENT__ && action.type === SOCKET_CONNECT_TO_REMOTE) {
-      const {host, port} = action.payload.targetAddress;
+      const {host, port} = action.payload;
       this._host = Buffer.from(host);
       this._port = numberToBuffer(port);
     }
@@ -158,10 +158,8 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
       broadcast({
         type: SOCKET_CONNECT_TO_REMOTE,
         payload: {
-          targetAddress: {
-            host: addr,
-            port
-          },
+          host: addr,
+          port: port,
           // once connected
           onConnected: () => {
             next(Buffer.concat([data, this._staging]));

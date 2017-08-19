@@ -1,5 +1,59 @@
+// actions may be received by built-in presets in onNotified(action):
+
+/**
+ *  {
+ *    type: CONNECTION_CREATED,
+ *    payload: {
+ *      host: '127.0.0.1',
+ *      port: 12345
+ *    }
+ *  }
+ */
+export const CONNECTION_CREATED = 'connection/created';
+
+/**
+ *  {
+ *    type: CONNECTION_CLOSED
+ *    payload: {
+ *      host: '127.0.0.1',
+ *      port: 12345
+ *    }
+ *  }
+ */
+export const CONNECTION_CLOSED = 'connection/closed';
+
+/**
+ *  {
+ *    type: PRESET_INIT,
+ *    payload: {
+ *      broadcast: (action) => {}
+ *    }
+ *  }
+ */
 export const PRESET_INIT = 'preset/init';
+
+/**
+ *  {
+ *    type: SOCKET_CONNECT_TO_REMOTE,
+ *    payload: {
+ *      host: 'bing.com',
+ *      port: 443,
+ *      onConnected: () => {}
+ *    }
+ *  }
+ */
 export const SOCKET_CONNECT_TO_REMOTE = 'socket/connect/to/remote';
+
+/**
+ *  {
+ *    type: PROCESSING_FAILED,
+ *    payload: {
+ *      name: 'custom' or null,
+ *      message: 'explain',
+ *      orgData: <Buffer> or null
+ *    }
+ *  }
+ */
 export const PROCESSING_FAILED = 'processing/failed';
 
 export class IPreset {
@@ -41,38 +95,3 @@ export class IPreset {
   }
 
 }
-
-// actions may be received by built-in presets in onNotified(action):
-
-/**
- * @action PRESET_INIT
- *   {
- *     type: PRESET_INIT,
- *     payload: {
- *       broadcast: (action) => {}
- *     }
- *   }
- */
-
-/**
- * @action SOCKET_CONNECT_TO_REMOTE
- *   {
- *     type: SOCKET_CONNECT_TO_REMOTE,
- *     payload: {
- *       targetAddress: {host, port},
- *       onConnected: () => {}
- *     }
- *   }
- */
-
-/**
- * @action PROCESSING_FAILED
- *   {
- *     type: PROCESSING_FAILED,
- *     payload: {
- *       name: 'custom' or null,
- *       message: 'explain',
- *       orgData: <Buffer> or null
- *     }
- *   }
- */

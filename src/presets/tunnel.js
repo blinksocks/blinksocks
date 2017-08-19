@@ -53,7 +53,8 @@ export default class TunnelPreset extends IPreset {
         broadcast({
           type: SOCKET_CONNECT_TO_REMOTE,
           payload: {
-            targetAddress: {host: this._host, port: this._port},
+            host: this._host,
+            port: this._port,
             onConnected: () => {
               next(Buffer.concat([buffer, this._staging]));
               this._isTunnelReady = true;

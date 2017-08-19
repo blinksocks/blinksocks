@@ -8,11 +8,8 @@ describe('SsBasePreset#clientOut', function () {
   preset.onNotified({
     type: SOCKET_CONNECT_TO_REMOTE,
     payload: {
-      targetAddress: {
-        type: 3,
-        host: 'example.com',
-        port: 1080
-      }
+      host: 'example.com',
+      port: 1080
     }
   });
 

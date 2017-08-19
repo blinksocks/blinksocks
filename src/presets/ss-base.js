@@ -67,7 +67,7 @@ export default class SsBasePreset extends IPreset {
 
   onNotified(action) {
     if (__IS_CLIENT__ && action.type === SOCKET_CONNECT_TO_REMOTE) {
-      const {host, port} = action.payload.targetAddress;
+      const {host, port} = action.payload;
       const type = getHostType(host);
       this._atyp = type;
       this._port = numberToBuffer(port);
@@ -152,11 +152,8 @@ export default class SsBasePreset extends IPreset {
       broadcast({
         type: SOCKET_CONNECT_TO_REMOTE,
         payload: {
-          targetAddress: {
-            type: atyp,
-            host: addr,
-            port
-          },
+          host: addr,
+          port: port,
           // once connected
           onConnected: () => {
             next(Buffer.concat([data, this._staging]));

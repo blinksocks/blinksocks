@@ -29,7 +29,8 @@ export default class ProxyPreset extends IPreset {
           broadcast({
             type: SOCKET_CONNECT_TO_REMOTE,
             payload: {
-              targetAddress: {host, port},
+              host: host,
+              port: port,
               onConnected: () => callback(next)
             }
           });
