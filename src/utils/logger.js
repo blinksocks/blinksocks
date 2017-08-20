@@ -24,7 +24,7 @@ export const Logger = {
   },
 
   getInstance() {
-    return instance;
+    return instance || winston;
   }
 
 };
