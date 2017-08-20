@@ -54,6 +54,15 @@ module.exports = function init({isMinimal}) {
         ]
       }
     ],
+    'behaviours': {
+      'on-preset-failed': {
+        'name': 'random-timeout',
+        'params': {
+          'min': 10,
+          'max': 40
+        }
+      }
+    },
     'dns': [],
     'dns_expire': 3600,
     'timeout': timeout,
@@ -89,9 +98,17 @@ module.exports = function init({isMinimal}) {
         }
       }
     ],
+    'behaviours': {
+      'on-preset-failed': {
+        'name': 'random-timeout',
+        'params': {
+          'min': 10,
+          'max': 40
+        }
+      }
+    },
     'dns': [],
     'dns_expire': 3600,
-    'redirect': '',
     'timeout': timeout,
     'workers': 0,
     'log_path': 'bs-server.log',
@@ -100,9 +117,9 @@ module.exports = function init({isMinimal}) {
 
   if (isMinimal) {
     delete serverJson.transport;
+    delete serverJson.behaviours;
     delete serverJson.dns;
     delete serverJson.dns_expire;
-    delete serverJson.redirect;
     delete serverJson.timeout;
     delete serverJson.workers;
     delete serverJson.log_path;
