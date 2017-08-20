@@ -5,7 +5,7 @@ export const DNS_DEFAULT_EXPIRE = 3600000;
 
 export class DNSCache {
 
-  _pool = {};
+  static _pool = {};
 
   _expire = DNS_DEFAULT_EXPIRE;
 
@@ -19,7 +19,7 @@ export class DNSCache {
     return (new Date()).getTime();
   }
 
-  _lookup(hostname) {
+  async _lookup(hostname) {
     return new Promise((resolve, reject) => {
       dns.lookup(hostname, function (err, address) {
         if (err) {
@@ -34,7 +34,7 @@ export class DNSCache {
   _put(hostname, address) {
     if (this._expire > 0) {
       const expire = this._now() + this._expire;
-      this._pool[hostname] = [address, expire];
+      DNSCache._pool[hostname] = [address, expire];
     }
   }
 
@@ -43,13 +43,13 @@ export class DNSCache {
       return hostname;
     }
     let address = null;
-    if (typeof this._pool[hostname] === 'undefined') {
+    if (typeof DNSCache._pool[hostname] === 'undefined') {
       address = await this._lookup(hostname);
       this._put(hostname, address);
     } else {
-      const [addr, expire] = this._pool[hostname];
+      const [addr, expire] = DNSCache._pool[hostname];
       if (this._now() >= expire) {
-        delete this._pool[hostname];
+        delete DNSCache._pool[hostname];
       }
       address = addr;
     }
