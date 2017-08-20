@@ -13,7 +13,7 @@ export default class RandomTimeoutBehaviour {
 
   constructor({min, max}) {
     logger = Logger.getInstance();
-    if (min !== undefined && !Number.isInteger(min)) {
+    if (min !== undefined) {
       if (!Number.isInteger(min)) {
         throw Error('\'min\' must be an integer');
       }
@@ -21,7 +21,7 @@ export default class RandomTimeoutBehaviour {
         throw Error('\'min\' must be greater than 0');
       }
     }
-    if (max !== undefined && !Number.isInteger(max)) {
+    if (max !== undefined) {
       if (!Number.isInteger(max)) {
         throw Error('\'max\' must be an integer');
       }
