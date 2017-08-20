@@ -1,7 +1,5 @@
 import {IPreset, CONNECTION_CREATED, SOCKET_CONNECT_TO_REMOTE, CONNECTION_CLOSED} from './defs';
-import {Logger} from '../utils';
-
-let logger = null;
+import {logger} from '../utils';
 
 const TRACK_CHAR_UPLOAD = 'u';
 const TRACK_CHAR_DOWNLOAD = 'd';
@@ -14,11 +12,6 @@ export default class TrackerPreset extends IPreset {
 
   // ['source', 'target', 'u', '20', 'u', '20', 'd', '10', ...]
   _tracks = [];
-
-  constructor() {
-    super();
-    logger = Logger.getInstance();
-  }
 
   onNotified({type, payload}) {
     switch (type) {

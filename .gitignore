@@ -10,6 +10,7 @@ logs/
 debug/
 npm-debug.log*
 yarn-error.log
+*.log.*
 
 # test
 coverage/
@@ -18,9 +19,6 @@ coverage/
 *.tgz
 
 # others
+blinksocks*.js
 blinksocks*.json
-blinksocks.client.js
-blinksocks.server.js
-blinksocks*.log
-/*.log
-/build/blinksocks.js.map
+*.map

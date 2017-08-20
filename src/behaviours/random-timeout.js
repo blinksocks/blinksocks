@@ -1,9 +1,7 @@
-import {getRandomInt, Logger} from '../utils';
+import {getRandomInt, logger} from '../utils';
 
 const DEFAULT_TIMEOUT_MIN = 10;
 const DEFAULT_TIMEOUT_MAX = 40;
-
-let logger = null;
 
 export default class RandomTimeoutBehaviour {
 
@@ -12,7 +10,6 @@ export default class RandomTimeoutBehaviour {
   max = DEFAULT_TIMEOUT_MAX;
 
   constructor({min, max}) {
-    logger = Logger.getInstance();
     if (min !== undefined) {
       if (!Number.isInteger(min)) {
         throw Error('\'min\' must be an integer');

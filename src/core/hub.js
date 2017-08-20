@@ -4,9 +4,7 @@ import net from 'net';
 import {Config} from './config';
 import {Socket} from './socket';
 import {Balancer} from './balancer';
-import {Logger} from '../utils';
-
-let logger = null;
+import {logger} from '../utils';
 
 const nextId = (function () {
   let i = 0;
@@ -41,7 +39,6 @@ export class Hub extends EventEmitter {
     if (typeof config !== 'undefined') {
       Config.init(config);
     }
-    logger = Logger.getInstance();
     this._hub = net.createServer();
     this._hub.on('close', this.onClose.bind(this));
     this._hub.on('connection', this.onConnect.bind(this));

@@ -1,6 +1,4 @@
-import {Logger, isValidHostname, isValidPort} from '../utils';
-
-let logger = null;
+import {logger, isValidHostname, isValidPort} from '../utils';
 
 export default class RedirectBehaviour {
 
@@ -9,7 +7,6 @@ export default class RedirectBehaviour {
   _port = '';
 
   constructor({host, port}) {
-    logger = Logger.getInstance();
     if (!isValidHostname(host)) {
       throw Error('\'host\' is invalid');
     }

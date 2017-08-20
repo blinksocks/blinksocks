@@ -3,10 +3,11 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import net from 'net';
+import winston from 'winston';
 import isPlainObject from 'lodash.isplainobject';
 import {getBehaviourClassByName, BEHAVIOUR_EVENT_ON_PRESET_FAILED, behaviourEvents} from '../behaviours';
 import {getPresetClassByName} from '../presets';
-import {isValidHostname, isValidPort, Logger} from '../utils';
+import {isValidHostname, isValidPort, logger} from '../utils';
 import {DNS_DEFAULT_EXPIRE} from './dns-cache';
 
 export const DEFAULT_LOG_LEVEL = 'info';
@@ -237,10 +238,29 @@ export class Config {
 
     // log_path & log_level
     const absolutePath = path.resolve(process.cwd(), json.log_path || '.');
-    const isFile = fs.statSync(absolutePath).isFile();
+    let isFile = false;
+    if (fs.existsSync(absolutePath)) {
+      isFile = fs.statSync(absolutePath).isFile();
+    } else if (path.extname(absolutePath) !== '') {
+      isFile = true;
+    }
+
     global.__LOG_PATH__ = isFile ? absolutePath : path.join(absolutePath, `bs-${__IS_CLIENT__ ? 'client' : 'server'}.log`);
     global.__LOG_LEVEL__ = (json.log_level !== undefined) ? json.log_level : DEFAULT_LOG_LEVEL;
-    Logger.init({file: __LOG_PATH__, level: __LOG_LEVEL__});
+
+    logger.configure({
+      level: __LOG_LEVEL__,
+      transports: [
+        new (winston.transports.Console)({
+          colorize: true,
+          prettyPrint: true
+        }),
+        new (require('winston-daily-rotate-file'))({
+          filename: __LOG_PATH__,
+          level: __LOG_LEVEL__
+        })
+      ]
+    });
 
     // behaviours
     const behaviours = {
