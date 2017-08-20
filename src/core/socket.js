@@ -57,6 +57,8 @@ export class Socket extends EventEmitter {
 
   _pipe = null;
 
+  _presets = [];
+
   constructor({socket}) {
     super();
     logger = Logger.getInstance();
@@ -69,6 +71,12 @@ export class Socket extends EventEmitter {
     this.onForwardSocketDrain = this.onForwardSocketDrain.bind(this);
     this.onForwardSocketTimeout = this.onForwardSocketTimeout.bind(this);
     this.onForwardSocketClose = this.onForwardSocketClose.bind(this);
+    this.onPipeNotified = this.onPipeNotified.bind(this);
+    this.sendForward = this.sendForward.bind(this);
+    this.sendBackward = this.sendBackward.bind(this);
+    this.connect = this.connect.bind(this);
+    this.setPresets = this.setPresets.bind(this);
+    this.destroy = this.destroy.bind(this);
     this._dnsCache = new DNSCache({expire: __DNS_EXPIRE__});
     this._remoteHost = socket.remoteAddress;
     this._remotePort = socket.remotePort;
@@ -85,7 +93,17 @@ export class Socket extends EventEmitter {
     if (__IS_CLIENT__) {
       selectServer();
     }
-    this._pipe = this.createPipe();
+    let presets = __PRESETS__;
+    // prepend "proxy" preset to the top of presets on client side
+    if (__IS_CLIENT__ && presets[0].name !== 'proxy') {
+      presets = [{name: 'proxy'}].concat(presets);
+    }
+    // add "tracker" preset to the preset list on both sides
+    if (presets[presets.length - 1].name !== 'tracker') {
+      presets = presets.concat([{name: 'tracker'}]);
+    }
+    this._presets = presets;
+    this._pipe = this.createPipe(presets);
     this._pipe.onBroadcast({
       type: CONNECTION_CREATED,
       payload: {
@@ -147,6 +165,7 @@ export class Socket extends EventEmitter {
     }
     if (this._bsocket) {
       if (this._bsocket.bufferSize > 0) {
+        this._bsocket.removeListener('drain', this.onBackwardSocketDrain);
         this._bsocket.on('drain', this.onBackwardSocketClose);
       } else {
         this.onBackwardSocketClose();
@@ -196,6 +215,7 @@ export class Socket extends EventEmitter {
     }
     if (this._fsocket) {
       if (this._fsocket.bufferSize > 0) {
+        this._fsocket.removeListener('drain', this.onForwardSocketDrain);
         this._fsocket.on('drain', this.onForwardSocketClose);
       } else {
         this.onForwardSocketClose();
@@ -234,7 +254,6 @@ export class Socket extends EventEmitter {
       this.onBackwardSocketClose();
       return;
     }
-    logger.info(`[socket] [${this.remote}] connecting to: ${host}:${port}`);
     // resolve host name
     let ip = null;
     try {
@@ -242,7 +261,13 @@ export class Socket extends EventEmitter {
     } catch (err) {
       logger.error(`[socket] [${this.remote}] fail to resolve host ${host}:${port}: ${err.message}`);
     }
+    logger.info(`[socket] [${this.remote}] connecting to: ${host}(${ip}):${port}`);
     return new Promise((resolve) => {
+      // close living connection before create a new connection
+      if (this._fsocket && !this._fsocket.destroyed) {
+        this._fsocket.destroy();
+        this._fsocket = null;
+      }
       this._fsocket = net.connect({host: ip, port}, () => resolve(this._fsocket));
       this._fsocket.on('error', this.onError);
       this._fsocket.on('close', this.onForwardSocketClose);
@@ -254,24 +279,25 @@ export class Socket extends EventEmitter {
   }
 
   /**
+   * set a new presets and recreate the pipe
+   * @param callback
+   */
+  setPresets(callback) {
+    this._presets = callback(this._presets);
+    this._pipe.removeAllListeners();
+    this._pipe.destroy();
+    this._pipe = this.createPipe(this._presets);
+  }
+
+  /**
    * create pipes for both data forward and backward
    */
-  createPipe() {
-    let presets = __PRESETS__;
-    // prepend "proxy" preset to the top of presets on client side
-    if (__IS_CLIENT__ && presets[0].name !== 'proxy') {
-      presets = [{name: 'proxy'}].concat(presets);
-    }
-    // add "tracker" preset to the preset list on both sides
-    if (presets[presets.length - 1].name !== 'tracker') {
-      presets = presets.concat([{name: 'tracker'}]);
-    }
-    // create middlewares and pipe
+  createPipe(presets) {
     const middlewares = presets.map((preset) => createMiddleware(preset.name, preset.params || {}));
-    const pipe = new Pipe({onNotified: this.onPipeNotified.bind(this)});
+    const pipe = new Pipe({onNotified: this.onPipeNotified});
     pipe.setMiddlewares(MIDDLEWARE_DIRECTION_UPWARD, middlewares);
-    pipe.on(`next_${MIDDLEWARE_DIRECTION_UPWARD}`, this.sendForward.bind(this));
-    pipe.on(`next_${MIDDLEWARE_DIRECTION_DOWNWARD}`, this.sendBackward.bind(this));
+    pipe.on(`next_${MIDDLEWARE_DIRECTION_UPWARD}`, this.sendForward);
+    pipe.on(`next_${MIDDLEWARE_DIRECTION_DOWNWARD}`, this.sendBackward);
     return pipe;
   }
 
@@ -281,13 +307,6 @@ export class Socket extends EventEmitter {
    * @returns {*}
    */
   async onPipeNotified(action) {
-    const props = {
-      remoteAddr: this.remote,
-      bsocket: this._bsocket,
-      fsocket: this._fsocket,
-      connect: this.connect.bind(this),
-      action: action
-    };
     switch (action.type) {
       case SOCKET_CONNECT_TO_REMOTE: {
         const {host, port, onConnected} = action.payload;
@@ -309,6 +328,14 @@ export class Socket extends EventEmitter {
         break;
       }
       case PROCESSING_FAILED: {
+        const props = {
+          remoteHost: this._remoteHost,
+          remotePort: this._remotePort,
+          onClose: this.destroy,
+          connect: this.connect,
+          setPresets: this.setPresets,
+          action: action
+        };
         const {name, message} = action.payload;
         logger.error(`[socket] [${this.remote}] preset "${name}" fail to process: ${message}`);
         await __BEHAVIOURS__[BEHAVIOUR_EVENT_ON_PRESET_FAILED].run(props);
