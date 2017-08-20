@@ -16,7 +16,8 @@ $ blinksocks --help
     -h, --help          output usage information
     -v, --version       output blinksocks version
     -c, --config        file with configuration, usually a json file
-    -l, --list-presets  list all built-in presets
+    --list-presets      list all built-in presets
+    --list-behaviours   list all built-in behaviours
     -m, --minimal       generate minimal json files
 
   Examples:
@@ -43,8 +44,7 @@ After init, you should edit `blinksocks.client.json` to tell blinksocks client w
 }
 ```
 
-> You may also want to change default protocol stack(presets) or other settings, please check out [--config](../config)
-for explanation of every option.
+> You may also want to change default protocol stack(presets) or other settings, please check out [--config](../config) for explanation of every option.
 
 ## Run in production
 

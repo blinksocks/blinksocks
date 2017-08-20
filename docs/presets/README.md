@@ -12,7 +12,7 @@ want to relay data to blinksocks server.
 
 This preset turns blinksocks to a proxy server, works on both client and server side.
 
-* For client side, this preset is added by default on **client side**, so you don't have to put it into preset list if you are setting up a proxy service.
+* For client side, this preset is **added by default** on **client side**, so you don't have to put it into preset list if you are setting up a proxy service.
 * For server side, this preset is useful to setup a network middleware(act as Man-in-the-middle) to do traffic analysis.
 
 For example, setup a local proxy server using **blinksocks server** at 1080:
@@ -40,7 +40,7 @@ $ curl -L --socks5-hostname localhost:1080 https://www.bing.com
 
 ## [tunnel]
 
-This proxy does not use any proxy protocols, just proxy original traffic to a fix destination.
+This proxy does not use any proxy protocols, just proxy original traffic to a permanent destination.
 
 | PARAMS         | DESCRIPTION      | DEFAULT |
 | :------------- | :--------------- | :------ |
