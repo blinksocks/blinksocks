@@ -2,8 +2,8 @@
   "apps": [
     {
       "name": "blinksocks",
-      "script": "blinksocks-server",
-      "args": "-c blinksocks.server.js",
+      "script": "blinksocks",
+      "args": "-c blinksocks.server.json",
       "node_args": "",
       "exec_mode": "cluster",
       "instances": 2,
