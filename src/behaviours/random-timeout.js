@@ -36,19 +36,12 @@ export default class RandomTimeoutBehaviour {
     this.max = max !== undefined ? max : DEFAULT_TIMEOUT_MAX;
   }
 
-  async run({remoteAddr, bsocket, fsocket}) {
+  async run({remoteHost, remotePort, onClose}) {
     const timeout = getRandomInt(this.min, this.max);
-    logger.warn(`[behaviour] [${remoteAddr}] connection will be closed in ${timeout}s...`);
+    logger.warn(`[behaviour] [${remoteHost}:${remotePort}] connection will be closed in ${timeout}s...`);
     return new Promise((resolve) => {
-      bsocket && bsocket.pause();
-      fsocket && fsocket.pause();
       setTimeout(() => {
-        if (bsocket !== null && !bsocket.destroyed) {
-          bsocket.destroy();
-        }
-        if (fsocket !== null && !fsocket.destroyed) {
-          fsocket.destroy();
-        }
+        onClose();
         resolve();
       }, timeout * 1e3);
     });

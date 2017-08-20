@@ -8,14 +8,9 @@ export default class DirectCloseBehaviour {
     logger = Logger.getInstance();
   }
 
-  async run({remoteAddr, bsocket, fsocket}) {
-    logger.warn(`[behaviour] [${remoteAddr}] connection closed directly`);
-    if (bsocket !== null && !bsocket.destroyed) {
-      bsocket.destroy();
-    }
-    if (fsocket !== null && !fsocket.destroyed) {
-      fsocket.destroy();
-    }
+  async run({remoteHost, remotePort, onClose}) {
+    logger.warn(`[behaviour] [${remoteHost}:${remotePort}] connection closed`);
+    onClose();
   }
 
 }

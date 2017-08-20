@@ -11,7 +11,9 @@ const mapping = {
 };
 
 const behaviours = Object.keys(mapping);
-const behaviourEvents = [BEHAVIOUR_EVENT_ON_PRESET_FAILED];
+const behaviourEvents = [
+  BEHAVIOUR_EVENT_ON_PRESET_FAILED
+];
 
 function getBehaviourClassByName(name) {
   const clazz = mapping[name];

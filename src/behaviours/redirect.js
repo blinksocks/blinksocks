@@ -20,42 +20,20 @@ export default class RedirectBehaviour {
     this._port = port;
   }
 
-  async run({action, remoteAddr, bsocket, fsocket, connect}) {
+  async run({action, remoteHost, remotePort, connect, setPresets}) {
     const {orgData} = action.payload;
     const [host, port] = [this._host, this._port];
 
-    logger.warn(`[behaviour] [${remoteAddr}] connection is redirecting to ${host}:${port}...`);
+    logger.warn(`[behaviour] [${remoteHost}:${remotePort}] connection is redirecting to ${host}:${port}`);
 
-    bsocket && bsocket.pause();
-    fsocket && fsocket.pause();
+    // replace presets to tracker only
+    setPresets((/* prevPresets */) => [{name: 'tracker'}]);
 
-    // close living connection
-    if (fsocket && !fsocket.destroyed) {
-      fsocket.destroy();
+    // connect to "redirect" target
+    const fsocket = await connect({host, port});
+    if (fsocket && fsocket.writable) {
+      fsocket.write(orgData);
     }
-
-    // TODO(fix): lost traffic track here, consider changing presets to [tunnel, tracker] for example
-
-    // connect to redirect target
-    const _fsocket = await connect({host, port});
-    if (_fsocket && _fsocket.writable) {
-      _fsocket.write(orgData);
-    }
-
-    _fsocket.removeAllListeners('data');
-    _fsocket.on('data', (buffer) => {
-      // TODO: take care of bufferSize?
-      if (bsocket && bsocket.writable) {
-        bsocket.write(buffer);
-      }
-    });
-
-    bsocket.removeAllListeners('data');
-    bsocket.on('data', (buffer) => {
-      if (_fsocket && _fsocket.writable) {
-        _fsocket.write(buffer);
-      }
-    });
   }
 
 }
