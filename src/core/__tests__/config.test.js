@@ -46,6 +46,27 @@ describe('Config#init', function () {
     expect(() => Config.init({...baseConf, timeout: 61})).not.toThrow();
   });
 
+  it('should throw when behaviours(if provided) is invalid', function () {
+    expect(() => Config.init({...baseConf, behaviours: null})).toThrow();
+    expect(() => Config.init({...baseConf, behaviours: {}})).not.toThrow();
+    expect(() => Config.init({...baseConf, behaviours: {'abc': {}}})).toThrow();
+    expect(() => Config.init({...baseConf, behaviours: {'on-preset-failed': {}}})).toThrow();
+    expect(() => Config.init({...baseConf, behaviours: {'on-preset-failed': {name: null}}})).toThrow();
+    expect(() => Config.init({...baseConf, behaviours: {'on-preset-failed': {name: ''}}})).toThrow();
+    expect(() => Config.init({
+      ...baseConf,
+      behaviours: {'on-preset-failed': {name: 'direct-close', params: []}}
+    })).toThrow();
+    expect(() => Config.init({
+      ...baseConf,
+      behaviours: {'on-preset-failed': {name: 'direct-close'}}
+    })).not.toThrow();
+    expect(() => Config.init({
+      ...baseConf,
+      behaviours: {'on-preset-failed': {name: 'direct-close', params: {}}}
+    })).not.toThrow();
+  });
+
   it('should throw when log_path(if provided) is invalid', function () {
     expect(() => Config.init({...baseConf, log_path: null})).toThrow();
     expect(() => Config.init({...baseConf, log_path: ''})).not.toThrow();
