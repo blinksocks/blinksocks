@@ -39,11 +39,6 @@ describe('Config#init', function () {
     }]
   };
 
-  it('should throw when redirect(if provided) is invalid', function () {
-    expect(() => Config.init({...baseConf, redirect: null})).toThrow();
-    expect(() => Config.init({...baseConf, redirect: 'test.com'})).toThrow();
-  });
-
   it('should throw when timeout(if provided) is invalid', function () {
     expect(() => Config.init({...baseConf, timeout: '0'})).toThrow();
     expect(() => Config.init({...baseConf, timeout: 0})).toThrow();
@@ -97,11 +92,6 @@ describe('Config#init', function () {
   it('should __LOG_PATH__ endsWith blinksocks.log', function () {
     Config.init({...baseConf, log_path: 'blinksocks.log'});
     expect(__LOG_PATH__.endsWith('blinksocks.log')).toBe(true);
-  });
-
-  it('should __REDIRECT__ set to test.com:443', function () {
-    Config.init({...baseConf, redirect: 'test.com:443'});
-    expect(__REDIRECT__).toBe('test.com:443');
   });
 
   it('should __LOG_LEVEL__ set to warn', function () {

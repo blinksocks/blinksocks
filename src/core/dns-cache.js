@@ -43,7 +43,7 @@ export class DNSCache {
       return hostname;
     }
     let address = null;
-    if (typeof DNSCache._pool[hostname] === 'undefined') {
+    if (DNSCache._pool[hostname] === undefined) {
       address = await this._lookup(hostname);
       this._put(hostname, address);
     } else {
@@ -54,6 +54,10 @@ export class DNSCache {
       address = addr;
     }
     return address;
+  }
+
+  clear() {
+    DNSCache._pool = {};
   }
 
 }
