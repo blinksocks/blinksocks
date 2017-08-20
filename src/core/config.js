@@ -12,7 +12,11 @@ import {DNS_DEFAULT_EXPIRE} from './dns-cache';
 export const DEFAULT_LOG_LEVEL = 'info';
 export const DEFAULT_BEHAVIOURS = {
   [BEHAVIOUR_EVENT_ON_PRESET_FAILED]: {
-    'name': 'random-timeout'
+    'name': 'random-timeout',
+    'params': {
+      'min': 10,
+      'max': 40
+    }
   }
 };
 
@@ -75,17 +79,6 @@ export class Config {
 
     } else {
       this.validateServer(json);
-    }
-
-    // redirect
-    if (json.redirect !== undefined) {
-      if (typeof json.redirect !== 'string') {
-        throw Error('\'redirect\' is must be a string');
-      }
-      const address = json.redirect.split(':');
-      if (address.length !== 2 || !isValidPort(+address[1])) {
-        throw Error('\'redirect\' must be formed as [host:port]');
-      }
     }
 
     // timeout
@@ -231,7 +224,6 @@ export class Config {
     }
 
     global.__IS_SERVER__ = !global.__IS_CLIENT__;
-    global.__REDIRECT__ = (json.redirect !== undefined) ? json.redirect : '';
     global.__TIMEOUT__ = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
     global.__WORKERS__ = (json.workers !== undefined) ? json.workers : 0;
     global.__DNS_EXPIRE__ = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
