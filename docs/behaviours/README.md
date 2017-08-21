@@ -1,6 +1,6 @@
 # Behaviours
 
-Behaviours are customizable event handlers for Socket layer. You can specify a behaviour to different events using different handlers:
+Behaviours are customizable event handlers for Relay. You can specify a behaviour to different events using different handlers:
 
 ```
 {
@@ -23,7 +23,7 @@ Behaviours are customizable event handlers for Socket layer. You can specify a b
 
 ## [direct-close]
 
-Socket should close the connection immediately.
+Relay should close the connection immediately.
 
 ```json
 {
@@ -33,7 +33,7 @@ Socket should close the connection immediately.
 
 ## [random-timeout]
 
-Socket should close the connection in a random timeout.
+Relay should close the connection in a random timeout.
 
 | PARAMS |     DESCRIPTION     | DEFAULT |
 | :----- | :------------------ | :------ |
@@ -52,7 +52,7 @@ Socket should close the connection in a random timeout.
 
 ## [redirect]
 
-Socket should redirect data stream to a permanent destination.
+Relay should redirect data stream to a permanent destination.
 
 | PARAMS |     DESCRIPTION      | DEFAULT |
 | :----- | :------------------- | :------ |

@@ -58,7 +58,7 @@ For more information about presets, please check out [presets].
 
 ### Behaviours
 
-Behaviours are customizable event handlers for Socket layer. `behaviours` is an object with several "events" which may occured in Socket.
+Behaviours are customizable event handlers for Relay. `behaviours` is an object with several "events" which may occured in Socket.
 
 You can specify a behaviour to different events using different handlers. The following config shows when any preset failed, socket should close the connection in a random timeout picked from 10 to 40 seconds:
 
