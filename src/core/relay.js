@@ -1,10 +1,10 @@
 import EventEmitter from 'events';
 import net from 'net';
+import tls from 'tls';
+import fs from 'fs';
 import {logger, isValidHostname, isValidPort} from '../utils';
-import {Config} from './config';
-import {DNSCache} from './dns-cache';
-import {Balancer} from './balancer';
 import {Pipe} from './pipe';
+import {DNSCache} from './dns-cache';
 import {
   MIDDLEWARE_DIRECTION_UPWARD,
   MIDDLEWARE_DIRECTION_DOWNWARD,
@@ -21,17 +21,7 @@ import {
 import {BEHAVIOUR_EVENT_ON_PRESET_FAILED} from '../behaviours';
 
 const MAX_BUFFERED_SIZE = 1024 * 1024; // 1MB
-
-let lastServer = null;
-
-function selectServer() {
-  const server = Balancer.getFastest();
-  if (lastServer === null || server.id !== lastServer.id) {
-    Config.initServer(server);
-    lastServer = server;
-    logger.info(`[balancer] use: ${server.host}:${server.port}`);
-  }
-}
+const SERVER_CERT = fs.readFileSync('server-cert.pem');
 
 /**
  * @description
@@ -40,7 +30,9 @@ function selectServer() {
  * @events
  *   .on('close', () => {});
  */
-export class Socket extends EventEmitter {
+export class Relay extends EventEmitter {
+
+  _isTLS = false;
 
   _dnsCache = null;
 
@@ -58,7 +50,7 @@ export class Socket extends EventEmitter {
 
   _presets = [];
 
-  constructor({socket}) {
+  constructor({socket, isTLS}) {
     super();
     this.onForward = this.onForward.bind(this);
     this.onBackward = this.onBackward.bind(this);
@@ -75,6 +67,7 @@ export class Socket extends EventEmitter {
     this.connect = this.connect.bind(this);
     this.setPresets = this.setPresets.bind(this);
     this.destroy = this.destroy.bind(this);
+    this._isTLS = !!isTLS;
     this._dnsCache = new DNSCache({expire: __DNS_EXPIRE__});
     this._remoteHost = socket.remoteAddress;
     this._remotePort = socket.remotePort;
@@ -88,9 +81,6 @@ export class Socket extends EventEmitter {
     this._bsocket.on('data', this.onForward);
     this._bsocket.on('drain', this.onBackwardSocketDrain);
     this._bsocket.setTimeout(__TIMEOUT__);
-    if (__IS_CLIENT__) {
-      selectServer();
-    }
     let presets = __PRESETS__;
     // prepend "proxy" preset to the top of presets on client side
     if (__IS_CLIENT__ && presets[0].name !== 'proxy') {
@@ -128,7 +118,7 @@ export class Socket extends EventEmitter {
   // events
 
   onError(err) {
-    logger.warn(`[socket] [${this.remote}] ${err.code} - ${err.message}`);
+    logger.warn(`[socket] [${this.remote}] ${err.code || ''} - ${err.message}`);
   }
 
   // bsocket
@@ -162,7 +152,8 @@ export class Socket extends EventEmitter {
       this._fsocket = null;
     }
     if (this._bsocket) {
-      if (this._bsocket.bufferSize > 0) {
+      // TODO: bufferSize is always 1 when use TLSSocket, maybe a Node.js bug
+      if (this._bsocket.bufferSize > 1) {
         this._bsocket.removeListener('drain', this.onBackwardSocketDrain);
         this._bsocket.on('drain', this.onBackwardSocketClose);
       } else {
@@ -212,7 +203,8 @@ export class Socket extends EventEmitter {
       this.emit('close');
     }
     if (this._fsocket) {
-      if (this._fsocket.bufferSize > 0) {
+      // TODO: bufferSize is always 1 when use TLSSocket, maybe a Node.js bug
+      if (this._fsocket.bufferSize > 1) {
         this._fsocket.removeListener('drain', this.onForwardSocketDrain);
         this._fsocket.on('drain', this.onForwardSocketClose);
       } else {
@@ -266,7 +258,11 @@ export class Socket extends EventEmitter {
         this._fsocket.destroy();
         this._fsocket = null;
       }
-      this._fsocket = net.connect({host: ip, port}, () => resolve(this._fsocket));
+      if (__IS_CLIENT__ && this._isTLS) {
+        this._fsocket = tls.connect({host, port, ca: [SERVER_CERT]}, () => resolve(this._fsocket));
+      } else {
+        this._fsocket = net.connect({host: ip, port}, () => resolve(this._fsocket));
+      }
       this._fsocket.on('error', this.onError);
       this._fsocket.on('close', this.onForwardSocketClose);
       this._fsocket.on('timeout', this.onForwardSocketTimeout.bind(this, {host, port}));
@@ -309,14 +305,10 @@ export class Socket extends EventEmitter {
       case SOCKET_CONNECT_TO_REMOTE: {
         const {host, port, onConnected} = action.payload;
         if (__IS_SERVER__) {
-          // connect to destination
           await this.connect({host, port});
         }
         if (__IS_CLIENT__) {
           logger.info(`[socket] [${this.remote}] request: ${host}:${port}`);
-          // select a server from Balancer
-          selectServer();
-          // connect to our server
           await this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__});
         }
         this._isConnectedToDst = true;
