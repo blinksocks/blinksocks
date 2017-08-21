@@ -10,7 +10,7 @@ logs/
 debug/
 npm-debug.log*
 yarn-error.log
-*.log.*
+*.log*
 
 # test
 coverage/
