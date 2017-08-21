@@ -1,7 +1,6 @@
 import EventEmitter from 'events';
 import net from 'net';
 import tls from 'tls';
-import fs from 'fs';
 import {logger, isValidHostname, isValidPort} from '../utils';
 import {Pipe} from './pipe';
 import {DNSCache} from './dns-cache';
@@ -21,7 +20,6 @@ import {
 import {BEHAVIOUR_EVENT_ON_PRESET_FAILED} from '../behaviours';
 
 const MAX_BUFFERED_SIZE = 1024 * 1024; // 1MB
-const SERVER_CERT = fs.readFileSync('server-cert.pem');
 
 /**
  * @description
@@ -31,8 +29,6 @@ const SERVER_CERT = fs.readFileSync('server-cert.pem');
  *   .on('close', () => {});
  */
 export class Relay extends EventEmitter {
-
-  _isTLS = false;
 
   _dnsCache = null;
 
@@ -50,7 +46,7 @@ export class Relay extends EventEmitter {
 
   _presets = [];
 
-  constructor({socket, isTLS}) {
+  constructor({socket}) {
     super();
     this.onForward = this.onForward.bind(this);
     this.onBackward = this.onBackward.bind(this);
@@ -67,7 +63,6 @@ export class Relay extends EventEmitter {
     this.connect = this.connect.bind(this);
     this.setPresets = this.setPresets.bind(this);
     this.destroy = this.destroy.bind(this);
-    this._isTLS = !!isTLS;
     this._dnsCache = new DNSCache({expire: __DNS_EXPIRE__});
     this._remoteHost = socket.remoteAddress;
     this._remotePort = socket.remotePort;
@@ -258,8 +253,8 @@ export class Relay extends EventEmitter {
         this._fsocket.destroy();
         this._fsocket = null;
       }
-      if (__IS_CLIENT__ && this._isTLS) {
-        this._fsocket = tls.connect({host, port, ca: [SERVER_CERT]}, () => resolve(this._fsocket));
+      if (__IS_CLIENT__ && __IS_TLS__) {
+        this._fsocket = tls.connect({host, port, ca: [__TLS_CERT__]}, () => resolve(this._fsocket));
       } else {
         this._fsocket = net.connect({host: ip, port}, () => resolve(this._fsocket));
       }

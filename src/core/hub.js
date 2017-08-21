@@ -1,7 +1,6 @@
 import cluster from 'cluster';
 import EventEmitter from 'events';
 import net from 'net';
-import fs from 'fs';
 import tls from 'tls';
 import uniqueId from 'lodash.uniqueid';
 import {Balancer} from './balancer';
@@ -20,8 +19,6 @@ export class Hub extends EventEmitter {
 
   _isFirstWorker = cluster.worker ? (cluster.worker.id <= 1) : true;
 
-  _isTLS = false;
-
   _localServer = null;
 
   _fastestServer = null;
@@ -35,16 +32,9 @@ export class Hub extends EventEmitter {
     if (config !== undefined) {
       Config.init(config);
     }
-    // TODO: remote this assign
-    global.__TRANSPORT__ = {
-      name: 'tls',
-      params: {}
-    };
-    this._isTLS = __TRANSPORT__.name === 'tls';
     if (this._isFirstWorker) {
       logger.info(`==> [hub] use configuration: ${JSON.stringify(__ALL_CONFIG__)}`);
       logger.info(`==> [hub] running as: ${__IS_SERVER__ ? 'server' : 'client'}`);
-      logger.info(`==> [hub] transport layer: ${__TRANSPORT__.name}`);
     }
     if (__IS_CLIENT__) {
       this._isFirstWorker && logger.info('==> [balancer] started');
@@ -58,6 +48,7 @@ export class Hub extends EventEmitter {
       port: __LOCAL_PORT__
     };
     this._localServer = this.createServer();
+    this._localServer.on('close', this.onClose);
     return new Promise((resolve) => this._localServer.listen(options, resolve));
   }
 
@@ -72,18 +63,16 @@ export class Hub extends EventEmitter {
   }
 
   createServer() {
-    if (__IS_SERVER__ && this._isTLS) {
+    if (__IS_SERVER__ && __IS_TLS__) {
       const server = tls.createServer({
-        key: [fs.readFileSync('server-key.pem')],
-        cert: [fs.readFileSync('server-cert.pem')]
+        key: [__TLS_KEY__],
+        cert: [__TLS_CERT__]
       });
       server.on('secureConnection', this.onConnect);
-      server.on('close', this.onClose);
       return server;
     } else {
       const server = net.createServer();
       server.on('connection', this.onConnect);
-      server.on('close', this.onClose);
       return server;
     }
   }
@@ -102,13 +91,13 @@ export class Hub extends EventEmitter {
       this.selectServer();
     }
     const id = uniqueId();
-    const relay = new Relay({socket, isTLS: this._isTLS});
+    const relay = new Relay({socket});
     relay.id = id;
     relay.on('close', () => {
       this._relays = this._relays.filter((relay) => relay.id !== id);
     });
     this._relays.push(relay);
-    logger.info(`[transport] [${socket.remoteAddress}:${socket.remotePort}] connected`);
+    logger.info(`[hub] [${socket.remoteAddress}:${socket.remotePort}] connected`);
   }
 
   onClose() {

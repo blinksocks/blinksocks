@@ -152,11 +152,23 @@ export class Config {
   static validateServer(server) {
     // transport
     if (server.transport !== undefined) {
-      if (typeof server.transport !== 'string') {
-        throw Error('\'server.transport\' must be a string');
+      if (!isPlainObject(server.transport)) {
+        throw Error('\'server.transport\' must be an object');
       }
-      if (!['tcp', 'udp'].includes(server.transport.toLowerCase())) {
-        throw Error('\'server.transport\' must be one of "tcp" or "udp"');
+      const {name, params} = server.transport;
+      if (!['tcp', 'tls'].includes(name)) {
+        throw Error('\'server.transport.name\' must be "tcp" or "tls"');
+      }
+      if (name === 'tls') {
+        if (!isPlainObject(params)) {
+          throw Error('\'server.transport.params\' must be an object');
+        }
+        if (typeof params.cert !== 'string') {
+          throw Error('\'server.transport.params.cert\' must be set');
+        }
+        if (params.cert === '') {
+          throw Error('\'server.transport.params.cert\' cannot be empty');
+        }
       }
     }
 
@@ -219,12 +231,13 @@ export class Config {
     if (json.servers !== undefined) {
       global.__SERVERS__ = json.servers.filter((server) => server.enabled);
       global.__IS_CLIENT__ = true;
+      global.__IS_SERVER__ = false;
     } else {
       global.__IS_CLIENT__ = false;
+      global.__IS_SERVER__ = true;
       this.initServer(json);
     }
 
-    global.__IS_SERVER__ = !global.__IS_CLIENT__;
     global.__TIMEOUT__ = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
     global.__WORKERS__ = (json.workers !== undefined) ? json.workers : 0;
     global.__DNS_EXPIRE__ = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
@@ -277,8 +290,14 @@ export class Config {
 
   static initServer(server) {
     this.validateServer(server);
-
-    global.__TRANSPORT__ = (server.transport !== undefined) ? server.transport : 'tcp';
+    global.__TRANSPORT__ = (server.transport !== undefined) ? server.transport : {name: 'tcp'};
+    global.__IS_TLS__ = __TRANSPORT__.name === 'tls';
+    if (__IS_TLS__) {
+      global.__TLS_CERT__ = fs.readFileSync(path.resolve(process.cwd(), __TRANSPORT__.params.cert));
+      if (__IS_SERVER__) {
+        global.__TLS_KEY__ = fs.readFileSync(path.resolve(process.cwd(), __TRANSPORT__.params.key));
+      }
+    }
     global.__SERVER_HOST__ = server.host;
     global.__SERVER_PORT__ = server.port;
     global.__KEY__ = server.key;
