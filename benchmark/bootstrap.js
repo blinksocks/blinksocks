@@ -15,10 +15,17 @@ function makeConfs(presets) {
     "log_level": "error"
   };
   const server = {
-    "host": "127.0.0.1",
+    "host": "localhost",
     "port": 1082,
     "key": "JJ9,$!.!sRG==v7$",
-    "presets": presets
+    "presets": presets,
+    // "transport": {
+    //   "name": "tls",
+    //   "params": {
+    //     "key": "key.pem",
+    //     "cert": "cert.pem"
+    //   }
+    // }
   };
   const clientConf = Object.assign({
     "host": "127.0.0.1",
@@ -51,6 +58,9 @@ function writeConfs(caseId, presets) {
 
 function parseStdout(stdout) {
   const matches = stdout.match(/\[SUM].*sec/g);
+  if (matches === null) {
+    console.error(stdout);
+  }
   return matches.slice(-2).map((line) => {
     const [interval, transfer, bitrate] = line.match(/\d+[.\d\-\s]+\w+[\/\w]+/g);
     return {interval, transfer, bitrate};
