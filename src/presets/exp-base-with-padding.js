@@ -113,7 +113,7 @@ export default class ExpBaseWithPaddingPreset extends IPreset {
       // verify addr
       let addr = buffer.slice(16, 16 + alen);
 
-      if (isValidHostname(addr)) {
+      if (isValidHostname(addr.toString())) {
         addr = addr.toString();
       } else if (net.isIP(addr)) {
         addr = ip.toString(addr);
