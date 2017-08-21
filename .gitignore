@@ -22,3 +22,4 @@ coverage/
 blinksocks*.js
 blinksocks*.json
 *.map
+*.pem

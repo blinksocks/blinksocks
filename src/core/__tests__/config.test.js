@@ -124,14 +124,9 @@ describe('Config#init', function () {
 
 describe('Config#initServer', function () {
 
-  it('should throw when server.transport(if provided) is invalid', function () {
-    expect(() => Config.initServer({transport: null})).toThrow();
-    expect(() => Config.initServer({transport: ''})).toThrow();
-  });
-
   it('should throw when server.host is invalid', function () {
-    expect(() => Config.initServer({transport: 'tcp', host: null})).toThrow();
-    expect(() => Config.initServer({transport: 'tcp', host: ''})).toThrow();
+    expect(() => Config.initServer({host: null})).toThrow();
+    expect(() => Config.initServer({host: ''})).toThrow();
   });
 
   it('should throw when server.port is invalid', function () {
@@ -165,9 +160,19 @@ describe('Config#initServer', function () {
     expect(() => Config.initServer({...baseConf, presets: [{name: 'ss-base', params: {}}]})).not.toThrow();
   });
 
+  it('should throw when server.transport(if provided) is invalid', function () {
+    const base = {...baseConf, presets: [{name: 'ss-base'}]};
+    expect(() => Config.initServer({...base, transport: null})).toThrow();
+    expect(() => Config.initServer({...base, transport: {name: ''}})).toThrow();
+    expect(() => Config.initServer({...base, transport: {name: 'tls'}})).toThrow();
+    expect(() => Config.initServer({...base, transport: {name: 'tls', params: {cert: null}}})).toThrow();
+    expect(() => Config.initServer({...base, transport: {name: 'tls', params: {cert: ''}}})).toThrow();
+    expect(() => Config.initServer({...base, transport: {name: 'tls', params: {cert: 'abc'}}})).not.toThrow();
+  });
+
   it('should __TRANSPORT__ set to tcp', function () {
-    Config.init({...baseConf, transport: 'tcp', presets: [{name: 'ss-base'}]});
-    expect(__TRANSPORT__).toBe('tcp');
+    Config.init({...baseConf, transport: {name: 'tcp'}, presets: [{name: 'ss-base'}]});
+    expect(__TRANSPORT__.name).toBe('tcp');
   });
 
 });

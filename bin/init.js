@@ -36,7 +36,9 @@ module.exports = function init({isMinimal}) {
     'servers': [
       {
         'enabled': true,
-        'transport': 'tcp',
+        'transport': {
+          'name': 'tcp'
+        },
         'host': 'example.com',
         'port': port,
         'key': key,
@@ -84,8 +86,10 @@ module.exports = function init({isMinimal}) {
   const serverJson = {
     'host': '0.0.0.0',
     'port': port,
-    'transport': 'tcp',
     'key': key,
+    'transport': {
+      'name': 'tcp'
+    },
     'presets': [
       {
         'name': 'ss-base'
