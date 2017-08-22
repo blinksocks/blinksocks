@@ -3434,9 +3434,9 @@ pkg-fetch@2.3.10:
     semver "5.4.1"
     unique-temp-dir "1.0.0"
 
-pkg@^4.2.3:
-  version "4.2.3"
-  resolved "https://registry.yarnpkg.com/pkg/-/pkg-4.2.3.tgz#f42c85e49d94d9ea3b29487e39539d4535000e50"
+pkg@^4.2.4:
+  version "4.2.4"
+  resolved "https://registry.yarnpkg.com/pkg/-/pkg-4.2.4.tgz#7781490f9339a8f5cc8eea737e94c37c4e8ed4c8"
   dependencies:
     acorn "5.1.1"
     babel-runtime "6.25.0"
