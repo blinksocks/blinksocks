@@ -19,7 +19,7 @@ coverage/
 *.tgz
 
 # others
-blinksocks*.js
-blinksocks*.json
+/blinksocks*.js
+/blinksocks*.json
 *.map
 *.pem
