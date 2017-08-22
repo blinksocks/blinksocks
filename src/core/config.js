@@ -152,22 +152,15 @@ export class Config {
   static validateServer(server) {
     // transport
     if (server.transport !== undefined) {
-      if (!isPlainObject(server.transport)) {
-        throw Error('\'server.transport\' must be an object');
+      if (!['tcp', 'tls'].includes(server.transport)) {
+        throw Error('\'server.transport\' must be "tcp" or "tls"');
       }
-      const {name, params} = server.transport;
-      if (!['tcp', 'tls'].includes(name)) {
-        throw Error('\'server.transport.name\' must be "tcp" or "tls"');
-      }
-      if (name === 'tls') {
-        if (!isPlainObject(params)) {
-          throw Error('\'server.transport.params\' must be an object');
+      if (server.transport === 'tls') {
+        if (typeof server.tls_cert !== 'string') {
+          throw Error('\'server.tls_key\' must be a string');
         }
-        if (typeof params.cert !== 'string') {
-          throw Error('\'server.transport.params.cert\' must be set');
-        }
-        if (params.cert === '') {
-          throw Error('\'server.transport.params.cert\' cannot be empty');
+        if (server.tls_cert === '') {
+          throw Error('\'server.tls_cert\' cannot be empty');
         }
       }
     }
@@ -290,12 +283,12 @@ export class Config {
 
   static initServer(server) {
     this.validateServer(server);
-    global.__TRANSPORT__ = (server.transport !== undefined) ? server.transport : {name: 'tcp'};
-    global.__IS_TLS__ = __TRANSPORT__.name === 'tls';
+    global.__TRANSPORT__ = (server.transport !== undefined) ? server.transport : 'tcp';
+    global.__IS_TLS__ = __TRANSPORT__ === 'tls';
     if (__IS_TLS__) {
-      global.__TLS_CERT__ = fs.readFileSync(path.resolve(process.cwd(), __TRANSPORT__.params.cert));
+      global.__TLS_CERT__ = fs.readFileSync(path.resolve(process.cwd(), server.tls_cert));
       if (__IS_SERVER__) {
-        global.__TLS_KEY__ = fs.readFileSync(path.resolve(process.cwd(), __TRANSPORT__.params.key));
+        global.__TLS_KEY__ = fs.readFileSync(path.resolve(process.cwd(), server.tls_key));
       }
     }
     global.__SERVER_HOST__ = server.host;

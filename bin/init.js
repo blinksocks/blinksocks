@@ -36,10 +36,8 @@ module.exports = function init({isMinimal}) {
     'servers': [
       {
         'enabled': true,
-        'transport': {
-          'name': 'tcp'
-        },
-        'host': 'example.com',
+        'transport': 'tcp',
+        'host': '127.0.0.1',
         'port': port,
         'key': key,
         'presets': [
@@ -53,7 +51,8 @@ module.exports = function init({isMinimal}) {
               'info': 'ss-subkey'
             }
           }
-        ]
+        ],
+        'tls_cert': 'cert.pem'
       }
     ],
     'behaviours': {
@@ -75,6 +74,7 @@ module.exports = function init({isMinimal}) {
 
   if (isMinimal) {
     delete clientJson.servers[0].transport;
+    delete clientJson.servers[0].tls_cert;
     delete clientJson.dns;
     delete clientJson.dns_expire;
     delete clientJson.timeout;
@@ -87,9 +87,7 @@ module.exports = function init({isMinimal}) {
     'host': '0.0.0.0',
     'port': port,
     'key': key,
-    'transport': {
-      'name': 'tcp'
-    },
+    'transport': 'tcp',
     'presets': [
       {
         'name': 'ss-base'
@@ -111,6 +109,8 @@ module.exports = function init({isMinimal}) {
         }
       }
     },
+    'tls_key': 'key.pem',
+    'tls_cert': 'cert.pem',
     'dns': [],
     'dns_expire': 3600,
     'timeout': timeout,
@@ -122,6 +122,8 @@ module.exports = function init({isMinimal}) {
   if (isMinimal) {
     delete serverJson.transport;
     delete serverJson.behaviours;
+    delete serverJson.tls_key;
+    delete serverJson.tls_cert;
     delete serverJson.dns;
     delete serverJson.dns_expire;
     delete serverJson.timeout;
@@ -134,5 +136,5 @@ module.exports = function init({isMinimal}) {
   fs.writeFileSync('blinksocks.server.json', JSON.stringify(serverJson, null, '  '));
 
   console.log('> Generated blinksocks.client.json and blinksocks.server.json');
-  console.log('> Check out https://github.com/blinksocks/blinksocks/tree/master/docs/config for explanation to each option');
+  console.log('> Please check out https://github.com/blinksocks/blinksocks/tree/master/docs/config for explanation to each option');
 };

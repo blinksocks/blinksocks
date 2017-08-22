@@ -138,7 +138,7 @@ describe('Config#initServer', function () {
     expect(() => Config.initServer({host: 'abc', port: 123, key: ''})).toThrow();
   });
 
-  const baseConf = {host: 'abc', port: 123, key: 'secret'};
+  let baseConf = {host: 'abc', port: 123, key: 'secret'};
 
   it('should throw when server.presets is not an array', function () {
     expect(() => Config.initServer({...baseConf, presets: null})).toThrow();
@@ -160,19 +160,28 @@ describe('Config#initServer', function () {
     expect(() => Config.initServer({...baseConf, presets: [{name: 'ss-base', params: {}}]})).not.toThrow();
   });
 
+  baseConf = {...baseConf, presets: [{name: 'ss-base'}]};
+
   it('should throw when server.transport(if provided) is invalid', function () {
-    const base = {...baseConf, presets: [{name: 'ss-base'}]};
-    expect(() => Config.initServer({...base, transport: null})).toThrow();
-    expect(() => Config.initServer({...base, transport: {name: ''}})).toThrow();
-    expect(() => Config.initServer({...base, transport: {name: 'tls'}})).toThrow();
-    expect(() => Config.initServer({...base, transport: {name: 'tls', params: {cert: null}}})).toThrow();
-    expect(() => Config.initServer({...base, transport: {name: 'tls', params: {cert: ''}}})).toThrow();
-    expect(() => Config.initServer({...base, transport: {name: 'tls', params: {cert: 'abc'}}})).not.toThrow();
+    expect(() => Config.initServer({...baseConf, transport: null})).toThrow();
+    expect(() => Config.initServer({...baseConf, transport: 'tcp'})).not.toThrow();
+  });
+
+  it('should throw when server.transport is set to "tls" but "tls_cert" is invalid', function () {
+    expect(() => Config.initServer({...baseConf, transport: 'tls'})).toThrow();
+    expect(() => Config.initServer({...baseConf, transport: 'tls', tls_cert: null})).toThrow();
+    expect(() => Config.initServer({...baseConf, transport: 'tls', tls_cert: ''})).toThrow();
+    expect(() => Config.initServer({...baseConf, transport: 'tls', tls_cert: 'abc'})).not.toThrow();
   });
 
   it('should __TRANSPORT__ set to tcp', function () {
-    Config.init({...baseConf, transport: {name: 'tcp'}, presets: [{name: 'ss-base'}]});
-    expect(__TRANSPORT__.name).toBe('tcp');
+    Config.init({...baseConf, transport: 'tcp'});
+    expect(__TRANSPORT__).toBe('tcp');
+  });
+
+  it('should __IS_TLS__ set to true', function () {
+    Config.init({...baseConf, transport: 'tls', tls_cert: 'abc', tls_key: 'def'});
+    expect(__IS_TLS__).toBe(true);
   });
 
 });
