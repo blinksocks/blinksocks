@@ -8,28 +8,30 @@ You can use the following command to generate `blinksocks.client.json` and `blin
 $ blinksocks init
 ```
 
-|         KEY          |             DESCRIPTION             | OPTIONAL |     DEFAULT     |                        REMARKS                         |
-| :------------------- | :---------------------------------- | :------- | :-------------- | :----------------------------------------------------- |
-| host                 | local hostname or ip address        | -        | -               | -                                                      |
-| port                 | local port                          | -        | -               | -                                                      |
-| transport            | the transport layer, "tcp" or "udp" | Yes      | "tcp"           | this option is reserved to "tcp" only                  |
-| servers              | a list of server                    | Yes      | -               | [CLIENT SIDE ONLY]                                     |
-| servers[i].enabled   | allow to use this server or not     | -        | -               | -                                                      |
-| servers[i].host      | server hostname or ip address       | -        | -               | -                                                      |
-| servers[i].port      | server port                         | -        | -               | -                                                      |
-| servers[i].key       | server key for encryption           | -        | -               | -                                                      |
-| presets              | preset list in order                | -        | -               | see [presets]                                          |
-| presets[i].name      | preset name                         | -        | -               | -                                                      |
-| presets[i].params    | preset params                       | -        | -               | -                                                      |
-| behaviours           | a list of behaviours                | Yes      | -               | see [behaviours]                                       |
-| behaviours[i].name   | behaviour name                      | -        | -               | -                                                      |
-| behaviours[i].params | behaviour params                    | -        | -               | -                                                      |
-| timeout              | timeout for each connection         | Yes      | 600             | in seconds                                             |
-| workers              | the number of sub-process           | Yes      | 0               | cluster mode when workers > 0                          |
-| dns                  | an ip list of DNS server            | Yes      | []              | -                                                      |
-| dns_expire           | DNS cache expiration time           | Yes      | 3600            | in seconds                                             |
-| log_path             | log file path                       | Yes      | "bs-[type].log" | a directory or a file                                  |
-| log_level            | log level                           | Yes      | "info"          | ['error', 'warn', 'info', 'verbose', 'debug', 'silly'] |
+|         KEY          |             DESCRIPTION             | OPTIONAL |     DEFAULT     |                          REMARKS                           |
+| :------------------- | :---------------------------------- | :------- | :-------------- | :--------------------------------------------------------- |
+| host                 | local hostname or ip address        | -        | -               | -                                                          |
+| port                 | local port                          | -        | -               | -                                                          |
+| transport            | the transport layer, "tcp" or "tls" | Yes      | "tcp"           | -                                                          |
+| servers              | a list of server                    | Yes      | -               | **CLIENT ONLY**                                            |
+| servers[i].enabled   | allow to use this server or not     | -        | -               | -                                                          |
+| servers[i].host      | server hostname or ip address       | -        | -               | -                                                          |
+| servers[i].port      | server port                         | -        | -               | -                                                          |
+| servers[i].key       | server key for encryption           | -        | -               | -                                                          |
+| presets              | preset list in order                | -        | -               | see [presets]                                              |
+| presets[i].name      | preset name                         | -        | -               | -                                                          |
+| presets[i].params    | preset params                       | -        | -               | -                                                          |
+| behaviours           | a list of behaviours                | Yes      | -               | see [behaviours]                                           |
+| behaviours[i].name   | behaviour name                      | -        | -               | -                                                          |
+| behaviours[i].params | behaviour params                    | -        | -               | -                                                          |
+| tls_key              | private key for TLS                 | -        | -               | required on server if "transport" is "tls"                 |
+| tls_cert             | server certificate                  | -        | -               | required on both client and server if "transport" is "tls" |
+| timeout              | timeout for each connection         | Yes      | 600             | in seconds                                                 |
+| workers              | the number of sub-process           | Yes      | 0               | cluster mode when workers > 0                              |
+| dns                  | an ip list of DNS server            | Yes      | []              | -                                                          |
+| dns_expire           | DNS cache expiration time           | Yes      | 3600            | in seconds                                                 |
+| log_path             | log file path                       | Yes      | "bs-[type].log" | a directory or a file                                      |
+| log_level            | log level                           | Yes      | "info"          | ['error', 'warn', 'info', 'verbose', 'debug', 'silly']     |
 
 ### Servers(Client Side Only)
 
@@ -78,6 +80,60 @@ You can specify a behaviour to different events using different handlers. The fo
 
 For more information about behaviours, please check out [behaviours].
 
+### blinksocks over TLS
+
+By default, blinksocks use "tcp" as transport, but you can also take advantage of TLS technology to protect your data. To use blinksocks over TLS, you should:
+
+1. Generate `key.pem` and `cert.pem` on server
+
+```
+// self-signed
+$ openssl req -x509 -newkey rsa:4096 -nodes -keyout key.pem -out cert.pem -days 365
+```
+
+> NOTE: Remember the **Common Name** you entered in the command prompt.
+
+2. Server config
+
+```
+{
+  ...
+  "transport": "tls",
+  "tls_key": "key.pem",
+  "tls_cert": "cert.pem",
+  ...
+}
+```
+
+3. Client config
+
+```
+{
+  ...
+  "servers": [{
+    ...
+    "host": "Common Name", // note here
+    ...
+    "transport": "tls",
+    "tls_cert": "cert.pem",
+    ...
+  }],
+  ...
+}
+```
+
+4. How about presets?
+
+You don't have to use extra encryption when transport is "tls", your data is already protected by TLS, so just set "base" preset:
+
+```
+{
+  "presets": [{"name": "ss-base"}]
+  // or "presets": [{"name": "exp-base-with-padding", "params": {"salt": "any string"}}]
+  // or "presets": [{"name": "exp-base-auth-stream", "params": {"method": "aes-256-ctr"}}]
+}
+```
+
 ### Log Path
 
 Specify a relative or absolute path to store log file, if no `log_path` provided, log file named `bs-[type].log` will be stored in the working directory.
@@ -118,14 +174,6 @@ You can enable cluster mode by setting `workers` greater than zero, cluster mode
   "workers": 2
   ...
 }
-```
-
-## Run blinksocks
-
-To start a server or a client, you prepare a json or js file first, then supply it to `--config` or `-c`:
-
-```
-$ blinksocks -c blinksocks.client.json
 ```
 
 [balancer.js]: ../../src/core/balancer.js

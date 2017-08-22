@@ -12,13 +12,17 @@
 
 A framework for building composable proxy protocol stack.
 
+![](docs/blinksocks.png)
+
 ## Features
 
-* Simple proxy interfaces for Socks5/Socks4/Socks4a and HTTP
-* Customizable Protocols(using [presets](docs/presets)): simple, composable, and flexible
-* Cross-platform: running on Linux based, Windows and macOS
-* Portable/Executable versions available
-* Partially compatible with **shadowsocks** [#27](https://github.com/blinksocks/blinksocks/issues/27)
+* Simple proxy interface for Socks5/Socks4/Socks4a and HTTP.
+* Cross-platform: running on Linux, Windows and macOS.
+* Transmit over TCP or [TLS](docs/config).
+* Customizable protocols and middlewares: using [Presets](docs/presets).
+* Customizable relay behaviours: using [Behaviours](docs/behaviours).
+* Portable/Executable versions available. [Download Here](https://github.com/blinksocks/blinksocks/releases)
+* Partially compatible with **shadowsocks**. [#27](https://github.com/blinksocks/blinksocks/issues/27)
 
 ## GUI ready
 
