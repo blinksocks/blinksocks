@@ -2,6 +2,14 @@
 
 
 
+## [v2.5.4](https://github.com/blinksocks/blinksocks/tree/v2.5.4) (2017-08-22)
+[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.5.3...v2.5.4)
+
+#### Features:
+
+- add TLS/SSL transport for blinksocks over TLS [#92](https://github.com/blinksocks/blinksocks/issues/92)
+- split tunnel mode from proxy.js to tunnel.js [#91](https://github.com/blinksocks/blinksocks/issues/91)
+
 ## [v2.5.3](https://github.com/blinksocks/blinksocks/tree/v2.5.3) (2017-08-16)
 [Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.5.2...v2.5.3)
 
