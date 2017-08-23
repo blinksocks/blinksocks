@@ -50,6 +50,8 @@ After init, you should edit `blinksocks.client.json` to tell blinksocks client w
 
 ### Using pm2
 
+> NOTE: you can only use pm2 on Linux/macOS due to a bug of pm2 on Windows. [#93](https://github.com/blinksocks/blinksocks/issues/93)
+
 You can take advantages of [pm2](https://github.com/unitech/pm2) to run blinksocks in the production.
 
 Install `pm2` before running blinksocks in the production:
