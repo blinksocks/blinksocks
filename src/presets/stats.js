@@ -1,5 +1,5 @@
 import fs from 'fs';
-import {IPreset, PROCESSING_FAILED} from './defs';
+import {IPreset, PROCESSING_FAILED, CONNECTION_CLOSED} from './defs';
 
 const now = () => (new Date()).getTime();
 
@@ -41,9 +41,9 @@ export default class StatsPreset extends IPreset {
 
   static startedAt = now();
 
-  static totalOut = 0;
+  static totalOutBytes = 0;
 
-  static totalIn = 0;
+  static totalInBytes = 0;
 
   static totalOutPackets = 0;
 
@@ -51,7 +51,7 @@ export default class StatsPreset extends IPreset {
 
   static totalErrors = 0;
 
-  static maxConnections = 0;
+  static totalConnections = 0;
 
   // calculated
 
@@ -121,7 +121,7 @@ export default class StatsPreset extends IPreset {
       process.on('SIGINT', StatsPreset.save);
       StatsPreset.isHookExit = true;
     }
-    StatsPreset.maxConnections += 1;
+    StatsPreset.totalConnections += 1;
   }
 
   static save() {
@@ -130,7 +130,7 @@ export default class StatsPreset extends IPreset {
     const durationMilliSec = endAt - startedAt;
     const durationSec = durationMilliSec / 1e3;
     const totalPackets = StatsPreset.totalInPackets + StatsPreset.totalOutPackets;
-    const totalBytes = StatsPreset.totalIn + StatsPreset.totalOut;
+    const totalBytes = StatsPreset.totalInBytes + StatsPreset.totalOutBytes;
     const json = {
       sample: {
         from: startedAt,
@@ -138,27 +138,27 @@ export default class StatsPreset extends IPreset {
         duration: durationMilliSec
       },
       summary: {
-        totalErrors: StatsPreset.totalErrors,
-        totalOut: StatsPreset.totalOut,
-        totalIn: StatsPreset.totalIn,
+        maxOutSpeed: StatsPreset.maxOutSpeed,
+        maxInSpeed: StatsPreset.maxInSpeed,
+        totalOutBytes: StatsPreset.totalOutBytes,
         totalOutPackets: StatsPreset.totalOutPackets,
+        totalInBytes: StatsPreset.totalInBytes,
         totalInPackets: StatsPreset.totalInPackets,
         totalBytes: totalBytes,
         totalPackets: totalPackets,
-        maxOutSpeed: StatsPreset.maxOutSpeed,
-        maxInSpeed: StatsPreset.maxInSpeed,
-        maxConnections: StatsPreset.maxConnections - 2
+        totalErrors: StatsPreset.totalErrors
       },
       instant: {
         outSpeed: StatsPreset.instantOutSpeed,
         inSpeed: StatsPreset.instantInSpeed,
         errorRate: totalPackets.length > 0 ? StatsPreset.totalErrors / totalPackets : 0,
-        outBytesRate: StatsPreset.totalOut / durationSec,
+        outBytesRate: StatsPreset.totalOutBytes / durationSec,
         outPacketsRate: StatsPreset.totalOutPackets / durationSec,
-        inBytesRate: StatsPreset.totalIn / durationSec,
+        inBytesRate: StatsPreset.totalInBytes / durationSec,
         inPacketsRate: StatsPreset.totalInPackets / durationSec,
         totalBytesRate: totalBytes / durationSec,
-        totalPacketsRate: totalPackets / durationSec
+        totalPacketsRate: totalPackets / durationSec,
+        totalConnections: StatsPreset.totalConnections - 2
       },
       process: {
         upTime: process.uptime(),
@@ -184,17 +184,20 @@ export default class StatsPreset extends IPreset {
     if (action.type === PROCESSING_FAILED) {
       StatsPreset.totalErrors += 1;
     }
+    if (action.type === CONNECTION_CLOSED) {
+      StatsPreset.totalConnections -= 1;
+    }
   }
 
   beforeOut({buffer}) {
-    StatsPreset.totalOut += buffer.length;
+    StatsPreset.totalOutBytes += buffer.length;
     StatsPreset.totalOutPackets += 1;
     StatsPreset.tmpOut += buffer.length;
     return buffer;
   }
 
   beforeIn({buffer}) {
-    StatsPreset.totalIn += buffer.length;
+    StatsPreset.totalInBytes += buffer.length;
     StatsPreset.totalInPackets += 1;
     StatsPreset.tmpIn += buffer.length;
     return buffer;
