@@ -75,6 +75,7 @@ module.exports = function init({isMinimal}) {
   if (isMinimal) {
     delete clientJson.servers[0].transport;
     delete clientJson.servers[0].tls_cert;
+    delete clientJson.behaviours;
     delete clientJson.dns;
     delete clientJson.dns_expire;
     delete clientJson.timeout;
