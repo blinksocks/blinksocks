@@ -1,0 +1,48 @@
+yarn benchmark v0.27.5
+$ node benchmark/bootstrap.js
+Operating System:
+cpu             Intel(R) Core(TM) i3-4160 CPU @ 3.60GHz
+cores           4
+memory          16722907136
+type            Linux
+platform        linux
+arch            x64
+release         4.4.0-92-generic
+
+Node.js Versions:
+http_parser     2.7.0
+node            8.4.0
+v8              6.0.286.52
+uv              1.13.1
+zlib            1.2.11
+ares            1.10.1-DEV
+modules         57
+nghttp2         1.22.0
+openssl         1.0.2l
+icu             59.1
+unicode         9.0
+cldr            31.0.1
+tz              2017b
+
+running tests...
+
+------------ Test Case 0 ----------------
+[{"name":"exp-base-with-padding","params":{"salt":"any string"}}]
+Interval         Transfer     Bitrate
+0.00-5.00   sec  4.86 GBytes  8.35 Gbits/sec  sender
+0.00-5.06   sec  4.54 GBytes  7.71 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 1 ----------------
+[{"name":"exp-base-with-padding","params":{"salt":"any string"}},{"name":"exp-compress","params":{"method":"deflate"}}]
+Interval         Transfer     Bitrate
+0.00-5.00   sec  5.10 GBytes  8.76 Gbits/sec  sender
+0.00-5.10   sec  32.1 MBytes  52.7 Mbits/sec  receiver
+-----------------------------------------
+
+(ranking):
+
+ 1: Test Case 0, Transfer=[4.86 GBytes, 4.54 GBytes], [{"name":"exp-base-with-padding","params":{"salt":"any string"}}]
+ 2: Test Case 1, Transfer=[5.10 GBytes, 32.1 MBytes], [{"name":"exp-base-with-padding","params":{"salt":"any string"}},{"name":"exp-compress","params":{"method":"deflate"}}]
+
+Done in 33.31s.
