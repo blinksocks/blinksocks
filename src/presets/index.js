@@ -11,6 +11,7 @@ import SsAeadCipherPreset from './ss-aead-cipher';
 import AeadRandomCipherPreset from './aead-random-cipher';
 import ObfsHttpPreset from './obfs-http';
 import ObfsTls12TicketPreset from './obfs-tls1.2-ticket';
+import ObfsRandomPaddingPreset from './obfs-random-padding';
 
 const mapping = {
   'proxy': ProxyPreset,
@@ -25,7 +26,8 @@ const mapping = {
   'ss-aead-cipher': SsAeadCipherPreset,
   'aead-random-cipher': AeadRandomCipherPreset,
   'obfs-http': ObfsHttpPreset,
-  'obfs-tls1.2-ticket': ObfsTls12TicketPreset
+  'obfs-tls1.2-ticket': ObfsTls12TicketPreset,
+  'obfs-random-padding': ObfsRandomPaddingPreset
 };
 
 const presets = Object.keys(mapping);
