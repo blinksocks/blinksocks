@@ -8,7 +8,7 @@ const factories = {
 };
 
 const options = {
-  flush: zlib.constants.Z_PARTIAL_FLUSH
+  flush: zlib.Z_PARTIAL_FLUSH
 };
 
 /**
