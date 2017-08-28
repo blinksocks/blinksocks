@@ -1,6 +1,6 @@
 # benchmark
 
-We use [iperf](https://en.wikipedia.org/wiki/Iperf) as network bandwidth measurement tool to measure **transfer/bandwidth** among different preset combinations during a period of time.
+We use [iperf](https://en.wikipedia.org/wiki/Iperf) as network bandwidth measurement tool to measure **transfer/bitrate** among different preset combinations during a period of time.
 
 ## Prerequisites
 
@@ -52,16 +52,17 @@ memory          16722907136
 type            Linux
 platform        linux
 arch            x64
-release         4.4.0-89-generic
+release         4.4.0-92-generic
 
 Node.js Versions:
 http_parser     2.7.0
-node            8.2.1
-v8              5.8.283.41
+node            8.4.0
+v8              6.0.286.52
 uv              1.13.1
 zlib            1.2.11
 ares            1.10.1-DEV
 modules         57
+nghttp2         1.22.0
 openssl         1.0.2l
 icu             59.1
 unicode         9.0
@@ -72,35 +73,32 @@ running tests...
 
 ------------ Test Case 0 ----------------
 [{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
-Interval       Transfer       Bandwidth
-0.0- 3.0 sec  1.63 GBytes  4.66 Gbits/sec
-0.0- 2.7 sec  1.63 GBytes  5.26 Gbits/sec
+Interval         Transfer     Bitrate
+0.00-5.00   sec  3.36 GBytes  5.77 Gbits/sec  sender
+0.00-5.11   sec  3.25 GBytes  5.46 Gbits/sec  receiver
 -----------------------------------------
 
 ------------ Test Case 1 ----------------
 [{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"aes-256-cfb"}}]
-Interval       Transfer       Bandwidth
-0.0- 3.0 sec  776 MBytes  2.17 Gbits/sec
-0.0- 2.8 sec  776 MBytes  2.35 Gbits/sec
+Interval         Transfer     Bitrate
+0.00-5.00   sec  1.53 GBytes  2.64 Gbits/sec  sender
+0.00-5.26   sec  1.43 GBytes  2.33 Gbits/sec  receiver
 -----------------------------------------
 
 ------------ Test Case 2 ----------------
 [{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"camellia-256-cfb"}}]
-Interval       Transfer       Bandwidth
-0.0- 3.0 sec  296 MBytes  825 Mbits/sec
-0.0- 2.7 sec  296 MBytes  912 Mbits/sec
+Interval         Transfer     Bitrate
+0.00-5.00   sec  734 MBytes  1.23 Gbits/sec  sender
+0.00-5.78   sec  632 MBytes  917 Mbits/sec  receiver
 -----------------------------------------
 
-(best):
+(ranking):
 
------------- Test Case 0 ----------------
-[{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
-Interval       Transfer       Bandwidth
-0.0- 3.0 sec  1.63 GBytes  4.66 Gbits/sec
-0.0- 2.7 sec  1.63 GBytes  5.26 Gbits/sec
------------------------------------------
+ 1: Test Case 0, Transfer=[3.36 GBytes, 3.25 GBytes], [{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
+ 2: Test Case 1, Transfer=[1.53 GBytes, 1.43 GBytes], [{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"aes-256-cfb"}}]
+ 3: Test Case 2, Transfer=[734 MBytes, 632 MBytes], [{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"camellia-256-cfb"}}]
 
-Done in 18.47s.
+Done in 50.86s.
 ```
 
 As you can see, the program first lists **Operating System** and **Node.js Versions** parameters of the current platform.
@@ -116,13 +114,14 @@ The first line of results represents traffic from `iperf -c` to `bs-client` whil
 
 > You'd better check out [benchmark/iperf.sh] and figure out how it works.
 
-**In my environment**, `aes-256-ctr` has the maximum transfer and bandwidth among these 3 test cases.
+**In my environment**, `aes-256-ctr` has the maximum transfer and bitrate among these 3 test cases.
 
 ## History Reports
 
 * [2017-8-11.txt](../../benchmark/reports/2017-8-11.txt)
 * [2017-8-13.txt](../../benchmark/reports/2017-8-13.txt)
 * [2017-8-14.txt](../../benchmark/reports/2017-8-14.txt)
+* [2017-8-28.txt](../../benchmark/reports/2017-8-28.txt)
 
 [benchmark/cases.js]: ./cases.js
 [benchmark/iperf.sh]: ./iperf.sh

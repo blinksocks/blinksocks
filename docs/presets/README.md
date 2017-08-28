@@ -151,14 +151,51 @@ This preset perform statistics among traffic via this preset, you can put it any
 }
 ```
 
+## [tracker]
+
+Track data send/receive events via this preset, and print a part of them after connection closed.
+
+```
+"presets": [
+  ...
+  {"name": "tracker"},
+  ...
+]
+```
+
+And you can get the track message in your terminal and log files:
+
+```
+[tracker] summary(out/in = 14/9, 5191b/3431b) abstract(127.0.0.1:55566 play.google.com:443 u 555 d 394 u 616 d 165 u 221 156 934 795 d 74 u 43 d 1201 u 51 174 531 d 51 573 u 51 172 841 d 51 854 u 51 d 68)
+```
+
+## [exp-compress]
+
+An **experimental** to do stream compression/decompression. **Use with caution.**
+
+| PARAMS    | DESCRIPTION                          | DEFAULT |
+| :-------- | :----------------------------------- | :------ |
+| method    | compression and decompression method | -       |
+
+`method` can be one of:
+
+gzip, deflate
+
+```
+"presets": [
+  {"name": "ss-base"},
+  {"name": "exp-compress", "params": {"method": "deflate"}}
+]
+```
+
 ## [ss-base]
 
 This is a very basic preset which delivers the real destination address from client to server.
 
 ```
-"presets": [{
-  "name": "ss-base"
-}]
+"presets": [
+  {"name": "ss-base"}
+]
 ```
 
 ## [exp-base-with-padding]
@@ -469,6 +506,8 @@ Make some cheat:
 [proxy]: ../../src/presets/proxy.js
 [tunnel]: ../../src/presets/tunnel.js
 [stats]: ../../src/presets/stats.js
+[tracker]: ../../src/presets/tracker.js
+[exp-compress]: ../../src/presets/exp-compress.js
 [ss-base]: ../../src/presets/ss-base.js
 [exp-base-with-padding]: ../../src/presets/exp-base-with-padding.js
 [exp-base-auth-stream]: ../../src/presets/exp-base-auth-stream.js

@@ -5,9 +5,19 @@ const TRACK_CHAR_UPLOAD = 'u';
 const TRACK_CHAR_DOWNLOAD = 'd';
 const TRACK_MAX_SIZE = 40;
 
-// +---+-----------------------+---+
-// | C | d <--> u     u <--> d | S |
-// +---+-----------------------+---+
+/**
+ * @description
+ *   Track data send/receive events via this preset, and print a part of them after connection closed.
+ *
+ *   +---+-----------------------+---+
+ *   | C | d <--> u     u <--> d | S |
+ *   +---+-----------------------+---+
+ *
+ * @examples
+ *   {
+ *     "name": "tracker"
+ *   }
+ */
 export default class TrackerPreset extends IPreset {
 
   // ['source', 'target', 'u', '20', 'u', '20', 'd', '10', ...]

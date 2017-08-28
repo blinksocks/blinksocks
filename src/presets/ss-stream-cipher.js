@@ -6,7 +6,6 @@ const IV_LEN = 16;
 
 // available ciphers
 const ciphers = [
-  // both supported
   'aes-128-ctr', 'aes-192-ctr', 'aes-256-ctr',
   'aes-128-cfb', 'aes-192-cfb', 'aes-256-cfb',
   'camellia-128-cfb', 'camellia-192-cfb', 'camellia-256-cfb'
