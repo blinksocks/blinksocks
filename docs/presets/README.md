@@ -108,44 +108,45 @@ This preset perform statistics among traffic via this preset, you can put it any
 // stats.json
 {
   "sample": {
-    "from": 1502344462515,
-    "to": 1502344542664,
-    "duration": 80149
+    "from": 1503920985192,
+    "to": 1503921026263,
+    "duration": 41071
   },
   "summary": {
-    "totalErrors": 0,
-    "totalOut": 1203,
-    "totalIn": 128416,
-    "totalOutPackets": 4,
-    "totalInPackets": 23,
-    "totalBytes": 129619,
-    "totalPackets": 27,
-    "maxOutSpeed": 1203,
-    "maxInSpeed": 85962,
-    "maxConnections": 2
+    "maxOutSpeed": 105254,
+    "maxInSpeed": 158,
+    "maxConnections": 2,
+    "totalOutBytes": 130360,
+    "totalOutPackets": 34,
+    "totalInBytes": 314,
+    "totalInPackets": 2,
+    "totalBytes": 130674,
+    "totalPackets": 36,
+    "totalErrors": 0
   },
   "instant": {
     "outSpeed": 0,
     "inSpeed": 0,
+    "totalConnections": 0,
     "errorRate": 0,
-    "outBytesRate": 15.0095447229535,
-    "outPacketsRate": 0.04990704812287115,
-    "inBytesRate": 1602.2158729366554,
-    "inPacketsRate": 0.2869655267065091,
-    "totalBytesRate": 1617.2254176596089,
-    "totalPacketsRate": 0.33687257482938027
+    "outBytesPerSecond": 3174.0157288597798,
+    "outPacketsPerSecond": 0.8278347252319155,
+    "inBytesPerSecond": 7.645297168318279,
+    "inPacketsPerSecond": 0.04869616030775974,
+    "totalBytesPerSecond": 3181.6610260280977,
+    "totalPacketsPerSecond": 0.8765308855396753
   },
   "process": {
-    "upTime": 80.932,
+    "upTime": 42.067,
     "cpuUsage": {
-      "user": 1080000,
-      "system": 88000
+      "user": 1219598,
+      "system": 96237
     },
     "memoryUsage": {
-      "rss": 65978368,
-      "heapTotal": 33566720,
-      "heapUsed": 28504720,
-      "external": 298192
+      "rss": 54575104,
+      "heapTotal": 28311552,
+      "heapUsed": 21701240,
+      "external": 3688374
     }
   }
 }
