@@ -120,8 +120,7 @@ function run(cases) {
       results.push({
         id: i,
         transfers: [a.transfer, b.transfer],
-        // NOTE: take average of sender transfer and receiver transfer to sort
-        avgTransfer: (conv(a.transfer) + conv(b.transfer)) / 2,
+        recvTransfer: conv(b.transfer),
         conf: JSON.stringify(presets)
       });
     } catch (err) {
@@ -132,7 +131,7 @@ function run(cases) {
 }
 
 function summary(results) {
-  const sorted = [].concat(results).sort((a, b) => b.avgTransfer - a.avgTransfer);
+  const sorted = [].concat(results).sort((a, b) => b.recvTransfer - a.recvTransfer);
   console.log('(ranking):');
   console.log('');
   for (let i = 0; i < sorted.length; ++i) {
