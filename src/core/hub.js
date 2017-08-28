@@ -53,6 +53,9 @@ export class Hub extends EventEmitter {
   }
 
   terminate() {
+    if (this._localServer === null) {
+      return;
+    }
     this._localServer.close();
     this._localServer = null;
     this._isFirstWorker && logger.info('==> [hub] shutdown');
