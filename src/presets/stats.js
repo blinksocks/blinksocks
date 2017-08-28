@@ -1,5 +1,5 @@
 import fs from 'fs';
-import {IPreset, PROCESSING_FAILED, CONNECTION_CLOSED} from './defs';
+import {IPreset, PROCESSING_FAILED, CONNECTION_CLOSED, CONNECTION_CREATED} from './defs';
 
 const now = () => (new Date()).getTime();
 
@@ -63,6 +63,8 @@ export default class StatsPreset extends IPreset {
 
   static maxInSpeed = 0;
 
+  static maxConnections = 0;
+
   // temporary
 
   static tmpOut = 0;
@@ -121,7 +123,6 @@ export default class StatsPreset extends IPreset {
       process.on('SIGINT', StatsPreset.save);
       StatsPreset.isHookExit = true;
     }
-    StatsPreset.totalConnections += 1;
   }
 
   static save() {
@@ -140,6 +141,7 @@ export default class StatsPreset extends IPreset {
       summary: {
         maxOutSpeed: StatsPreset.maxOutSpeed,
         maxInSpeed: StatsPreset.maxInSpeed,
+        maxConnections: StatsPreset.maxConnections,
         totalOutBytes: StatsPreset.totalOutBytes,
         totalOutPackets: StatsPreset.totalOutPackets,
         totalInBytes: StatsPreset.totalInBytes,
@@ -151,14 +153,14 @@ export default class StatsPreset extends IPreset {
       instant: {
         outSpeed: StatsPreset.instantOutSpeed,
         inSpeed: StatsPreset.instantInSpeed,
+        totalConnections: StatsPreset.totalConnections,
         errorRate: totalPackets.length > 0 ? StatsPreset.totalErrors / totalPackets : 0,
-        outBytesRate: StatsPreset.totalOutBytes / durationSec,
-        outPacketsRate: StatsPreset.totalOutPackets / durationSec,
-        inBytesRate: StatsPreset.totalInBytes / durationSec,
-        inPacketsRate: StatsPreset.totalInPackets / durationSec,
-        totalBytesRate: totalBytes / durationSec,
-        totalPacketsRate: totalPackets / durationSec,
-        totalConnections: StatsPreset.totalConnections - 2
+        outBytesPerSecond: StatsPreset.totalOutBytes / durationSec,
+        outPacketsPerSecond: StatsPreset.totalOutPackets / durationSec,
+        inBytesPerSecond: StatsPreset.totalInBytes / durationSec,
+        inPacketsPerSecond: StatsPreset.totalInPackets / durationSec,
+        totalBytesPerSecond: totalBytes / durationSec,
+        totalPacketsPerSecond: totalPackets / durationSec
       },
       process: {
         upTime: process.uptime(),
@@ -183,6 +185,10 @@ export default class StatsPreset extends IPreset {
   onNotified(action) {
     if (action.type === PROCESSING_FAILED) {
       StatsPreset.totalErrors += 1;
+    }
+    if (action.type === CONNECTION_CREATED) {
+      StatsPreset.totalConnections += 1;
+      StatsPreset.maxConnections = Math.max(StatsPreset.maxConnections, StatsPreset.totalConnections);
     }
     if (action.type === CONNECTION_CLOSED) {
       StatsPreset.totalConnections -= 1;
