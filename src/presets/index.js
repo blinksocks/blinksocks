@@ -2,6 +2,7 @@ import ProxyPreset from './proxy';
 import TunnelPreset from './tunnel';
 import StatsPreset from './stats';
 import TrackerPreset from './tracker';
+import ExpCompressPreset from './exp-compress';
 import ExpBaseWithPaddingPreset from './exp-base-with-padding';
 import ExpBaseAuthStreamPreset from './exp-base-auth-stream';
 import SsBasePreset from './ss-base';
@@ -16,6 +17,7 @@ const mapping = {
   'tunnel': TunnelPreset,
   'stats': StatsPreset,
   'tracker': TrackerPreset,
+  'exp-compress': ExpCompressPreset,
   'exp-base-with-padding': ExpBaseWithPaddingPreset,
   'exp-base-auth-stream': ExpBaseAuthStreamPreset,
   'ss-base': SsBasePreset,
