@@ -148,7 +148,7 @@ export default class SsAeadCipherPreset extends IPreset {
     const [encLen, lenTag] = [buffer.slice(0, 2), buffer.slice(2, 2 + TAG_LEN)];
     const dataLen = this.decrypt(encLen, lenTag);
     if (dataLen === null) {
-      fail(`unexpected DataLen_TAG=${lenTag.toString('hex')} when verify DataLen=${encLen.toString('hex')}`);
+      fail(`unexpected DataLen_TAG=${lenTag.toString('hex')} when verify DataLen=${encLen.toString('hex')}, dump=${buffer.slice(0, 60).toString('hex')}`);
       return -1;
     }
     return 2 + TAG_LEN + dataLen.readUInt16BE(0) + TAG_LEN;
@@ -159,7 +159,7 @@ export default class SsAeadCipherPreset extends IPreset {
     const [encData, dataTag] = [chunk.slice(2 + TAG_LEN, -TAG_LEN), chunk.slice(-TAG_LEN)];
     const data = this.decrypt(encData, dataTag);
     if (data === null) {
-      fail(`unexpected Data_TAG=${dataTag.toString('hex')} when verify Data=${encData.slice(0, 60).toString('hex')}`);
+      fail(`unexpected Data_TAG=${dataTag.toString('hex')} when verify Data=${encData.slice(0, 60).toString('hex')}, dump=${chunk.slice(0, 60).toString('hex')}`);
       return;
     }
     next(data);
