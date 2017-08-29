@@ -74,45 +74,48 @@ export class AdvancedBuffer extends EventEmitter {
    * @returns {Buffer}
    */
   _digest(buffer, ...args) {
-    const expectLen = this._nextLength || this._getPacketLength(buffer, ...args);
+    const retVal = this._nextLength || this._getPacketLength(buffer, ...args);
 
-    if (expectLen === 0 || typeof expectLen === 'undefined') {
-      return buffer; // continue to put
+    // continue to put
+    if (retVal === 0 || retVal === undefined) {
+      return buffer;
     }
 
-    if (expectLen === -1) {
-      return Buffer.alloc(0); // drop this one
+    // drop this one
+    else if (retVal === -1) {
+      return Buffer.alloc(0);
     }
 
-    if (expectLen instanceof Buffer) {
-      return this._digest(expectLen, ...args); // start from the new point
+    // start from the new point
+    else if (retVal instanceof Buffer) {
+      return this._digest(retVal, ...args);
     }
 
     // luckily: <- [chunk]
-    if (buffer.length === expectLen) {
+    if (buffer.length === retVal) {
       this.emit('data', buffer, ...args);
       this._nextLength = 0;
       return Buffer.alloc(0);
     }
 
     // incomplete packet: <- [chu]
-    if (buffer.length < expectLen) {
+    if (buffer.length < retVal) {
       // prevent redundant calling to getPacketLength()
-      this._nextLength = expectLen;
+      this._nextLength = retVal;
 
       // continue to put
       return buffer;
     }
 
     // packet sticking: <- [chunk][chunk][chu...
-    if (buffer.length > expectLen) {
-      this.emit('data', buffer.slice(0, expectLen), ...args);
+    if (buffer.length > retVal) {
+      this.emit('data', buffer.slice(0, retVal), ...args);
 
       // note that each chunk has probably different length
       this._nextLength = 0;
 
       // digest buffer recursively
-      return this._digest(buffer.slice(expectLen), ...args);
+      return this._digest(buffer.slice(retVal), ...args);
     }
   }
 
