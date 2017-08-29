@@ -55,17 +55,17 @@ export default class ObfsRandomPaddingPreset extends IPreset {
     return Buffer.concat(chunks);
   }
 
-  beforeIn({buffer, next, fail}) {
-    this._adBuf.put(buffer, {next, fail});
+  beforeIn({buffer, next}) {
+    this._adBuf.put(buffer, {next});
   }
 
-  onReceiving(buffer, {fail}) {
+  onReceiving(buffer) {
     if (buffer.length < 3) {
-      return fail(`too short to get padding length, dump=${buffer.toString('hex')}`);
+      return; // too short to get PaddingLen
     }
     const pLen = buffer[0];
-    if (buffer.length < 1 + pLen) {
-      return; // too short to drop Padding
+    if (buffer.length < 1 + pLen + 2) {
+      return; // too short to drop Padding and get DataLen
     }
     const dLen = buffer.readUInt16BE(1 + pLen);
     if (buffer.length < 1 + pLen + 2 + dLen) {
