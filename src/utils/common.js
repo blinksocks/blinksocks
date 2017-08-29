@@ -77,7 +77,7 @@ export function parseURI(uri) {
 export function getRandomInt(min, max) {
   min = Math.ceil(min);
   max = Math.ceil(max);
-  return Math.floor(crypto.randomBytes(1)[0] / 0xff * (max - min + 1)) + min;
+  return Math.floor(crypto.randomBytes(1)[0] / 0xff * (max - min)) + min;
 }
 
 /**
