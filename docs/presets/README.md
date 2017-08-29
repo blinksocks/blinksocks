@@ -1,11 +1,41 @@
 # Presets
 
-Presets are chaining and composable, built-in presets are listed here.
-If you want custom a preset, feel free to read [this](../development/architecture#preset) first.
+Presets are chaining and composable, built-in presets are listed here. If you want to customize a new preset, feel free to read [this](../development/architecture#preset) first.
 
-## NOTICE
+## Table of Contents
 
-> You **MUST** put [ss-base] or [exp-base-with-padding] or [exp-base-auth-stream] to the first in presets list if you
+**functional**
+
+* [proxy](#proxy)
+* [tunnel](#tunnel)
+* [stats](#stats)
+* [tracker](#tracker)
+
+**shadowsocks**
+
+* [ss-base](#ss-base)*
+* [ss-stream-cipher](#ss-stream-cipher)
+* [ss-aead-cipher](#ss-aead-cipher)
+
+**obfuscator**
+
+* [obfs-random-padding](#obfs-random-padding)
+* [obfs-http](#obfs-http)
+* [obfs-tls1.2-ticket](#obfs-tls1.2-ticket)
+
+**experimental**
+
+* [exp-base-with-padding](#exp-base-with-padding)*
+* [exp-base-auth-stream](#exp-base-auth-stream)*
+* [exp-compress](#exp-compress)
+
+**others**
+
+* [aead-random-cipher](#aead-random-cipher)
+
+### NOTICE
+
+> You **MUST** put preset signed with * to the first in presets list if you
 want to relay data to blinksocks server.
 
 ## [proxy]
@@ -170,25 +200,6 @@ And you can get the track message in your terminal and log files:
 [tracker] summary(out/in = 14/9, 5191b/3431b) abstract(127.0.0.1:55566 play.google.com:443 u 555 d 394 u 616 d 165 u 221 156 934 795 d 74 u 43 d 1201 u 51 174 531 d 51 573 u 51 172 841 d 51 854 u 51 d 68)
 ```
 
-## [exp-compress]
-
-An **experimental** to do stream compression/decompression. **Use with caution.**
-
-| PARAMS    | DESCRIPTION                          | DEFAULT |
-| :-------- | :----------------------------------- | :------ |
-| method    | compression and decompression method | -       |
-
-`method` can be one of:
-
-gzip, deflate
-
-```
-"presets": [
-  {"name": "ss-base"},
-  {"name": "exp-compress", "params": {"method": "deflate"}}
-]
-```
-
 ## [ss-base]
 
 This is a very basic preset which delivers the real destination address from client to server.
@@ -197,56 +208,6 @@ This is a very basic preset which delivers the real destination address from cli
 "presets": [
   {"name": "ss-base"}
 ]
-```
-
-## [exp-base-with-padding]
-
-An **experimental** and advanced preset based on [ss-base], **SHOULD BE** used with ciphers in **cfb** operation mode.
-It can prevent address from being tampered.
-
-**NOTE**: Using [exp-base-with-padding] with non-cfb ciphers will lose protection. 
-
-| PARAMS    | DESCRIPTION                     | DEFAULT |
-| :-------- | :------------------------------ | :------ |
-| salt      | a string for generating padding | -       |
-
-```
-"presets": [{
-  "name": "exp-base-with-padding",
-  "params": {
-    "salt": "any string"
-  }
-}, {
-  "name": "ss-stream-cipher",
-  "params": {
-    "method": "aes-256-cfb"
-  }
-}]
-```
-
-## [exp-base-auth-stream]
-
-An **experimental** preset combines HMAC and stream encryption. HMAC only guarantees integrity for addressing part.
-
-| PARAMS    | DESCRIPTION                      | DEFAULT |
-| :-------- | :------------------------------- | :------ |
-| method    | encryption and decryption method | -       |
-
-`method` can be one of:
-
-aes-128-ctr, aes-192-ctr, aes-256-ctr,
-
-aes-128-cfb, aes-192-cfb, aes-256-cfb,
-
-camellia-128-cfb, camellia-192-cfb, camellia-256-cfb
-
-```
-"presets": [{
-  "name": "exp-base-auth-stream",
-  "params": {
-    "method": "aes-256-cfb"
-  }
-}]
 ```
 
 ## [ss-stream-cipher]
@@ -310,35 +271,6 @@ Otherwise, it can be any string.
 ]
 ```
 
-## [aead-random-cipher]
-
-This preset is based on **ss-aead-cipher**, but added random padding in the front of **each chunk**. This preset inherited
-all features from **ss-aead-cipher** and prevent server from being detected by packet length statistics analysis.
-
-| PARAMS           | DESCRIPTION                              | DEFAULT |
-| :--------------- | :--------------------------------------- | :------ |
-| method           | encryption and decryption method         | -       |
-| info             | a string to generate subkey              | -       |
-| factor(optional) | random padding length = (0-255) * factor | 2       |
-
-```
-"presets": [
-  {
-    "name": "exp-base-with-padding",
-    "params": {
-      "salt": "any string"
-    }
-  },
-  {
-    "name": "aead-random-cipher",
-    "params": {
-      "method": "aes-256-gcm",
-      "info": "bs-subkey",
-      "factor": 2
-    }
-  }
-]
-```
 
 ## [obfs-random-padding]
 
@@ -420,6 +352,105 @@ A TLS1.2 obfuscator, do TLS handshake using SessionTicket TLS mechanism, transfe
     "name": "obfs-tls1.2-ticket",
     "params": {
       "sni": ["cloudfront.net"]
+    }
+  }
+]
+```
+
+## [exp-base-with-padding]
+
+An **experimental** and advanced preset based on [ss-base], **SHOULD BE** used with ciphers in **cfb** operation mode.
+It can prevent address from being tampered.
+
+**NOTE**: Using [exp-base-with-padding] with non-cfb ciphers will lose protection. 
+
+| PARAMS    | DESCRIPTION                     | DEFAULT |
+| :-------- | :------------------------------ | :------ |
+| salt      | a string for generating padding | -       |
+
+```
+"presets": [{
+  "name": "exp-base-with-padding",
+  "params": {
+    "salt": "any string"
+  }
+}, {
+  "name": "ss-stream-cipher",
+  "params": {
+    "method": "aes-256-cfb"
+  }
+}]
+```
+
+## [exp-base-auth-stream]
+
+An **experimental** preset combines HMAC and stream encryption. HMAC only guarantees integrity for addressing part.
+
+| PARAMS    | DESCRIPTION                      | DEFAULT |
+| :-------- | :------------------------------- | :------ |
+| method    | encryption and decryption method | -       |
+
+`method` can be one of:
+
+aes-128-ctr, aes-192-ctr, aes-256-ctr,
+
+aes-128-cfb, aes-192-cfb, aes-256-cfb,
+
+camellia-128-cfb, camellia-192-cfb, camellia-256-cfb
+
+```
+"presets": [{
+  "name": "exp-base-auth-stream",
+  "params": {
+    "method": "aes-256-cfb"
+  }
+}]
+```
+
+## [exp-compress]
+
+An **experimental** to do stream compression/decompression. **Use with caution.**
+
+| PARAMS    | DESCRIPTION                          | DEFAULT |
+| :-------- | :----------------------------------- | :------ |
+| method    | compression and decompression method | -       |
+
+`method` can be one of:
+
+gzip, deflate
+
+```
+"presets": [
+  {"name": "ss-base"},
+  {"name": "exp-compress", "params": {"method": "deflate"}}
+]
+```
+
+## [aead-random-cipher]
+
+This preset is based on **ss-aead-cipher**, but added random padding in the front of **each chunk**. This preset inherited
+all features from **ss-aead-cipher** and prevent server from being detected by packet length statistics analysis.
+
+| PARAMS           | DESCRIPTION                              | DEFAULT |
+| :--------------- | :--------------------------------------- | :------ |
+| method           | encryption and decryption method         | -       |
+| info             | a string to generate subkey              | -       |
+| factor(optional) | random padding length = (0-255) * factor | 2       |
+
+```
+"presets": [
+  {
+    "name": "exp-base-with-padding",
+    "params": {
+      "salt": "any string"
+    }
+  },
+  {
+    "name": "aead-random-cipher",
+    "params": {
+      "method": "aes-256-gcm",
+      "info": "bs-subkey",
+      "factor": 2
     }
   }
 ]
