@@ -340,6 +340,27 @@ all features from **ss-aead-cipher** and prevent server from being detected by p
 ]
 ```
 
+## [obfs-random-padding]
+
+A simple obfuscator to significantly randomize the length of each packet. It can be used to prevent statistical analysis based on packet length.
+
+```
+"presets": [
+  {
+    "name": "ss-base"
+  },
+  {
+    "name": "obfs-random-padding"
+  },
+  {
+    "name": "ss-stream-cipher",
+    "params": {
+      "method": "aes-256-ctr"
+    }
+  }
+]
+```
+
 ## [obfs-http]
 
 A http obfuscator, the first round after TCP handshake will wrap data within a random http header
@@ -453,28 +474,31 @@ You can use **http** or **tls** obfuscator to avoid bad [QoS], **tls** is recomm
     "info": "ss-subkey"
   }
 }, {
-  "name": "obfs-http",
-  "params": {
-    "file": "http-fake.txt"
-  }
-}]
-```
-
-```
-"presets": [{
-  "name": "ss-base"
-}, {
-  "name": "ss-aead-cipher",
-  "params": {
-    "method": "aes-256-gcm",
-    "info": "ss-subkey"
-  }
-}, {
   "name": "obfs-tls1.2-ticket",
   "params": {
     "sni": ["www.bing.com"]
   }
 }]
+```
+
+## To prevent length analysis and ensure integrity as well
+
+```
+"presets": [
+  {
+    "name": "ss-base"
+  },
+  {
+    "name": "obfs-random-padding"
+  },
+  {
+    "name": "ss-aead-cipher",
+    "params": {
+      "method": "aes-128-gcm",
+      "info": "ss-subkey"
+    }
+  }
+]
 ```
 
 ## Try other compositions
@@ -484,9 +508,7 @@ If you don't want to encrypt all your data, just remove **cipher** preset, the f
 The fastest one:
 
 ```
-"presets": [{
-  "name": "ss-base"
-}]
+"presets": [{"name": "ss-base"}]
 ```
 
 Make some cheat:
@@ -502,7 +524,7 @@ Make some cheat:
 }]
 ```
 
-> You can also see [benchmark] reports then choose a combination you want.
+> You can also check out [benchmark] to choose a combination you prefer.
 
 [proxy]: ../../src/presets/proxy.js
 [tunnel]: ../../src/presets/tunnel.js
@@ -515,6 +537,7 @@ Make some cheat:
 [ss-stream-cipher]: ../../src/presets/ss-stream-cipher.js
 [ss-aead-cipher]: ../../src/presets/ss-aead-cipher.js
 [aead-random-cipher]: ../../src/presets/aead-random-cipher.js
+[obfs-random-padding]: ../../src/presets/obfs-random-padding.js
 [obfs-http]: ../../src/presets/obfs-http.js
 [obfs-tls1.2-ticket]: ../../src/presets/obfs-tls1.2-ticket.js
 [Server Name Indication]: https://en.wikipedia.org/wiki/Server_Name_Indication

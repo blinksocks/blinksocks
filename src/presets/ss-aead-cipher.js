@@ -31,13 +31,13 @@ const HKDF_HASH_ALGORITHM = 'sha1';
  *   info: An info for HKDF.
  *
  * @examples
- *  {
- *    "name": "ss-aead-cipher",
- *    "params": {
- *      "method": "aes-128-gcm",
- *      "info": "ss-subkey"
- *    }
- *  }
+ *   {
+ *     "name": "ss-aead-cipher",
+ *     "params": {
+ *       "method": "aes-128-gcm",
+ *       "info": "ss-subkey"
+ *     }
+ *   }
  *
  * @protocol
  *
