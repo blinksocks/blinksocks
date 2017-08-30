@@ -19,7 +19,7 @@ import {
 
 import {BEHAVIOUR_EVENT_ON_PRESET_FAILED} from '../behaviours';
 
-const MAX_BUFFERED_SIZE = 1024 * 1024; // 1MB
+const MAX_BUFFERED_SIZE = 512 * 1024; // 512KB
 
 /**
  * @description
@@ -51,10 +51,8 @@ export class Relay extends EventEmitter {
     this.onForward = this.onForward.bind(this);
     this.onBackward = this.onBackward.bind(this);
     this.onError = this.onError.bind(this);
-    this.onBackwardSocketDrain = this.onBackwardSocketDrain.bind(this);
     this.onBackwardSocketTimeout = this.onBackwardSocketTimeout.bind(this);
     this.onBackwardSocketClose = this.onBackwardSocketClose.bind(this);
-    this.onForwardSocketDrain = this.onForwardSocketDrain.bind(this);
     this.onForwardSocketTimeout = this.onForwardSocketTimeout.bind(this);
     this.onForwardSocketClose = this.onForwardSocketClose.bind(this);
     this.onPipeNotified = this.onPipeNotified.bind(this);
@@ -74,7 +72,6 @@ export class Relay extends EventEmitter {
       port: this._remotePort
     }));
     this._bsocket.on('data', this.onForward);
-    this._bsocket.on('drain', this.onBackwardSocketDrain);
     this._bsocket.setTimeout(__TIMEOUT__);
     let presets = __PRESETS__;
     // prepend "proxy" preset to the top of presets on client side
@@ -113,7 +110,7 @@ export class Relay extends EventEmitter {
   // events
 
   onError(err) {
-    logger.warn(`[socket] [${this.remote}] ${err.code || ''} - ${err.message}`);
+    logger.warn(`[relay] [${this.remote}] ${err.code || ''} - ${err.message}`);
   }
 
   // bsocket
@@ -125,19 +122,21 @@ export class Relay extends EventEmitter {
     }
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
+    // https://nodejs.org/dist/latest/docs/api/net.html#net_socket_buffersize
     if (this._fsocket && this._fsocket.bufferSize >= MAX_BUFFERED_SIZE) {
+      logger.debug(`[relay] bsocket recv paused due to fsocket.bufferSize=${this._fsocket.bufferSize} > ${MAX_BUFFERED_SIZE}`);
       this._bsocket.pause();
-    }
-  }
-
-  onForwardSocketDrain() {
-    if (this._bsocket && !this._bsocket.destroyed) {
-      this._bsocket.resume();
+      this._fsocket.once('drain', () => {
+        if (this._bsocket && !this._bsocket.destroyed) {
+          logger.debug('[relay] bsocket resume to recv');
+          this._bsocket.resume();
+        }
+      });
     }
   }
 
   onForwardSocketTimeout({host, port}) {
-    logger.warn(`[socket] [${host}:${port}] timeout: no I/O on the connection for ${__TIMEOUT__ / 1e3}s`);
+    logger.warn(`[relay] [${host}:${port}] timeout: no I/O on the connection for ${__TIMEOUT__ / 1e3}s`);
     this.onForwardSocketClose();
   }
 
@@ -147,10 +146,10 @@ export class Relay extends EventEmitter {
       this._fsocket = null;
     }
     if (this._bsocket) {
-      // TODO: bufferSize is always 1 when use TLSSocket, maybe a Node.js bug
-      if (this._bsocket.bufferSize > 1) {
-        this._bsocket.removeListener('drain', this.onBackwardSocketDrain);
-        this._bsocket.on('drain', this.onBackwardSocketClose);
+      // https://github.com/nodejs/node/issues/15005
+      const bufferSize = this._bsocket.bufferSize - (__IS_TLS__ ? 1 : 0);
+      if (bufferSize > 0) {
+        this._bsocket.once('drain', this.onBackwardSocketClose);
       } else {
         this.onBackwardSocketClose();
       }
@@ -166,19 +165,21 @@ export class Relay extends EventEmitter {
     }
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
+    // https://nodejs.org/dist/latest/docs/api/net.html#net_socket_buffersize
     if (this._bsocket && this._bsocket.bufferSize >= MAX_BUFFERED_SIZE) {
+      logger.debug(`[relay] fsocket recv paused due to bsocket.bufferSize=${this._bsocket.bufferSize} > ${MAX_BUFFERED_SIZE}`);
       this._fsocket.pause();
-    }
-  }
-
-  onBackwardSocketDrain() {
-    if (this._fsocket && !this._fsocket.destroyed) {
-      this._fsocket.resume();
+      this._bsocket.once('drain', () => {
+        if (this._fsocket && !this._fsocket.destroyed) {
+          logger.debug('[relay] fsocket resume to recv');
+          this._fsocket.resume();
+        }
+      });
     }
   }
 
   onBackwardSocketTimeout({host, port}) {
-    logger.warn(`[socket] [${host}:${port}] timeout: no I/O on the connection for ${__TIMEOUT__ / 1e3}s`);
+    logger.warn(`[relay] [${host}:${port}] timeout: no I/O on the connection for ${__TIMEOUT__ / 1e3}s`);
     this.onBackwardSocketClose();
   }
 
@@ -198,10 +199,10 @@ export class Relay extends EventEmitter {
       this.emit('close');
     }
     if (this._fsocket) {
-      // TODO: bufferSize is always 1 when use TLSSocket, maybe a Node.js bug
-      if (this._fsocket.bufferSize > 1) {
-        this._fsocket.removeListener('drain', this.onForwardSocketDrain);
-        this._fsocket.on('drain', this.onForwardSocketClose);
+      // https://github.com/nodejs/node/issues/15005
+      const bufferSize = this._fsocket.bufferSize - (__IS_TLS__ ? 1 : 0);
+      if (bufferSize > 0) {
+        this._fsocket.once('drain', this.onForwardSocketClose);
       } else {
         this.onForwardSocketClose();
       }
@@ -244,9 +245,9 @@ export class Relay extends EventEmitter {
     try {
       ip = await this._dnsCache.get(host);
     } catch (err) {
-      logger.error(`[socket] [${this.remote}] fail to resolve host ${host}:${port}: ${err.message}`);
+      logger.error(`[relay] [${this.remote}] fail to resolve host ${host}:${port}: ${err.message}`);
     }
-    logger.info(`[socket] [${this.remote}] connecting to: ${host}(${ip}):${port}`);
+    logger.info(`[relay] [${this.remote}] connecting to: ${host}(${ip}):${port}`);
     return new Promise((resolve) => {
       // close living connection before create a new connection
       if (this._fsocket && !this._fsocket.destroyed) {
@@ -262,7 +263,6 @@ export class Relay extends EventEmitter {
       this._fsocket.on('close', this.onForwardSocketClose);
       this._fsocket.on('timeout', this.onForwardSocketTimeout.bind(this, {host, port}));
       this._fsocket.on('data', this.onBackward);
-      this._fsocket.on('drain', this.onForwardSocketDrain);
       this._fsocket.setTimeout(__TIMEOUT__);
     });
   }
@@ -303,7 +303,7 @@ export class Relay extends EventEmitter {
           await this.connect({host, port});
         }
         if (__IS_CLIENT__) {
-          logger.info(`[socket] [${this.remote}] request: ${host}:${port}`);
+          logger.info(`[relay] [${this.remote}] request: ${host}:${port}`);
           await this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__});
         }
         this._isConnectedToDst = true;
@@ -322,7 +322,7 @@ export class Relay extends EventEmitter {
           action: action
         };
         const {name, message} = action.payload;
-        logger.error(`[socket] [${this.remote}] preset "${name}" fail to process: ${message}`);
+        logger.error(`[relay] [${this.remote}] preset "${name}" fail to process: ${message}`);
         await __BEHAVIOURS__[BEHAVIOUR_EVENT_ON_PRESET_FAILED].run(props);
         break;
       }
