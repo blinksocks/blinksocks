@@ -14,7 +14,7 @@ import {
   CONNECTION_CREATED,
   CONNECTION_CLOSED,
   SOCKET_CONNECT_TO_REMOTE,
-  PROCESSING_FAILED
+  PRESET_FAILED
 } from '../presets/defs';
 
 import {BEHAVIOUR_EVENT_ON_PRESET_FAILED} from '../behaviours';
@@ -312,7 +312,7 @@ export class Relay extends EventEmitter {
         }
         break;
       }
-      case PROCESSING_FAILED: {
+      case PRESET_FAILED: {
         const props = {
           remoteHost: this._remoteHost,
           remotePort: this._remotePort,

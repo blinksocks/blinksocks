@@ -1,5 +1,5 @@
 import fs from 'fs';
-import {IPreset, PROCESSING_FAILED, CONNECTION_CLOSED, CONNECTION_CREATED} from './defs';
+import {IPreset, PRESET_FAILED, CONNECTION_CLOSED, CONNECTION_CREATED} from './defs';
 
 const now = () => (new Date()).getTime();
 
@@ -183,7 +183,7 @@ export default class StatsPreset extends IPreset {
   }
 
   onNotified(action) {
-    if (action.type === PROCESSING_FAILED) {
+    if (action.type === PRESET_FAILED) {
       StatsPreset.totalErrors += 1;
     }
     if (action.type === CONNECTION_CREATED) {

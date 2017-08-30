@@ -3,7 +3,7 @@ import {
   MIDDLEWARE_DIRECTION_UPWARD,
   MIDDLEWARE_DIRECTION_DOWNWARD
 } from './middleware';
-import {PRESET_INIT, PROCESSING_FAILED} from '../presets/defs';
+import {PRESET_INIT, PRESET_FAILED} from '../presets/defs';
 
 export class Pipe extends EventEmitter {
 
@@ -61,7 +61,7 @@ export class Pipe extends EventEmitter {
     // methods to be injected
     const direct = (buf, isReverse = false) => this.emit(isReverse ? `next_${-direction}` : eventName, buf);
     const fail = (name, message) => this.onBroadcast({
-      type: PROCESSING_FAILED,
+      type: PRESET_FAILED,
       payload: {
         name,
         message,

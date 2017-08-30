@@ -46,7 +46,7 @@ export const SOCKET_CONNECT_TO_REMOTE = 'socket/connect/to/remote';
 
 /**
  *  {
- *    type: PROCESSING_FAILED,
+ *    type: PRESET_FAILED,
  *    payload: {
  *      name: 'custom' or null,
  *      message: 'explain',
@@ -54,7 +54,7 @@ export const SOCKET_CONNECT_TO_REMOTE = 'socket/connect/to/remote';
  *    }
  *  }
  */
-export const PROCESSING_FAILED = 'processing/failed';
+export const PRESET_FAILED = 'preset/failed';
 
 export class IPreset {
 
