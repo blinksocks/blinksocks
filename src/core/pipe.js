@@ -20,7 +20,7 @@ export class Pipe extends EventEmitter {
   }
 
   onBroadcast(action) {
-    const middlewares = this.getMiddlewares(MIDDLEWARE_DIRECTION_UPWARD);
+    const middlewares = this.getMiddlewares();
     const results = [];
     for (const middleware of middlewares) {
       results.push(middleware.onNotified(action));
@@ -47,7 +47,7 @@ export class Pipe extends EventEmitter {
     this.onBroadcast(direction, {type: PRESET_INIT, payload: {broadcast: this.onBroadcast}});
   }
 
-  getMiddlewares(direction) {
+  getMiddlewares(direction = MIDDLEWARE_DIRECTION_UPWARD) {
     return {
       [MIDDLEWARE_DIRECTION_UPWARD]: this._upstream_middlewares,
       [MIDDLEWARE_DIRECTION_DOWNWARD]: this._downstream_middlewares
@@ -87,6 +87,10 @@ export class Pipe extends EventEmitter {
   }
 
   destroy() {
+    const middlewares = this.getMiddlewares();
+    for (const middleware of middlewares) {
+      middleware.onDestroy();
+    }
     this._upstream_middlewares = null;
     this._downstream_middlewares = null;
   }

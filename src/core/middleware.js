@@ -31,6 +31,10 @@ export class Middleware extends EventEmitter {
     return this._impl.onNotified(action);
   }
 
+  onDestroy() {
+    this._impl.onDestroy();
+  }
+
   /**
    * call hook functions of implement in order
    * @param direction

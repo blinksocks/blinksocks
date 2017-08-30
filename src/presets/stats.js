@@ -195,6 +195,11 @@ export default class StatsPreset extends IPreset {
     }
   }
 
+  onDestroy() {
+    clearInterval(StatsPreset.sampleTimer);
+    clearInterval(StatsPreset.saveTimer);
+  }
+
   beforeOut({buffer}) {
     StatsPreset.totalOutBytes += buffer.length;
     StatsPreset.totalOutPackets += 1;

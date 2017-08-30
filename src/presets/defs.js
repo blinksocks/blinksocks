@@ -66,6 +66,13 @@ export class IPreset {
     return false;
   }
 
+  /**
+   * you can do something when preset destroyed
+   */
+  onDestroy() {
+
+  }
+
   // hooks
 
   beforeOut({buffer/* , next, broadcast, direct, fail */}) {
