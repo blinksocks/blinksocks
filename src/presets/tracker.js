@@ -1,4 +1,4 @@
-import {IPreset, CONNECTION_CREATED, SOCKET_CONNECT_TO_REMOTE, CONNECTION_CLOSED} from './defs';
+import {IPreset, CONNECTION_CREATED, CONNECT_TO_REMOTE, CONNECTION_CLOSED} from './defs';
 import {logger} from '../utils';
 
 const TRACK_CHAR_UPLOAD = 'u';
@@ -26,7 +26,7 @@ export default class TrackerPreset extends IPreset {
   onNotified({type, payload}) {
     switch (type) {
       case CONNECTION_CREATED:
-      case SOCKET_CONNECT_TO_REMOTE:
+      case CONNECT_TO_REMOTE:
         const {host, port} = payload;
         this._tracks.push(`${host}:${port}`);
         break;

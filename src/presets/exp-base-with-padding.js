@@ -1,7 +1,7 @@
 import net from 'net';
 import ip from 'ip';
 import {isValidHostname, numberToBuffer, hash} from '../utils';
-import {IPreset, SOCKET_CONNECT_TO_REMOTE} from './defs';
+import {IPreset, CONNECT_TO_REMOTE} from './defs';
 
 /**
  * @description
@@ -65,7 +65,7 @@ export default class ExpBaseWithPaddingPreset extends IPreset {
   }
 
   onNotified(action) {
-    if (__IS_CLIENT__ && action.type === SOCKET_CONNECT_TO_REMOTE) {
+    if (__IS_CLIENT__ && action.type === CONNECT_TO_REMOTE) {
       const {host, port} = action.payload;
       this._host = Buffer.from(host);
       this._port = numberToBuffer(port);
@@ -128,7 +128,7 @@ export default class ExpBaseWithPaddingPreset extends IPreset {
       // notify to connect to the real server
       this._isBroadCasting = true;
       broadcast({
-        type: SOCKET_CONNECT_TO_REMOTE,
+        type: CONNECT_TO_REMOTE,
         payload: {
           host: addr,
           port: port,

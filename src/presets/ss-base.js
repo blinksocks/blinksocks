@@ -1,7 +1,7 @@
 import net from 'net';
 import ip from 'ip';
 import {isValidHostname, numberToBuffer} from '../utils';
-import {IPreset, SOCKET_CONNECT_TO_REMOTE} from './defs';
+import {IPreset, CONNECT_TO_REMOTE} from './defs';
 
 const ATYP_V4 = 0x01;
 const ATYP_V6 = 0x04;
@@ -66,7 +66,7 @@ export default class SsBasePreset extends IPreset {
   _port = null; // buffer
 
   onNotified(action) {
-    if (__IS_CLIENT__ && action.type === SOCKET_CONNECT_TO_REMOTE) {
+    if (__IS_CLIENT__ && action.type === CONNECT_TO_REMOTE) {
       const {host, port} = action.payload;
       const type = getHostType(host);
       this._atyp = type;
@@ -150,7 +150,7 @@ export default class SsBasePreset extends IPreset {
       // notify to connect to the real server
       this._isBroadCasting = true;
       broadcast({
-        type: SOCKET_CONNECT_TO_REMOTE,
+        type: CONNECT_TO_REMOTE,
         payload: {
           host: addr,
           port: port,

@@ -1,5 +1,5 @@
 import ip from 'ip';
-import {IPreset, SOCKET_CONNECT_TO_REMOTE} from './defs';
+import {IPreset, CONNECT_TO_REMOTE} from './defs';
 import {Proxifier, ATYP_DOMAIN} from '../proxies';
 
 /**
@@ -27,7 +27,7 @@ export default class ProxyPreset extends IPreset {
             addr.port.readUInt16BE(0)
           ];
           broadcast({
-            type: SOCKET_CONNECT_TO_REMOTE,
+            type: CONNECT_TO_REMOTE,
             payload: {
               host: host,
               port: port,

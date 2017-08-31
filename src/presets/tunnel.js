@@ -1,4 +1,4 @@
-import {IPreset, SOCKET_CONNECT_TO_REMOTE} from './defs';
+import {IPreset, CONNECT_TO_REMOTE} from './defs';
 import {isValidHostname, isValidPort} from '../utils';
 
 /**
@@ -51,7 +51,7 @@ export default class TunnelPreset extends IPreset {
       } else {
         this._isBroadCasting = true;
         broadcast({
-          type: SOCKET_CONNECT_TO_REMOTE,
+          type: CONNECT_TO_REMOTE,
           payload: {
             host: this._host,
             port: this._port,

@@ -1,4 +1,4 @@
-import {SOCKET_CONNECT_TO_REMOTE} from '../defs';
+import {CONNECT_TO_REMOTE} from '../defs';
 import SsBasePreset from '../ss-base';
 
 describe('SsBasePreset#clientOut', function () {
@@ -6,7 +6,7 @@ describe('SsBasePreset#clientOut', function () {
   const preset = new SsBasePreset();
 
   preset.onNotified({
-    type: SOCKET_CONNECT_TO_REMOTE,
+    type: CONNECT_TO_REMOTE,
     payload: {
       host: 'example.com',
       port: 1080

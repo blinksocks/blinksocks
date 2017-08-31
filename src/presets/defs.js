@@ -34,7 +34,7 @@ export const PRESET_INIT = 'preset/init';
 
 /**
  *  {
- *    type: SOCKET_CONNECT_TO_REMOTE,
+ *    type: CONNECT_TO_REMOTE,
  *    payload: {
  *      host: 'bing.com',
  *      port: 443,
@@ -42,7 +42,7 @@ export const PRESET_INIT = 'preset/init';
  *    }
  *  }
  */
-export const SOCKET_CONNECT_TO_REMOTE = 'socket/connect/to/remote';
+export const CONNECT_TO_REMOTE = 'connect/to/remote';
 
 /**
  *  {

@@ -13,7 +13,7 @@ import {
 import {
   CONNECTION_CREATED,
   CONNECTION_CLOSED,
-  SOCKET_CONNECT_TO_REMOTE,
+  CONNECT_TO_REMOTE,
   PRESET_FAILED
 } from '../presets/defs';
 
@@ -297,7 +297,7 @@ export class Relay extends EventEmitter {
    */
   async onPipeNotified(action) {
     switch (action.type) {
-      case SOCKET_CONNECT_TO_REMOTE: {
+      case CONNECT_TO_REMOTE: {
         const {host, port, onConnected} = action.payload;
         if (__IS_SERVER__) {
           await this.connect({host, port});

@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import {EVP_BytesToKey, numberToBuffer, hmac, Xor} from '../utils';
-import {IPreset, SOCKET_CONNECT_TO_REMOTE} from './defs';
+import {IPreset, CONNECT_TO_REMOTE} from './defs';
 
 const IV_LEN = 16;
 const HMAC_LEN = 16;
@@ -80,7 +80,7 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
   }
 
   onNotified(action) {
-    if (__IS_CLIENT__ && action.type === SOCKET_CONNECT_TO_REMOTE) {
+    if (__IS_CLIENT__ && action.type === CONNECT_TO_REMOTE) {
       const {host, port} = action.payload;
       this._host = Buffer.from(host);
       this._port = numberToBuffer(port);
@@ -156,7 +156,7 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
       // notify to connect to the real server
       this._isBroadCasting = true;
       broadcast({
-        type: SOCKET_CONNECT_TO_REMOTE,
+        type: CONNECT_TO_REMOTE,
         payload: {
           host: addr,
           port: port,
