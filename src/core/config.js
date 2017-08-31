@@ -23,7 +23,88 @@ export const DEFAULT_BEHAVIOURS = {
 
 export class Config {
 
-  static validate(json) {
+  static init(json) {
+    this._validate(json);
+
+    global.__LOCAL_HOST__ = json.host;
+    global.__LOCAL_PORT__ = json.port;
+
+    if (json.servers !== undefined) {
+      global.__SERVERS__ = json.servers.filter((server) => server.enabled);
+      global.__IS_CLIENT__ = true;
+      global.__IS_SERVER__ = false;
+    } else {
+      global.__IS_CLIENT__ = false;
+      global.__IS_SERVER__ = true;
+      this.initServer(json);
+    }
+
+    global.__TIMEOUT__ = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
+    global.__WORKERS__ = (json.workers !== undefined) ? json.workers : 0;
+    global.__DNS_EXPIRE__ = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
+    global.__ALL_CONFIG__ = json;
+
+    // dns
+    if (json.dns !== undefined && json.dns.length > 0) {
+      global.__DNS__ = json.dns;
+      dns.setServers(json.dns);
+    }
+
+    // log_path & log_level
+    const absolutePath = path.resolve(process.cwd(), json.log_path || '.');
+    let isFile = false;
+    if (fs.existsSync(absolutePath)) {
+      isFile = fs.statSync(absolutePath).isFile();
+    } else if (path.extname(absolutePath) !== '') {
+      isFile = true;
+    }
+
+    global.__LOG_PATH__ = isFile ? absolutePath : path.join(absolutePath, `bs-${__IS_CLIENT__ ? 'client' : 'server'}.log`);
+    global.__LOG_LEVEL__ = (json.log_level !== undefined) ? json.log_level : DEFAULT_LOG_LEVEL;
+
+    logger.configure({
+      level: __LOG_LEVEL__,
+      transports: [
+        new (winston.transports.Console)({
+          colorize: true,
+          prettyPrint: true
+        }),
+        new (require('winston-daily-rotate-file'))({
+          filename: __LOG_PATH__,
+          level: 'verbose'
+        })
+      ]
+    });
+
+    // behaviours
+    const behaviours = {
+      ...DEFAULT_BEHAVIOURS,
+      ...(json.behaviours !== undefined ? json.behaviours : {})
+    };
+    const events = Object.keys(behaviours);
+    global.__BEHAVIOURS__ = {};
+    for (const ev of events) {
+      const clazz = getBehaviourClassByName(behaviours[ev].name);
+      global.__BEHAVIOURS__[ev] = new clazz(behaviours[ev].params || {});
+    }
+  }
+
+  static initServer(server) {
+    global.__TRANSPORT__ = (server.transport !== undefined) ? server.transport : 'tcp';
+    global.__IS_TLS__ = __TRANSPORT__ === 'tls';
+    if (__IS_TLS__) {
+      global.__TLS_CERT__ = fs.readFileSync(path.resolve(process.cwd(), server.tls_cert));
+      if (__IS_SERVER__) {
+        global.__TLS_KEY__ = fs.readFileSync(path.resolve(process.cwd(), server.tls_key));
+      }
+    }
+    global.__SERVER_HOST__ = server.host;
+    global.__SERVER_PORT__ = server.port;
+    global.__KEY__ = server.key;
+    global.__PRESETS__ = server.presets;
+  }
+
+  static _validate(json) {
     if (!isPlainObject(json)) {
       throw Error('invalid configuration file');
     }
@@ -65,21 +146,16 @@ export class Config {
 
     // servers
     if (json.servers !== undefined) {
-
       if (!Array.isArray(json.servers)) {
         throw Error('\'servers\' must be provided as an array');
       }
-
       const servers = json.servers.filter((server) => server.enabled === true);
-
       if (servers.length < 1) {
         throw Error('\'servers\' must have at least one enabled item');
       }
-
-      servers.forEach(this.validateServer);
-
+      servers.forEach(this._validateServer);
     } else {
-      this.validateServer(json);
+      this._validateServer(json);
     }
 
     // timeout
@@ -149,7 +225,7 @@ export class Config {
     }
   }
 
-  static validateServer(server) {
+  static _validateServer(server) {
     // transport
     if (server.transport !== undefined) {
       if (!['tcp', 'tls'].includes(server.transport)) {
@@ -192,109 +268,21 @@ export class Config {
     // presets[].parameters
     for (const preset of server.presets) {
       const {name, params} = preset;
-
       if (typeof name !== 'string') {
         throw Error('\'server.presets[].name\' must be a string');
       }
-
       if (name === '') {
         throw Error('\'server.presets[].name\' cannot be empty');
       }
-
       if (params !== undefined) {
         if (!isPlainObject(params)) {
           throw Error('\'server.presets[].params\' must be an plain object');
         }
       }
-
-      // 1. check for the existence of the preset
-      const ps = getPresetClassByName(preset.name);
-
-      // 2. check parameters
-      delete new ps(params || {});
+      // check for existence of the preset
+      const PresetClass = getPresetClassByName(preset.name);
+      PresetClass.checkParams(preset.params || {});
     }
-  }
-
-  static init(json) {
-    this.validate(json);
-
-    global.__LOCAL_HOST__ = json.host;
-    global.__LOCAL_PORT__ = json.port;
-
-    if (json.servers !== undefined) {
-      global.__SERVERS__ = json.servers.filter((server) => server.enabled);
-      global.__IS_CLIENT__ = true;
-      global.__IS_SERVER__ = false;
-    } else {
-      global.__IS_CLIENT__ = false;
-      global.__IS_SERVER__ = true;
-      this.initServer(json);
-    }
-
-    global.__TIMEOUT__ = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
-    global.__WORKERS__ = (json.workers !== undefined) ? json.workers : 0;
-    global.__DNS_EXPIRE__ = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
-    global.__ALL_CONFIG__ = json;
-
-    // dns
-    if (json.dns !== undefined && json.dns.length > 0) {
-      global.__DNS__ = json.dns;
-      dns.setServers(json.dns);
-    }
-
-    // log_path & log_level
-    const absolutePath = path.resolve(process.cwd(), json.log_path || '.');
-    let isFile = false;
-    if (fs.existsSync(absolutePath)) {
-      isFile = fs.statSync(absolutePath).isFile();
-    } else if (path.extname(absolutePath) !== '') {
-      isFile = true;
-    }
-
-    global.__LOG_PATH__ = isFile ? absolutePath : path.join(absolutePath, `bs-${__IS_CLIENT__ ? 'client' : 'server'}.log`);
-    global.__LOG_LEVEL__ = (json.log_level !== undefined) ? json.log_level : DEFAULT_LOG_LEVEL;
-
-    logger.configure({
-      level: __LOG_LEVEL__,
-      transports: [
-        new (winston.transports.Console)({
-          colorize: true,
-          prettyPrint: true
-        }),
-        new (require('winston-daily-rotate-file'))({
-          filename: __LOG_PATH__,
-          level: __LOG_LEVEL__
-        })
-      ]
-    });
-
-    // behaviours
-    const behaviours = {
-      ...DEFAULT_BEHAVIOURS,
-      ...(json.behaviours !== undefined ? json.behaviours : {})
-    };
-    const events = Object.keys(behaviours);
-    global.__BEHAVIOURS__ = {};
-    for (const ev of events) {
-      const clazz = getBehaviourClassByName(behaviours[ev].name);
-      global.__BEHAVIOURS__[ev] = new clazz(behaviours[ev].params || {});
-    }
-  }
-
-  static initServer(server) {
-    this.validateServer(server);
-    global.__TRANSPORT__ = (server.transport !== undefined) ? server.transport : 'tcp';
-    global.__IS_TLS__ = __TRANSPORT__ === 'tls';
-    if (__IS_TLS__) {
-      global.__TLS_CERT__ = fs.readFileSync(path.resolve(process.cwd(), server.tls_cert));
-      if (__IS_SERVER__) {
-        global.__TLS_KEY__ = fs.readFileSync(path.resolve(process.cwd(), server.tls_key));
-      }
-    }
-    global.__SERVER_HOST__ = server.host;
-    global.__SERVER_PORT__ = server.port;
-    global.__KEY__ = server.key;
-    global.__PRESETS__ = server.presets;
   }
 
 }
