@@ -3,11 +3,11 @@ import {isValidHostname, isValidPort} from '../utils';
 
 /**
  * @description
- *   proxy traffic to destination
+ *   Proxy traffic to a specific destination.
  *
  * @params
- *   host(optional): destination host
- *   port(optional): destination port
+ *   host: Destination host.
+ *   port: Destination port.
  *
  * @examples
  *   {
@@ -30,18 +30,19 @@ export default class TunnelPreset extends IPreset {
 
   _staging = Buffer.alloc(0);
 
-  constructor({host, port}) {
-    super();
-    if (typeof host !== 'undefined' && !isValidHostname(host)) {
+  static checkParams({host, port}) {
+    if (!isValidHostname(host)) {
       throw Error('host is invalid');
     }
-    if (typeof port !== 'undefined' && !isValidPort(port)) {
+    if (!isValidPort(port)) {
       throw Error('port is invalid');
     }
-    if (host && port) {
-      this._host = host;
-      this._port = port;
-    }
+  }
+
+  constructor({host, port}) {
+    super();
+    this._host = host;
+    this._port = port;
   }
 
   handleTunnel({buffer, next, broadcast}) {

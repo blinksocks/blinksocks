@@ -94,31 +94,32 @@ export default class AeadRandomCipherPreset extends IPreset {
 
   _adBuf = null;
 
-  constructor({method, info, factor}) {
-    super();
-    if (typeof method === 'undefined' || method === '') {
-      throw Error('\'method\' must be set.');
+  static checkParams({method, info, factor = DEFAULT_FACTOR}) {
+    if (method === undefined || method === '') {
+      throw Error('\'method\' must be set');
     }
     if (!ciphers.includes(method)) {
-      throw Error(`method '${method}' is not supported.`);
+      throw Error(`method '${method}' is not supported`);
     }
     if (typeof info !== 'string' || info.length <= 0) {
-      throw Error('\'info\' must be a non-empty string.');
+      throw Error('\'info\' must be a non-empty string');
     }
-    if (typeof factor === 'undefined') {
-      factor = DEFAULT_FACTOR;
-    } else {
+    if (factor !== undefined) {
       if (!Number.isInteger(factor)) {
-        throw Error('\'factor\' must be an integer.');
+        throw Error('\'factor\' must be an integer');
       }
       if (factor < 1 || factor > 10) {
-        throw Error('\'factor\' must be in [1, 10].');
+        throw Error('\'factor\' must be in [1, 10]');
       }
     }
+  }
+
+  constructor({method, info, factor = DEFAULT_FACTOR}) {
+    super();
     this._cipherName = method;
     this._info = Buffer.from(info);
     this._factor = factor;
-    this._rawKey = global.__KEY__ ? Buffer.from(__KEY__) : null;
+    this._rawKey = Buffer.from(__KEY__);
     this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});
     this._adBuf.on('data', this.onChunkReceived.bind(this));
   }

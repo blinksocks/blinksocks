@@ -15,13 +15,13 @@ const options = {
  * @description
  *   A simple compressor/decompressor using Node.js zlib module with default options.
  *
- * @note
+ * @notice
  *   1. Compress encrypted(randomized) data is considered stupid and inefficient.
  *   2. You SHOULD ONLY use this preset to compress non-encryption data.
  *   3. Using this preset will **significantly reduce** performance and increase memory usage during data piping.
  *
  * @params
- *   method: The compression/decompression method, "deflate" or "gzip"
+ *   method: The compression/decompression method, "deflate" or "gzip".
  *
  * @examples
  *   {
@@ -41,12 +41,15 @@ export default class ExpCompressPreset extends IPreset {
 
   _decompressor = null;
 
-  constructor({method}) {
-    super();
+  static checkParams({method}) {
     const methods = Object.keys(factories);
     if (!methods.includes(method)) {
       throw Error(`'method' must be one of [${methods}]`);
     }
+  }
+
+  constructor({method}) {
+    super();
     this._method = method;
   }
 

@@ -95,11 +95,14 @@ export default class ObfsHttpPreset extends IPreset {
 
   _response = null;
 
+  static checkParams({file}) {
+    if (typeof file !== 'string' || file === '') {
+      throw Error('\'file\' must be a non-empty string');
+    }
+  }
+
   constructor({file}) {
     super();
-    if (typeof file === 'undefined') {
-      throw Error('\'file\' parameter is required.');
-    }
     this._file = file;
   }
 

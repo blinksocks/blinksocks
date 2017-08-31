@@ -4,10 +4,7 @@ import {Proxifier, ATYP_DOMAIN} from '../proxies';
 
 /**
  * @description
- *   proxy handshake using Proxifier
- *
- * @params
- *   no
+ *   Proxy handshake using Proxifier.
  *
  * @examples
  *   {

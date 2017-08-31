@@ -17,7 +17,7 @@ const ciphers = [
  *   Delivery destination address(ip/hostname) and port with authorization and stream encryption.
  *
  * @params
- *   no
+ *   method: A cipher for encryption/decryption.
  *
  * @examples
  *   {
@@ -68,14 +68,14 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
 
   _decipher = null;
 
+  static checkParams({method}) {
+    if (!ciphers.includes(method)) {
+      throw Error(`'method' must be one of [${ciphers}]`);
+    }
+  }
+
   constructor({method}) {
     super();
-    if (typeof method !== 'string' || method === '') {
-      throw Error('\'method\' must be set');
-    }
-    if (!ciphers.includes(method)) {
-      throw Error(`method '${method}' is not supported.`);
-    }
     this._cipherName = method;
   }
 

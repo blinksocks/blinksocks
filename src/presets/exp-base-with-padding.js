@@ -11,7 +11,7 @@ import {IPreset, CONNECT_TO_REMOTE} from './defs';
  *   This preset should be used with ciphers in cfb mode.
  *
  * @params
- *   salt: a string for generating padding
+ *   salt: A string for generating padding.
  *
  * @examples
  *   {
@@ -56,11 +56,14 @@ export default class ExpBaseWithPaddingPreset extends IPreset {
 
   _padding = null; // buffer
 
+  static checkParams({salt}) {
+    if (typeof salt !== 'string' || salt === '') {
+      throw Error('\'salt\' must be a non-empty string');
+    }
+  }
+
   constructor({salt}) {
     super();
-    if (typeof salt !== 'string' || salt === '') {
-      throw Error('\'salt\' must be set to a non-empty string');
-    }
     this._padding = hash('sha256', salt).slice(0, 15);
   }
 

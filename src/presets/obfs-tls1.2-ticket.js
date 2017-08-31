@@ -62,8 +62,7 @@ export default class ObfsTls12TicketPreset extends IPreset {
 
   _adBuf = null;
 
-  constructor({sni}) {
-    super();
+  static checkParams({sni}) {
     if (typeof sni === 'undefined') {
       throw Error('\'sni\' must be set');
     }
@@ -73,6 +72,10 @@ export default class ObfsTls12TicketPreset extends IPreset {
     if (sni.some((s) => typeof s !== 'string' || s.length < 1)) {
       throw Error('\'sni\' must be a non-empty string or an array without empty strings');
     }
+  }
+
+  constructor({sni}) {
+    super();
     this.onReceiving = this.onReceiving.bind(this);
     this.onChunkReceived = this.onChunkReceived.bind(this);
     this._sni = Array.isArray(sni) ? sni : [sni];

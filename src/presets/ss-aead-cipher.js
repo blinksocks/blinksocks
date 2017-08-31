@@ -91,14 +91,17 @@ export default class SsAeadCipherPreset extends IPreset {
 
   _adBuf = null;
 
+  static checkParams({method, info}) {
+    if (!ciphers.includes(method)) {
+      throw Error(`'method' must be one of [${ciphers}]`);
+    }
+    if (typeof info !== 'string' || info === '') {
+      throw Error('\'info\' must be a non-empty string');
+    }
+  }
+
   constructor({method, info}) {
     super();
-    if (typeof method === 'undefined' || method === '') {
-      throw Error('\'method\' must be set.');
-    }
-    if (!ciphers.includes(method)) {
-      throw Error(`method '${method}' is not supported.`);
-    }
     this._cipherName = method;
     this._info = Buffer.from(info);
     this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});

@@ -40,9 +40,7 @@ export default class ObfsRandomPaddingPreset extends IPreset {
 
   constructor() {
     super();
-    this._adBuf = new AdvancedBuffer({
-      getPacketLength: this.onReceiving.bind(this)
-    });
+    this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});
     this._adBuf.on('data', this.onChunkReceived.bind(this));
   }
 
