@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+
 // actions may be received by built-in presets in onNotified(action):
 
 /**
@@ -59,10 +61,17 @@ export const PRESET_FAILED = 'preset/failed';
 export class IPreset {
 
   /**
+   * check params for the preset, should throw errors directly inside
+   */
+  static checkParams(params) {
+
+  }
+
+  /**
    * how to deal with the action, return false/undefined to ignore/continue broadcast
    * @returns {boolean}
    */
-  onNotified(/* action */) {
+  onNotified(action) {
     return false;
   }
 
