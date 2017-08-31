@@ -6,6 +6,7 @@ import uniqueId from 'lodash.uniqueid';
 import {Balancer} from './balancer';
 import {Config} from './config';
 import {Relay} from './relay';
+import {cleanup} from './middleware';
 import {logger} from '../utils';
 
 /**
@@ -100,13 +101,14 @@ export class Hub extends EventEmitter {
       this._relays = this._relays.filter((relay) => relay.id !== id);
     });
     this._relays.push(relay);
-    logger.info(`[hub] [${socket.remoteAddress}:${socket.remotePort}] connected`);
+    logger.verbose(`[hub] [${socket.remoteAddress}:${socket.remotePort}] connected`);
   }
 
   onClose() {
     this._relays.forEach((relay) => relay.destroy());
     this._relays = null;
     this._localServer = null;
+    cleanup();
     this.emit('close');
   }
 

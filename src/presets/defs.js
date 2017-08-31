@@ -102,3 +102,17 @@ export class IPreset {
   }
 
 }
+
+export class IPresetStatic extends IPreset {
+
+  static isInstantiated = false;
+
+  constructor() {
+    super();
+    if (IPresetStatic.isInstantiated) {
+      throw Error(`${this.constructor.name} is singleton and can only be instantiated once`);
+    }
+    IPresetStatic.isInstantiated = true;
+  }
+
+}

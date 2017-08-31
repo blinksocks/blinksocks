@@ -1,6 +1,10 @@
 import EventEmitter from 'events';
-import {getPresetClassByName} from '../presets';
+import {getPresetClassByName, IPresetStatic} from '../presets';
 import {kebabCase} from '../utils';
+
+const instanceCache = {
+  // 'className': <instance>
+};
 
 export const MIDDLEWARE_DIRECTION_UPWARD = 1;
 export const MIDDLEWARE_DIRECTION_DOWNWARD = -1;
@@ -31,7 +35,10 @@ export class Middleware extends EventEmitter {
     return this._impl.onNotified(action);
   }
 
-  onDestroy() {
+  onDestroy(force = false) {
+    if (!force && (this._impl instanceof IPresetStatic)) {
+      return;
+    }
     this._impl.onDestroy();
   }
 
@@ -91,10 +98,18 @@ export class Middleware extends EventEmitter {
 export function createMiddleware(name, params = {}) {
   try {
     const ImplClass = getPresetClassByName(name);
-    const impl = new ImplClass(params);
-
-    checkMiddleware(ImplClass.name, impl);
-
+    let impl = null;
+    // only create one instance for IPresetStatic
+    if (ImplClass.__proto__.name === IPresetStatic.name) {
+      const _impl = instanceCache[ImplClass.name];
+      if (_impl) {
+        impl = _impl;
+      } else {
+        impl = (instanceCache[ImplClass.name] = new ImplClass(params));
+      }
+    } else {
+      impl = new ImplClass(params);
+    }
     return new Middleware(impl);
   } catch (err) {
     console.error(err.message);
@@ -104,20 +119,11 @@ export function createMiddleware(name, params = {}) {
 }
 
 /**
- * check if a middleware implement is valid or not
- * @param name
- * @param impl
- * @returns {boolean}
+ * destroy cached middlewares
  */
-function checkMiddleware(name, impl) {
-  const requiredMethods = [
-    'clientOut',
-    'serverIn',
-    'serverOut',
-    'clientIn'
-  ];
-  if (requiredMethods.some((method) => typeof impl[method] !== 'function')) {
-    throw Error(`all methods [${requiredMethods.toString()}] in ${name} must be implemented`);
+export function cleanup() {
+  const instances = Object.values(instanceCache);
+  for (const ins of instances) {
+    ins.onDestroy(true);
   }
-  return true;
 }
