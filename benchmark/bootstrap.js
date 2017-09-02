@@ -11,7 +11,6 @@ const SEC_PER_CASE = 5;
 
 function makeConfs(presets) {
   const common = {
-    "log_path": "/dev/null",
     "log_level": "error"
   };
   const server = {
