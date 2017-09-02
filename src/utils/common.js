@@ -174,13 +174,10 @@ export function isValidHostname(hostname) {
  * @returns {boolean}
  */
 export function isValidPort(port) {
-  if (typeof port !== 'number') {
+  if (!Number.isInteger(port)) {
     return false;
   }
-  if (port < 0 || port > 65535) {
-    return false;
-  }
-  return true;
+  return !(port < 0 || port > 65535);
 }
 
 /**
