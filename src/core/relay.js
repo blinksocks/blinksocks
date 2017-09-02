@@ -84,7 +84,7 @@ export class Relay extends EventEmitter {
     }
     this._presets = presets;
     this._pipe = this.createPipe(presets);
-    this._pipe.onBroadcast({
+    this._pipe.broadcast({
       type: CONNECTION_CREATED,
       payload: {
         host: this._remoteHost,
@@ -187,7 +187,7 @@ export class Relay extends EventEmitter {
     if (this._bsocket) {
       this._bsocket.destroy();
       this._bsocket = null;
-      this._pipe.onBroadcast({
+      this._pipe.broadcast({
         type: CONNECTION_CLOSED,
         payload: {
           host: this._remoteHost,
@@ -273,7 +273,6 @@ export class Relay extends EventEmitter {
    */
   setPresets(callback) {
     this._presets = callback(this._presets);
-    this._pipe.removeAllListeners();
     this._pipe.destroy();
     this._pipe = this.createPipe(this._presets);
   }
@@ -283,10 +282,11 @@ export class Relay extends EventEmitter {
    */
   createPipe(presets) {
     const middlewares = presets.map((preset) => createMiddleware(preset.name, preset.params || {}));
-    const pipe = new Pipe({onNotified: this.onPipeNotified});
-    pipe.setMiddlewares(MIDDLEWARE_DIRECTION_UPWARD, middlewares);
+    const pipe = new Pipe();
+    pipe.on('broadcast', this.onPipeNotified);
     pipe.on(`next_${MIDDLEWARE_DIRECTION_UPWARD}`, this.sendForward);
     pipe.on(`next_${MIDDLEWARE_DIRECTION_DOWNWARD}`, this.sendBackward);
+    pipe.setMiddlewares(middlewares);
     return pipe;
   }
 
