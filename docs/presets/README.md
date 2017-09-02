@@ -35,8 +35,7 @@ Presets are chaining and composable, built-in presets are listed here. If you wa
 
 ### NOTICE
 
-> You **MUST** put preset signed with * to the first in presets list if you
-want to relay data to blinksocks server.
+> You **MUST** put preset signed with * to the presets list(anywhere in theory) if you want to relay data.
 
 ## [proxy]
 
