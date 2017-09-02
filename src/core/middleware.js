@@ -14,8 +14,6 @@ export const MIDDLEWARE_DIRECTION_DOWNWARD = -1;
  */
 export class Middleware extends EventEmitter {
 
-  _broadcast = null;
-
   _impl = null;
 
   constructor(impl) {
@@ -23,12 +21,12 @@ export class Middleware extends EventEmitter {
     this._impl = impl;
   }
 
-  getName() {
+  get name() {
     return kebabCase(this._impl.constructor.name).replace(/(.*)-preset/i, '$1');
   }
 
-  subscribe(receiver) {
-    this._broadcast = receiver;
+  hasListener(event) {
+    return this.listenerCount(event) > 0;
   }
 
   onNotified(action) {
@@ -40,6 +38,7 @@ export class Middleware extends EventEmitter {
       return;
     }
     this._impl.onDestroy();
+    this.removeAllListeners();
   }
 
   /**
@@ -47,43 +46,36 @@ export class Middleware extends EventEmitter {
    * @param direction
    * @param buffer
    * @param direct
-   * @param fail
    */
-  write(direction, {buffer, direct, fail}) {
-    const type = {
-      [MIDDLEWARE_DIRECTION_UPWARD]: 'Out',
-      [MIDDLEWARE_DIRECTION_DOWNWARD]: 'In'
-    }[direction];
-    const broadcast = this._broadcast;
+  write(direction, {buffer, direct}) {
+    const type = (direction === MIDDLEWARE_DIRECTION_UPWARD) ? 'Out' : 'In';
 
-    const _fail = (message) => fail(this.getName(), message);
+    // create arg wrappers
+    const broadcast = (action) => void this.emit('broadcast', action);
+    const fail = (message) => void this.emit('fail', this.name, message);
+    const next = (processed, isReverse = false) => {
+      // oh my nice hack to deal with reverse pipeline if haven't been created
+      const hasListener = this.emit(`next_${isReverse ? -direction : direction}`, processed);
+      if (!hasListener) {
+        direct(processed, isReverse);
+      }
+    };
 
-    // NOTE: next(buf, isReverse) is not available in beforeOut/beforeIn
-    const next = (buf/* , isReverse = false */) => {
-      const args = {
-        buffer: buf,
-        next: (processed, isReverse = false) => {
-          const hasListener = this.emit(`next_${isReverse ? -direction : direction}`, processed);
-          // oh my nice hack to deal with reverse pipeline if haven't been created
-          if (!hasListener) {
-            direct(processed, isReverse);
-          }
-        },
-        broadcast,
-        direct,
-        fail: _fail
-      };
-      // clientOut, serverOut, clientIn, serverIn
+    // clientOut, serverOut, clientIn, serverIn
+    const nextLifeCycleHook = (buf/* , isReverse = false */) => {
+      const args = {buffer: buf, next, broadcast, direct, fail};
       const ret = __IS_CLIENT__ ? this._impl[`client${type}`](args) : this._impl[`server${type}`](args);
       if (ret instanceof Buffer) {
-        args.next(ret);
+        next(ret);
       }
     };
 
     // beforeOut, beforeIn
-    const r = this._impl[`before${type}`]({buffer, next, broadcast, direct, fail: _fail});
-    if (r instanceof Buffer) {
-      next(r);
+    // NOTE: next(buf, isReverse) is not available in beforeOut/beforeIn
+    const args = {buffer, next: nextLifeCycleHook, broadcast, direct, fail};
+    const ret = this._impl[`before${type}`](args);
+    if (ret instanceof Buffer) {
+      nextLifeCycleHook(ret);
     }
   }
 
