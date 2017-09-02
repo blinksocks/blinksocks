@@ -5,7 +5,7 @@
   "main": "build/index.js",
   "files": [
     "bin",
-    "build",
+    "lib",
     "AUTHORS"
   ],
   "bin": {
@@ -15,8 +15,8 @@
     "test": "npm run lint && npm run test:coverage",
     "test:coverage": "jest --coverage",
     "lint": "eslint bin src pkg",
-    "compile": "cross-env NODE_ENV=production babel src --out-dir build --minified --ignore __tests__,__mocks__",
-    "bundle": "cross-env NODE_ENV=production webpack --config webpack.config.js",
+    "compile": "cross-env NODE_ENV=production babel src --out-dir lib --minified --ignore __tests__,__mocks__",
+    "bundle": "cross-env NODE_ENV=production webpack --config webpack.config.js --progress",
     "prepkg": "rimraf build/blinksocks.js.map pkg/blinksocks-* pkg/sha256sum.txt",
     "pkg": "pkg --out-path pkg/ --targets node8.3.0-linux-x64,node8.3.0-macos-x64,node8.3.0-win-x64 .",
     "postpkg": "node pkg/postpkg.js",
