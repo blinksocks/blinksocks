@@ -1,6 +1,16 @@
 /* eslint-disable no-unused-vars */
 
-// actions may be received by built-in presets in onNotified(action):
+// - pushed by relay
+
+/**
+ *  {
+ *    type: PRESET_INIT,
+ *    payload: {
+ *      broadcast: (action) => {}
+ *    }
+ *  }
+ */
+export const PRESET_INIT = '@action:preset_init';
 
 /**
  *  {
@@ -24,15 +34,7 @@ export const CONNECTION_CREATED = 'connection/created';
  */
 export const CONNECTION_CLOSED = 'connection/closed';
 
-/**
- *  {
- *    type: PRESET_INIT,
- *    payload: {
- *      broadcast: (action) => {}
- *    }
- *  }
- */
-export const PRESET_INIT = 'preset/init';
+// - emitted by presets
 
 /**
  *  {
@@ -58,17 +60,26 @@ export const CONNECT_TO_REMOTE = 'connect/to/remote';
  */
 export const PRESET_FAILED = 'preset/failed';
 
+/**
+ *  {
+ *    type: PRESET_CLOSE_CONNECTION
+ *  }
+ */
+export const PRESET_CLOSE_CONNECTION = 'preset/close/connection';
+
 export class IPreset {
 
   /**
-   * check params for the preset, should throw errors directly inside
+   * check params passed to the preset, if any errors, should throw directly
    */
   static checkParams(params) {
 
   }
 
+  // callbacks
+
   /**
-   * how to deal with the action, return false/undefined to ignore/continue broadcast
+   * how to handle the action, return false/undefined to continue delivery
    * @returns {boolean}
    */
   onNotified(action) {
@@ -82,7 +93,7 @@ export class IPreset {
 
   }
 
-  // hooks
+  // life cycle hooks
 
   beforeOut({buffer/* , next, broadcast, direct, fail */}) {
     return buffer;
@@ -91,8 +102,6 @@ export class IPreset {
   beforeIn({buffer/* , next, broadcast, direct, fail */}) {
     return buffer;
   }
-
-  // the following interfaces must be implemented
 
   clientOut({buffer/* , next, broadcast, direct, fail */}) {
     return buffer;
@@ -108,6 +117,16 @@ export class IPreset {
 
   clientIn({buffer/* , next, broadcast, direct, fail */}) {
     return buffer;
+  }
+
+  // auto-generated methods for convenience, DO NOT implement them!
+
+  broadcast(action) {
+
+  }
+
+  fail(message) {
+
   }
 
 }

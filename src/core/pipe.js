@@ -19,7 +19,7 @@ export class Pipe extends EventEmitter {
     const middlewares = this.getMiddlewares();
     const results = [];
     for (const middleware of middlewares) {
-      results.push(middleware.onNotified(action));
+      results.push(middleware.notify(action));
     }
     // if no middleware handled this action, bubble up to where pipe created.
     if (results.every((result) => !!result === false)) {

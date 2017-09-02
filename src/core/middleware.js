@@ -18,7 +18,11 @@ export class Middleware extends EventEmitter {
 
   constructor(impl) {
     super();
+    this.onPresetBroadcast = this.onPresetBroadcast.bind(this);
+    this.onPresetFail = this.onPresetFail.bind(this);
     this._impl = impl;
+    this._impl.broadcast = this.onPresetBroadcast;
+    this._impl.fail = this.onPresetFail;
   }
 
   get name() {
@@ -29,8 +33,16 @@ export class Middleware extends EventEmitter {
     return this.listenerCount(event) > 0;
   }
 
-  onNotified(action) {
+  notify(action) {
     return this._impl.onNotified(action);
+  }
+
+  onPresetBroadcast(action) {
+    this.emit('broadcast', action);
+  }
+
+  onPresetFail(message) {
+    this.emit('fail', this.name, message);
   }
 
   onDestroy(force = false) {
@@ -50,9 +62,9 @@ export class Middleware extends EventEmitter {
   write(direction, {buffer, direct}) {
     const type = (direction === MIDDLEWARE_DIRECTION_UPWARD) ? 'Out' : 'In';
 
-    // create arg wrappers
-    const broadcast = (action) => void this.emit('broadcast', action);
-    const fail = (message) => void this.emit('fail', this.name, message);
+    // prepare args
+    const broadcast = this.onPresetBroadcast;
+    const fail = this.onPresetFail;
     const next = (processed, isReverse = false) => {
       // oh my nice hack to deal with reverse pipeline if haven't been created
       const hasListener = this.emit(`next_${isReverse ? -direction : direction}`, processed);
