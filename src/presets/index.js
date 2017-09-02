@@ -41,3 +41,4 @@ function getPresetClassByName(name) {
 }
 
 export {getPresetClassByName, presets};
+export * from './defs';
