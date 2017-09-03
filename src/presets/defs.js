@@ -4,10 +4,7 @@
 
 /**
  *  {
- *    type: PRESET_INIT,
- *    payload: {
- *      broadcast: (action) => {}
- *    }
+ *    type: PRESET_INIT
  *  }
  */
 export const PRESET_INIT = '@action:preset_init';
@@ -21,7 +18,7 @@ export const PRESET_INIT = '@action:preset_init';
  *    }
  *  }
  */
-export const CONNECTION_CREATED = 'connection/created';
+export const CONNECTION_CREATED = '@action:connection_created';
 
 /**
  *  {
@@ -32,7 +29,7 @@ export const CONNECTION_CREATED = 'connection/created';
  *    }
  *  }
  */
-export const CONNECTION_CLOSED = 'connection/closed';
+export const CONNECTION_CLOSED = '@action:connection_closed';
 
 // - emitted by presets
 
@@ -46,7 +43,7 @@ export const CONNECTION_CLOSED = 'connection/closed';
  *    }
  *  }
  */
-export const CONNECT_TO_REMOTE = 'connect/to/remote';
+export const CONNECT_TO_REMOTE = '@action:connect_to_remote';
 
 /**
  *  {
@@ -58,14 +55,14 @@ export const CONNECT_TO_REMOTE = 'connect/to/remote';
  *    }
  *  }
  */
-export const PRESET_FAILED = 'preset/failed';
+export const PRESET_FAILED = '@action:preset_failed';
 
 /**
  *  {
  *    type: PRESET_CLOSE_CONNECTION
  *  }
  */
-export const PRESET_CLOSE_CONNECTION = 'preset/close/connection';
+export const PRESET_CLOSE_CONNECTION = '@action:preset_close_connection';
 
 export class IPreset {
 

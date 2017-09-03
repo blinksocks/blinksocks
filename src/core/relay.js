@@ -14,7 +14,8 @@ import {
   CONNECTION_CREATED,
   CONNECTION_CLOSED,
   CONNECT_TO_REMOTE,
-  PRESET_FAILED
+  PRESET_FAILED,
+  PRESET_CLOSE_CONNECTION
 } from '../presets/defs';
 
 import {BEHAVIOUR_EVENT_ON_PRESET_FAILED} from '../behaviours';
@@ -324,6 +325,11 @@ export class Relay extends EventEmitter {
         const {name, message} = action.payload;
         logger.error(`[relay] [${this.remote}] preset "${name}" fail to process: ${message}`);
         await __BEHAVIOURS__[BEHAVIOUR_EVENT_ON_PRESET_FAILED].run(props);
+        break;
+      }
+      case PRESET_CLOSE_CONNECTION: {
+        logger.info(`[relay] [${this.remote}] preset request to close connection`);
+        this.destroy();
         break;
       }
       default:
