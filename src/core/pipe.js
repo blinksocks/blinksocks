@@ -15,14 +15,16 @@ export class Pipe extends EventEmitter {
     this.broadcast = this.broadcast.bind(this);
   }
 
-  broadcast(action) {
+  broadcast(name, action) {
     const middlewares = this.getMiddlewares();
     const results = [];
     for (const middleware of middlewares) {
-      results.push(middleware.notify(action));
+      if (middleware.name !== name) {
+        results.push(middleware.notify(action));
+      }
     }
     // if no middleware handled this action, bubble up to where pipe created.
-    if (results.every((result) => !!result === false)) {
+    if (name !== 'pipe' && results.every((result) => !!result === false)) {
       this.emit('broadcast', action);
     }
   }
@@ -36,7 +38,7 @@ export class Pipe extends EventEmitter {
     for (const middleware of middlewares) {
       middleware.setMaxListeners(4);
       middleware.on('broadcast', this.broadcast);
-      middleware.on('fail', (name, message) => void this.broadcast({
+      middleware.on('fail', (name, message) => void this.broadcast(name, {
         type: PRESET_FAILED,
         payload: {
           name,
@@ -48,7 +50,7 @@ export class Pipe extends EventEmitter {
     this._upstream_middlewares = middlewares;
     this._downstream_middlewares = [].concat(middlewares).reverse();
     // initial broadcast
-    this.broadcast({type: PRESET_INIT, payload: {broadcast: this.broadcast}});
+    this.broadcast('pipe', {type: PRESET_INIT});
   }
 
   getMiddlewares(direction = MIDDLEWARE_DIRECTION_UPWARD) {

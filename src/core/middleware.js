@@ -38,7 +38,7 @@ export class Middleware extends EventEmitter {
   }
 
   onPresetBroadcast(action) {
-    this.emit('broadcast', action);
+    this.emit('broadcast', this.name, action);
   }
 
   onPresetFail(message) {

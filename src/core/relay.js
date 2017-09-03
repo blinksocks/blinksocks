@@ -84,7 +84,7 @@ export class Relay extends EventEmitter {
     }
     this._presets = presets;
     this._pipe = this.createPipe(presets);
-    this._pipe.broadcast({
+    this._pipe.broadcast('pipe', {
       type: CONNECTION_CREATED,
       payload: {
         host: this._remoteHost,
@@ -187,7 +187,7 @@ export class Relay extends EventEmitter {
     if (this._bsocket) {
       this._bsocket.destroy();
       this._bsocket = null;
-      this._pipe.broadcast({
+      this._pipe.broadcast('pipe', {
         type: CONNECTION_CLOSED,
         payload: {
           host: this._remoteHost,

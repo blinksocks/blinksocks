@@ -71,7 +71,7 @@ export class Config {
         }),
         new (require('winston-daily-rotate-file'))({
           filename: __LOG_PATH__,
-          level: 'verbose'
+          level: __LOG_LEVEL__
         })
       ]
     });
