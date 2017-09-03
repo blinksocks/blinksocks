@@ -32,14 +32,14 @@ const HKDF_HASH_ALGORITHM = 'sha1';
  *   factor(optional): Expand random padding length(0-255) by factor times. It must be in [1, 10]. Default is 2.
  *
  * @examples
- *  {
- *    "name": "aead-random-cipher",
- *    "params": {
- *      "method": "aes-128-gcm",
- *      "info": "bs-subkey",
- *      "factor": 2
- *    }
- *  }
+ *   {
+ *     "name": "aead-random-cipher",
+ *     "params": {
+ *       "method": "aes-128-gcm",
+ *       "info": "bs-subkey",
+ *       "factor": 2
+ *     }
+ *   }
  *
  * @protocol
  *
@@ -181,12 +181,17 @@ export default class AeadRandomCipherPreset extends IPreset {
 
     // 3. verify DataLen, DataLen_TAG
     const [encLen, lenTag] = [buffer.slice(0, 2), buffer.slice(2, 2 + TAG_LEN)];
-    const dataLen = this.decrypt(encLen, lenTag);
-    if (dataLen === null) {
+    const dataLenBuf = this.decrypt(encLen, lenTag);
+    if (dataLenBuf === null) {
       fail(`unexpected DataLen_TAG=${lenTag.toString('hex')} when verify DataLen=${encLen.toString('hex')}, dump=${buffer.slice(0, 60).toString('hex')}`);
       return -1;
     }
-    return 2 + TAG_LEN + dataLen.readUInt16BE(0) + TAG_LEN;
+    const dataLen = dataLenBuf.readUInt16BE(0);
+    if (dataLen > MAX_CHUNK_SPLIT_LEN) {
+      fail(`invalid DataLen=${dataLen} is over ${MAX_CHUNK_SPLIT_LEN}, dump=${buffer.slice(0, 60).toString('hex')}`);
+      return -1;
+    }
+    return 2 + TAG_LEN + dataLen + TAG_LEN;
   }
 
   onChunkReceived(chunk, {next, fail}) {

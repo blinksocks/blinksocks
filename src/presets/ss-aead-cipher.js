@@ -149,12 +149,17 @@ export default class SsAeadCipherPreset extends IPreset {
 
     // verify DataLen, DataLen_TAG
     const [encLen, lenTag] = [buffer.slice(0, 2), buffer.slice(2, 2 + TAG_LEN)];
-    const dataLen = this.decrypt(encLen, lenTag);
-    if (dataLen === null) {
+    const dataLenBuf = this.decrypt(encLen, lenTag);
+    if (dataLenBuf === null) {
       fail(`unexpected DataLen_TAG=${lenTag.toString('hex')} when verify DataLen=${encLen.toString('hex')}, dump=${buffer.slice(0, 60).toString('hex')}`);
       return -1;
     }
-    return 2 + TAG_LEN + dataLen.readUInt16BE(0) + TAG_LEN;
+    const dataLen = dataLenBuf.readUInt16BE(0);
+    if (dataLen > MAX_CHUNK_SPLIT_LEN) {
+      fail(`invalid DataLen=${dataLen} is over ${MAX_CHUNK_SPLIT_LEN}, dump=${buffer.slice(0, 60).toString('hex')}`);
+      return -1;
+    }
+    return 2 + TAG_LEN + dataLen + TAG_LEN;
   }
 
   onChunkReceived(chunk, {next, fail}) {
