@@ -62,6 +62,8 @@ export class Pipe extends EventEmitter {
   }
 
   feed(direction, buffer) {
+    this._cacheBuffer = buffer;
+
     const eventName = `next_${direction}`;
     const middlewares = this.getMiddlewares(direction);
 
@@ -83,12 +85,6 @@ export class Pipe extends EventEmitter {
 
     // begin pipe
     middlewares[0].write(direction, {buffer, direct});
-
-    // TODO(fix): here only cached the first incoming data for carrying "orgData" in PRESET_FAILED.
-    // NOTE: cache full data may be a bad practice.
-    if (this._cacheBuffer === null) {
-      this._cacheBuffer = buffer;
-    }
   }
 
   destroy() {
@@ -98,7 +94,7 @@ export class Pipe extends EventEmitter {
     }
     this._upstream_middlewares = null;
     this._downstream_middlewares = null;
-    this._staging = null;
+    this._cacheBuffer = null;
     this.removeAllListeners();
   }
 

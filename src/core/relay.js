@@ -1,28 +1,12 @@
 import EventEmitter from 'events';
 import net from 'net';
 import tls from 'tls';
-import {logger, isValidHostname, isValidPort} from '../utils';
+import ActionHandler from './action-handler';
 import {Pipe} from './pipe';
 import {DNSCache} from './dns-cache';
-import {
-  MIDDLEWARE_DIRECTION_UPWARD,
-  MIDDLEWARE_DIRECTION_DOWNWARD,
-  createMiddleware
-} from './middleware';
-
-import {
-  CONNECTION_CREATED,
-  CONNECTION_CLOSED,
-  CONNECT_TO_REMOTE,
-  PRESET_FAILED,
-  PRESET_CLOSE_CONNECTION,
-  PRESET_PAUSE_RECV,
-  PRESET_PAUSE_SEND,
-  PRESET_RESUME_RECV,
-  PRESET_RESUME_SEND
-} from '../presets/defs';
-
-import {BEHAVIOUR_EVENT_ON_PRESET_FAILED} from '../behaviours';
+import {MIDDLEWARE_DIRECTION_UPWARD, MIDDLEWARE_DIRECTION_DOWNWARD, createMiddleware} from './middleware';
+import {logger, isValidHostname, isValidPort} from '../utils';
+import {CONNECTION_CREATED, CONNECTION_CLOSED} from '../presets/defs';
 
 const MAX_BUFFERED_SIZE = 512 * 1024; // 512KB
 
@@ -37,7 +21,7 @@ export class Relay extends EventEmitter {
 
   _dnsCache = null;
 
-  _isConnectedToDst = false;
+  _isConnectedToRemote = false;
 
   _remoteHost = '';
 
@@ -60,7 +44,6 @@ export class Relay extends EventEmitter {
     this.onBackwardSocketClose = this.onBackwardSocketClose.bind(this);
     this.onForwardSocketTimeout = this.onForwardSocketTimeout.bind(this);
     this.onForwardSocketClose = this.onForwardSocketClose.bind(this);
-    this.onPipeNotified = this.onPipeNotified.bind(this);
     this.sendForward = this.sendForward.bind(this);
     this.sendBackward = this.sendBackward.bind(this);
     this.connect = this.connect.bind(this);
@@ -121,7 +104,7 @@ export class Relay extends EventEmitter {
   // bsocket
 
   onForward(buffer) {
-    if (this.fsocketWritable || !this._isConnectedToDst) {
+    if (this.fsocketWritable || !this._isConnectedToRemote) {
       const direction = __IS_CLIENT__ ? MIDDLEWARE_DIRECTION_UPWARD : MIDDLEWARE_DIRECTION_DOWNWARD;
       this._pipe.feed(direction, buffer);
     }
@@ -288,77 +271,11 @@ export class Relay extends EventEmitter {
   createPipe(presets) {
     const middlewares = presets.map((preset) => createMiddleware(preset.name, preset.params || {}));
     const pipe = new Pipe();
-    pipe.on('broadcast', this.onPipeNotified);
+    pipe.on('broadcast', ActionHandler.bind(this)); // if no action were caught by presets
     pipe.on(`next_${MIDDLEWARE_DIRECTION_UPWARD}`, this.sendForward);
     pipe.on(`next_${MIDDLEWARE_DIRECTION_DOWNWARD}`, this.sendBackward);
     pipe.setMiddlewares(middlewares);
     return pipe;
-  }
-
-  /**
-   * if no action were caught by middlewares
-   * @param action
-   * @returns {*}
-   */
-  async onPipeNotified(action) {
-    switch (action.type) {
-      case CONNECT_TO_REMOTE: {
-        const {host, port, onConnected} = action.payload;
-        if (__IS_SERVER__) {
-          await this.connect({host, port});
-        }
-        if (__IS_CLIENT__) {
-          logger.info(`[relay] [${this.remote}] request: ${host}:${port}`);
-          await this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__});
-        }
-        this._isConnectedToDst = true;
-        if (typeof onConnected === 'function') {
-          onConnected();
-        }
-        break;
-      }
-      case PRESET_FAILED: {
-        const props = {
-          remoteHost: this._remoteHost,
-          remotePort: this._remotePort,
-          onClose: this.destroy,
-          connect: this.connect,
-          setPresets: this.setPresets,
-          action: action
-        };
-        const {name, message} = action.payload;
-        logger.error(`[relay] [${this.remote}] preset "${name}" fail to process: ${message}`);
-        await __BEHAVIOURS__[BEHAVIOUR_EVENT_ON_PRESET_FAILED].run(props);
-        break;
-      }
-      case PRESET_CLOSE_CONNECTION: {
-        logger.info(`[relay] [${this.remote}] preset request to close connection`);
-        this.destroy();
-        break;
-      }
-      case PRESET_PAUSE_RECV:
-        __IS_SERVER__ ?
-          (this._bsocket && this._bsocket.pause()) :
-          (this._fsocket && this._fsocket.pause());
-        break;
-      case PRESET_PAUSE_SEND:
-        __IS_SERVER__ ?
-          (this._fsocket && this._fsocket.pause()) :
-          (this._bsocket && this._bsocket.pause());
-        break;
-      case PRESET_RESUME_RECV:
-        __IS_SERVER__ ?
-          (this._bsocket && this._bsocket.resume()) :
-          (this._fsocket && this._fsocket.resume());
-        break;
-      case PRESET_RESUME_SEND:
-        __IS_SERVER__ ?
-          (this._fsocket && this._fsocket.resume()) :
-          (this._bsocket && this._bsocket.resume());
-        break;
-      default:
-        break;
-    }
   }
 
   /**
