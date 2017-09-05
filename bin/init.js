@@ -55,15 +55,6 @@ module.exports = function init({isMinimal}) {
         'tls_cert': 'cert.pem'
       }
     ],
-    'behaviours': {
-      'on-preset-failed': {
-        'name': 'random-timeout',
-        'params': {
-          'min': 10,
-          'max': 40
-        }
-      }
-    },
     'dns': [],
     'dns_expire': 3600,
     'timeout': timeout,
@@ -75,7 +66,6 @@ module.exports = function init({isMinimal}) {
   if (isMinimal) {
     delete clientJson.servers[0].transport;
     delete clientJson.servers[0].tls_cert;
-    delete clientJson.behaviours;
     delete clientJson.dns;
     delete clientJson.dns_expire;
     delete clientJson.timeout;
@@ -101,20 +91,12 @@ module.exports = function init({isMinimal}) {
         }
       }
     ],
-    'behaviours': {
-      'on-preset-failed': {
-        'name': 'random-timeout',
-        'params': {
-          'min': 10,
-          'max': 40
-        }
-      }
-    },
     'tls_key': 'key.pem',
     'tls_cert': 'cert.pem',
     'dns': [],
     'dns_expire': 3600,
     'timeout': timeout,
+    'redirect': '',
     'workers': 0,
     'log_path': 'bs-server.log',
     'log_level': 'info'
@@ -122,12 +104,12 @@ module.exports = function init({isMinimal}) {
 
   if (isMinimal) {
     delete serverJson.transport;
-    delete serverJson.behaviours;
     delete serverJson.tls_key;
     delete serverJson.tls_cert;
     delete serverJson.dns;
     delete serverJson.dns_expire;
     delete serverJson.timeout;
+    delete serverJson.redirect;
     delete serverJson.workers;
     delete serverJson.log_path;
     delete serverJson.log_level;
@@ -136,6 +118,6 @@ module.exports = function init({isMinimal}) {
   fs.writeFileSync('blinksocks.client.json', JSON.stringify(clientJson, null, '  '));
   fs.writeFileSync('blinksocks.server.json', JSON.stringify(serverJson, null, '  '));
 
-  console.log('> Generated blinksocks.client.json and blinksocks.server.json');
-  console.log('> Please check out https://github.com/blinksocks/blinksocks/tree/master/docs/config for explanation to each option');
+  console.log('> Generate Done.');
+  console.log('> For usage please check out: https://github.com/blinksocks/blinksocks/tree/master/docs/config/README.md');
 };

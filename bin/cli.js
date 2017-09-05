@@ -25,9 +25,8 @@ const usage = `
 
     -h, --help          output usage information
     -v, --version       output blinksocks version
-    -c, --config        file with configuration, usually a json file
+    -c, --config        json file with configuration
     --list-presets      list all built-in presets
-    --list-behaviours   list all built-in behaviours
     -m, --minimal       generate minimal json files
 
   Examples:
@@ -82,10 +81,6 @@ const argv = process.argv;
 
   if (hasOption('--list-presets')) {
     return console.log(modules.presets.join(os.EOL));
-  }
-
-  if (hasOption('--list-behaviours')) {
-    return console.log(modules.behaviours.join(os.EOL));
   }
 
   if (options[0] === 'init') {
