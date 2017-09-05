@@ -2,7 +2,7 @@ import ProxyPreset from './proxy';
 import TunnelPreset from './tunnel';
 import StatsPreset from './stats';
 import TrackerPreset from './tracker';
-import AccessControl from './access-control';
+import AccessControlPreset from './access-control';
 import ExpCompressPreset from './exp-compress';
 import ExpBaseWithPaddingPreset from './exp-base-with-padding';
 import ExpBaseAuthStreamPreset from './exp-base-auth-stream';
@@ -19,17 +19,17 @@ const mapping = {
   'tunnel': TunnelPreset,
   'stats': StatsPreset,
   'tracker': TrackerPreset,
-  'access-control': AccessControl,
-  'exp-compress': ExpCompressPreset,
-  'exp-base-with-padding': ExpBaseWithPaddingPreset,
-  'exp-base-auth-stream': ExpBaseAuthStreamPreset,
+  'access-control': AccessControlPreset,
   'ss-base': SsBasePreset,
   'ss-stream-cipher': SsStreamCipherPreset,
   'ss-aead-cipher': SsAeadCipherPreset,
-  'aead-random-cipher': AeadRandomCipherPreset,
+  'obfs-random-padding': ObfsRandomPaddingPreset,
   'obfs-http': ObfsHttpPreset,
   'obfs-tls1.2-ticket': ObfsTls12TicketPreset,
-  'obfs-random-padding': ObfsRandomPaddingPreset
+  'exp-base-with-padding': ExpBaseWithPaddingPreset,
+  'exp-base-auth-stream': ExpBaseAuthStreamPreset,
+  'exp-compress': ExpCompressPreset,
+  'aead-random-cipher': AeadRandomCipherPreset
 };
 
 const presets = Object.keys(mapping);
