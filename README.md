@@ -7,7 +7,6 @@
 [![devDependencies](https://img.shields.io/david/dev/blinksocks/blinksocks.svg)](https://www.npmjs.com/package/blinksocks)
 
 [![Travis](https://img.shields.io/travis/blinksocks/blinksocks.svg)](https://travis-ci.org/blinksocks/blinksocks)
-[![Coverage](https://img.shields.io/codecov/c/github/blinksocks/blinksocks/master.svg)](https://codecov.io/gh/blinksocks/blinksocks)
 [![%e2%9d%a4](https://img.shields.io/badge/made%20with-%e2%9d%a4-ff69b4.svg)](https://github.com/blinksocks/blinksocks)
 
 A framework for building composable proxy protocol stack.
@@ -16,13 +15,14 @@ A framework for building composable proxy protocol stack.
 
 ## Features
 
-* Simple proxy interface for Socks5/Socks4/Socks4a and HTTP.
 * Cross-platform: running on Linux, Windows and macOS.
-* Transmit over TCP or [TLS](docs/config).
-* Customizable protocols and middlewares: using [Presets](docs/presets).
-* Customizable relay behaviours: using [Behaviours](docs/behaviours).
-* Portable/Executable versions available. [Download Here](https://github.com/blinksocks/blinksocks/releases)
-* Partially compatible with **shadowsocks**. [#27](https://github.com/blinksocks/blinksocks/issues/27)
+* Simple proxy interface for Socks5/Socks4/Socks4a and HTTP.
+* Transmit over TCP or [TLS](https://github.com/blinksocks/blinksocks/tree/master/docs/config#blinksocks-over-tls).
+* Customizable protocols and functional middlewares: using [presets](docs/presets).
+* Over **30+** built-in combinations with [benchmark](docs/benchmark).
+* Easy and powerful Access Control([ACL](https://github.com/blinksocks/blinksocks/tree/master/docs/presets#access-control)): auto ban, speed limiter.
+* Portable/Executable versions available: [download here](https://github.com/blinksocks/blinksocks/releases).
+* Compatible with **shadowsocks**(partially). [#27](https://github.com/blinksocks/blinksocks/issues/27)
 
 ## GUI ready
 

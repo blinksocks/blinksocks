@@ -5,7 +5,6 @@
 1. [Usage](usage)
 2. [Configuration](config)
 3. [Presets](presets)
-4. [Behaviours](behaviours)
 
 ## For Developers
 

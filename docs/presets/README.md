@@ -10,6 +10,7 @@ Presets are chaining and composable, built-in presets are listed here. If you wa
 * [tunnel](#tunnel)
 * [stats](#stats)
 * [tracker](#tracker)
+* [access-control](#access-control)
 
 **shadowsocks**
 
@@ -71,7 +72,7 @@ $ curl -L --socks5-hostname localhost:1080 https://www.bing.com
 
 This proxy does not use any proxy protocols, just proxy original traffic to a permanent destination.
 
-| PARAMS         | DESCRIPTION      | DEFAULT |
+|     PARAMS     |   DESCRIPTION    | DEFAULT |
 | :------------- | :--------------- | :------ |
 | host(optional) | destination host | -       |
 | port(optional) | destination port | -       |
@@ -109,7 +110,7 @@ In this case, it's useful to test network performance between client and server 
 
 This preset perform statistics among traffic via this preset, you can put it anywhere in preset list to obtain **summary/instant/process** information of specific preset traffic. This preset has no side-effect to the traffic through it.
 
-| PARAMS          | DESCRIPTION                  | DEFAULT |
+|     PARAMS      |         DESCRIPTION          | DEFAULT |
 | :-------------- | :--------------------------- | :------ |
 | save_to         | path to the result json file | -       |
 | sample_interval | sample interval in seconds   | 30      |
@@ -199,6 +200,57 @@ And you can get the track message in your terminal and log files:
 [tracker] summary(out/in = 14/9, 5191b/3431b) abstract(127.0.0.1:55566 play.google.com:443 u 555 d 394 u 616 d 165 u 221 156 934 795 d 74 u 43 d 1201 u 51 174 531 d 51 573 u 51 172 841 d 51 854 u 51 d 68)
 ```
 
+## [access-control]
+
+Easy and powerful Access Control(ACL) to each connection.
+
+> NOTE: This preset is for server use only.
+
+|  PARAMS   |                          DESCRIPTION                          | DEFAULT |
+| :-------- | :------------------------------------------------------------ | :------ |
+| acl       | A path to a text file which contains a list of rules in order | -       |
+| max_tries | The maximum tries from client                                 | 60      |
+
+> NOTE: you'd better put this preset to the last of the preset list.
+
+```
+"presets": [
+  ...,
+  {
+    "name": "access-control",
+    "params": {
+      "acl": "acl.txt",
+      "max_tries": 60
+    }
+  }
+]
+```
+
+**acl.txt** for example:
+
+```
+# [addr[/mask][:port]] [ban] [max_upload_speed(/s)] [max_download_speed(/s)]
+
+example.com     1            # prevent access to example.com
+example.com:*   1            # prevent access to example.com:*, equal to above
+example.com:443 1            # prevent access to example.com:443 only
+*:25            1            # prevent access to SMTP servers
+*:*             1            # prevent all access from/to all endpoints
+127.0.0.1       1            # ban localhost
+192.168.0.0/16  1            # ban hosts in 192.168.*.*
+172.27.1.100    0 120K       # limit upload speed to 120KB/s
+172.27.1.100    0 -    120K  # limit download speed to 120KB/s
+172.27.1.100    0 120K 120K  # limit upload and download speed to 120KB/s
+```
+
+Rules in **acl.txt** has a priority from lower to higher.
+
+If server fail to process client(**by host**) requests over **max_tries** times, client will be **baned immediately**, and a new rule will be appended to the **acl** file.
+
+To recovery unwary ban, you can edit acl file, remove unwanted rule without restarting the program.
+
+> NOTE: rules will take effect immediately each time **acl.txt** was updated.
+
 ## [ss-base]
 
 This is a very basic preset which delivers the real destination address from client to server.
@@ -213,9 +265,9 @@ This is a very basic preset which delivers the real destination address from cli
 
 The shadowsocks's [stream cipher](https://shadowsocks.org/en/spec/Stream-Ciphers.html).
 
-| PARAMS    | DESCRIPTION                      | DEFAULT |
-| :-------- | :------------------------------- | :------ |
-| method    | encryption and decryption method | -       |
+| PARAMS |           DESCRIPTION            | DEFAULT |
+| :----- | :------------------------------- | :------ |
+| method | encryption and decryption method | -       |
 
 `method` can be one of:
 
@@ -233,7 +285,7 @@ camellia-128-cfb, camellia-192-cfb, camellia-256-cfb
   {
     "name": "ss-stream-cipher",
     "params": {
-      "method": "camellia-256-cfb"
+      "method": "aes-256-ctr"
     }
   }
 ]
@@ -243,10 +295,10 @@ camellia-128-cfb, camellia-192-cfb, camellia-256-cfb
 
 The shadowsocks's [aead cipher](https://shadowsocks.org/en/spec/AEAD-Ciphers.html).
 
-| PARAMS    | DESCRIPTION                      | DEFAULT |
-| :-------- | :------------------------------- | :------ |
-| method    | encryption and decryption method | -       |
-| info      | a string to generate subkey      | -       |
+| PARAMS |           DESCRIPTION            | DEFAULT |
+| :----- | :------------------------------- | :------ |
+| method | encryption and decryption method | -       |
+| info   | a string to generate subkey      | -       |
 
 `method` can be one of:
 
@@ -297,9 +349,9 @@ A simple obfuscator to significantly randomize the length of each packet. It can
 A http obfuscator, the first round after TCP handshake will wrap data within a random http header
 selected from a text file.
 
-| PARAMS    | DESCRIPTION                                   | DEFAULT |
-| :-------- | :-------------------------------------------- | :------ |
-| file      | a text file which contains HTTP header paris. | -       |
+| PARAMS |                  DESCRIPTION                  | DEFAULT |
+| :----- | :-------------------------------------------- | :------ |
+| file   | a text file which contains HTTP header paris. | -       |
 
 `file` for example:
 
@@ -338,9 +390,9 @@ HTTP/1.1 200 OK
 
 A TLS1.2 obfuscator, do TLS handshake using SessionTicket TLS mechanism, transfer data inside of Application Data.
 
-| PARAMS    | DESCRIPTION                                                      | DEFAULT |
-| :-------- | :--------------------------------------------------------------- | :------ |
-| sni       | [Server Name Indication], a server name or a list of server name | -       |
+| PARAMS |                           DESCRIPTION                            | DEFAULT |
+| :----- | :--------------------------------------------------------------- | :------ |
+| sni    | [Server Name Indication], a server name or a list of server name | -       |
 
 ```
 "presets": [
@@ -363,9 +415,9 @@ It can prevent address from being tampered.
 
 **NOTE**: Using [exp-base-with-padding] with non-cfb ciphers will lose protection. 
 
-| PARAMS    | DESCRIPTION                     | DEFAULT |
-| :-------- | :------------------------------ | :------ |
-| salt      | a string for generating padding | -       |
+| PARAMS |           DESCRIPTION           | DEFAULT |
+| :----- | :------------------------------ | :------ |
+| salt   | a string for generating padding | -       |
 
 ```
 "presets": [{
@@ -385,9 +437,9 @@ It can prevent address from being tampered.
 
 An **experimental** preset combines HMAC and stream encryption. HMAC only guarantees integrity for addressing part.
 
-| PARAMS    | DESCRIPTION                      | DEFAULT |
-| :-------- | :------------------------------- | :------ |
-| method    | encryption and decryption method | -       |
+| PARAMS |           DESCRIPTION            | DEFAULT |
+| :----- | :------------------------------- | :------ |
+| method | encryption and decryption method | -       |
 
 `method` can be one of:
 
@@ -410,9 +462,9 @@ camellia-128-cfb, camellia-192-cfb, camellia-256-cfb
 
 An **experimental** to do stream compression/decompression. **Use with caution.**
 
-| PARAMS    | DESCRIPTION                          | DEFAULT |
-| :-------- | :----------------------------------- | :------ |
-| method    | compression and decompression method | -       |
+| PARAMS |             DESCRIPTION              | DEFAULT |
+| :----- | :----------------------------------- | :------ |
+| method | compression and decompression method | -       |
 
 `method` can be one of:
 
@@ -430,7 +482,7 @@ gzip, deflate
 This preset is based on **ss-aead-cipher**, but added random padding in the front of **each chunk**. This preset inherited
 all features from **ss-aead-cipher** and prevent server from being detected by packet length statistics analysis.
 
-| PARAMS           | DESCRIPTION                              | DEFAULT |
+|      PARAMS      |               DESCRIPTION                | DEFAULT |
 | :--------------- | :--------------------------------------- | :------ |
 | method           | encryption and decryption method         | -       |
 | info             | a string to generate subkey              | -       |
@@ -560,6 +612,7 @@ Make some cheat:
 [tunnel]: ../../src/presets/tunnel.js
 [stats]: ../../src/presets/stats.js
 [tracker]: ../../src/presets/tracker.js
+[access-control]: ../../src/presets/access-control.js
 [exp-compress]: ../../src/presets/exp-compress.js
 [ss-base]: ../../src/presets/ss-base.js
 [exp-base-with-padding]: ../../src/presets/exp-base-with-padding.js

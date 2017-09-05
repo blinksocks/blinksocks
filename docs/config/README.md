@@ -21,12 +21,10 @@ $ blinksocks init
 | presets              | preset list in order                | -        | -               | see [presets]                                              |
 | presets[i].name      | preset name                         | -        | -               | -                                                          |
 | presets[i].params    | preset params                       | -        | -               | -                                                          |
-| behaviours           | a list of behaviours                | Yes      | -               | see [behaviours]                                           |
-| behaviours[i].name   | behaviour name                      | -        | -               | -                                                          |
-| behaviours[i].params | behaviour params                    | -        | -               | -                                                          |
 | tls_key              | private key for TLS                 | -        | -               | required on server if "transport" is "tls"                 |
 | tls_cert             | server certificate                  | -        | -               | required on both client and server if "transport" is "tls" |
 | timeout              | timeout for each connection         | Yes      | 600             | in seconds                                                 |
+| redirect             | target to redirect when preset fail | Yes      | ""              | <host or ip>:<port>                                        |
 | workers              | the number of sub-process           | Yes      | 0               | cluster mode when workers > 0                              |
 | dns                  | an ip list of DNS server            | Yes      | []              | -                                                          |
 | dns_expire           | DNS cache expiration time           | Yes      | 3600            | in seconds                                                 |
@@ -57,28 +55,6 @@ Blinksocks will detect which server is the fastest in intervals using [balancer.
 `presets` are chaining from the first to the last, and are almost free to compose.
 
 For more information about presets, please check out [presets].
-
-### Behaviours
-
-Behaviours are customizable event handlers for Relay. `behaviours` is an object with several "events" which may occured in Socket.
-
-You can specify a behaviour to different events using different handlers. The following config shows when any preset failed, socket should close the connection in a random timeout picked from 10 to 40 seconds:
-
-```json
-{
-  "behaviours": {
-    "on-preset-failed": {
-      "name": "random-timeout",
-      "params": {
-        "min": 10,
-        "max": 40
-      }
-    }
-  },
-}
-```
-
-For more information about behaviours, please check out [behaviours].
 
 ### blinksocks over TLS
 
@@ -178,5 +154,4 @@ You can enable cluster mode by setting `workers` greater than zero, cluster mode
 
 [balancer.js]: ../../src/core/balancer.js
 [presets]: ../presets
-[behaviours]: ../behaviours
 [winston]: https://github.com/winstonjs/winston

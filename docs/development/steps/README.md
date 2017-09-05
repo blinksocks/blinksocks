@@ -18,14 +18,14 @@ Prepare your configurations(**blinksocks.client.json** and **blinksocks.server.j
 
 ### Debug Mode(Use Chrome Developer Tool)
 
-Debug in Chrome requires Node.js v6 and Chrome 57 or later.
+Debug in Chrome requires Node.js v6.x and Chrome 57 or later.
 
 ```
 $ npm run debug:client
 $ npm run debug:server
 ```
 
-Then open **chrome://inspect/#devices** in Chrome. Click **inspect** under **bin/cli-client.js** or **bin/cli-server.js**.
+Then open **chrome://inspect/#devices** in Chrome, configure **Target discovery settings** then click **inspect** below **Remote Target**.
 
 ### Production Mode
 
@@ -37,19 +37,9 @@ $ npm run server
 
 This will run compiled code under **build/**.
 
-Notice that you can change program behaviour using the following environment variants:
+## Test
 
-| NAME      | VALUE                       |
-| :-------- | :-------------------------- |
-| NODE_ENV  | "development", "production" |
-| RUN_AS    | "server", "client"          |
-
-If **RUN_AS** provided, log file name will be **blinksocks-[RUN_AS].log**, otherwise **blinksocks.log**. This is useful
-to distinguish log files in different roles.
-
-## Verify
-
-Any application support HTTP/Socks5/Socks4/Socks4a can be used for verification.
+Any application support HTTP/Socks5/Socks4/Socks4a can be used for testing.
 
 For example(use curl):
 

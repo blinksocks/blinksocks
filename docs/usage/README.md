@@ -17,7 +17,6 @@ $ blinksocks --help
     -v, --version       output blinksocks version
     -c, --config        file with configuration, usually a json file
     --list-presets      list all built-in presets
-    --list-behaviours   list all built-in behaviours
     -m, --minimal       generate minimal json files
 
   Examples:
