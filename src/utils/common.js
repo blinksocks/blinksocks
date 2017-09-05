@@ -177,7 +177,7 @@ export function isValidPort(port) {
   if (!Number.isInteger(port)) {
     return false;
   }
-  return !(port < 0 || port > 65535);
+  return !(port <= 0 || port >= 65535);
 }
 
 /**
