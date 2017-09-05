@@ -8,30 +8,34 @@ const modules = require('./modules');
 const version = global.__WEBPACK__ ? global.__VERSION__ : require('../package.json').version;
 
 const examples = [
-  ['Generate json file with full options', '$ blinksocks init'],
   ['Generate json file with minimal options', '$ blinksocks init --minimal'],
   ['Start blinksocks client', '$ blinksocks --config blinksocks.client.json'],
-  ['Start blinksocks server', '$ blinksocks --config blinksocks.server.json']
+  ['Start blinksocks server', '$ blinksocks --config blinksocks.server.json'],
+  ['List all built-in presets', '$ blinksocks --list-presets']
 ];
 
 const usage = `
+  ${chalk.bold.underline(`blinksocks v${version}`)}
+
   Usage: blinksocks [command] [options] ...
 
   Commands:
 
-    init    generate a pair of json file
+    init    generate configuration pair
 
   Options:
 
     -h, --help          output usage information
     -v, --version       output blinksocks version
-    -c, --config        json file with configuration
-    --list-presets      list all built-in presets
+    -c, --config        file json file with configuration
     -m, --minimal       generate minimal json files
+    --list-presets      list all built-in presets
 
   Examples:
 
-${examples.map(([description, example]) => `  ${chalk.gray('-')} ${description}\n    ${chalk.blue(example)}`).join('\n')}
+${examples.map(([description, example]) => `  ${chalk.gray('-')} ${description}${os.EOL}    ${chalk.blue(example)}`).join(os.EOL)}
+
+  About & Help: ${chalk.underline('https://github.com/blinksocks/blinksocks')}
 `;
 
 const argv = process.argv;
