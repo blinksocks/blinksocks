@@ -2,11 +2,6 @@
 
 // - pushed by relay
 
-/**
- *  {
- *    type: PRESET_INIT
- *  }
- */
 export const PRESET_INIT = '@action:preset_init';
 
 /**
@@ -57,12 +52,12 @@ export const CONNECT_TO_REMOTE = '@action:connect_to_remote';
  */
 export const PRESET_FAILED = '@action:preset_failed';
 
-/**
- *  {
- *    type: PRESET_CLOSE_CONNECTION
- *  }
- */
 export const PRESET_CLOSE_CONNECTION = '@action:preset_close_connection';
+
+export const PRESET_PAUSE_RECV = '@action:preset_pause_recv';
+export const PRESET_PAUSE_SEND = '@action:preset_pause_send';
+export const PRESET_RESUME_RECV = '@action:preset_resume_recv';
+export const PRESET_RESUME_SEND = '@action:preset_resume_send';
 
 export class IPreset {
 

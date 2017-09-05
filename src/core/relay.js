@@ -15,7 +15,11 @@ import {
   CONNECTION_CLOSED,
   CONNECT_TO_REMOTE,
   PRESET_FAILED,
-  PRESET_CLOSE_CONNECTION
+  PRESET_CLOSE_CONNECTION,
+  PRESET_PAUSE_RECV,
+  PRESET_PAUSE_SEND,
+  PRESET_RESUME_RECV,
+  PRESET_RESUME_SEND
 } from '../presets/defs';
 
 import {BEHAVIOUR_EVENT_ON_PRESET_FAILED} from '../behaviours';
@@ -332,6 +336,26 @@ export class Relay extends EventEmitter {
         this.destroy();
         break;
       }
+      case PRESET_PAUSE_RECV:
+        __IS_SERVER__ ?
+          (this._bsocket && this._bsocket.pause()) :
+          (this._fsocket && this._fsocket.pause());
+        break;
+      case PRESET_PAUSE_SEND:
+        __IS_SERVER__ ?
+          (this._fsocket && this._fsocket.pause()) :
+          (this._bsocket && this._bsocket.pause());
+        break;
+      case PRESET_RESUME_RECV:
+        __IS_SERVER__ ?
+          (this._bsocket && this._bsocket.resume()) :
+          (this._fsocket && this._fsocket.resume());
+        break;
+      case PRESET_RESUME_SEND:
+        __IS_SERVER__ ?
+          (this._fsocket && this._fsocket.resume()) :
+          (this._bsocket && this._bsocket.resume());
+        break;
       default:
         break;
     }
