@@ -88,7 +88,8 @@ $ node blinksocks.js -c blinksocks.client.json
 **executable version(~~Node.js~~, not GUI)**
 
 ```
-$ ./blinksocks(.exe) --help
+$ ./blinksocks --help    // Linux and macOS
+$ blinksocks.exe --help  // Windows
 ```
 
 You can [download](https://github.com/blinksocks/blinksocks/releases) precompiled executables for different platforms and launch it directly without having Node.js installed.
