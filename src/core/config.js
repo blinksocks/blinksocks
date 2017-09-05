@@ -5,21 +5,11 @@ import os from 'os';
 import net from 'net';
 import winston from 'winston';
 import isPlainObject from 'lodash.isplainobject';
-import {getBehaviourClassByName, BEHAVIOUR_EVENT_ON_PRESET_FAILED, behaviourEvents} from '../behaviours';
 import {getPresetClassByName} from '../presets';
 import {isValidHostname, isValidPort, logger} from '../utils';
 import {DNS_DEFAULT_EXPIRE} from './dns-cache';
 
 export const DEFAULT_LOG_LEVEL = 'info';
-export const DEFAULT_BEHAVIOURS = {
-  [BEHAVIOUR_EVENT_ON_PRESET_FAILED]: {
-    'name': 'random-timeout',
-    'params': {
-      'min': 10,
-      'max': 40
-    }
-  }
-};
 
 export class Config {
 
@@ -40,6 +30,7 @@ export class Config {
     }
 
     global.__TIMEOUT__ = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
+    global.__REDIRECT__ = (json.redirect !== '') ? json.redirect : null;
     global.__WORKERS__ = (json.workers !== undefined) ? json.workers : 0;
     global.__DNS_EXPIRE__ = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
     global.__ALL_CONFIG__ = json;
@@ -75,18 +66,6 @@ export class Config {
         })
       ]
     });
-
-    // behaviours
-    const behaviours = {
-      ...DEFAULT_BEHAVIOURS,
-      ...(json.behaviours !== undefined ? json.behaviours : {})
-    };
-    const events = Object.keys(behaviours);
-    global.__BEHAVIOURS__ = {};
-    for (const ev of events) {
-      const clazz = getBehaviourClassByName(behaviours[ev].name);
-      global.__BEHAVIOURS__[ev] = new clazz(behaviours[ev].params || {});
-    }
   }
 
   static initServer(server) {
@@ -119,31 +98,6 @@ export class Config {
       throw Error('\'port\' is invalid');
     }
 
-    // behaviours
-    if (json.behaviours !== undefined) {
-      if (!isPlainObject(json.behaviours)) {
-        throw Error('\'behaviours\' is invalid');
-      }
-      const events = Object.keys(json.behaviours);
-      for (const event of events) {
-        if (!behaviourEvents.includes(event)) {
-          throw Error(`unrecognized behaviour event: "${event}"`);
-        }
-        const {name, params} = json.behaviours[event];
-        if (typeof name !== 'string') {
-          throw Error('\'behaviours[].name\' must be a string');
-        }
-        if (name === '') {
-          throw Error('\'behaviours[].name\' cannot be empty');
-        }
-        if (params !== undefined && !isPlainObject(params)) {
-          throw Error('\'behaviours[].params\' must be an plain object');
-        }
-        const behaviour = getBehaviourClassByName(name);
-        delete new behaviour(params || {});
-      }
-    }
-
     // servers
     if (json.servers !== undefined) {
       if (!Array.isArray(json.servers)) {
@@ -168,6 +122,23 @@ export class Config {
       }
       if (json.timeout < 60) {
         console.warn(`==> [config] 'timeout' is too short, is ${json.timeout}s expected?`);
+      }
+    }
+
+    if (json.redirect !== undefined && json.redirect !== '') {
+      if (typeof json.redirect !== 'string') {
+        throw Error('\'redirect\' must be a string');
+      }
+      const parts = json.redirect.split(':');
+      if (parts.length !== 2) {
+        throw Error('\'redirect\' must be "<host or ip>:<port>"');
+      }
+      const [host, port] = parts;
+      if (!isValidHostname(host) && !net.isIP(host)) {
+        throw Error('\'redirect\' host is invalid');
+      }
+      if (!isValidPort(+port)) {
+        throw Error('\'redirect\' port is invalid');
       }
     }
 

@@ -46,25 +46,13 @@ describe('Config#init', () => {
     expect(() => Config.init({...baseConf, timeout: 61})).not.toThrow();
   });
 
-  it('should throw when behaviours(if provided) is invalid', () => {
-    expect(() => Config.init({...baseConf, behaviours: null})).toThrow();
-    expect(() => Config.init({...baseConf, behaviours: {}})).not.toThrow();
-    expect(() => Config.init({...baseConf, behaviours: {'abc': {}}})).toThrow();
-    expect(() => Config.init({...baseConf, behaviours: {'on-preset-failed': {}}})).toThrow();
-    expect(() => Config.init({...baseConf, behaviours: {'on-preset-failed': {name: null}}})).toThrow();
-    expect(() => Config.init({...baseConf, behaviours: {'on-preset-failed': {name: ''}}})).toThrow();
-    expect(() => Config.init({
-      ...baseConf,
-      behaviours: {'on-preset-failed': {name: 'direct-close', params: []}}
-    })).toThrow();
-    expect(() => Config.init({
-      ...baseConf,
-      behaviours: {'on-preset-failed': {name: 'direct-close'}}
-    })).not.toThrow();
-    expect(() => Config.init({
-      ...baseConf,
-      behaviours: {'on-preset-failed': {name: 'direct-close', params: {}}}
-    })).not.toThrow();
+  it('should throw when redirect(if provided) is invalid', () => {
+    expect(() => Config.init({...baseConf, redirect: null})).toThrow();
+    expect(() => Config.init({...baseConf, redirect: '123'})).toThrow();
+    expect(() => Config.init({...baseConf, redirect: '*:80'})).toThrow();
+    expect(() => Config.init({...baseConf, redirect: '123:-1'})).toThrow();
+    expect(() => Config.init({...baseConf, redirect: 'bing.com:80'})).not.toThrow();
+    expect(() => Config.init({...baseConf, redirect: ''})).not.toThrow();
   });
 
   it('should throw when log_path(if provided) is invalid', () => {
