@@ -1,14 +1,14 @@
 #  Change Log
 
-## [v2.6.0](https://github.com/blinksocks/blinksocks/tree/v2.6.0) (2017-09-06)
+## 2.6.0 (2017-09-06)
 
-#### Breaking Changes:
+### :boom: Breaking Changes:
 
 - **bin**: remove **.js** configuration file support, now you can only use **.json** file.
 - **core**: remove ~~behaviours~~ because it's not as convenient as I thought.
 - **package**: now **lib/** is back.
 
-#### Features & Improvements:
+### :rocket: Features & Improvements:
 
 - **benchmark**: add tests for `obfs-random-padding`.
 - **bin**: try to load config file from the first argument.
@@ -24,7 +24,7 @@
 - **presets**: add [obfs-random-padding](src/presets/obfs-random-padding.js).
 - **presets**: allow to set relative path to `save_to` of [stats](src/presets/stats.js) preset.
 
-#### Fixes:
+### :bug: Fixes:
 
 - **benchmark**: ranking by `SUM` of receiver transfer.
 - **benchmark**: remove `log_path` in generated jsons.
