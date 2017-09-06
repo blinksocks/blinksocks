@@ -39,25 +39,40 @@ ${examples.map(([description, example]) => `  ${chalk.gray('-')} ${description}$
 `;
 
 const argv = process.argv;
+const options = argv.slice(2);
+
+function hasOption(opt) {
+  return options.indexOf(opt) !== -1;
+}
+
+function getOptionValue(opt) {
+  const index = options.indexOf(opt);
+  if (index !== -1) {
+    return options[index + 1];
+  }
+  return undefined;
+}
 
 (function main() {
   if (argv.length < 3) {
     return console.log(usage);
   }
 
-  const options = argv.slice(2);
-
-  function hasOption(opt) {
-    return options.indexOf(opt) !== -1;
+  // try to treat the first argument as conf
+  const opt0 = options[0];
+  const maybeConfPath = path.resolve(process.cwd(), opt0);
+  if (fs.existsSync(maybeConfPath) && path.extname(maybeConfPath) === '.json') {
+    return bootstrap(maybeConfPath, modules);
   }
 
-  function getOptionValue(opt) {
-    const index = options.indexOf(opt);
-    if (index !== -1) {
-      return options[index + 1];
-    }
-    return undefined;
+  // parse Commands
+
+  if (options[0] === 'init') {
+    const isMinimal = hasOption('-m') || hasOption('--minimal');
+    return init({isMinimal});
   }
+
+  // parse options
 
   if (hasOption('-h') || hasOption('--help')) {
     return console.log(usage);
@@ -85,11 +100,6 @@ const argv = process.argv;
 
   if (hasOption('--list-presets')) {
     return console.log(modules.presets.join(os.EOL));
-  }
-
-  if (options[0] === 'init') {
-    const isMinimal = hasOption('-m') || hasOption('--minimal');
-    return init({isMinimal});
   }
 
   // other cases
