@@ -76,7 +76,10 @@ function convertTransferToKBytes(transfer) {
   return num * factor;
 }
 
-function printSystemConf() {
+function printTestEnv() {
+  console.log(chalk.bold.underline('blinksocks version:'));
+  console.log(child_process.execFileSync('blinksocks', ['-v'], {encoding: 'utf-8'}).trim());
+  console.log('');
   console.log(chalk.bold.underline('Operating System:'));
   const osParams = [
     ['cpu', os.cpus()[0].model],
@@ -140,7 +143,7 @@ function summary(results) {
   console.log('');
 }
 
-printSystemConf();
+printTestEnv();
 
 console.log('running tests...');
 console.log('');
