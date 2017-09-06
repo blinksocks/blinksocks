@@ -1,9 +1,39 @@
 #  Change Log
 
+## [v2.6.0](https://github.com/blinksocks/blinksocks/tree/v2.6.0) (2017-09-06)
 
+#### Breaking Changes:
+
+- **bin**: remove **.js** configuration file support, now you can only use **.json** file.
+- **core**: remove ~~behaviours~~ because it's not as convenient as I thought.
+- **package**: now **lib/** is back.
+
+#### Features & Improvements:
+
+- **benchmark**: add tests for `obfs-random-padding`.
+- **bin**: try to load config file from the first argument.
+- **core**: refactor relay and change **MAX_BUFFERED_SIZE** to 512KB.
+- **core**: refactor pipe.js.
+- **core**: refactor middleware.js.
+- **presets**: add a new class `IPresetStatic` which extends from IPreset.
+- **presets**: add `static checkParams()` to IPreset and move all parameters check logic to it.
+- **presets**: add `onDestroy()` lifecycle hook to IPreset.
+- **presets**: add `fail()` and `broadcast()` convenience methods to IPreset.
+- **presets**: add [access-control](src/presets/access-control.js).
+- **presets**: add [exp-compress](src/presets/exp-compress.js).
+- **presets**: add [obfs-random-padding](src/presets/obfs-random-padding.js).
+- **presets**: allow to set relative path to `save_to` of [stats](src/presets/stats.js) preset.
+
+#### Fixes:
+
+- **benchmark**: ranking by `SUM` of receiver transfer.
+- **benchmark**: remove `log_path` in generated jsons.
+- **core**: prevent calling close() on null in hub.
+- **core**: prevent onNotified() emitter itself.
+- **presets**: fix several indicators of stats preset.
+- **utils**: fix getRandomInt() and isValidPort().
 
 ## [v2.5.4](https://github.com/blinksocks/blinksocks/tree/v2.5.4) (2017-08-22)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.5.3...v2.5.4)
 
 #### Features:
 
@@ -11,7 +41,6 @@
 - split tunnel mode from proxy.js to tunnel.js [#91](https://github.com/blinksocks/blinksocks/issues/91)
 
 ## [v2.5.3](https://github.com/blinksocks/blinksocks/tree/v2.5.3) (2017-08-16)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.5.2...v2.5.3)
 
 #### Features:
 
@@ -21,7 +50,6 @@
 - improve json generation for windows [#86](https://github.com/blinksocks/blinksocks/issues/86)
 
 ## [v2.5.2](https://github.com/blinksocks/blinksocks/tree/v2.5.2) (2017-08-13)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.5.1...v2.5.2)
 
 #### Features:
 
@@ -33,17 +61,14 @@
 - generate port and timeout randomly in cli-init.js [#79](https://github.com/blinksocks/blinksocks/issues/79)
 
 ## [v2.5.1](https://github.com/blinksocks/blinksocks/tree/v2.5.1) (2017-08-09)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.5.0...v2.5.1)
 
 ## [v2.5.0](https://github.com/blinksocks/blinksocks/tree/v2.5.0) (2017-08-09)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.9...v2.5.0)
 
 #### Features:
 
 - pack src into a single file using webpack [#78](https://github.com/blinksocks/blinksocks/issues/78)
 
 ## [v2.4.9](https://github.com/blinksocks/blinksocks/tree/v2.4.9) (2017-08-04)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.8...v2.4.9)
 
 #### Features:
 
@@ -53,12 +78,11 @@
 - display error buffer in hex for obfs-tls1.2-ticket [#73](https://github.com/blinksocks/blinksocks/issues/73)
 - display preset name in error log [#72](https://github.com/blinksocks/blinksocks/issues/72)
 
-#### Fixes (bugs & defects):
+#### Fixes:
 
 - Destination port is wrong when relay ipv6 address [#68](https://github.com/blinksocks/blinksocks/issues/68)
 
 ## [v2.4.8](https://github.com/blinksocks/blinksocks/tree/v2.4.8) (2017-06-18)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.7...v2.4.8)
 
 #### Features:
 
@@ -66,26 +90,23 @@
 - Allow to custom DNS servers [#66](https://github.com/blinksocks/blinksocks/issues/66)
 - Add an enhanced AEAD preset without redundant logic [#63](https://github.com/blinksocks/blinksocks/issues/63)
 
-#### Fixes (bugs & defects):
+#### Fixes:
 
 - HTTP proxy doesn't work on Windows [#59](https://github.com/blinksocks/blinksocks/issues/59)
 
 ## [v2.4.7](https://github.com/blinksocks/blinksocks/tree/v2.4.7) (2017-06-10)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.6...v2.4.7)
 
 #### Features:
 
 - Instantiating winston logger to improve integration [#65](https://github.com/blinksocks/blinksocks/issues/65)
 
 ## [v2.4.6](https://github.com/blinksocks/blinksocks/tree/v2.4.6) (2017-06-09)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.5...v2.4.6)
 
-#### Fixes (bugs & defects):
+#### Fixes:
 
 - TypeError: Cannot read property 'bufferSize' of null [#64](https://github.com/blinksocks/blinksocks/issues/64)
 
 ## [v2.4.5](https://github.com/blinksocks/blinksocks/tree/v2.4.5) (2017-06-08)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.4...v2.4.5)
 
 #### Features:
 
@@ -93,12 +114,10 @@
 - Throttle uploads to reduce memory grow heavily when upload/download large files [#60](https://github.com/blinksocks/blinksocks/issues/60)
 
 ## [v2.4.4](https://github.com/blinksocks/blinksocks/tree/v2.4.4) (2017-06-03)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.3...v2.4.4)
 
 ## [v2.4.3](https://github.com/blinksocks/blinksocks/tree/v2.4.3) (2017-06-02)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.2...v2.4.3)
 
-#### Fixes (bugs & defects):
+#### Fixes:
 
 - ENOENT: no such file or directory, mkdir '~/.blinksocks/logs' [#58](https://github.com/blinksocks/blinksocks/issues/58)
 
@@ -107,33 +126,28 @@
 - Log request address when applications connected to the client [#57](https://github.com/blinksocks/blinksocks/issues/57)
 
 ## [v2.4.2](https://github.com/blinksocks/blinksocks/tree/v2.4.2) (2017-05-29)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.1...v2.4.2)
 
-#### Fixes (bugs & defects):
+#### Fixes:
 
 - Write logs to home directory [#55](https://github.com/blinksocks/blinksocks/issues/55)
 
 ## [v2.4.1](https://github.com/blinksocks/blinksocks/tree/v2.4.1) (2017-05-24)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.0...v2.4.1)
 
 ## [v2.4.0](https://github.com/blinksocks/blinksocks/tree/v2.4.0) (2017-05-02)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.0-beta.4...v2.4.0)
 
 ## [v2.4.0-beta.4](https://github.com/blinksocks/blinksocks/tree/v2.4.0-beta.4) (2017-04-23)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.0-beta.3...v2.4.0-beta.4)
 
 #### Features:
 
 - Presets: add TLS obfuscator [#52](https://github.com/blinksocks/blinksocks/issues/52)
 
-#### Fixes (bugs & defects):
+#### Fixes:
 
 - connection terminated while downloading a large file [#51](https://github.com/blinksocks/blinksocks/issues/51)
 
 ## [v2.4.0-beta.3](https://github.com/blinksocks/blinksocks/tree/v2.4.0-beta.3) (2017-04-17)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.0-beta.2...v2.4.0-beta.3)
 
-#### Fixes (bugs & defects):
+#### Fixes:
 
 - "ss-aead-cipher" does not work at server side when use shadowsocks client [#50](https://github.com/blinksocks/blinksocks/issues/50)
 
@@ -142,14 +156,12 @@
 - Multiple servers use different configurations [#48](https://github.com/blinksocks/blinksocks/issues/48)
 
 ## [v2.4.0-beta.2](https://github.com/blinksocks/blinksocks/tree/v2.4.0-beta.2) (2017-04-16)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.4.0-beta.1...v2.4.0-beta.2)
 
 #### Features:
 
 - Verify DST.ADDR of "presets/ss-base" [#47](https://github.com/blinksocks/blinksocks/issues/47)
 
 ## [v2.4.0-beta.1](https://github.com/blinksocks/blinksocks/tree/v2.4.0-beta.1) (2017-04-13)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.3.0...v2.4.0-beta.1)
 
 #### Features:
 
@@ -159,7 +171,6 @@
 - Add suitable presets to be compatible with shadowsocks protocols [#27](https://github.com/blinksocks/blinksocks/issues/27)
 
 ## [v2.3.0](https://github.com/blinksocks/blinksocks/tree/v2.3.0) (2017-04-09)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.3.0-beta.3...v2.3.0)
 
 #### Features:
 
@@ -168,33 +179,28 @@
 - Share the same config.json between clients and servers [#35](https://github.com/blinksocks/blinksocks/issues/35)
 
 ## [v2.3.0-beta.3](https://github.com/blinksocks/blinksocks/tree/v2.3.0-beta.3) (2017-03-28)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.3.0-beta.2...v2.3.0-beta.3)
 
 #### Features:
 
 - Disable a server by prefixing a '-' [#38](https://github.com/blinksocks/blinksocks/issues/38)
 
 ## [v2.3.0-beta.2](https://github.com/blinksocks/blinksocks/tree/v2.3.0-beta.2) (2017-03-24)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.3.0-beta.1...v2.3.0-beta.2)
 
 ## [v2.3.0-beta.1](https://github.com/blinksocks/blinksocks/tree/v2.3.0-beta.1) (2017-03-23)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.2.2...v2.3.0-beta.1)
 
 #### Features:
 
 - Print connection track line once a socket was closed [#33](https://github.com/blinksocks/blinksocks/issues/33)
 - Refactor docker deploy scripts [#32](https://github.com/blinksocks/blinksocks/issues/32)
 
-#### Fixes (bugs & defects):
+#### Fixes:
 
 - "blinksocks init" generates wrong configurations [#31](https://github.com/blinksocks/blinksocks/issues/31)
 - Fix typo of git commit hook in package.json [#29](https://github.com/blinksocks/blinksocks/issues/29)
 
 ## [v2.2.2](https://github.com/blinksocks/blinksocks/tree/v2.2.2) (2017-03-18)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.2.1...v2.2.2)
 
 ## [v2.2.1](https://github.com/blinksocks/blinksocks/tree/v2.2.1) (2017-03-15)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.2.0-beta.5...v2.2.1)
 
 #### Features:
 
@@ -202,7 +208,6 @@
 - Proposal: add "init" sub command to auto-generate configuration pair [#17](https://github.com/blinksocks/blinksocks/issues/17)
 
 ## [v2.2.0-beta.5](https://github.com/blinksocks/blinksocks/tree/v2.2.0-beta.5) (2017-03-10)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.2.0-beta.4...v2.2.0-beta.5)
 
 #### Features:
 
@@ -212,7 +217,6 @@
 - Enhancement: error handling [#18](https://github.com/blinksocks/blinksocks/issues/18)
 
 ## [v2.2.0-beta.4](https://github.com/blinksocks/blinksocks/tree/v2.2.0-beta.4) (2017-03-05)
-[Full Changelog](https://github.com/blinksocks/blinksocks/compare/v2.2.0-beta.3...v2.2.0-beta.4)
 
 #### Features:
 
