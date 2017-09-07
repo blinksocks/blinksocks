@@ -6,7 +6,7 @@ import {Pipe} from './pipe';
 import {DNSCache} from './dns-cache';
 import {MIDDLEWARE_DIRECTION_UPWARD, MIDDLEWARE_DIRECTION_DOWNWARD, createMiddleware} from './middleware';
 import {logger, isValidHostname, isValidPort} from '../utils';
-import {CONNECTION_CREATED, CONNECTION_CLOSED} from '../presets/defs';
+import {CONNECTION_CREATED, CONNECTION_CLOSED, CONNECTION_WILL_CLOSE} from '../presets/defs';
 
 const MAX_BUFFERED_SIZE = 512 * 1024; // 512KB
 
@@ -72,7 +72,7 @@ export class Relay extends EventEmitter {
     }
     this._presets = presets;
     this._pipe = this.createPipe(presets);
-    this._pipe.broadcast('pipe', {
+    this.broadcast({
       type: CONNECTION_CREATED,
       payload: {
         host: this._remoteHost,
@@ -173,9 +173,16 @@ export class Relay extends EventEmitter {
 
   onBackwardSocketClose() {
     if (this._bsocket) {
+      this.broadcast({
+        type: CONNECTION_WILL_CLOSE,
+        payload: {
+          host: this._remoteHost,
+          port: this._remotePort
+        }
+      });
       this._bsocket.destroy();
       this._bsocket = null;
-      this._pipe.broadcast('pipe', {
+      this.broadcast({
         type: CONNECTION_CLOSED,
         payload: {
           host: this._remoteHost,
@@ -212,6 +219,12 @@ export class Relay extends EventEmitter {
       this.bsocketWritable && this._bsocket.write(buffer);
     } else {
       this.fsocketWritable && this._fsocket.write(buffer);
+    }
+  }
+
+  broadcast(action) {
+    if (this._pipe) {
+      this._pipe.broadcast('pipe', action);
     }
   }
 

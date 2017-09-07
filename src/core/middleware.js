@@ -18,9 +18,11 @@ export class Middleware extends EventEmitter {
 
   constructor(impl) {
     super();
+    this.onPresetNext = this.onPresetNext.bind(this);
     this.onPresetBroadcast = this.onPresetBroadcast.bind(this);
     this.onPresetFail = this.onPresetFail.bind(this);
     this._impl = impl;
+    this._impl.next = this.onPresetNext;
     this._impl.broadcast = this.onPresetBroadcast;
     this._impl.fail = this.onPresetFail;
   }
@@ -35,6 +37,10 @@ export class Middleware extends EventEmitter {
 
   notify(action) {
     return this._impl.onNotified(action);
+  }
+
+  onPresetNext(direction, buffer) {
+    this.emit(`next_${direction}`, buffer);
   }
 
   onPresetBroadcast(action) {

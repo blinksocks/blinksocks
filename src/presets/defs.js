@@ -26,6 +26,17 @@ export const CONNECTION_CREATED = '@action:connection_created';
  */
 export const CONNECTION_CLOSED = '@action:connection_closed';
 
+/**
+ *  {
+ *    type: CONNECTION_WILL_CLOSE
+ *    payload: {
+ *      host: '127.0.0.1',
+ *      port: 12345
+ *    }
+ *  }
+ */
+export const CONNECTION_WILL_CLOSE = '@action:connection_will_close';
+
 // - emitted by presets
 
 /**
@@ -112,6 +123,10 @@ export class IPreset {
   }
 
   // auto-generated methods for convenience, DO NOT implement them!
+
+  next(direction, buffer) {
+
+  }
 
   broadcast(action) {
 
