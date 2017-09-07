@@ -103,7 +103,6 @@ You can [download](https://github.com/blinksocks/blinksocks/releases) precompile
 1. [Usage](docs/usage)
 2. [Configuration](docs/config)
 3. [Presets](docs/presets)
-4. [Behaviours](docs/behaviours)
 
 ### For Developers
 
