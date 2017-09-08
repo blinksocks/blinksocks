@@ -68,6 +68,13 @@ export class AdvancedBuffer extends EventEmitter {
   }
 
   /**
+   * clear staged buffer
+   */
+  clear() {
+    this._buffer = Buffer.alloc(0);
+  }
+
+  /**
    * digest a buffer, emit an event if a complete packet was resolved
    * @param buffer{Buffer}: a buffer to be digested
    * @param args
