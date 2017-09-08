@@ -41,16 +41,8 @@ module.exports = function init({isMinimal}) {
         'port': port,
         'key': key,
         'presets': [
-          {
-            'name': 'ss-base'
-          },
-          {
-            'name': 'ss-aead-cipher',
-            'params': {
-              'method': 'aes-256-gcm',
-              'info': 'ss-subkey'
-            }
-          }
+          {'name': 'ss-base'},
+          {'name': 'ss-aead-cipher', 'params': {'method': 'aes-256-gcm'}}
         ],
         'tls_cert': 'cert.pem'
       }
@@ -80,16 +72,8 @@ module.exports = function init({isMinimal}) {
     'key': key,
     'transport': 'tcp',
     'presets': [
-      {
-        'name': 'ss-base'
-      },
-      {
-        'name': 'ss-aead-cipher',
-        'params': {
-          'method': 'aes-256-gcm',
-          'info': 'ss-subkey'
-        }
-      }
+      {'name': 'ss-base'},
+      {'name': 'ss-aead-cipher', 'params': {'method': 'aes-256-gcm'}}
     ],
     'tls_key': 'key.pem',
     'tls_cert': 'cert.pem',
@@ -119,5 +103,5 @@ module.exports = function init({isMinimal}) {
   fs.writeFileSync('blinksocks.server.json', JSON.stringify(serverJson, null, '  '));
 
   console.log('> Generate Done.');
-  console.log('> For usage please check out: https://github.com/blinksocks/blinksocks/tree/master/docs/config/README.md');
+  console.log('> For configuring please read: https://github.com/blinksocks/blinksocks/tree/master/docs/config/README.md');
 };
