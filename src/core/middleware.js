@@ -2,9 +2,35 @@ import EventEmitter from 'events';
 import {getPresetClassByName, IPresetStatic} from '../presets';
 import {kebabCase} from '../utils';
 
-const instanceCache = {
-  // 'className': <instance>
+const presetCache = {
+  // 'ClassName': <preset>
 };
+
+function getInstanceFromCache(ImplClass, params) {
+  let impl = presetCache[ImplClass.name];
+  if (impl === undefined) {
+    // only create one instance for IPresetStatic
+    ImplClass.onInit(params);
+    impl = new ImplClass(params);
+    presetCache[ImplClass.name] = impl;
+  }
+  return impl;
+}
+
+function createPreset(name, params = {}) {
+  const ImplClass = getPresetClassByName(name);
+  let preset = null;
+  if (ImplClass.__proto__.name === IPresetStatic.name) {
+    preset = getInstanceFromCache(ImplClass, params);
+  } else {
+    if (!ImplClass.initialized) {
+      ImplClass.onInit(params);
+      ImplClass.initialized = true;
+    }
+    preset = new ImplClass(params);
+  }
+  return preset;
+}
 
 export const MIDDLEWARE_DIRECTION_UPWARD = 1;
 export const MIDDLEWARE_DIRECTION_DOWNWARD = -1;
@@ -51,11 +77,11 @@ export class Middleware extends EventEmitter {
     this.emit('fail', this.name, message);
   }
 
-  onDestroy(force = false) {
-    if (!force && (this._impl instanceof IPresetStatic)) {
-      return;
+  onDestroy() {
+    // prevent destroy on static preset
+    if (!(this._impl instanceof IPresetStatic)) {
+      this._impl.onDestroy();
     }
-    this._impl.onDestroy();
     this.removeAllListeners();
   }
 
@@ -107,20 +133,8 @@ export class Middleware extends EventEmitter {
  */
 export function createMiddleware(name, params = {}) {
   try {
-    const ImplClass = getPresetClassByName(name);
-    let impl = null;
-    // only create one instance for IPresetStatic
-    if (ImplClass.__proto__.name === IPresetStatic.name) {
-      const _impl = instanceCache[ImplClass.name];
-      if (_impl) {
-        impl = _impl;
-      } else {
-        impl = (instanceCache[ImplClass.name] = new ImplClass(params));
-      }
-    } else {
-      impl = new ImplClass(params);
-    }
-    return new Middleware(impl);
+    const preset = createPreset(name, params);
+    return new Middleware(preset);
   } catch (err) {
     console.error(err.message);
     process.exit(-1);
@@ -129,11 +143,11 @@ export function createMiddleware(name, params = {}) {
 }
 
 /**
- * destroy cached middlewares
+ * destroy cached presets when program exit()
  */
 export function cleanup() {
-  const instances = Object.values(instanceCache);
-  for (const ins of instances) {
-    ins.onDestroy(true);
+  const presets = Object.values(presetCache);
+  for (const preset of presets) {
+    preset.onDestroy();
   }
 }
