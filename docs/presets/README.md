@@ -298,14 +298,10 @@ The shadowsocks's [aead cipher](https://shadowsocks.org/en/spec/AEAD-Ciphers.htm
 | PARAMS |           DESCRIPTION            | DEFAULT |
 | :----- | :------------------------------- | :------ |
 | method | encryption and decryption method | -       |
-| info   | a string to generate subkey      | -       |
 
 `method` can be one of:
 
 aes-128-gcm, aes-192-gcm, aes-256-gcm
-
-If you want to work with shadowsocks client/server, the `info` must be **"ss-subkey"** without quotes.
-Otherwise, it can be any string.
 
 ```
 "presets": [
@@ -315,13 +311,11 @@ Otherwise, it can be any string.
   {
     "name": "ss-aead-cipher",
     "params": {
-      "method": "aes-256-gcm",
-      "info": "ss-subkey"
+      "method": "aes-256-gcm"
     }
   }
 ]
 ```
-
 
 ## [obfs-random-padding]
 
@@ -482,11 +476,11 @@ gzip, deflate
 This preset is based on **ss-aead-cipher**, but added random padding in the front of **each chunk**. This preset inherited
 all features from **ss-aead-cipher** and prevent server from being detected by packet length statistics analysis.
 
-|      PARAMS      |               DESCRIPTION                | DEFAULT |
-| :--------------- | :--------------------------------------- | :------ |
-| method           | encryption and decryption method         | -       |
-| info             | a string to generate subkey              | -       |
-| factor(optional) | random padding length = (0-255) * factor | 2       |
+|      PARAMS      |               DESCRIPTION                |   DEFAULT   |
+| :--------------- | :--------------------------------------- | :---------- |
+| method           | encryption and decryption method         | -           |
+| info(optional)   | a string to generate subkey              | "bs-subkey" |
+| factor(optional) | random padding length = (0-255) * factor | 2           |
 
 ```
 "presets": [
@@ -534,8 +528,7 @@ To work with **shadowsocks**, please choose one of the following configuration:
 }, {
   "name": "ss-aead-cipher",
   "params": {
-    "method": "aes-256-gcm",
-    "info": "ss-subkey"
+    "method": "aes-256-gcm"
   }
 }]
 ```
@@ -552,8 +545,7 @@ You can use **http** or **tls** obfuscator to avoid bad [QoS], **tls** is recomm
 }, {
   "name": "ss-aead-cipher",
   "params": {
-    "method": "aes-256-gcm",
-    "info": "ss-subkey"
+    "method": "aes-256-gcm"
   }
 }, {
   "name": "obfs-tls1.2-ticket",
@@ -576,8 +568,7 @@ You can use **http** or **tls** obfuscator to avoid bad [QoS], **tls** is recomm
   {
     "name": "ss-aead-cipher",
     "params": {
-      "method": "aes-128-gcm",
-      "info": "ss-subkey"
+      "method": "aes-128-gcm"
     }
   }
 ]
