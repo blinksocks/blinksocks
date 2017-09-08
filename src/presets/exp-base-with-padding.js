@@ -44,6 +44,8 @@ import {IPreset, CONNECT_TO_REMOTE} from './defs';
  */
 export default class ExpBaseWithPaddingPreset extends IPreset {
 
+  static padding = null; // buffer
+
   _isHandshakeDone = false;
 
   _isBroadCasting = false;
@@ -54,17 +56,20 @@ export default class ExpBaseWithPaddingPreset extends IPreset {
 
   _port = null; // buffer
 
-  _padding = null; // buffer
-
   static checkParams({salt}) {
     if (typeof salt !== 'string' || salt === '') {
       throw Error('\'salt\' must be a non-empty string');
     }
   }
 
-  constructor({salt}) {
-    super();
-    this._padding = hash('sha256', salt).slice(0, 15);
+  static onInit({salt}) {
+    this.padding = hash('sha256', salt).slice(0, 15);
+  }
+
+  onDestroy() {
+    this._staging = null;
+    this._host = null;
+    this._port = null;
   }
 
   onNotified(action) {
@@ -79,7 +84,7 @@ export default class ExpBaseWithPaddingPreset extends IPreset {
     if (!this._isHandshakeDone) {
       this._isHandshakeDone = true;
       return Buffer.concat([
-        numberToBuffer(this._host.length, 1), this._padding, this._host, this._port, buffer
+        numberToBuffer(this._host.length, 1), ExpBaseWithPaddingPreset.padding, this._host, this._port, buffer
       ]);
     } else {
       return buffer;
@@ -102,8 +107,8 @@ export default class ExpBaseWithPaddingPreset extends IPreset {
       }
 
       // verify padding
-      if (!buffer.slice(1, 16).equals(this._padding)) {
-        return fail(`unexpected padding=${this._padding.toString('hex')}`);
+      if (!buffer.slice(1, 16).equals(ExpBaseWithPaddingPreset.padding)) {
+        return fail(`unexpected padding=${ExpBaseWithPaddingPreset.padding.toString('hex')}`);
       }
 
       // obtain addr length

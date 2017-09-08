@@ -13,12 +13,15 @@ const TAG_LEN = 16;
 const MIN_CHUNK_LEN = TAG_LEN * 2 + 3;
 const MIN_CHUNK_SPLIT_LEN = 0x0800;
 const MAX_CHUNK_SPLIT_LEN = 0x3FFF;
+const DEFAULT_INFO = 'bs-subkey';
 const DEFAULT_FACTOR = 2;
 
 // available ciphers
-const ciphers = [
-  'aes-128-gcm', 'aes-192-gcm', 'aes-256-gcm'
-];
+const ciphers = {
+  'aes-128-gcm': 16,
+  'aes-192-gcm': 24,
+  'aes-256-gcm': 32
+};
 
 const HKDF_HASH_ALGORITHM = 'sha1';
 
@@ -71,13 +74,15 @@ const HKDF_HASH_ALGORITHM = 'sha1';
  */
 export default class AeadRandomCipherPreset extends IPreset {
 
-  _cipherName = '';
+  static cipherName = '';
 
-  _info = null;
+  static info = null;
 
-  _factor = DEFAULT_FACTOR;
+  static factor = DEFAULT_FACTOR;
 
-  _rawKey = null;
+  static rawKey = null;
+
+  static keySaltSize = 0; // key and salt size
 
   _cipherKey = null;
 
@@ -94,42 +99,55 @@ export default class AeadRandomCipherPreset extends IPreset {
 
   _adBuf = null;
 
-  static checkParams({method, info, factor = DEFAULT_FACTOR}) {
+  static checkParams({method, info = DEFAULT_INFO, factor = DEFAULT_FACTOR}) {
     if (method === undefined || method === '') {
       throw Error('\'method\' must be set');
     }
-    if (!ciphers.includes(method)) {
-      throw Error(`method '${method}' is not supported`);
+    const cipherNames = Object.keys(ciphers);
+    if (!cipherNames.includes(method)) {
+      throw Error(`'method' must be one of [${cipherNames}]`);
     }
     if (typeof info !== 'string' || info.length <= 0) {
       throw Error('\'info\' must be a non-empty string');
     }
-    if (factor !== undefined) {
-      if (!Number.isInteger(factor)) {
-        throw Error('\'factor\' must be an integer');
-      }
-      if (factor < 1 || factor > 10) {
-        throw Error('\'factor\' must be in [1, 10]');
-      }
+    if (!Number.isInteger(factor)) {
+      throw Error('\'factor\' must be an integer');
+    }
+    if (factor < 1 || factor > 10) {
+      throw Error('\'factor\' must be in [1, 10]');
     }
   }
 
-  constructor({method, info, factor = DEFAULT_FACTOR}) {
+  static onInit({method, info = DEFAULT_INFO, factor = DEFAULT_FACTOR}) {
+    this.cipherName = method;
+    this.info = Buffer.from(info);
+    this.factor = factor;
+    this.rawKey = Buffer.from(__KEY__);
+    this.keySaltSize = ciphers[method];
+  }
+
+  constructor() {
     super();
-    this._cipherName = method;
-    this._info = Buffer.from(info);
-    this._factor = factor;
-    this._rawKey = Buffer.from(__KEY__);
     this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});
     this._adBuf.on('data', this.onChunkReceived.bind(this));
+  }
+
+  onDestroy() {
+    this._adBuf.clear();
+    this._adBuf = null;
+    this._cipherKey = null;
+    this._decipherKey = null;
+    this._cipherNonce = 0;
+    this._decipherNonce = 0;
+    this._nextExpectDecipherNonce = 0;
   }
 
   beforeOut({buffer}) {
     let salt = null;
     if (this._cipherKey === null) {
-      const size = this._cipherName.split('-')[1] / 8; // key and salt size
+      const size = AeadRandomCipherPreset.keySaltSize;
       salt = crypto.randomBytes(size);
-      this._cipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, this._rawKey, this._info, size);
+      this._cipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, AeadRandomCipherPreset.rawKey, AeadRandomCipherPreset.info, size);
     }
     const chunks = getRandomChunks(buffer, MIN_CHUNK_SPLIT_LEN, MAX_CHUNK_SPLIT_LEN).map((chunk) => {
       // random padding
@@ -156,12 +174,12 @@ export default class AeadRandomCipherPreset extends IPreset {
   onReceiving(buffer, {fail}) {
     // 1. init this._decipherKey
     if (this._decipherKey === null) {
-      const size = this._cipherName.split('-')[1] / 8; // key and salt size
+      const size = AeadRandomCipherPreset.keySaltSize;
       if (buffer.length < size) {
         return; // too short to get salt
       }
       const salt = buffer.slice(0, size);
-      this._decipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, this._rawKey, this._info, size);
+      this._decipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, AeadRandomCipherPreset.rawKey, AeadRandomCipherPreset.info, size);
       return buffer.slice(size); // drop salt
     }
 
@@ -207,15 +225,15 @@ export default class AeadRandomCipherPreset extends IPreset {
 
   getPaddingLength(key, nonce) {
     const nonceBuffer = numberToBuffer(nonce, NONCE_LEN, BYTE_ORDER_LE);
-    const cipher = crypto.createCipheriv(this._cipherName, key, nonceBuffer);
+    const cipher = crypto.createCipheriv(AeadRandomCipherPreset.cipherName, key, nonceBuffer);
     cipher.update(nonceBuffer);
     cipher.final();
-    return cipher.getAuthTag()[0] * this._factor;
+    return cipher.getAuthTag()[0] * AeadRandomCipherPreset.factor;
   }
 
   encrypt(message) {
     const cipher = crypto.createCipheriv(
-      this._cipherName,
+      AeadRandomCipherPreset.cipherName,
       this._cipherKey,
       numberToBuffer(this._cipherNonce, NONCE_LEN, BYTE_ORDER_LE)
     );
@@ -227,7 +245,7 @@ export default class AeadRandomCipherPreset extends IPreset {
 
   decrypt(ciphertext, tag) {
     const decipher = crypto.createDecipheriv(
-      this._cipherName,
+      AeadRandomCipherPreset.cipherName,
       this._decipherKey,
       numberToBuffer(this._decipherNonce, NONCE_LEN, BYTE_ORDER_LE)
     );

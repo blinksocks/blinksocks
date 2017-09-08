@@ -54,32 +54,37 @@ const ciphers = [
  */
 export default class SsStreamCipherPreset extends IPreset {
 
-  _cipherName = '';
+  static cipherName = '';
 
-  _key = null;
+  static key = null;
 
   _cipher = null;
 
   _decipher = null;
 
-  constructor({method}) {
-    super();
+  static checkParams({method}) {
     if (typeof method !== 'string' || method === '') {
       throw Error('\'method\' must be set');
     }
     if (!ciphers.includes(method)) {
-      throw Error(`method '${method}' is not supported`);
+      throw Error(`'method' must be one of [${ciphers}]`);
     }
-    this._cipherName = method;
-    if (global.__KEY__) {
-      this._key = EVP_BytesToKey(__KEY__, this._cipherName.split('-')[1] / 8, IV_LEN);
-    }
+  }
+
+  static onInit({method}) {
+    this.cipherName = method;
+    this.key = EVP_BytesToKey(__KEY__, method.split('-')[1] / 8, IV_LEN);
+  }
+
+  onDestroy() {
+    this._cipher = null;
+    this._decipher = null;
   }
 
   beforeOut({buffer}) {
     if (!this._cipher) {
       const iv = crypto.randomBytes(IV_LEN);
-      this._cipher = crypto.createCipheriv(this._cipherName, this._key, iv);
+      this._cipher = crypto.createCipheriv(SsStreamCipherPreset.cipherName, SsStreamCipherPreset.key, iv);
       return Buffer.concat([iv, this.encrypt(buffer)]);
     } else {
       return this.encrypt(buffer);
@@ -92,7 +97,7 @@ export default class SsStreamCipherPreset extends IPreset {
         return fail(`cannot get iv, buffer is too short(${buffer.length}bytes): ${buffer.toString('hex')}`);
       }
       const iv = buffer.slice(0, IV_LEN);
-      this._decipher = crypto.createDecipheriv(this._cipherName, this._key, iv);
+      this._decipher = crypto.createDecipheriv(SsStreamCipherPreset.cipherName, SsStreamCipherPreset.key, iv);
       return this.decrypt(buffer.slice(IV_LEN));
     } else {
       return this.decrypt(buffer);

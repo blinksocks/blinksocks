@@ -294,6 +294,10 @@ export default class AccessControlPreset extends IPreset {
         throw Error('\'max_tries\' must be greater than 0');
       }
     }
+  }
+
+  static onInit({acl}) {
+    const aclPath = path.resolve(process.cwd(), acl);
     // note: should load rules once server up
     reloadRules(aclPath);
     fs.watchFile(aclPath, (curr, prev) => {

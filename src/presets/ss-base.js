@@ -65,6 +65,12 @@ export default class SsBasePreset extends IPreset {
 
   _port = null; // buffer
 
+  onDestroy() {
+    this._staging = null;
+    this._host = null;
+    this._port = null;
+  }
+
   onNotified(action) {
     if (__IS_CLIENT__ && action.type === CONNECT_TO_REMOTE) {
       const {host, port} = action.payload;

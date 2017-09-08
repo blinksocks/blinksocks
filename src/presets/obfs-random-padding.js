@@ -44,6 +44,11 @@ export default class ObfsRandomPaddingPreset extends IPreset {
     this._adBuf.on('data', this.onChunkReceived.bind(this));
   }
 
+  onDestroy() {
+    this._adBuf.clear();
+    this._adBuf = null;
+  }
+
   beforeOut({buffer}) {
     const chunks = getRandomChunks(buffer, 0, 0xffff).map((data) => {
       const pLen = getRandomInt(0, 0xff);

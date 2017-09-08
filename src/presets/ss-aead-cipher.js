@@ -15,10 +15,12 @@ const MIN_CHUNK_LEN = TAG_LEN * 2 + 3;
 const MIN_CHUNK_SPLIT_LEN = 0x0800;
 const MAX_CHUNK_SPLIT_LEN = 0x3FFF;
 
-// available ciphers
-const ciphers = [
-  'aes-128-gcm', 'aes-192-gcm', 'aes-256-gcm'
-];
+// available ciphers and key lengths
+const ciphers = {
+  'aes-128-gcm': 16,
+  'aes-192-gcm': 24,
+  'aes-256-gcm': 32
+};
 
 const HKDF_HASH_ALGORITHM = 'sha1';
 
@@ -28,14 +30,12 @@ const HKDF_HASH_ALGORITHM = 'sha1';
  *
  * @params
  *   method: The encryption/decryption method.
- *   info: An info for HKDF.
  *
  * @examples
  *   {
  *     "name": "ss-aead-cipher",
  *     "params": {
- *       "method": "aes-128-gcm",
- *       "info": "ss-subkey"
+ *       "method": "aes-128-gcm"
  *     }
  *   }
  *
@@ -77,9 +77,13 @@ const HKDF_HASH_ALGORITHM = 'sha1';
  */
 export default class SsAeadCipherPreset extends IPreset {
 
-  _cipherName = '';
+  static cipherName = '';
 
-  _info = null;
+  static info = Buffer.from('ss-subkey');
+
+  static keySaltSize = 0; // key and salt size
+
+  static evpKey = null;
 
   _cipherKey = null;
 
@@ -91,29 +95,40 @@ export default class SsAeadCipherPreset extends IPreset {
 
   _adBuf = null;
 
-  static checkParams({method, info}) {
-    if (!ciphers.includes(method)) {
-      throw Error(`'method' must be one of [${ciphers}]`);
-    }
-    if (typeof info !== 'string' || info === '') {
-      throw Error('\'info\' must be a non-empty string');
+  static checkParams({method}) {
+    const cipherNames = Object.keys(ciphers);
+    if (!cipherNames.includes(method)) {
+      throw Error(`'method' must be one of [${cipherNames}]`);
     }
   }
 
-  constructor({method, info}) {
+  static onInit({method}) {
+    this.cipherName = method;
+    this.keySaltSize = ciphers[method];
+    this.evpKey = EVP_BytesToKey(__KEY__, this.keySaltSize, 16);
+  }
+
+  constructor() {
     super();
-    this._cipherName = method;
-    this._info = Buffer.from(info);
     this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});
     this._adBuf.on('data', this.onChunkReceived.bind(this));
+  }
+
+  onDestroy() {
+    this._adBuf.clear();
+    this._adBuf = null;
+    this._cipherKey = null;
+    this._decipherKey = null;
+    this._cipherNonce = 0;
+    this._decipherNonce = 0;
   }
 
   beforeOut({buffer}) {
     let salt = null;
     if (this._cipherKey === null) {
-      const size = this._cipherName.split('-')[1] / 8; // key and salt size
+      const size = SsAeadCipherPreset.keySaltSize;
       salt = crypto.randomBytes(size);
-      this._cipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, EVP_BytesToKey(__KEY__, size, 16), this._info, size);
+      this._cipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, SsAeadCipherPreset.evpKey, SsAeadCipherPreset.info, size);
     }
     const chunks = getRandomChunks(buffer, MIN_CHUNK_SPLIT_LEN, MAX_CHUNK_SPLIT_LEN).map((chunk) => {
       const dataLen = numberToBuffer(chunk.length);
@@ -134,12 +149,12 @@ export default class SsAeadCipherPreset extends IPreset {
 
   onReceiving(buffer, {fail}) {
     if (this._decipherKey === null) {
-      const size = this._cipherName.split('-')[1] / 8; // key and salt size
+      const size = SsAeadCipherPreset.keySaltSize;
       if (buffer.length < size) {
         return; // too short to get salt
       }
       const salt = buffer.slice(0, size);
-      this._decipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, EVP_BytesToKey(__KEY__, size, 16), this._info, size);
+      this._decipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, SsAeadCipherPreset.evpKey, SsAeadCipherPreset.info, size);
       return buffer.slice(size); // drop salt
     }
 
@@ -175,7 +190,7 @@ export default class SsAeadCipherPreset extends IPreset {
 
   encrypt(message) {
     const cipher = crypto.createCipheriv(
-      this._cipherName,
+      SsAeadCipherPreset.cipherName,
       this._cipherKey,
       numberToBuffer(this._cipherNonce, NONCE_LEN, BYTE_ORDER_LE)
     );
@@ -187,7 +202,7 @@ export default class SsAeadCipherPreset extends IPreset {
 
   decrypt(ciphertext, tag) {
     const decipher = crypto.createDecipheriv(
-      this._cipherName,
+      SsAeadCipherPreset.cipherName,
       this._decipherKey,
       numberToBuffer(this._decipherNonce, NONCE_LEN, BYTE_ORDER_LE)
     );

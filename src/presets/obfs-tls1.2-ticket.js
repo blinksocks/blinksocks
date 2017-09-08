@@ -83,6 +83,13 @@ export default class ObfsTls12TicketPreset extends IPreset {
     this._adBuf.on('data', this.onChunkReceived);
   }
 
+  onDestroy() {
+    this._adBuf.clear();
+    this._adBuf = null;
+    this._staging = null;
+    this._sni = null;
+  }
+
   getRandomSNI() {
     const index = crypto.randomBytes(1)[0] % this._sni.length;
     return Buffer.from(this._sni[index]);

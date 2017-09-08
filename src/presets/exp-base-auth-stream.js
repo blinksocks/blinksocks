@@ -52,6 +52,10 @@ const ciphers = [
  */
 export default class ExpBaseAuthStreamPreset extends IPreset {
 
+  static cipherName = '';
+
+  static key = null;
+
   _isHandshakeDone = false;
 
   _isBroadCasting = false;
@@ -61,8 +65,6 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
   _host = null; // buffer
 
   _port = null; // buffer
-
-  _cipherName = '';
 
   _cipher = null;
 
@@ -74,9 +76,17 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
     }
   }
 
-  constructor({method}) {
-    super();
-    this._cipherName = method;
+  static onInit({method}) {
+    this.cipherName = method;
+    this.key = EVP_BytesToKey(__KEY__, method.split('-')[1] / 8, IV_LEN);
+  }
+
+  onDestroy() {
+    this._staging = null;
+    this._host = null;
+    this._port = null;
+    this._cipher = null;
+    this._decipher = null;
   }
 
   onNotified(action) {
@@ -93,12 +103,12 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
 
       // prepare
       const iv = crypto.randomBytes(IV_LEN);
-      const keyForEncryption = EVP_BytesToKey(__KEY__, this._cipherName.split('-')[1] / 8, IV_LEN);
+      const secretKey = ExpBaseAuthStreamPreset.key;
       const keyForHMAC = Xor(iv, keyForEncryption.slice(0, IV_LEN));
 
       // initialize cipher/decipher
-      this._cipher = crypto.createCipheriv(this._cipherName, keyForEncryption, iv);
-      this._decipher = crypto.createDecipheriv(this._cipherName, keyForEncryption, iv);
+      this._cipher = crypto.createCipheriv(ExpBaseAuthStreamPreset.cipherName, secretKey, iv);
+      this._decipher = crypto.createDecipheriv(ExpBaseAuthStreamPreset.cipherName, secretKey, iv);
 
       const encBuf = this.encrypt(Buffer.concat([numberToBuffer(this._host.length, 1), this._host, this._port, buffer]));
       const hmacEncAddr = hmac('sha1', keyForHMAC, encBuf.slice(0, -buffer.length)).slice(0, HMAC_LEN);
@@ -124,10 +134,10 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
 
       // obtain IV and initialize cipher/decipher
       const iv = buffer.slice(0, IV_LEN);
-      const keyForEncryption = EVP_BytesToKey(__KEY__, this._cipherName.split('-')[1] / 8, IV_LEN);
+      const secretKey = ExpBaseAuthStreamPreset.key;
 
-      this._cipher = crypto.createCipheriv(this._cipherName, keyForEncryption, iv);
-      this._decipher = crypto.createDecipheriv(this._cipherName, keyForEncryption, iv);
+      this._cipher = crypto.createCipheriv(ExpBaseAuthStreamPreset.cipherName, secretKey, iv);
+      this._decipher = crypto.createDecipheriv(ExpBaseAuthStreamPreset.cipherName, secretKey, iv);
 
       // decrypt tail
       const tailBuffer = this.decrypt(buffer.slice(32));
@@ -142,7 +152,7 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
       }
 
       // verify HMAC
-      const keyForHMAC = Xor(iv, keyForEncryption.slice(0, IV_LEN));
+      const keyForHMAC = Xor(iv, secretKey.slice(0, IV_LEN));
       const expHmac = hmac('sha1', keyForHMAC, buffer.slice(32, 35 + alen)).slice(0, HMAC_LEN);
       if (!expHmac.equals(providedHmac)) {
         return fail(`unexpected HMAC-SHA1=${providedHmac.toString('hex')} want=${expHmac.toString('hex')}`);
