@@ -1,6 +1,6 @@
 import EventEmitter from 'events';
 import {MIDDLEWARE_DIRECTION_UPWARD} from './middleware';
-import {PRESET_INIT, PRESET_FAILED} from '../presets/defs';
+import {PRESET_FAILED} from '../presets/defs';
 
 export class Pipe extends EventEmitter {
 
@@ -49,8 +49,6 @@ export class Pipe extends EventEmitter {
     }
     this._upstream_middlewares = middlewares;
     this._downstream_middlewares = [].concat(middlewares).reverse();
-    // initial broadcast
-    this.broadcast('pipe', {type: PRESET_INIT});
   }
 
   getMiddlewares(direction = MIDDLEWARE_DIRECTION_UPWARD) {

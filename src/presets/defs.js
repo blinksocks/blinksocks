@@ -2,8 +2,6 @@
 
 // - pushed by relay
 
-export const PRESET_INIT = '@action:preset_init';
-
 /**
  *  {
  *    type: CONNECTION_CREATED,
@@ -70,12 +68,27 @@ export const PRESET_PAUSE_SEND = '@action:preset_pause_send';
 export const PRESET_RESUME_RECV = '@action:preset_resume_recv';
 export const PRESET_RESUME_SEND = '@action:preset_resume_send';
 
+/**
+ *
+ * @lifecycle
+ *   [static checkParams() -> static onInit()] -> constructor() -> ... -> onDestroy()
+ *                Only call once
+ */
 export class IPreset {
 
   /**
    * check params passed to the preset, if any errors, should throw directly
+   * @param params
    */
   static checkParams(params) {
+
+  }
+
+  /**
+   * you can make some cache in this function
+   * @param params
+   */
+  static onInit(params) {
 
   }
 
