@@ -55,10 +55,7 @@ export class Relay extends EventEmitter {
     this._bsocket = socket;
     this._bsocket.on('error', this.onError);
     this._bsocket.on('close', this.onBackwardSocketClose);
-    this._bsocket.on('timeout', this.onBackwardSocketTimeout.bind(this, {
-      host: this._remoteHost,
-      port: this._remotePort
-    }));
+    this._bsocket.on('timeout', this.onBackwardSocketTimeout);
     this._bsocket.on('data', this.onForward);
     this._bsocket.setTimeout(__TIMEOUT__);
     let presets = __PRESETS__;
@@ -123,8 +120,8 @@ export class Relay extends EventEmitter {
     }
   }
 
-  onForwardSocketTimeout({host, port}) {
-    logger.warn(`[relay] [${host}:${port}] timeout: no I/O on the connection for ${__TIMEOUT__ / 1e3}s`);
+  onForwardSocketTimeout() {
+    logger.warn(`[relay] [${this.remote}] timeout: no I/O on the connection for ${__TIMEOUT__ / 1e3}s`);
     this.onForwardSocketClose();
   }
 
@@ -166,8 +163,8 @@ export class Relay extends EventEmitter {
     }
   }
 
-  onBackwardSocketTimeout({host, port}) {
-    logger.warn(`[relay] [${host}:${port}] timeout: no I/O on the connection for ${__TIMEOUT__ / 1e3}s`);
+  onBackwardSocketTimeout() {
+    logger.warn(`[relay] [${this.remote}] timeout: no I/O on the connection for ${__TIMEOUT__ / 1e3}s`);
     this.onBackwardSocketClose();
   }
 
@@ -262,7 +259,7 @@ export class Relay extends EventEmitter {
       }
       this._fsocket.on('error', this.onError);
       this._fsocket.on('close', this.onForwardSocketClose);
-      this._fsocket.on('timeout', this.onForwardSocketTimeout.bind(this, {host, port}));
+      this._fsocket.on('timeout', this.onForwardSocketTimeout);
       this._fsocket.on('data', this.onBackward);
       this._fsocket.setTimeout(__TIMEOUT__);
     });
