@@ -54,16 +54,7 @@ export class Hub extends EventEmitter {
   }
 
   terminate() {
-    if (this._localServer === null) {
-      return;
-    }
-    this._localServer.close();
-    this._localServer = null;
-    this._isFirstWorker && logger.info('==> [hub] shutdown');
-    if (__IS_CLIENT__) {
-      Balancer.destroy();
-      this._isFirstWorker && logger.info('==> [balancer] stopped');
-    }
+    this.onClose();
   }
 
   createServer() {
@@ -105,11 +96,22 @@ export class Hub extends EventEmitter {
   }
 
   onClose() {
-    this._relays.forEach((relay) => relay.destroy());
-    this._relays = null;
-    this._localServer = null;
-    cleanup();
-    this.emit('close');
+    if (this._localServer !== null) {
+      // relays
+      this._relays.forEach((relay) => relay.destroy());
+      this._relays = null;
+      cleanup();
+      // balancer
+      if (__IS_CLIENT__) {
+        Balancer.destroy();
+        this._isFirstWorker && logger.info('==> [balancer] stopped');
+      }
+      // server
+      this._localServer.close();
+      this._localServer = null;
+      this._isFirstWorker && logger.info('==> [hub] shutdown');
+      this.emit('close');
+    }
   }
 
 }
