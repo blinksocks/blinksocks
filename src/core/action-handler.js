@@ -47,7 +47,7 @@ async function onPresetFailed(action) {
 
   // close connection directly on client side
   if (__IS_CLIENT__) {
-    logger.warn(`[rely] [${this.remote}] connection closed`);
+    logger.warn(`[relay] [${this.remote}] connection closed`);
     this.destroy();
   }
 
@@ -57,7 +57,7 @@ async function onPresetFailed(action) {
       const {orgData} = action.payload;
       const [host, port] = __REDIRECT__.split(':');
 
-      logger.warn(`[rely] [${this.remote}] connection is redirecting to: ${host}:${port}`);
+      logger.warn(`[relay] [${this.remote}] connection is redirecting to: ${host}:${port}`);
 
       // replace presets to tracker only
       this.setPresets((/* prevPresets */) => [{name: 'tracker'}]);
@@ -71,7 +71,7 @@ async function onPresetFailed(action) {
       this._bsocket && this._bsocket.pause();
       this._fsocket && this._fsocket.pause();
       const timeout = getRandomInt(10, 40);
-      logger.warn(`[rely] [${this.remote}] connection will be closed in ${timeout}s...`);
+      logger.warn(`[relay] [${this.remote}] connection will be closed in ${timeout}s...`);
       setTimeout(this.destroy, timeout * 1e3);
     }
   }
