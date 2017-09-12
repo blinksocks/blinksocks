@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import {EVP_BytesToKey, numberToBuffer, hmac, Xor} from '../utils';
+import {EVP_BytesToKey, numberToBuffer, hmac, xor} from '../utils';
 import {IPreset, CONNECT_TO_REMOTE} from './defs';
 
 const IV_LEN = 16;
@@ -104,7 +104,7 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
       // prepare
       const iv = crypto.randomBytes(IV_LEN);
       const secretKey = ExpBaseAuthStreamPreset.key;
-      const keyForHMAC = Xor(iv, keyForEncryption.slice(0, IV_LEN));
+      const keyForHMAC = xor(iv, keyForEncryption.slice(0, IV_LEN));
 
       // initialize cipher/decipher
       this._cipher = crypto.createCipheriv(ExpBaseAuthStreamPreset.cipherName, secretKey, iv);
@@ -152,7 +152,7 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
       }
 
       // verify HMAC
-      const keyForHMAC = Xor(iv, secretKey.slice(0, IV_LEN));
+      const keyForHMAC = xor(iv, secretKey.slice(0, IV_LEN));
       const expHmac = hmac('sha1', keyForHMAC, buffer.slice(32, 35 + alen)).slice(0, HMAC_LEN);
       if (!expHmac.equals(providedHmac)) {
         return fail(`unexpected HMAC-SHA1=${providedHmac.toString('hex')} want=${expHmac.toString('hex')}`);

@@ -1,8 +1,7 @@
 import crypto from 'crypto';
 import {
-  hexStringToBuffer as stb,
   numberToBuffer,
-  getUTC,
+  getCurrentTimestampInt,
   getRandomInt,
   getRandomChunks,
   AdvancedBuffer
@@ -15,6 +14,23 @@ const TLS_STAGE_APPLICATION_DATA = 3;
 
 const MIN_AD_PAYLOAD_LEN = 0x0800;
 const MAX_AD_PAYLOAD_LEN = 0x3FFF;
+
+/**
+ * convert string to buffer
+ * @param str
+ * @returns {Buffer}
+ */
+function stb(str) {
+  return Buffer.from(str, 'hex');
+}
+
+/**
+ * return UTC timestamp as buffer
+ * @returns {Buffer}
+ */
+function getUTC() {
+  return numberToBuffer(getCurrentTimestampInt(), 4);
+}
 
 /**
  * wrap buffer to Application Data
