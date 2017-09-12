@@ -89,7 +89,7 @@ export class AdvancedBuffer extends EventEmitter {
     }
 
     // drop this one
-    else if (retVal === -1) {
+    else if (retVal < 0) {
       return Buffer.alloc(0);
     }
 
