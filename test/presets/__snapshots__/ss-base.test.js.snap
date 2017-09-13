@@ -1,0 +1,89 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`running on client 1`] = `
+Object {
+  "data": Array [
+    3,
+    11,
+    101,
+    120,
+    97,
+    109,
+    112,
+    108,
+    101,
+    46,
+    99,
+    111,
+    109,
+    1,
+    187,
+    49,
+    50,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`running on client 2`] = `
+Object {
+  "data": Array [
+    51,
+    52,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`running on client 3`] = `
+Object {
+  "data": Array [
+    53,
+    54,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`running on server 1`] = `
+Object {
+  "payload": Object {
+    "host": "example.com",
+    "onConnected": [Function],
+    "port": 443,
+  },
+  "type": "@action:connect_to_remote",
+}
+`;
+
+exports[`running on server 2`] = `
+Object {
+  "data": Array [
+    0,
+    0,
+    0,
+    0,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`running on server 3`] = `
+Object {
+  "data": Array [
+    49,
+    50,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`running on server 4`] = `
+Object {
+  "data": Array [
+    51,
+    52,
+  ],
+  "type": "Buffer",
+}
+`;
