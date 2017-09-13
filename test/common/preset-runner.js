@@ -1,7 +1,14 @@
 export default class PresetRunner {
 
-  constructor({clazz, params}) {
+  constructor({clazz, params = {}}, globals = {}) {
+    this.setGlobals(globals);
+    clazz.checkParams(params);
+    clazz.onInit(params);
     this.preset = new clazz(params);
+  }
+
+  getPreset() {
+    return this.preset;
   }
 
   setGlobals(obj) {
@@ -13,7 +20,14 @@ export default class PresetRunner {
     this.preset.onNotified(action);
   }
 
+  destroy() {
+    this.preset.onDestroy();
+  }
+
   async forward(data) {
+    if (typeof data === 'string') {
+      data = Buffer.from(data);
+    }
     return new Promise((resolve, reject) => {
       const next = (buffer) => {
         const args = {
@@ -23,17 +37,12 @@ export default class PresetRunner {
           broadcast: this.preset.broadcast,
           direct: resolve
         };
-        let ret = null;
-        if (__IS_CLIENT__) {
-          ret = this.preset.clientOut(args);
-        } else {
-          ret = this.preset.serverOut(args);
-        }
+        const ret = this.preset[__IS_CLIENT__ ? 'clientOut' : 'serverIn'](args);
         if (ret instanceof Buffer) {
           resolve(ret);
         }
       };
-      const ret = this.preset.beforeOut({
+      const ret = this.preset[__IS_CLIENT__ ? 'beforeOut' : 'beforeIn']({
         buffer: data,
         fail: reject,
         next: next,
@@ -46,6 +55,9 @@ export default class PresetRunner {
   }
 
   async backward(data) {
+    if (typeof data === 'string') {
+      data = Buffer.from(data);
+    }
     return new Promise((resolve, reject) => {
       const next = (buffer) => {
         const args = {
@@ -55,17 +67,12 @@ export default class PresetRunner {
           broadcast: this.preset.broadcast,
           direct: resolve
         };
-        let ret = null;
-        if (__IS_CLIENT__) {
-          ret = this.preset.clientIn(args);
-        } else {
-          ret = this.preset.serverIn(args);
-        }
+        const ret = this.preset[__IS_CLIENT__ ? 'clientIn' : 'serverOut'](args);
         if (ret instanceof Buffer) {
           resolve(ret);
         }
       };
-      const ret = this.preset.beforeIn({
+      const ret = this.preset[__IS_CLIENT__ ? 'beforeIn' : 'beforeOut']({
         buffer: data,
         fail: reject,
         next: next,
