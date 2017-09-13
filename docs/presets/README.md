@@ -18,6 +18,10 @@ Presets are chaining and composable, built-in presets are listed here. If you wa
 * [ss-stream-cipher](#ss-stream-cipher)
 * [ss-aead-cipher](#ss-aead-cipher)
 
+**v2ray**
+
+* [v2ray-vmess](#v2ray-vmess)*
+
 **obfuscator**
 
 * [obfs-random-padding](#obfs-random-padding)
@@ -317,6 +321,83 @@ aes-128-gcm, aes-192-gcm, aes-256-gcm
 ]
 ```
 
+## [v2ray-vmess]
+
+[v2ray vmess protocol](https://www.v2ray.com/chapter_04/03_vmess.html) implementation.
+
+|  PARAMS  |            DESCRIPTION             |   DEFAULT   |
+| :------- | :--------------------------------- | :---------- |
+| id       | client uuid                        | -           |
+| security | encryption method, **client only** | aes-128-gcm |
+
+`method` can be one of:
+
+aes-128-gcm, none
+
+```
+"presets": [
+  {
+    "name": "v2ray-vmess",
+    "params": {
+      "id": "c2485913-4e9e-41eb-8cc5-b2e7db8d3bc7",
+      "security": "aes-128-gcm"
+    }
+  }
+]
+```
+
+**Notice in v2ray configs:**
+
+<details>
+  <summary>v2ray client</summary>
+
+  ```
+    "outbound": {
+      "protocol": "vmess",
+      "settings": {
+        "vnext": [
+          {
+            "address": "127.0.0.1",
+            "port": 10086,
+            "users": [
+              {
+                "id": "c2485913-4e9e-41eb-8cc5-b2e7db8d3bc7",
+                "security": "aes-128-gcm",
+                "alterId": 0 // [must be the default value: 0]
+              }
+            ]
+          }
+        ]
+      },
+      "mux": {
+        "enabled": false // [must be false]
+      }
+    },
+  ```
+
+</details>
+
+<details>
+  <summary>v2ray server</summary>
+
+```
+  "inbound": {
+    "port": 10086,
+    "protocol": "vmess",
+    "settings": {
+      "clients": [
+        {
+          "id": "c2485913-4e9e-41eb-8cc5-b2e7db8d3bc7",
+          "level": 1,
+          "alterId": 0 // [must be the default value: 0]
+        }
+      ]
+    }
+  },
+```
+
+</details>
+
 ## [obfs-random-padding]
 
 A simple obfuscator to significantly randomize the length of each packet. It can be used to prevent statistical analysis based on packet length.
@@ -604,16 +685,17 @@ Make some cheat:
 [stats]: ../../src/presets/stats.js
 [tracker]: ../../src/presets/tracker.js
 [access-control]: ../../src/presets/access-control.js
-[exp-compress]: ../../src/presets/exp-compress.js
 [ss-base]: ../../src/presets/ss-base.js
-[exp-base-with-padding]: ../../src/presets/exp-base-with-padding.js
-[exp-base-auth-stream]: ../../src/presets/exp-base-auth-stream.js
 [ss-stream-cipher]: ../../src/presets/ss-stream-cipher.js
 [ss-aead-cipher]: ../../src/presets/ss-aead-cipher.js
-[aead-random-cipher]: ../../src/presets/aead-random-cipher.js
+[v2ray-vmess]: ../../src/presets/v2ray-vmess.js
 [obfs-random-padding]: ../../src/presets/obfs-random-padding.js
 [obfs-http]: ../../src/presets/obfs-http.js
 [obfs-tls1.2-ticket]: ../../src/presets/obfs-tls1.2-ticket.js
+[exp-compress]: ../../src/presets/exp-compress.js
+[exp-base-with-padding]: ../../src/presets/exp-base-with-padding.js
+[exp-base-auth-stream]: ../../src/presets/exp-base-auth-stream.js
+[aead-random-cipher]: ../../src/presets/aead-random-cipher.js
 [Server Name Indication]: https://en.wikipedia.org/wiki/Server_Name_Indication
 [QoS]: https://en.wikipedia.org/wiki/Quality_of_service
 [benchmark]: ../../docs/benchmark

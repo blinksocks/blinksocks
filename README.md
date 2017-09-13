@@ -22,7 +22,8 @@ A framework for building composable proxy protocol stack.
 * Over **30+** built-in combinations with [benchmark](docs/benchmark).
 * Easy and powerful Access Control([ACL](https://github.com/blinksocks/blinksocks/tree/master/docs/presets#access-control)): auto ban, speed limiter.
 * Portable/Executable versions available: [download here](https://github.com/blinksocks/blinksocks/releases).
-* Compatible with **shadowsocks**(partially). [#27](https://github.com/blinksocks/blinksocks/issues/27)
+* Compatible with **shadowsocks** (partially). [#27](https://github.com/blinksocks/blinksocks/issues/27)
+* Compatible with **v2ray vmess** (partially).
 
 ## GUI ready
 
