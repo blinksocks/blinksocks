@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import SHA3 from '../externals/sha3';
+import sha3 from 'js-sha3';
 
 /**
  * message digest
@@ -28,12 +28,23 @@ export function hmac(algorithm, key, buffer) {
 /**
  * sha3 shake128
  * @param buffer
- * @returns {Buffer}
+ * @returns {{nextBytes: nextBytes}}
  */
 export function shake128(buffer) {
-  const shaObj = new SHA3('SHAKE128', 'ARRAYBUFFER');
-  shaObj.update(buffer);
-  return Buffer.from(shaObj.getHash('ARRAYBUFFER', {shakeLen: 128}));
+  let buffered = [];
+  let iter = 0;
+  return {
+    nextBytes: function nextBytes(n) {
+      if (iter + n > buffered.length) {
+        const hash = sha3.shake128.create(buffered.length * 8 + 512);
+        hash.update(buffer);
+        buffered = Buffer.from(hash.arrayBuffer());
+      }
+      const bytes = buffered.slice(iter, iter + n);
+      iter += n;
+      return bytes;
+    }
+  };
 }
 
 /**
