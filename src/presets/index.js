@@ -10,6 +10,9 @@ import SsBasePreset from './ss-base';
 import SsStreamCipherPreset from './ss-stream-cipher';
 import SsAeadCipherPreset from './ss-aead-cipher';
 
+// v2ray
+import V2rayVmessPreset from './v2ray-vmess';
+
 // obfuscator
 import ObfsRandomPaddingPreset from './obfs-random-padding';
 import ObfsHttpPreset from './obfs-http';
@@ -35,6 +38,9 @@ const mapping = {
   'ss-base': SsBasePreset,
   'ss-stream-cipher': SsStreamCipherPreset,
   'ss-aead-cipher': SsAeadCipherPreset,
+
+  // v2ray
+  'v2ray-vmess': V2rayVmessPreset,
 
   // obfuscator
   'obfs-random-padding': ObfsRandomPaddingPreset,
