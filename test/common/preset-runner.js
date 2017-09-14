@@ -1,4 +1,4 @@
-export default class PresetRunner {
+export class PresetRunner {
 
   constructor({clazz, params = {}}, globals = {}) {
     this.setGlobals(globals);

@@ -1,5 +1,25 @@
 #  Change Log
 
+## 2.6.1 (2017-09-14)
+
+### :rocket: Features & Improvements:
+
+- **benchmark**: print blinksocks version before running tests.
+- **utils**: add `clear()` method to `AdvancedBuffer`.
+- **presets**: add [v2ray vmess](https://www.v2ray.com/chapter_02/protocols/vmess.html) support. :sparkles:
+- **presets**: **info** now removed from `ss-aead-cipher`, always use "ss-subkey".
+- **presets**: **info** now has a default value **bs-subkey** for `aead-random-cipher`.
+- **presets**: add `static onInit()`, `next()` method to IPreset and remove `PRESET_INIT` action.
+- **presets**: improve performance as well as reduce memory usage:
+
+|     PRESET     | INCREASE RATE |
+| :------------- | :------------ |
+| ss-aead-cipher | 2x faster     |
+
+### :bug: Fixes:
+
+
+
 ## 2.6.0 (2017-09-06)
 
 ### :boom: Breaking Changes:

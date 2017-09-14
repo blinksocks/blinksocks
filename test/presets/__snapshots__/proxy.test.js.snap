@@ -1,0 +1,120 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`running on both client and server 1`] = `
+Object {
+  "payload": Object {
+    "host": "apis.google.com",
+    "onConnected": [Function],
+    "port": 443,
+  },
+  "type": "@action:connect_to_remote",
+}
+`;
+
+exports[`running on both client and server 2`] = `
+Object {
+  "data": Array [
+    5,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`running on both client and server 3`] = `
+Object {
+  "data": Array [
+    49,
+    50,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`running on both client and server 4`] = `
+Object {
+  "data": Array [
+    51,
+    52,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`running on both client and server 5`] = `
+Object {
+  "data": Array [
+    53,
+    54,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`running on both client and server 6`] = `
+Object {
+  "data": Array [
+    5,
+    1,
+    0,
+    3,
+    15,
+    97,
+    112,
+    105,
+    115,
+    46,
+    103,
+    111,
+    111,
+    103,
+    108,
+    101,
+    46,
+    99,
+    111,
+    109,
+    1,
+    187,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`running on both client and server 7`] = `
+Object {
+  "data": Array [
+    49,
+    50,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`running on both client and server 8`] = `
+Object {
+  "data": Array [
+    51,
+    52,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`running on both client and server 9`] = `
+Object {
+  "data": Array [
+    53,
+    54,
+  ],
+  "type": "Buffer",
+}
+`;

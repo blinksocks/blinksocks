@@ -1,5 +1,5 @@
 import {getPresetClassByName, CONNECT_TO_REMOTE} from '../../src/presets';
-import PresetRunner from '../common/preset-runner';
+import {PresetRunner} from '../common';
 
 test('running on client', async () => {
   const runner = new PresetRunner({

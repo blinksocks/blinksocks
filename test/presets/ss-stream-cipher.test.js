@@ -1,5 +1,5 @@
 import {getPresetClassByName} from '../../src/presets';
-import PresetRunner from '../common/preset-runner';
+import {PresetRunner} from '../common';
 
 test('running on both client and server', async () => {
   const runner = new PresetRunner({

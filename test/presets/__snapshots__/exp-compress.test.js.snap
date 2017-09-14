@@ -1,0 +1,35 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`running on both client and server 1`] = `
+Object {
+  "data": Array [
+    120,
+    156,
+    50,
+    52,
+    132,
+    1,
+    128,
+    0,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`running on both client and server 2`] = `
+Object {
+  "data": Array [
+    49,
+    49,
+    49,
+    49,
+    49,
+    49,
+    49,
+    49,
+    49,
+    49,
+  ],
+  "type": "Buffer",
+}
+`;
