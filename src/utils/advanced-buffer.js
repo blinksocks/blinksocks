@@ -83,19 +83,19 @@ export class AdvancedBuffer extends EventEmitter {
   _digest(buffer, ...args) {
     const retVal = this._nextLength || this._getPacketLength(buffer, ...args);
 
+    // start from the new point
+    if (retVal instanceof Buffer) {
+      return this._digest(retVal, ...args);
+    }
+
     // continue to put
-    if (retVal === 0 || retVal === undefined) {
+    else if (retVal === 0 || retVal === undefined) {
       return buffer;
     }
 
     // drop this one
     else if (retVal < 0) {
       return Buffer.alloc(0);
-    }
-
-    // start from the new point
-    else if (retVal instanceof Buffer) {
-      return this._digest(retVal, ...args);
     }
 
     // luckily: <- [chunk]
