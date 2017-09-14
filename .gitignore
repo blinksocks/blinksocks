@@ -23,4 +23,4 @@ coverage/
 /blinksocks*.json
 *.map
 *.pem
-acl.txt
+/acl.txt
