@@ -100,8 +100,8 @@ export default class StatsPreset extends IPresetStatic {
     if (!Number.isSafeInteger(save_interval)) {
       throw Error('\'save_interval\' must be an integer');
     }
-    if (save_interval < 5) {
-      throw Error('\'save_interval\' must be greater than 5');
+    if (save_interval < 1) {
+      throw Error('\'save_interval\' must be greater than 0');
     }
   }
 

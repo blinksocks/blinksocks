@@ -31,7 +31,7 @@ const HKDF_HASH_ALGORITHM = 'sha1';
  *
  * @params
  *   method: The encryption/decryption method.
- *   info: An info for HKDF.
+ *   info(optional): An info for HKDF.
  *   factor(optional): Expand random padding length(0-255) by factor times. It must be in [1, 10]. Default is 2.
  *
  * @examples

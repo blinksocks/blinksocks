@@ -104,7 +104,7 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
       // prepare
       const iv = crypto.randomBytes(IV_LEN);
       const secretKey = ExpBaseAuthStreamPreset.key;
-      const keyForHMAC = xor(iv, keyForEncryption.slice(0, IV_LEN));
+      const keyForHMAC = xor(iv, secretKey.slice(0, IV_LEN));
 
       // initialize cipher/decipher
       this._cipher = crypto.createCipheriv(ExpBaseAuthStreamPreset.cipherName, secretKey, iv);
