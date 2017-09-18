@@ -1,5 +1,6 @@
 import dns from 'dns';
 import net from 'net';
+import {logger} from '../utils';
 
 export const DNS_DEFAULT_EXPIRE = 3600000;
 
@@ -48,9 +49,11 @@ export class DNSCache {
       this._put(hostname, address);
     } else {
       const [addr, expire] = DNSCache._pool[hostname];
-      if (this._now() >= expire) {
+      const now = this._now();
+      if (now >= expire) {
         delete DNSCache._pool[hostname];
       }
+      logger.verbose(`[dns-cache] hit: hostname=${hostname} resolved=${addr} ttl=${expire - now}ms`);
       address = addr;
     }
     return address;
