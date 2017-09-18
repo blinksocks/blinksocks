@@ -10,6 +10,12 @@ export class Pipe extends EventEmitter {
 
   _cacheBuffer = null; // buffer
 
+  _destroyed = false;
+
+  get destroyed() {
+    return this._destroyed;
+  }
+
   constructor() {
     super();
     this.broadcast = this.broadcast.bind(this);
@@ -93,6 +99,7 @@ export class Pipe extends EventEmitter {
     this._upstream_middlewares = null;
     this._downstream_middlewares = null;
     this._cacheBuffer = null;
+    this._destroyed = true;
     this.removeAllListeners();
   }
 
