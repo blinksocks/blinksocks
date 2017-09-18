@@ -484,6 +484,9 @@ export default class V2rayVmessPreset extends IPreset {
   }
 
   onReceiving(buffer) {
+    if (buffer.length < 2) {
+      return;
+    }
     let len = buffer.readUInt16BE(0);
     if (this._opt === 0x05) {
       const mask = this._chunkLenDecMaskGenerator.nextBytes(2).readUInt16BE(0);
