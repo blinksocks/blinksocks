@@ -582,103 +582,9 @@ all features from **ss-aead-cipher** and prevent server from being detected by p
 ]
 ```
 
-# Recommended Combinations
+## Have trouble in choosing presets?
 
-## Work with shadowsocks
-
-To work with **shadowsocks**, please choose one of the following configuration:
-
-**Steam Ciphers(Older Versions)**
-
-```
-"presets": [{
-  "name": "ss-base"
-}, {
-  "name": "ss-stream-cipher",
-  "params": {
-    "method": "aes-256-cfb"
-  }
-}]
-```
-
-**AEAD Ciphers(Newer Versions)**
-
-```
-"presets": [{
-  "name": "ss-base"
-}, {
-  "name": "ss-aead-cipher",
-  "params": {
-    "method": "aes-256-gcm"
-  }
-}]
-```
-
-Please also check out [#27](https://github.com/blinksocks/blinksocks/issues/27) for ciphers we've already implemented.
-
-## Avoid QoS
-
-You can use **http** or **tls** obfuscator to avoid bad [QoS], **tls** is recommended.
-
-```
-"presets": [{
-  "name": "ss-base"
-}, {
-  "name": "ss-aead-cipher",
-  "params": {
-    "method": "aes-256-gcm"
-  }
-}, {
-  "name": "obfs-tls1.2-ticket",
-  "params": {
-    "sni": ["www.bing.com"]
-  }
-}]
-```
-
-## To prevent length analysis and ensure integrity as well
-
-```
-"presets": [
-  {
-    "name": "ss-base"
-  },
-  {
-    "name": "obfs-random-padding"
-  },
-  {
-    "name": "ss-aead-cipher",
-    "params": {
-      "method": "aes-128-gcm"
-    }
-  }
-]
-```
-
-## Try other compositions
-
-If you don't want to encrypt all your data, just remove **cipher** preset, the followings should work:
-
-The fastest one:
-
-```
-"presets": [{"name": "ss-base"}]
-```
-
-Make some cheat:
-
-```
-"presets": [{
-  "name": "ss-base"
-}, {
-  "name": "obfs-tls1.2-ticket",
-  "params": {
-    "sni": ["www.bing.com"]
-  }
-}]
-```
-
-> You can also check out [benchmark] to choose a combination you prefer.
+Here is a [list](./RECOMMENDATIONS.md) of recommended conbinations.
 
 [proxy]: ../../src/presets/proxy.js
 [tunnel]: ../../src/presets/tunnel.js
@@ -697,5 +603,3 @@ Make some cheat:
 [exp-base-auth-stream]: ../../src/presets/exp-base-auth-stream.js
 [aead-random-cipher]: ../../src/presets/aead-random-cipher.js
 [Server Name Indication]: https://en.wikipedia.org/wiki/Server_Name_Indication
-[QoS]: https://en.wikipedia.org/wiki/Quality_of_service
-[benchmark]: ../../docs/benchmark
