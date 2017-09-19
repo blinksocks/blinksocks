@@ -10,7 +10,7 @@
 [![Coverage](https://img.shields.io/codecov/c/github/blinksocks/blinksocks/master.svg)](https://codecov.io/gh/blinksocks/blinksocks)
 [![%e2%9d%a4](https://img.shields.io/badge/made%20with-%e2%9d%a4-ff69b4.svg)](https://github.com/blinksocks/blinksocks)
 
-A framework for building composable proxy protocol stack.
+> A framework for building composable proxy protocol stack.
 
 ![](docs/blinksocks.png)
 
@@ -18,18 +18,14 @@ A framework for building composable proxy protocol stack.
 
 * Cross-platform: running on Linux, Windows and macOS.
 * Simple proxy interface for Socks5/Socks4/Socks4a and HTTP.
-* Transmit over TCP or [TLS](https://github.com/blinksocks/blinksocks/tree/master/docs/config#blinksocks-over-tls).
+* Transmit data over raw TCP, **real** [TLS] or **real** [WebSocket].
 * Customizable protocols and functional middlewares: using [presets](docs/presets).
-* Over **30+** built-in combinations with [benchmark](docs/benchmark).
-* Easy and powerful Access Control([ACL](https://github.com/blinksocks/blinksocks/tree/master/docs/presets#access-control)): auto ban, speed limiter.
+* A variety of preset combinations beyond your imagination.
+* Easy and powerful Access Control([ACL]): auto ban, speed(upload and download) limiter.
 * Portable/Executable versions available: [download here](https://github.com/blinksocks/blinksocks/releases).
-* Compatible with **shadowsocks** (partially). [#27](https://github.com/blinksocks/blinksocks/issues/27)
+* "Out of the box" distribution and deployment.
+* Compatible with **shadowsocks** (partially).
 * Compatible with **v2ray vmess** (partially).
-
-## GUI ready
-
-For desktop use, you can download official [blinksocks-desktop](https://github.com/blinksocks/blinksocks-desktop),
-a cross-platform GUI for blinksocks.
 
 ## Getting Started
 
@@ -61,7 +57,7 @@ $ npm install -g git+https://github.com/blinksocks/blinksocks.git#v2.5.5
 
 If you hate to install and want to get a even more portable version, we have all in one script:
 
-**the latest build(maybe unstable)**
+**the latest build(unstable)**
 
 ```
 $ wget https://raw.githubusercontent.com/blinksocks/blinksocks/master/build/blinksocks.js
@@ -98,6 +94,11 @@ You can [download](https://github.com/blinksocks/blinksocks/releases) precompile
 
 > For configuring blinksocks, please refer to [Configuration](docs/config).
 
+## GUI ready
+
+For desktop use, you can download official [blinksocks-desktop](https://github.com/blinksocks/blinksocks-desktop),
+a cross-platform GUI for blinksocks.
+
 ## Documents
 
 ### For Users
@@ -120,3 +121,7 @@ See [authors](AUTHORS).
 ## License
 
 Apache License 2.0
+
+[TLS]: https://github.com/blinksocks/blinksocks/tree/master/docs/config#blinksocks-over-tls
+[WebSocket]: https://github.com/blinksocks/blinksocks/tree/master/docs/config#blinksocks-over-websocket
+[ACL]: https://github.com/blinksocks/blinksocks/tree/master/docs/presets#access-control

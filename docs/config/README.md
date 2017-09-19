@@ -8,28 +8,28 @@ You can use the following command to generate `blinksocks.client.json` and `blin
 $ blinksocks init
 ```
 
-|         KEY          |             DESCRIPTION             | OPTIONAL |     DEFAULT     |                          REMARKS                           |
-| :------------------- | :---------------------------------- | :------- | :-------------- | :--------------------------------------------------------- |
-| host                 | local hostname or ip address        | -        | -               | -                                                          |
-| port                 | local port                          | -        | -               | -                                                          |
-| transport            | the transport layer, "tcp" or "tls" | Yes      | "tcp"           | -                                                          |
-| servers              | a list of server                    | Yes      | -               | **CLIENT ONLY**                                            |
-| servers[i].enabled   | allow to use this server or not     | -        | -               | -                                                          |
-| servers[i].host      | server hostname or ip address       | -        | -               | -                                                          |
-| servers[i].port      | server port                         | -        | -               | -                                                          |
-| servers[i].key       | server key for encryption           | -        | -               | -                                                          |
-| presets              | preset list in order                | -        | -               | see [presets]                                              |
-| presets[i].name      | preset name                         | -        | -               | -                                                          |
-| presets[i].params    | preset params                       | -        | -               | -                                                          |
-| tls_key              | private key for TLS                 | -        | -               | required on server if "transport" is "tls"                 |
-| tls_cert             | server certificate                  | -        | -               | required on both client and server if "transport" is "tls" |
-| timeout              | timeout for each connection         | Yes      | 600             | in seconds                                                 |
-| redirect             | target to redirect when preset fail | Yes      | ""              | <host or ip>:<port>                                        |
-| workers              | the number of sub-process           | Yes      | 0               | cluster mode when workers > 0                              |
-| dns                  | an ip list of DNS server            | Yes      | []              | -                                                          |
-| dns_expire           | DNS cache expiration time           | Yes      | 3600            | in seconds                                                 |
-| log_path             | log file path                       | Yes      | "bs-[type].log" | a directory or a file                                      |
-| log_level            | log level                           | Yes      | "info"          | ['error', 'warn', 'info', 'verbose', 'debug', 'silly']     |
+|        KEY         |                   DESCRIPTION                    | OPTIONAL |     DEFAULT     |                          REMARKS                           |
+| :----------------- | :----------------------------------------------- | :------- | :-------------- | :--------------------------------------------------------- |
+| host               | local hostname or ip address                     | -        | -               | -                                                          |
+| port               | local port                                       | -        | -               | -                                                          |
+| transport          | the transport layer, "tcp", "tls" or "websocket" | Yes      | "tcp"           | -                                                          |
+| servers            | a list of server                                 | Yes      | -               | **CLIENT ONLY**                                            |
+| servers[i].enabled | allow to use this server or not                  | -        | -               | -                                                          |
+| servers[i].host    | server hostname or ip address                    | -        | -               | -                                                          |
+| servers[i].port    | server port                                      | -        | -               | -                                                          |
+| servers[i].key     | server key for encryption                        | -        | -               | -                                                          |
+| presets            | preset list in order                             | -        | -               | see [presets]                                              |
+| presets[i].name    | preset name                                      | -        | -               | -                                                          |
+| presets[i].params  | preset params                                    | -        | -               | -                                                          |
+| tls_key            | private key for TLS                              | -        | -               | required on server if "transport" is "tls"                 |
+| tls_cert           | server certificate                               | -        | -               | required on both client and server if "transport" is "tls" |
+| timeout            | timeout for each connection                      | Yes      | 600             | in seconds                                                 |
+| redirect           | target to redirect when preset fail              | Yes      | ""              | <host or ip>:<port>                                        |
+| workers            | the number of sub-process                        | Yes      | 0               | cluster mode when workers > 0                              |
+| dns                | an ip list of DNS server                         | Yes      | []              | -                                                          |
+| dns_expire         | DNS cache expiration time                        | Yes      | 3600            | in seconds                                                 |
+| log_path           | log file path                                    | Yes      | "bs-[type].log" | a directory or a file                                      |
+| log_level          | log level                                        | Yes      | "info"          | ['error', 'warn', 'info', 'verbose', 'debug', 'silly']     |
 
 ### Servers(Client Side Only)
 
@@ -110,6 +110,24 @@ You don't have to use extra encryption when transport is "tls", your data is alr
 }
 ```
 
+### blinksocks over WebSocket
+
+Like blinksocks over TLS, it's much easier to setup a websocket tunnel:
+
+1. On both client and server side:
+
+```
+{
+  ...
+  "transport": "websocket",
+  ...
+}
+```
+
+2. How about presets?
+
+Although data sent from client is masked(accourding to [RFC-6455]), you should add cipher presets to ensure confidentiality because websocket server will transfer your data in plain text by default.
+
 ### Log Path
 
 Specify a relative or absolute path to store log file, if no `log_path` provided, log file named `bs-[type].log` will be stored in the working directory.
@@ -155,3 +173,4 @@ You can enable cluster mode by setting `workers` greater than zero, cluster mode
 [balancer.js]: ../../src/core/balancer.js
 [presets]: ../presets
 [winston]: https://github.com/winstonjs/winston
+[RFC-6455]: https://tools.ietf.org/html/rfc6455

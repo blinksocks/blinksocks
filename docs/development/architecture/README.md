@@ -270,6 +270,7 @@ export default class CustomPreset extends IPreset {
 | \_\_PRESETS\_\_     |
 | \_\_DNS\_\_         |
 | \_\_DNS_EXPIRE\_\_  |
+| \_\_TRANSPORT\_\_   |
 | \_\_TLS_CERT\_\_    |
 | \_\_TLS_KEY\_\_     |
 | \_\_TIMEOUT\_\_     |
