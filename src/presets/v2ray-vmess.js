@@ -140,7 +140,7 @@ const securityTypes = {
  *     0x01: dynamic port(not support)
  *   Data Chunks: see above
  *
- *  @notes
+ *  @notice
  *    1. "Opt" of client request is always 0x05.
  *    2. "alterId" of vmess client must be the default(0).
  *    3. "mux" of vmess client must be disabled.
