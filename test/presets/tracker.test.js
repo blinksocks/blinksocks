@@ -1,9 +1,9 @@
-import {getPresetClassByName, CONNECTION_CREATED, CONNECT_TO_REMOTE, CONNECTION_CLOSED} from '../../src/presets';
+import {CONNECTION_CREATED, CONNECT_TO_REMOTE, CONNECTION_CLOSED} from '../../src/presets';
 import {PresetRunner} from '../common';
 
 test('running on both client and server', async () => {
   const runner = new PresetRunner({
-    clazz: getPresetClassByName('tracker')
+    name: 'tracker'
   }, {
     __IS_CLIENT__: true,
     __IS_SERVER__: false

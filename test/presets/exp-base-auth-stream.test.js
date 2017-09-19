@@ -1,9 +1,9 @@
-import {getPresetClassByName, CONNECT_TO_REMOTE} from '../../src/presets';
+import {CONNECT_TO_REMOTE} from '../../src/presets';
 import {PresetRunner} from '../common';
 
 test('running on client and then server', async () => {
   let runner = new PresetRunner({
-    clazz: getPresetClassByName('exp-base-auth-stream'),
+    name: 'exp-base-auth-stream',
     params: {
       method: 'aes-256-ctr'
     }
@@ -33,7 +33,7 @@ test('running on client and then server', async () => {
 
   // server
   runner = new PresetRunner({
-    clazz: getPresetClassByName('exp-base-auth-stream'),
+    name: 'exp-base-auth-stream',
     params: {
       method: 'aes-256-ctr'
     }
@@ -43,7 +43,7 @@ test('running on client and then server', async () => {
     __IS_SERVER__: true
   });
 
-  runner.preset.broadcast = jest.fn((action) => {
+  runner.on('broadcast', (action) => {
     expect(action).toMatchSnapshot();
     action.payload.onConnected();
   });

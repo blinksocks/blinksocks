@@ -1,9 +1,9 @@
-import {getPresetClassByName, CONNECT_TO_REMOTE} from '../../src/presets';
+import {CONNECT_TO_REMOTE} from '../../src/presets';
 import {PresetRunner} from '../common';
 
 test('running on client', async () => {
   const runner = new PresetRunner({
-    clazz: getPresetClassByName('ss-base')
+    name: 'ss-base'
   }, {
     __IS_CLIENT__: true,
     __IS_SERVER__: false
@@ -30,14 +30,13 @@ test('running on client', async () => {
 
 test('running on server', async () => {
   const runner = new PresetRunner({
-    clazz: getPresetClassByName('ss-base')
+    name: 'ss-base'
   }, {
     __IS_CLIENT__: false,
     __IS_SERVER__: true
   });
 
-  const preset = runner.getPreset();
-  preset.broadcast = jest.fn((action) => {
+  runner.on('broadcast', (action) => {
     expect(action).toMatchSnapshot();
     action.payload.onConnected();
   });
@@ -47,7 +46,7 @@ test('running on server', async () => {
   const payload = [0, 0, 0, 0];
   const ret = await runner.forward(Buffer.from(header.concat(payload)));
   expect(ret).toMatchSnapshot();
-  expect(preset.broadcast).toHaveBeenCalled();
+
   // just payload
   expect(await runner.forward('12')).toMatchSnapshot();
 

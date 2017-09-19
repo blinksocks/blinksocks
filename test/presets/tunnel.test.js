@@ -1,8 +1,7 @@
-import {getPresetClassByName} from '../../src/presets';
-import {PresetRunner} from '../common';
+import {PresetRunner, setGlobals} from '../common';
 
 async function doTunnel(runner) {
-  runner.preset.broadcast = jest.fn((action) => {
+  runner.on('broadcast', (action) => {
     expect(action).toMatchSnapshot();
     action.payload.onConnected();
   });
@@ -18,7 +17,7 @@ async function doTunnel(runner) {
 
 test('running on both client and server', async () => {
   const runner = new PresetRunner({
-    clazz: getPresetClassByName('tunnel'),
+    name: 'tunnel',
     params: {
       host: 'example.com',
       port: 443
@@ -28,7 +27,7 @@ test('running on both client and server', async () => {
     __IS_SERVER__: false
   });
   await doTunnel(runner);
-  runner.setGlobals({
+  setGlobals({
     __IS_CLIENT__: false,
     __IS_SERVER__: true
   });

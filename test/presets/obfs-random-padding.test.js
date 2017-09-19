@@ -1,9 +1,8 @@
-import {getPresetClassByName} from '../../src/presets';
 import {PresetRunner} from '../common';
 
 test('running on both client and server', async () => {
   const runner = new PresetRunner({
-    clazz: getPresetClassByName('obfs-random-padding')
+    name: 'obfs-random-padding'
   }, {
     __IS_CLIENT__: true,
     __IS_SERVER__: false

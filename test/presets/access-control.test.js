@@ -1,6 +1,5 @@
 import path from 'path';
 import {
-  getPresetClassByName,
   PRESET_FAILED,
   CONNECT_TO_REMOTE,
   CONNECTION_CREATED,
@@ -10,7 +9,7 @@ import {PresetRunner, sleep} from '../common';
 
 test('running on both client and server', async () => {
   const runner = new PresetRunner({
-    clazz: getPresetClassByName('access-control'),
+    name: 'access-control',
     params: {
       acl: path.join(__dirname, 'acl.txt')
     }

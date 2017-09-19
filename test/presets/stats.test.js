@@ -1,10 +1,10 @@
 import path from 'path';
-import {getPresetClassByName, PRESET_FAILED, CONNECTION_CREATED, CONNECTION_CLOSED} from '../../src/presets';
+import {PRESET_FAILED, CONNECTION_CREATED, CONNECTION_CLOSED} from '../../src/presets';
 import {PresetRunner, sleep} from '../common';
 
 test('running on both client and server', async () => {
   const runner = new PresetRunner({
-    clazz: getPresetClassByName('stats'),
+    name: 'stats',
     params: {
       save_to: path.resolve(__dirname, '../tmp/stats.json'),
       sample_interval: 1,

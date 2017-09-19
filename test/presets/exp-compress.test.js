@@ -1,9 +1,9 @@
-import {getPresetClassByName, CONNECTION_CLOSED} from '../../src/presets';
+import {CONNECTION_CLOSED} from '../../src/presets';
 import {PresetRunner} from '../common';
 
 test('running on both client and server', async () => {
   const runner = new PresetRunner({
-    clazz: getPresetClassByName('exp-compress'),
+    name: 'exp-compress',
     params: {
       method: 'deflate'
     }

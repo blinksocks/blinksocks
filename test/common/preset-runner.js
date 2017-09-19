@@ -1,27 +1,30 @@
-export class PresetRunner {
+import EventEmitter from 'events';
+import {getPresetClassByName} from '../../src/presets';
+import {
+  createMiddleware,
+  MIDDLEWARE_DIRECTION_UPWARD,
+  MIDDLEWARE_DIRECTION_DOWNWARD
+} from '../../src/core/middleware';
 
-  constructor({clazz, params = {}}, globals = {}) {
-    this.setGlobals(globals);
-    clazz.checkParams(params);
-    clazz.onInit(params);
-    this.preset = new clazz(params);
-  }
+export function setGlobals(obj) {
+  Object.assign(global, obj);
+}
 
-  getPreset() {
-    return this.preset;
-  }
+export class PresetRunner extends EventEmitter {
 
-  setGlobals(obj) {
-    Object.assign(global, obj);
-    return this;
+  constructor({name, params = {}}, globals = {}) {
+    super();
+    setGlobals(globals);
+    getPresetClassByName(name).checkParams(params);
+    this.middleware = createMiddleware(name, params);
   }
 
   notify(action) {
-    this.preset.onNotified(action);
+    this.middleware.notify(action);
   }
 
   destroy() {
-    this.preset.onDestroy();
+    this.middleware.onDestroy();
   }
 
   async forward(data) {
@@ -29,28 +32,14 @@ export class PresetRunner {
       data = Buffer.from(data);
     }
     return new Promise((resolve, reject) => {
-      const next = (buffer) => {
-        const args = {
-          buffer: buffer,
-          next: resolve,
-          fail: reject,
-          broadcast: this.preset.broadcast,
-          direct: resolve
-        };
-        const ret = this.preset[__IS_CLIENT__ ? 'clientOut' : 'serverIn'](args);
-        if (ret instanceof Buffer) {
-          resolve(ret);
-        }
-      };
-      const ret = this.preset[__IS_CLIENT__ ? 'beforeOut' : 'beforeIn']({
+      this.middleware.on('next_1', resolve);
+      this.middleware.on('next_-1', resolve);
+      this.middleware.on('fail', reject);
+      this.middleware.on('broadcast', (name, action) => this.emit('broadcast', action));
+      this.middleware.write(__IS_CLIENT__ ? MIDDLEWARE_DIRECTION_UPWARD : MIDDLEWARE_DIRECTION_DOWNWARD, {
         buffer: data,
-        fail: reject,
-        next: next,
-        broadcast: this.preset.broadcast
+        direct: resolve
       });
-      if (ret instanceof Buffer) {
-        next(ret);
-      }
     });
   }
 
@@ -59,28 +48,14 @@ export class PresetRunner {
       data = Buffer.from(data);
     }
     return new Promise((resolve, reject) => {
-      const next = (buffer) => {
-        const args = {
-          buffer: buffer,
-          next: resolve,
-          fail: reject,
-          broadcast: this.preset.broadcast,
-          direct: resolve
-        };
-        const ret = this.preset[__IS_CLIENT__ ? 'clientIn' : 'serverOut'](args);
-        if (ret instanceof Buffer) {
-          resolve(ret);
-        }
-      };
-      const ret = this.preset[__IS_CLIENT__ ? 'beforeIn' : 'beforeOut']({
+      this.middleware.on('next_1', resolve);
+      this.middleware.on('next_-1', resolve);
+      this.middleware.on('fail', reject);
+      this.middleware.on('broadcast', (name, action) => this.emit('broadcast', action));
+      this.middleware.write(__IS_CLIENT__ ? MIDDLEWARE_DIRECTION_DOWNWARD : MIDDLEWARE_DIRECTION_UPWARD, {
         buffer: data,
-        fail: reject,
-        next: next,
-        broadcast: this.preset.broadcast
+        direct: resolve
       });
-      if (ret instanceof Buffer) {
-        next(ret);
-      }
     });
   }
 

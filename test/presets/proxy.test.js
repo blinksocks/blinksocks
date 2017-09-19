@@ -1,8 +1,7 @@
-import {getPresetClassByName} from '../../src/presets';
-import {PresetRunner} from '../common';
+import {PresetRunner, setGlobals} from '../common';
 
 async function doHandshake(runner) {
-  runner.preset.broadcast = jest.fn((action) => {
+  runner.on('broadcast', (action) => {
     expect(action).toMatchSnapshot();
     action.payload.onConnected();
   });
@@ -19,13 +18,13 @@ async function doHandshake(runner) {
 
 test('running on both client and server', async () => {
   const runner = new PresetRunner({
-    clazz: getPresetClassByName('proxy')
+    name: 'proxy'
   }, {
     __IS_CLIENT__: true,
     __IS_SERVER__: false
   });
   await doHandshake(runner);
-  runner.setGlobals({
+  setGlobals({
     __IS_CLIENT__: false,
     __IS_SERVER__: true
   });

@@ -1,9 +1,9 @@
-import {getPresetClassByName, CONNECT_TO_REMOTE} from '../../src/presets';
+import {CONNECT_TO_REMOTE} from '../../src/presets';
 import {PresetRunner} from '../common';
 
 test('running on client', async () => {
   let runner = new PresetRunner({
-    clazz: getPresetClassByName('exp-base-with-padding'),
+    name: 'exp-base-with-padding',
     params: {
       salt: 'any string'
     }
@@ -28,7 +28,7 @@ test('running on client', async () => {
 
   // server
   runner = new PresetRunner({
-    clazz: getPresetClassByName('exp-base-with-padding'),
+    name: 'exp-base-with-padding',
     params: {
       salt: 'any string'
     }
@@ -36,10 +36,12 @@ test('running on client', async () => {
     __IS_CLIENT__: false,
     __IS_SERVER__: true
   });
-  runner.preset.broadcast = jest.fn((action) => {
+
+  runner.on('broadcast', (action) => {
     expect(action).toMatchSnapshot();
     action.payload.onConnected();
   });
+
   expect(await runner.forward(request)).toMatchSnapshot();
   expect(await runner.forward('12')).toMatchSnapshot();
   expect(await runner.backward('34')).toMatchSnapshot();

@@ -1,9 +1,8 @@
-import {getPresetClassByName} from '../../src/presets';
 import {PresetRunner} from '../common';
 
 test('running on both client and server', async () => {
   const runner = new PresetRunner({
-    clazz: getPresetClassByName('ss-stream-cipher'),
+    name: 'ss-stream-cipher',
     params: {
       method: 'aes-128-ctr'
     }
