@@ -70,8 +70,7 @@ export class Config {
 
   static initServer(server) {
     global.__TRANSPORT__ = (server.transport !== undefined) ? server.transport : 'tcp';
-    global.__IS_TLS__ = __TRANSPORT__ === 'tls';
-    if (__IS_TLS__) {
+    if (__TRANSPORT__ === 'tls') {
       global.__TLS_CERT__ = fs.readFileSync(path.resolve(process.cwd(), server.tls_cert));
       if (__IS_SERVER__) {
         global.__TLS_KEY__ = fs.readFileSync(path.resolve(process.cwd(), server.tls_key));
@@ -199,8 +198,8 @@ export class Config {
   static _validateServer(server) {
     // transport
     if (server.transport !== undefined) {
-      if (!['tcp', 'tls'].includes(server.transport)) {
-        throw Error('\'server.transport\' must be "tcp" or "tls"');
+      if (!['tcp', 'tls', 'websocket'].includes(server.transport)) {
+        throw Error('\'server.transport\' must be "tcp", "tls" or "websocket"');
       }
       if (server.transport === 'tls') {
         if (typeof server.tls_cert !== 'string') {

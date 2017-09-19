@@ -167,9 +167,11 @@ describe('Config#_validateServer', () => {
     expect(__TRANSPORT__).toBe('tcp');
   });
 
-  it('should __IS_TLS__ set to true', () => {
-    Config.init({...baseConf, transport: 'tls', tls_cert: 'abc', tls_key: 'def'});
-    expect(__IS_TLS__).toBe(true);
+  it('__TLS_CERT__ and __TLS_KEY__ should be set', () => {
+    Config.init({...baseConf, transport: 'tls', tls_cert: 'mock_cert.pem', tls_key: 'mock_key.pem'});
+    expect(__TRANSPORT__).toBe('tls');
+    expect(__TLS_CERT__).toBeDefined();
+    expect(__TLS_KEY__).toBeDefined();
   });
 
 });

@@ -12,4 +12,8 @@ fs.lstatSync = function () {
   throw err;
 };
 
+fs.readFileSync = function () {
+  return Buffer.alloc(0);
+};
+
 module.exports = fs;
