@@ -9,8 +9,8 @@ To work with **shadowsocks**, please choose one of the following configurations:
 ```json
 "presets": [
   {"name": "ss-base"},
-  {"name": "ss-stream-cipher", "params": {"method": "aes-256-cfb"}
-}]
+  {"name": "ss-stream-cipher", "params": {"method": "aes-256-cfb"}}
+]
 ```
 
 **AEAD Ciphers(Newer Versions)**
@@ -18,8 +18,8 @@ To work with **shadowsocks**, please choose one of the following configurations:
 ```json
 "presets": [
   {"name": "ss-base"},
-  {"name": "ss-aead-cipher", "params": {"method": "aes-256-gcm"}
-}]
+  {"name": "ss-aead-cipher", "params": {"method": "aes-256-gcm"}}
+]
 ```
 
 Please also check out [#27](https://github.com/blinksocks/blinksocks/issues/27) for ciphers we supported.
@@ -62,16 +62,16 @@ You can use **http** or **tls** obfuscator to avoid bad [QoS], **tls** is recomm
 ```json
 "presets": [
   {"name": "ss-base"},
-  {"name": "ss-aead-cipher", "params": {"method": "aes-256-gcm"},
-  {"name": "obfs-tls1.2-ticket", "params": {"sni": ["example.com"]}
-}]
+  {"name": "ss-aead-cipher", "params": {"method": "aes-256-gcm"}},
+  {"name": "obfs-tls1.2-ticket", "params": {"sni": ["example.com"]}}
+]
 ```
 
 ```json
 "presets": [
   {"name": "exp-base-auth-stream", "params":{"method": "aes-256-ctr"}},
-  {"name": "obfs-tls1.2-ticket", "params": {"sni": ["example.com"]}
-}]
+  {"name": "obfs-tls1.2-ticket", "params": {"sni": ["example.com"]}}
+]
 ```
 
 ## To prevent statistical analysis and ensure integrity as well
