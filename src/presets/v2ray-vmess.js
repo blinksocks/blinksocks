@@ -197,12 +197,12 @@ export default class V2rayVmessPreset extends IPreset {
   }
 
   static onInit({id, security = 'aes-128-gcm'}) {
-    this.uuid = Buffer.from(id.split('-').join(''), 'hex');
+    V2rayVmessPreset.uuid = Buffer.from(id.split('-').join(''), 'hex');
     if (__IS_CLIENT__) {
-      this.security = securityTypes[security];
+      V2rayVmessPreset.security = securityTypes[security];
     }
-    setInterval(() => this.updateAuthCache(), 1e3);
-    this.updateAuthCache();
+    setInterval(() => V2rayVmessPreset.updateAuthCache(), 1e3);
+    V2rayVmessPreset.updateAuthCache();
   }
 
   static updateAuthCache() {

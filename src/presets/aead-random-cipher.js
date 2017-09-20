@@ -119,11 +119,11 @@ export default class AeadRandomCipherPreset extends IPreset {
   }
 
   static onInit({method, info = DEFAULT_INFO, factor = DEFAULT_FACTOR}) {
-    this.cipherName = method;
-    this.info = Buffer.from(info);
-    this.factor = factor;
-    this.rawKey = Buffer.from(__KEY__);
-    this.keySaltSize = ciphers[method];
+    AeadRandomCipherPreset.cipherName = method;
+    AeadRandomCipherPreset.info = Buffer.from(info);
+    AeadRandomCipherPreset.factor = factor;
+    AeadRandomCipherPreset.rawKey = Buffer.from(__KEY__);
+    AeadRandomCipherPreset.keySaltSize = ciphers[method];
   }
 
   constructor() {

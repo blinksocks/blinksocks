@@ -63,7 +63,7 @@ export default class BaseWithPaddingPreset extends IPreset {
   }
 
   static onInit({salt}) {
-    this.padding = hash('sha256', salt).slice(0, 15);
+    BaseWithPaddingPreset.padding = hash('sha256', salt).slice(0, 15);
   }
 
   onDestroy() {

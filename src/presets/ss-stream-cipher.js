@@ -72,8 +72,8 @@ export default class SsStreamCipherPreset extends IPreset {
   }
 
   static onInit({method}) {
-    this.cipherName = method;
-    this.key = EVP_BytesToKey(__KEY__, method.split('-')[1] / 8, IV_LEN);
+    SsStreamCipherPreset.cipherName = method;
+    SsStreamCipherPreset.key = EVP_BytesToKey(__KEY__, method.split('-')[1] / 8, IV_LEN);
   }
 
   onDestroy() {

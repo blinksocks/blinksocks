@@ -103,9 +103,9 @@ export default class SsAeadCipherPreset extends IPreset {
   }
 
   static onInit({method}) {
-    this.cipherName = method;
-    this.keySaltSize = ciphers[method];
-    this.evpKey = EVP_BytesToKey(__KEY__, this.keySaltSize, 16);
+    SsAeadCipherPreset.cipherName = method;
+    SsAeadCipherPreset.keySaltSize = ciphers[method];
+    SsAeadCipherPreset.evpKey = EVP_BytesToKey(__KEY__, SsAeadCipherPreset.keySaltSize, 16);
   }
 
   constructor() {
