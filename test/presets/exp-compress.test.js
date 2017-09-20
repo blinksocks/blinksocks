@@ -5,14 +5,15 @@ test('running on both client and server', async () => {
   const runner = new PresetRunner({
     name: 'exp-compress',
     params: {
-      method: 'deflate'
+      method: 'deflate',
+      threshold: '50b'
     }
   }, {
     __IS_CLIENT__: true,
     __IS_SERVER__: false
   });
 
-  const compressed = await runner.forward('1111111111');
+  const compressed = await runner.forward(Buffer.alloc(50 + 10));
 
   // just payload
   expect(compressed).toMatchSnapshot();
