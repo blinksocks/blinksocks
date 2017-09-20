@@ -42,7 +42,7 @@ import {IPreset, CONNECT_TO_REMOTE} from './defs';
  *   2. PADDING = SHA256(salt).slice(0, 15).
  *   3. The initial stream MUST contain a DATA chunk followed by [ALEN, PADDING, DST.ADDR, DST.PORT].
  */
-export default class ExpBaseWithPaddingPreset extends IPreset {
+export default class BaseWithPaddingPreset extends IPreset {
 
   static padding = null; // buffer
 
@@ -84,7 +84,7 @@ export default class ExpBaseWithPaddingPreset extends IPreset {
     if (!this._isHandshakeDone) {
       this._isHandshakeDone = true;
       return Buffer.concat([
-        numberToBuffer(this._host.length, 1), ExpBaseWithPaddingPreset.padding, this._host, this._port, buffer
+        numberToBuffer(this._host.length, 1), BaseWithPaddingPreset.padding, this._host, this._port, buffer
       ]);
     } else {
       return buffer;
@@ -107,8 +107,8 @@ export default class ExpBaseWithPaddingPreset extends IPreset {
       }
 
       // verify padding
-      if (!buffer.slice(1, 16).equals(ExpBaseWithPaddingPreset.padding)) {
-        return fail(`unexpected padding=${ExpBaseWithPaddingPreset.padding.toString('hex')}`);
+      if (!buffer.slice(1, 16).equals(BaseWithPaddingPreset.padding)) {
+        return fail(`unexpected padding=${BaseWithPaddingPreset.padding.toString('hex')}`);
       }
 
       // obtain addr length

@@ -5,6 +5,10 @@ import StatsPreset from './stats';
 import TrackerPreset from './tracker';
 import AccessControlPreset from './access-control';
 
+// basic
+import BaseWithPaddingPreset from './base-with-padding';
+import BaseAuthStreamPreset from './base-auth-stream';
+
 // shadowsocks
 import SsBasePreset from './ss-base';
 import SsStreamCipherPreset from './ss-stream-cipher';
@@ -20,11 +24,13 @@ import ObfsTls12TicketPreset from './obfs-tls1.2-ticket';
 
 // experimental
 import ExpCompressPreset from './exp-compress';
-import ExpBaseWithPaddingPreset from './exp-base-with-padding';
-import ExpBaseAuthStreamPreset from './exp-base-auth-stream';
 
 // others
 import AeadRandomCipherPreset from './aead-random-cipher';
+
+// legacy presets for backward compatibility
+import ExpBaseWithPaddingPreset from './_exp-base-with-padding';
+import ExpBaseAuthStreamPreset from './_exp-base-auth-stream';
 
 const mapping = {
   // functional
@@ -33,6 +39,10 @@ const mapping = {
   'stats': StatsPreset,
   'tracker': TrackerPreset,
   'access-control': AccessControlPreset,
+
+  // basic
+  'base-with-padding': BaseWithPaddingPreset,
+  'base-auth-stream': BaseAuthStreamPreset,
 
   // shadowsocks
   'ss-base': SsBasePreset,
@@ -48,23 +58,27 @@ const mapping = {
   'obfs-tls1.2-ticket': ObfsTls12TicketPreset,
 
   // experimental
-  'exp-base-with-padding': ExpBaseWithPaddingPreset,
-  'exp-base-auth-stream': ExpBaseAuthStreamPreset,
   'exp-compress': ExpCompressPreset,
 
   // others
   'aead-random-cipher': AeadRandomCipherPreset
 };
 
+const legacy = {
+  'exp-base-with-padding': ExpBaseWithPaddingPreset,
+  'exp-base-auth-stream': ExpBaseAuthStreamPreset
+};
+
 const presets = Object.keys(mapping);
+const legacyPresets = Object.keys(legacy);
 
 function getPresetClassByName(name) {
-  const clazz = mapping[name];
+  const clazz = {...mapping, ...legacy}[name];
   if (clazz === undefined) {
     throw Error(`cannot find preset: "${name}"`);
   }
   return clazz;
 }
 
-export {getPresetClassByName, presets};
+export {getPresetClassByName, presets, legacyPresets};
 export * from './defs';

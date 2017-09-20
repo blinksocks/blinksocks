@@ -50,7 +50,7 @@ const ciphers = [
  *   3. Encrypt-then-Mac(EtM) is performed to calculate HMAC-SHA1.
  *   4. The initial stream MUST contain a DATA chunk followed by [ALEN, DST.ADDR, DST.PORT].
  */
-export default class ExpBaseAuthStreamPreset extends IPreset {
+export default class BaseAuthStreamPreset extends IPreset {
 
   static cipherName = '';
 
@@ -103,12 +103,12 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
 
       // prepare
       const iv = crypto.randomBytes(IV_LEN);
-      const secretKey = ExpBaseAuthStreamPreset.key;
+      const secretKey = BaseAuthStreamPreset.key;
       const keyForHMAC = xor(iv, secretKey.slice(0, IV_LEN));
 
       // initialize cipher/decipher
-      this._cipher = crypto.createCipheriv(ExpBaseAuthStreamPreset.cipherName, secretKey, iv);
-      this._decipher = crypto.createDecipheriv(ExpBaseAuthStreamPreset.cipherName, secretKey, iv);
+      this._cipher = crypto.createCipheriv(BaseAuthStreamPreset.cipherName, secretKey, iv);
+      this._decipher = crypto.createDecipheriv(BaseAuthStreamPreset.cipherName, secretKey, iv);
 
       const encBuf = this.encrypt(Buffer.concat([numberToBuffer(this._host.length, 1), this._host, this._port, buffer]));
       const hmacEncAddr = hmac('sha1', keyForHMAC, encBuf.slice(0, -buffer.length)).slice(0, HMAC_LEN);
@@ -134,10 +134,10 @@ export default class ExpBaseAuthStreamPreset extends IPreset {
 
       // obtain IV and initialize cipher/decipher
       const iv = buffer.slice(0, IV_LEN);
-      const secretKey = ExpBaseAuthStreamPreset.key;
+      const secretKey = BaseAuthStreamPreset.key;
 
-      this._cipher = crypto.createCipheriv(ExpBaseAuthStreamPreset.cipherName, secretKey, iv);
-      this._decipher = crypto.createDecipheriv(ExpBaseAuthStreamPreset.cipherName, secretKey, iv);
+      this._cipher = crypto.createCipheriv(BaseAuthStreamPreset.cipherName, secretKey, iv);
+      this._decipher = crypto.createDecipheriv(BaseAuthStreamPreset.cipherName, secretKey, iv);
 
       // decrypt tail
       const tailBuffer = this.decrypt(buffer.slice(32));
