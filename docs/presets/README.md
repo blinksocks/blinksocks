@@ -258,6 +258,56 @@ To recovery unwary ban, you can edit acl file, remove unwanted rule without rest
 
 > NOTE: rules will take effect immediately each time **acl.txt** was updated.
 
+## [base-with-padding]
+
+An **experimental** and advanced preset based on [ss-base], **SHOULD BE** used with ciphers in **cfb** operation mode.
+It can prevent address from being tampered.
+
+**NOTE**: Using [base-with-padding] with non-cfb ciphers will lose protection. 
+
+| PARAMS |           DESCRIPTION           | DEFAULT |
+| :----- | :------------------------------ | :------ |
+| salt   | a string for generating padding | -       |
+
+```
+"presets": [{
+  "name": "base-with-padding",
+  "params": {
+    "salt": "any string"
+  }
+}, {
+  "name": "ss-stream-cipher",
+  "params": {
+    "method": "aes-256-cfb"
+  }
+}]
+```
+
+## [base-auth-stream]
+
+An **experimental** preset combines HMAC and stream encryption. HMAC only guarantees integrity for addressing part.
+
+| PARAMS |           DESCRIPTION            | DEFAULT |
+| :----- | :------------------------------- | :------ |
+| method | encryption and decryption method | -       |
+
+`method` can be one of:
+
+aes-128-ctr, aes-192-ctr, aes-256-ctr,
+
+aes-128-cfb, aes-192-cfb, aes-256-cfb,
+
+camellia-128-cfb, camellia-192-cfb, camellia-256-cfb
+
+```
+"presets": [{
+  "name": "base-auth-stream",
+  "params": {
+    "method": "aes-256-cfb"
+  }
+}]
+```
+
 ## [ss-base]
 
 This is a very basic preset which delivers the real destination address from client to server.
@@ -484,56 +534,6 @@ A TLS1.2 obfuscator, do TLS handshake using SessionTicket TLS mechanism, transfe
     }
   }
 ]
-```
-
-## [base-with-padding]
-
-An **experimental** and advanced preset based on [ss-base], **SHOULD BE** used with ciphers in **cfb** operation mode.
-It can prevent address from being tampered.
-
-**NOTE**: Using [base-with-padding] with non-cfb ciphers will lose protection. 
-
-| PARAMS |           DESCRIPTION           | DEFAULT |
-| :----- | :------------------------------ | :------ |
-| salt   | a string for generating padding | -       |
-
-```
-"presets": [{
-  "name": "base-with-padding",
-  "params": {
-    "salt": "any string"
-  }
-}, {
-  "name": "ss-stream-cipher",
-  "params": {
-    "method": "aes-256-cfb"
-  }
-}]
-```
-
-## [base-auth-stream]
-
-An **experimental** preset combines HMAC and stream encryption. HMAC only guarantees integrity for addressing part.
-
-| PARAMS |           DESCRIPTION            | DEFAULT |
-| :----- | :------------------------------- | :------ |
-| method | encryption and decryption method | -       |
-
-`method` can be one of:
-
-aes-128-ctr, aes-192-ctr, aes-256-ctr,
-
-aes-128-cfb, aes-192-cfb, aes-256-cfb,
-
-camellia-128-cfb, camellia-192-cfb, camellia-256-cfb
-
-```
-"presets": [{
-  "name": "base-auth-stream",
-  "params": {
-    "method": "aes-256-cfb"
-  }
-}]
 ```
 
 ## [exp-compress]
