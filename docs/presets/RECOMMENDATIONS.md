@@ -42,7 +42,7 @@ Please also check out [#27](https://github.com/blinksocks/blinksocks/issues/27) 
 
 ```json
 "presets": [
-  {"name": "exp-base-with-padding", "params": {"salt": "any string"}},
+  {"name": "base-with-padding", "params": {"salt": "any string"}},
   {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}}
 ]
 ```
@@ -51,7 +51,7 @@ Please also check out [#27](https://github.com/blinksocks/blinksocks/issues/27) 
 
 ```json
 "presets": [
-  {"name": "exp-base-auth-stream", "params": {"method": "aes-256-ctr"}}
+  {"name": "base-auth-stream", "params": {"method": "aes-256-ctr"}}
 ]
 ```
 
@@ -69,7 +69,7 @@ You can use **http** or **tls** obfuscator to avoid bad [QoS], **tls** is recomm
 
 ```json
 "presets": [
-  {"name": "exp-base-auth-stream", "params":{"method": "aes-256-ctr"}},
+  {"name": "base-auth-stream", "params":{"method": "aes-256-ctr"}},
   {"name": "obfs-tls1.2-ticket", "params": {"sni": ["example.com"]}}
 ]
 ```

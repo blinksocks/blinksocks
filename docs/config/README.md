@@ -105,8 +105,8 @@ You don't have to use extra encryption when transport is "tls", your data is alr
 ```
 {
   "presets": [{"name": "ss-base"}]
-  // or "presets": [{"name": "exp-base-with-padding", "params": {"salt": "any string"}}]
-  // or "presets": [{"name": "exp-base-auth-stream", "params": {"method": "aes-256-ctr"}}]
+  // or "presets": [{"name": "base-with-padding", "params": {"salt": "any string"}}]
+  // or "presets": [{"name": "base-auth-stream", "params": {"method": "aes-256-ctr"}}]
 }
 ```
 

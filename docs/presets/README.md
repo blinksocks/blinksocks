@@ -12,6 +12,11 @@ Presets are chaining and composable, built-in presets are listed here. If you wa
 * [tracker](#tracker)
 * [access-control](#access-control)
 
+**basic**
+
+* [base-with-padding](#base-with-padding)*
+* [base-auth-stream](#base-auth-stream)*
+
 **shadowsocks**
 
 * [ss-base](#ss-base)*
@@ -30,8 +35,6 @@ Presets are chaining and composable, built-in presets are listed here. If you wa
 
 **experimental**
 
-* [exp-base-with-padding](#exp-base-with-padding)*
-* [exp-base-auth-stream](#exp-base-auth-stream)*
 * [exp-compress](#exp-compress)
 
 **others**
@@ -483,12 +486,12 @@ A TLS1.2 obfuscator, do TLS handshake using SessionTicket TLS mechanism, transfe
 ]
 ```
 
-## [exp-base-with-padding]
+## [base-with-padding]
 
 An **experimental** and advanced preset based on [ss-base], **SHOULD BE** used with ciphers in **cfb** operation mode.
 It can prevent address from being tampered.
 
-**NOTE**: Using [exp-base-with-padding] with non-cfb ciphers will lose protection. 
+**NOTE**: Using [base-with-padding] with non-cfb ciphers will lose protection. 
 
 | PARAMS |           DESCRIPTION           | DEFAULT |
 | :----- | :------------------------------ | :------ |
@@ -496,7 +499,7 @@ It can prevent address from being tampered.
 
 ```
 "presets": [{
-  "name": "exp-base-with-padding",
+  "name": "base-with-padding",
   "params": {
     "salt": "any string"
   }
@@ -508,7 +511,7 @@ It can prevent address from being tampered.
 }]
 ```
 
-## [exp-base-auth-stream]
+## [base-auth-stream]
 
 An **experimental** preset combines HMAC and stream encryption. HMAC only guarantees integrity for addressing part.
 
@@ -526,7 +529,7 @@ camellia-128-cfb, camellia-192-cfb, camellia-256-cfb
 
 ```
 "presets": [{
-  "name": "exp-base-auth-stream",
+  "name": "base-auth-stream",
   "params": {
     "method": "aes-256-cfb"
   }
@@ -535,11 +538,13 @@ camellia-128-cfb, camellia-192-cfb, camellia-256-cfb
 
 ## [exp-compress]
 
-An **experimental** to do stream compression/decompression. **Use with caution.**
+An **experimental** preset to do compression/decompression. It has bad performance, please **Use with caution.**
 
-| PARAMS |             DESCRIPTION              | DEFAULT |
-| :----- | :----------------------------------- | :------ |
-| method | compression and decompression method | -       |
+|  PARAMS   |               DESCRIPTION               |  DEFAULT  |
+| :-------- | :-------------------------------------- | :-------- |
+| method    | compression and decompression method    | "deflate" |
+| threshold | the minimal chunk size to be compressed | "5kb"     |
+| options   | the options passed to zlib              | {}        |
 
 `method` can be one of:
 
@@ -548,7 +553,7 @@ gzip, deflate
 ```
 "presets": [
   {"name": "ss-base"},
-  {"name": "exp-compress", "params": {"method": "deflate"}}
+  {"name": "exp-compress", "params": {"method": "deflate", "threshold": "10k", "options": {}}}
 ]
 ```
 
@@ -566,7 +571,7 @@ all features from **ss-aead-cipher** and prevent server from being detected by p
 ```
 "presets": [
   {
-    "name": "exp-base-with-padding",
+    "name": "base-with-padding",
     "params": {
       "salt": "any string"
     }
@@ -591,6 +596,8 @@ Here is a [list](./RECOMMENDATIONS.md) of recommended conbinations.
 [stats]: ../../src/presets/stats.js
 [tracker]: ../../src/presets/tracker.js
 [access-control]: ../../src/presets/access-control.js
+[base-with-padding]: ../../src/presets/base-with-padding.js
+[base-auth-stream]: ../../src/presets/base-auth-stream.js
 [ss-base]: ../../src/presets/ss-base.js
 [ss-stream-cipher]: ../../src/presets/ss-stream-cipher.js
 [ss-aead-cipher]: ../../src/presets/ss-aead-cipher.js
@@ -599,7 +606,5 @@ Here is a [list](./RECOMMENDATIONS.md) of recommended conbinations.
 [obfs-http]: ../../src/presets/obfs-http.js
 [obfs-tls1.2-ticket]: ../../src/presets/obfs-tls1.2-ticket.js
 [exp-compress]: ../../src/presets/exp-compress.js
-[exp-base-with-padding]: ../../src/presets/exp-base-with-padding.js
-[exp-base-auth-stream]: ../../src/presets/exp-base-auth-stream.js
 [aead-random-cipher]: ../../src/presets/aead-random-cipher.js
 [Server Name Indication]: https://en.wikipedia.org/wiki/Server_Name_Indication
