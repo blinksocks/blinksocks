@@ -3,7 +3,7 @@ import {PresetRunner} from '../common';
 
 test('running on client and then server', async () => {
   let runner = new PresetRunner({
-    name: 'exp-base-auth-stream',
+    name: 'base-auth-stream',
     params: {
       method: 'aes-256-ctr'
     }
@@ -33,7 +33,7 @@ test('running on client and then server', async () => {
 
   // server
   runner = new PresetRunner({
-    name: 'exp-base-auth-stream',
+    name: 'base-auth-stream',
     params: {
       method: 'aes-256-ctr'
     }

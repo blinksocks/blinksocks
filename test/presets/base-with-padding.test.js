@@ -3,7 +3,7 @@ import {PresetRunner} from '../common';
 
 test('running on client', async () => {
   let runner = new PresetRunner({
-    name: 'exp-base-with-padding',
+    name: 'base-with-padding',
     params: {
       salt: 'any string'
     }
@@ -28,7 +28,7 @@ test('running on client', async () => {
 
   // server
   runner = new PresetRunner({
-    name: 'exp-base-with-padding',
+    name: 'base-with-padding',
     params: {
       salt: 'any string'
     }
