@@ -5,7 +5,7 @@ import tls from 'tls';
 import ws from 'ws';
 import {Balancer} from './balancer';
 import {Config} from './config';
-import {cleanup} from './middleware';
+import * as MiddlewareManager from './middleware';
 import {createRelay} from '../transports';
 import {logger} from '../utils';
 
@@ -101,6 +101,7 @@ export class Hub extends EventEmitter {
     if (this._fastestServer === null || server.id !== this._fastestServer.id) {
       this._fastestServer = server;
       Config.initServer(server);
+      MiddlewareManager.reset();
       logger.info(`[balancer] use: ${server.host}:${server.port}`);
     }
   }
@@ -124,7 +125,7 @@ export class Hub extends EventEmitter {
       // relays
       this._relays.forEach((relay) => relay.destroy());
       this._relays = null;
-      cleanup();
+      MiddlewareManager.cleanup();
       // balancer
       if (__IS_CLIENT__) {
         Balancer.destroy();

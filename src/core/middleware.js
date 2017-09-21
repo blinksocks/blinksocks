@@ -2,7 +2,7 @@ import EventEmitter from 'events';
 import {getPresetClassByName, IPresetStatic} from '../presets';
 import {kebabCase} from '../utils';
 
-const presetCache = {
+let presetCache = {
   // 'ClassName': <preset>
 };
 
@@ -150,4 +150,14 @@ export function cleanup() {
   for (const preset of presets) {
     preset.onDestroy();
   }
+}
+
+/**
+ * clear preset cache and reset them to fresh status
+ */
+export function reset() {
+  presetCache = {};
+  __PRESETS__
+    .map(({name}) => getPresetClassByName(name))
+    .forEach((ImplClass) => ImplClass.initialized = false);
 }
