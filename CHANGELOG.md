@@ -1,5 +1,32 @@
 #  Change Log
 
+## 2.6.2 (2017-09-21)
+
+### Notable Changes
+
+Two experimental presets are ready for production use:
+
+`exp-base-with-padding` is linked to `base-with-padding`.
+`exp-base-auth-stream` is linked to `base-auth-stream`.
+
+For backward compatibility, you can still use `exp-xxx` without changing configurations.
+
+### :boom: Breaking Changes:
+
+- **core**: deprecated ~~__IS_TLS__~~, you should make judgement by __TRANSPORT__ instead.
+
+### :rocket: Features & Improvements:
+
+- **core**: display dns cache hitting info in verbose log level.
+- **transports**: abstract transport layer, and add **websocket**. :sparkles:
+- **presets**: refactor exp-compress, expose "threshold" and "options" parameters.
+- **test**: refactor preset runner, run preset through Middleware directly.
+
+### :bug: Fixes:
+
+- **presets**: fix an "out-of-range" bug in v2ray-vmess.
+- **presets**: fix access to static members.
+
 ## 2.6.1 (2017-09-15)
 
 ### :rocket: Features & Improvements:
