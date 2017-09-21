@@ -1,10 +1,10 @@
 const single_presets = [
   // ss-base
   [{"name": "ss-base"}],
-  // exp-base-with-padding
-  [{"name": "exp-base-with-padding", "params": {"salt": "any string"}}],
-  // exp-base-auth-stream
-  [{"name": "exp-base-auth-stream", "params": {"method": "aes-256-ctr"}}]
+  // base-with-padding
+  [{"name": "base-with-padding", "params": {"salt": "any string"}}],
+  // base-auth-stream
+  [{"name": "base-auth-stream", "params": {"method": "aes-256-ctr"}}]
 ];
 
 const v2ray_presets = [
@@ -48,39 +48,39 @@ const two_presets = [
     {"name": "ss-base"},
     {"name": "obfs-random-padding"}
   ],
-  // exp-base-with-padding + ss-stream-cipher
+  // base-with-padding + ss-stream-cipher
   [
-    {"name": "exp-base-with-padding", "params": {"salt": "any string"}},
+    {"name": "base-with-padding", "params": {"salt": "any string"}},
     {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}}
   ],
-  // exp-base-with-padding + ss-aead-cipher
+  // base-with-padding + ss-aead-cipher
   [
-    {"name": "exp-base-with-padding", "params": {"salt": "any string"}},
+    {"name": "base-with-padding", "params": {"salt": "any string"}},
     {"name": "ss-aead-cipher", "params": {"method": "aes-256-gcm"}}
   ],
-  // exp-base-with-padding + aead-random-cipher
+  // base-with-padding + aead-random-cipher
   [
-    {"name": "exp-base-with-padding", "params": {"salt": "any string"}},
+    {"name": "base-with-padding", "params": {"salt": "any string"}},
     {"name": "aead-random-cipher", "params": {"method": "aes-256-gcm"}}
   ],
-  // exp-base-with-padding + obfs-tls1.2-ticket
+  // base-with-padding + obfs-tls1.2-ticket
   [
-    {"name": "exp-base-with-padding", "params": {"salt": "any string"}},
+    {"name": "base-with-padding", "params": {"salt": "any string"}},
     {"name": "obfs-tls1.2-ticket", "params": {"sni": ["test.com"]}}
   ],
-  // exp-base-with-padding + obfs-random-padding
+  // base-with-padding + obfs-random-padding
   [
-    {"name": "exp-base-with-padding", "params": {"salt": "any string"}},
+    {"name": "base-with-padding", "params": {"salt": "any string"}},
     {"name": "obfs-random-padding"}
   ],
-  // exp-base-auth-stream + obfs-tls1.2-ticket
+  // base-auth-stream + obfs-tls1.2-ticket
   [
-    {"name": "exp-base-auth-stream", "params": {"method": "aes-256-ctr"}},
+    {"name": "base-auth-stream", "params": {"method": "aes-256-ctr"}},
     {"name": "obfs-tls1.2-ticket", "params": {"sni": ["test.com"]}}
   ],
-  // exp-base-auth-stream + obfs-random-padding
+  // base-auth-stream + obfs-random-padding
   [
-    {"name": "exp-base-auth-stream", "params": {"method": "aes-256-ctr"}},
+    {"name": "base-auth-stream", "params": {"method": "aes-256-ctr"}},
     {"name": "obfs-random-padding"}
   ]
 ];
@@ -116,33 +116,33 @@ const three_presets = [
     {"name": "aead-random-cipher", "params": {"method": "aes-256-gcm"}},
     {"name": "obfs-tls1.2-ticket", "params": {"sni": ["test.com"]}}
   ],
-  // exp-base-with-padding + ss-stream-cipher + obfs-tls1.2-ticket
+  // base-with-padding + ss-stream-cipher + obfs-tls1.2-ticket
   [
-    {"name": "exp-base-with-padding", "params": {"salt": "any string"}},
+    {"name": "base-with-padding", "params": {"salt": "any string"}},
     {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}},
     {"name": "obfs-tls1.2-ticket", "params": {"sni": ["test.com"]}}
   ],
-  // exp-base-with-padding + obfs-random-padding + ss-stream-cipher
+  // base-with-padding + obfs-random-padding + ss-stream-cipher
   [
-    {"name": "exp-base-with-padding", "params": {"salt": "any string"}},
+    {"name": "base-with-padding", "params": {"salt": "any string"}},
     {"name": "obfs-random-padding"},
     {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}}
   ],
-  // exp-base-with-padding + ss-aead-cipher + obfs-tls1.2-ticket
+  // base-with-padding + ss-aead-cipher + obfs-tls1.2-ticket
   [
-    {"name": "exp-base-with-padding", "params": {"salt": "any string"}},
+    {"name": "base-with-padding", "params": {"salt": "any string"}},
     {"name": "ss-aead-cipher", "params": {"method": "aes-256-gcm"}},
     {"name": "obfs-tls1.2-ticket", "params": {"sni": ["test.com"]}}
   ],
-  // exp-base-with-padding + obfs-random-padding + ss-aead-cipher
+  // base-with-padding + obfs-random-padding + ss-aead-cipher
   [
-    {"name": "exp-base-with-padding", "params": {"salt": "any string"}},
+    {"name": "base-with-padding", "params": {"salt": "any string"}},
     {"name": "obfs-random-padding"},
     {"name": "ss-aead-cipher", "params": {"method": "aes-256-gcm"}}
   ],
-  // exp-base-with-padding + aead-random-cipher + obfs-tls1.2-ticket
+  // base-with-padding + aead-random-cipher + obfs-tls1.2-ticket
   [
-    {"name": "exp-base-with-padding", "params": {"salt": "any string"}},
+    {"name": "base-with-padding", "params": {"salt": "any string"}},
     {"name": "aead-random-cipher", "params": {"method": "aes-256-gcm"}},
     {"name": "obfs-tls1.2-ticket", "params": {"sni": ["test.com"]}}
   ]
