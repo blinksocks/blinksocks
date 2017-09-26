@@ -4,25 +4,16 @@ import {TcpInbound, TcpOutbound} from './tcp';
 import {TlsInbound, TlsOutbound} from './tls';
 import {WsInbound, WsOutbound} from './websocket';
 
+const mapping = {
+  'tcp': [TcpInbound, TcpOutbound],
+  'tls': [TlsInbound, TlsOutbound],
+  'websocket': [WsInbound, WsOutbound]
+};
+
 export function createRelay(transport, context) {
-  let relay = null;
-  switch (transport) {
-    case 'tcp':
-      relay = new Relay({context, Inbound: TcpInbound, Outbound: TcpOutbound});
-      relay.id = uniqueId('tcp_');
-      break;
-    case 'tls':
-      relay = new Relay({context, Inbound: TlsInbound, Outbound: TlsOutbound});
-      relay.id = uniqueId('tls_');
-      break;
-    case 'websocket':
-      relay = __IS_CLIENT__
-        ? new Relay({context, Inbound: TcpInbound, Outbound: WsOutbound})
-        : new Relay({context, Inbound: WsInbound, Outbound: TcpOutbound});
-      relay.id = uniqueId('ws_');
-      break;
-    default:
-      throw Error(`unknown transport: ${transport}`);
-  }
+  const [Inbound, Outbound] = __IS_CLIENT__ ? [TcpInbound, mapping[transport][1]] : [mapping[transport][0], TcpOutbound];
+  const props = {context, Inbound, Outbound};
+  const relay = new Relay(props);
+  relay.id = uniqueId(`${transport}_`);
   return relay;
 }

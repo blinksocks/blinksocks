@@ -77,14 +77,12 @@ export class Hub extends EventEmitter {
             ...address,
             perMessageDeflate: false
           });
-          // server.on('headers', (headers) => logger.debug(headers));
           server.on('connection', (ws, req) => {
             ws.remoteAddress = req.connection.remoteAddress;
             ws.remotePort = req.connection.remotePort;
             this._onConnection(ws);
           });
           server.on('listening', () => resolve(server));
-          // TODO: detect if websocket connection have been closed
           return;
         }
       }
@@ -110,9 +108,9 @@ export class Hub extends EventEmitter {
     if (__IS_CLIENT__) {
       this._selectServer();
     }
+    logger.verbose(`[hub] [${context.remoteAddress}:${context.remotePort}] connected`);
     const relay = createRelay(__TRANSPORT__, context);
     relay.on('close', () => this._onRelayClose(relay.id));
-    logger.verbose(`[hub] [${context.remoteAddress}:${context.remotePort}] connected`);
     this._relays.push(relay);
   }
 
