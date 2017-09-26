@@ -64,6 +64,11 @@ describe('Config#init', () => {
     expect(() => Config.init({...baseConf, log_level: 'xxx'})).toThrow();
   });
 
+  it('should throw when log_max_days(if provided) is invalid', () => {
+    expect(() => Config.init({...baseConf, log_max_days: 'xxx'})).toThrow();
+    expect(() => Config.init({...baseConf, log_max_days: 0})).toThrow();
+  });
+
   it('should throw when workers(if provided) is invalid', () => {
     expect(() => Config.init({...baseConf, workers: '0'})).toThrow();
     expect(() => Config.init({...baseConf, workers: -1})).toThrow();
@@ -106,6 +111,11 @@ describe('Config#init', () => {
   it('should __LOG_LEVEL__ set to warn', () => {
     Config.init({...baseConf, log_level: 'warn'});
     expect(__LOG_LEVEL__).toBe('warn');
+  });
+
+  it('should __LOG_MAX_DAYS__ set to 30', () => {
+    Config.init({...baseConf, log_max_days: 30});
+    expect(__LOG_MAX_DAYS__).toBe(30);
   });
 
 });

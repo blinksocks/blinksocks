@@ -9,8 +9,6 @@ import {getPresetClassByName} from '../presets';
 import {isValidHostname, isValidPort, logger} from '../utils';
 import {DNS_DEFAULT_EXPIRE} from './dns-cache';
 
-export const DEFAULT_LOG_LEVEL = 'info';
-
 export class Config {
 
   static init(json) {
@@ -50,8 +48,10 @@ export class Config {
       isFile = true;
     }
 
+    // logger stuff
     global.__LOG_PATH__ = isFile ? absolutePath : path.join(absolutePath, `bs-${__IS_CLIENT__ ? 'client' : 'server'}.log`);
-    global.__LOG_LEVEL__ = (json.log_level !== undefined) ? json.log_level : DEFAULT_LOG_LEVEL;
+    global.__LOG_LEVEL__ = (json.log_level !== undefined) ? json.log_level : 'info';
+    global.__LOG_MAX_DAYS__ = (json.log_max_days !== undefined) ? json.log_max_days : 0;
 
     logger.configure({
       level: __LOG_LEVEL__,
@@ -62,7 +62,8 @@ export class Config {
         }),
         new (require('winston-daily-rotate-file'))({
           filename: __LOG_PATH__,
-          level: __LOG_LEVEL__
+          level: __LOG_LEVEL__,
+          maxDays: __LOG_MAX_DAYS__
         })
       ]
     });
@@ -153,6 +154,16 @@ export class Config {
       const levels = ['error', 'warn', 'info', 'verbose', 'debug', 'silly'];
       if (!levels.includes(json.log_level)) {
         throw Error(`'log_level' must be one of [${levels.toString()}]`);
+      }
+    }
+
+    // log_max_days
+    if (json.log_max_days !== undefined) {
+      if (typeof json.log_max_days !== 'number') {
+        throw Error('\'log_max_days\' must a number');
+      }
+      if (json.log_max_days < 1) {
+        throw Error('\'log_max_days\' must be greater than 0');
       }
     }
 

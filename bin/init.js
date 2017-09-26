@@ -52,7 +52,8 @@ module.exports = function init({isMinimal}) {
     'timeout': timeout,
     'workers': 0,
     'log_path': 'bs-client.log',
-    'log_level': 'info'
+    'log_level': 'info',
+    'log_max_days': 30
   };
 
   if (isMinimal) {
@@ -64,6 +65,7 @@ module.exports = function init({isMinimal}) {
     delete clientJson.workers;
     delete clientJson.log_path;
     delete clientJson.log_level;
+    delete clientJson.log_max_days;
   }
 
   const serverJson = {
@@ -83,7 +85,8 @@ module.exports = function init({isMinimal}) {
     'redirect': '',
     'workers': 0,
     'log_path': 'bs-server.log',
-    'log_level': 'info'
+    'log_level': 'info',
+    'log_max_days': 30
   };
 
   if (isMinimal) {
@@ -97,6 +100,7 @@ module.exports = function init({isMinimal}) {
     delete serverJson.workers;
     delete serverJson.log_path;
     delete serverJson.log_level;
+    delete serverJson.log_max_days;
   }
 
   fs.writeFileSync('blinksocks.client.json', JSON.stringify(clientJson, null, '  '));
