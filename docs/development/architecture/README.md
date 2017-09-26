@@ -152,7 +152,7 @@ export default class CustomPreset extends IPreset {
 }
 ```
 
-| METHODS   | DESCRIPTION                                                                      |
+|  METHODS  |                                   DESCRIPTION                                    |
 | :-------- | :------------------------------------------------------------------------------- |
 | clientOut | client received data from application, and ready to forward data to server       |
 | serverIn  | server received data from client, and ready to forward data to real destination  |
@@ -163,7 +163,7 @@ export default class CustomPreset extends IPreset {
 
 Every method gets an object which contains three parameters you need:
 
-| PARAM                     | DESCRIPTION                                                                                                        |
+|           PARAM           |                                                    DESCRIPTION                                                     |
 | :------------------------ | :----------------------------------------------------------------------------------------------------------------- |
 | buffer                    | output from the previous preset                                                                                    |
 | next(buffer, isReverse)   | asynchronously process buffer to the next preset, if isReverse is true, then send data back to the previous preset |
@@ -231,7 +231,7 @@ export default class CustomPreset extends IPreset {
 }
 ```
 
-| METHODS   | DESCRIPTION                 |
+|  METHODS  |         DESCRIPTION         |
 | :-------- | :-------------------------- |
 | beforeOut | pre-process before `*Out()` |
 | beforeIn  | pre-process before `*In()`  |
@@ -255,26 +255,27 @@ export default class CustomPreset extends IPreset {
 
 **available constants**
 
-| NAME                |
-| :------------------ |
-| \_\_ALL_CONFIG\_\_  |
-| \_\_IS_SERVER\_\_   |
-| \_\_IS_CLIENT\_\_   |
-| \_\_LOCAL_HOST\_\_  |
-| \_\_LOCAL_PORT\_\_  |
-| \_\_TRANSPORT\_\_   |
-| \_\_SERVER_HOST\_\_ |
-| \_\_SERVER_PORT\_\_ |
-| \_\_SERVERS\_\_     |
-| \_\_KEY\_\_         |
-| \_\_PRESETS\_\_     |
-| \_\_DNS\_\_         |
-| \_\_DNS_EXPIRE\_\_  |
-| \_\_TRANSPORT\_\_   |
-| \_\_TLS_CERT\_\_    |
-| \_\_TLS_KEY\_\_     |
-| \_\_TIMEOUT\_\_     |
-| \_\_REDIRECT\_\_    |
-| \_\_LOG_PATH\_\_    |
-| \_\_LOG_LEVEL\_\_   |
-| \_\_WORKERS\_\_     |
+|         NAME         |
+| :------------------- |
+| \_\_ALL_CONFIG\_\_   |
+| \_\_IS_SERVER\_\_    |
+| \_\_IS_CLIENT\_\_    |
+| \_\_LOCAL_HOST\_\_   |
+| \_\_LOCAL_PORT\_\_   |
+| \_\_TRANSPORT\_\_    |
+| \_\_SERVER_HOST\_\_  |
+| \_\_SERVER_PORT\_\_  |
+| \_\_SERVERS\_\_      |
+| \_\_KEY\_\_          |
+| \_\_PRESETS\_\_      |
+| \_\_DNS\_\_          |
+| \_\_DNS_EXPIRE\_\_   |
+| \_\_TRANSPORT\_\_    |
+| \_\_TLS_CERT\_\_     |
+| \_\_TLS_KEY\_\_      |
+| \_\_TIMEOUT\_\_      |
+| \_\_REDIRECT\_\_     |
+| \_\_LOG_PATH\_\_     |
+| \_\_LOG_LEVEL\_\_    |
+| \_\_LOG_MAX_DAYS\_\_ |
+| \_\_WORKERS\_\_      |

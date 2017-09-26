@@ -19,9 +19,8 @@
 * Cross-platform: running on Linux, Windows and macOS.
 * Simple proxy interface for Socks5/Socks4/Socks4a and HTTP.
 * Transmit data over raw TCP, **real** [TLS] or **real** [WebSocket].
-* Customizable protocols and functional middlewares: using [presets](docs/presets).
-* A variety of preset combinations beyond your imagination.
-* Easy and powerful Access Control([ACL]): auto ban, speed(upload and download) limiter.
+* A variety of customizable protocols and functional middlewares: using [presets](docs/presets).
+* Easy and powerful Access Control([ACL]) and Traffic Control([TC]): auto ban, speed(upload/download) limiter.
 * Portable/Executable versions available: [download here](https://github.com/blinksocks/blinksocks/releases).
 * "Out of the box" distribution and deployment.
 * Compatible with **shadowsocks** (partially).
@@ -125,3 +124,4 @@ Apache License 2.0
 [TLS]: https://github.com/blinksocks/blinksocks/tree/master/docs/config#blinksocks-over-tls
 [WebSocket]: https://github.com/blinksocks/blinksocks/tree/master/docs/config#blinksocks-over-websocket
 [ACL]: https://github.com/blinksocks/blinksocks/tree/master/docs/presets#access-control
+[TC]: https://github.com/blinksocks/blinksocks/tree/master/docs/presets#access-control
