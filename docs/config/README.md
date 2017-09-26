@@ -30,6 +30,7 @@ $ blinksocks init
 | dns_expire         | DNS cache expiration time                        | Yes      | 3600            | in seconds                                                 |
 | log_path           | log file path                                    | Yes      | "bs-[type].log" | a directory or a file                                      |
 | log_level          | log level                                        | Yes      | "info"          | ['error', 'warn', 'info', 'verbose', 'debug', 'silly']     |
+| log_max_days       | the max of days a log file will be saved         | Yes      | 30              | remove this option if you want to keep all log files       |
 
 ### Servers(Client Side Only)
 
