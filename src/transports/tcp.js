@@ -1,5 +1,4 @@
 import net from 'net';
-import tls from 'tls';
 import {Inbound, Outbound} from './defs';
 import {MIDDLEWARE_DIRECTION_UPWARD, MIDDLEWARE_DIRECTION_DOWNWARD} from '../core';
 import {logger, getRandomInt} from '../utils';
@@ -93,9 +92,7 @@ export class TcpInbound extends Inbound {
     }
     if (this._outbound && !this._outbound.destroying) {
       this._outbound.destroying = true;
-      // https://github.com/nodejs/node/issues/15005
-      const bufferSize = this._outbound.bufferSize - (__TRANSPORT__ === 'tls' ? 1 : 0);
-      if (bufferSize > 0) {
+      if (this._outbound.bufferSize > 0) {
         this._outbound.once('drain', () => this._outbound.destroy());
       } else {
         this._outbound.destroy();
@@ -237,9 +234,7 @@ export class TcpOutbound extends Outbound {
     }
     if (this._inbound && !this._inbound.destroying) {
       this._inbound.destroying = true;
-      // https://github.com/nodejs/node/issues/15005
-      const bufferSize = this._inbound.bufferSize - (__TRANSPORT__ === 'tls' ? 1 : 0);
-      if (bufferSize > 0) {
+      if (this._inbound.bufferSize > 0) {
         this._inbound.once('drain', () => this._inbound.destroy());
       } else {
         this._inbound.destroy();
@@ -266,16 +261,21 @@ export class TcpOutbound extends Outbound {
 
   async onConnectToRemote(action) {
     const {host, port, onConnected} = action.payload;
-    if (__IS_SERVER__) {
-      await this.connect({host, port});
-    }
-    if (__IS_CLIENT__) {
-      logger.info(`[tcp:outbound] [${this.remote}] request: ${host}:${port}`);
-      await this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__});
-    }
-    this._inbound._isConnectedToRemote = true; // TODO(refactor)
-    if (typeof onConnected === 'function') {
-      onConnected();
+    try {
+      if (__IS_SERVER__) {
+        await this.connect({host, port});
+      }
+      if (__IS_CLIENT__) {
+        logger.info(`[tcp:outbound] [${this.remote}] request: ${host}:${port}`);
+        await this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__});
+      }
+      this._inbound._isConnectedToRemote = true; // TODO(refactor)
+      if (typeof onConnected === 'function') {
+        onConnected();
+      }
+    } catch (err) {
+      logger.warn(`[tcp:outbound] [${this.remote}] fail to connect to ${host}:${port} err=${err.message}`);
+      this._inbound.destroy();
     }
   }
 
@@ -290,30 +290,25 @@ export class TcpOutbound extends Outbound {
   }
 
   async connect({host, port}) {
-    let ip = null;
-    try {
-      ip = await this._dnsCache.get(host);
-    } catch (err) {
-      logger.error(`[tcp:outbound] [${this.remote}] fail to resolve host ${host}: ${err.message}`);
+    // close living connection before create a new connection
+    if (this._socket && !this._socket.destroyed) {
+      this._socket.destroy();
+      this._socket = null;
     }
+    this._socket = await this._connect({host, port});
+    this._socket.on('error', this.onError);
+    this._socket.on('close', this.destroy);
+    this._socket.on('timeout', this.onTimeout);
+    this._socket.on('data', this.onReceive);
+    this._socket.on('drain', () => this.emit('drain'));
+    this._socket.setTimeout(__TIMEOUT__);
+  }
+
+  async _connect({host, port}) {
+    const ip = await this._dnsCache.get(host);
     logger.info(`[tcp:outbound] [${this.remote}] connecting to: ${host}(${ip}):${port}`);
     return new Promise((resolve) => {
-      // close living connection before create a new connection
-      if (this._socket && !this._socket.destroyed) {
-        this._socket.destroy();
-        this._socket = null;
-      }
-      if (__IS_CLIENT__ && __TRANSPORT__ === 'tls') {
-        this._socket = tls.connect({host, port, ca: [__TLS_CERT__]}, () => resolve(this._socket));
-      } else {
-        this._socket = net.connect({host: ip, port}, () => resolve(this._socket));
-      }
-      this._socket.on('error', this.onError);
-      this._socket.on('close', this.destroy);
-      this._socket.on('timeout', this.onTimeout);
-      this._socket.on('data', this.onReceive);
-      this._socket.on('drain', () => this.emit('drain'));
-      this._socket.setTimeout(__TIMEOUT__);
+      const socket = net.connect({host: ip, port}, () => resolve(socket));
     });
   }
 
