@@ -307,9 +307,7 @@ export class TcpOutbound extends Outbound {
   async _connect({host, port}) {
     const ip = await this._dnsCache.get(host);
     logger.info(`[tcp:outbound] [${this.remote}] connecting to: ${host}(${ip}):${port}`);
-    return new Promise((resolve) => {
-      const socket = net.connect({host: ip, port}, () => resolve(socket));
-    });
+    return net.connect({host: ip, port});
   }
 
 }
