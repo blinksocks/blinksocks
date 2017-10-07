@@ -72,8 +72,10 @@ export class Config {
   static initServer(server) {
     global.__TRANSPORT__ = (server.transport !== undefined) ? server.transport : 'tcp';
     if (__TRANSPORT__ === 'tls') {
+      logger.info(`[config] loading ${server.tls_cert}`);
       global.__TLS_CERT__ = fs.readFileSync(path.resolve(process.cwd(), server.tls_cert));
       if (__IS_SERVER__) {
+        logger.info(`[config] loading ${server.tls_key}`);
         global.__TLS_KEY__ = fs.readFileSync(path.resolve(process.cwd(), server.tls_key));
       }
     }
