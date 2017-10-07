@@ -41,11 +41,11 @@ export class Hub extends EventEmitter {
     }
     this._server = await this._createServer();
     if (this._isFirstWorker) {
-      logger.info(`==> [hub] use configuration: ${JSON.stringify(__ALL_CONFIG__)}`);
-      logger.info(`==> [hub] running as: ${__IS_SERVER__ ? 'server' : 'client'}`);
+      logger.info(`[hub] use configuration: ${JSON.stringify(__ALL_CONFIG__)}`);
+      logger.info(`[hub] running as: ${__IS_SERVER__ ? 'server' : 'client'}`);
     }
     if (__IS_CLIENT__) {
-      this._isFirstWorker && logger.info('==> [balancer] started');
+      this._isFirstWorker && logger.info('[balancer] started');
       Balancer.start(__SERVERS__);
     }
   }
@@ -127,12 +127,12 @@ export class Hub extends EventEmitter {
       // balancer
       if (__IS_CLIENT__) {
         Balancer.destroy();
-        this._isFirstWorker && logger.info('==> [balancer] stopped');
+        this._isFirstWorker && logger.info('[balancer] stopped');
       }
       // server
       this._server.close();
       this._server = null;
-      this._isFirstWorker && logger.info('==> [hub] shutdown');
+      this._isFirstWorker && logger.info('[hub] shutdown');
       this.emit('close');
     }
   }
