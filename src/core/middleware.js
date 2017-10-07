@@ -146,9 +146,9 @@ export function createMiddleware(name, params = {}) {
  * destroy cached presets when program exit()
  */
 export function cleanup() {
-  const presets = Object.values(presetCache);
-  for (const preset of presets) {
-    preset.onDestroy();
+  const classNames = Object.keys(presetCache);
+  for (const className of classNames) {
+    presetCache[className].onDestroy();
   }
 }
 
