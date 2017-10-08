@@ -106,6 +106,6 @@ module.exports = function init({isMinimal}) {
   fs.writeFileSync('blinksocks.client.json', JSON.stringify(clientJson, null, '  '));
   fs.writeFileSync('blinksocks.server.json', JSON.stringify(serverJson, null, '  '));
 
-  console.log('> Generate Done.');
-  console.log('> For configuring please read: https://github.com/blinksocks/blinksocks/tree/master/docs/config/README.md');
+  console.log('> Generate Done. For help please see:');
+  console.log('> https://github.com/blinksocks/blinksocks/tree/master/docs/config/README.md');
 };

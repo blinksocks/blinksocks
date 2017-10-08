@@ -1,9 +1,6 @@
 const single_presets = [
-  // ss-base
   [{"name": "ss-base"}],
-  // base-with-padding
   [{"name": "base-with-padding", "params": {"salt": "any string"}}],
-  // base-auth-stream
   [{"name": "base-auth-stream", "params": {"method": "aes-256-ctr"}}]
 ];
 
@@ -12,7 +9,7 @@ const v2ray_presets = [
 ];
 
 const shadowsocks_presets = [
-  // [shadowsocks stream ciphers]
+  // [stream ciphers]
   [
     {"name": "ss-base"},
     {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}}
@@ -25,7 +22,7 @@ const shadowsocks_presets = [
     {"name": "ss-base"},
     {"name": "ss-stream-cipher", "params": {"method": "camellia-256-cfb"}}
   ],
-  // [shadowsocks aead ciphers]
+  // [aead ciphers]
   [
     {"name": "ss-base"},
     {"name": "ss-aead-cipher", "params": {"method": "aes-256-gcm"}}

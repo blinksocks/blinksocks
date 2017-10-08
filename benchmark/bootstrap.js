@@ -18,13 +18,9 @@ function makeConfs(presets) {
     "port": 1082,
     "key": "JJ9,$!.!sRG==v7$",
     "presets": presets,
-    // "transport": {
-    //   "name": "tls",
-    //   "params": {
-    //     "key": "key.pem",
-    //     "cert": "cert.pem"
-    //   }
-    // }
+    // "transport": "tls",
+    // "tls_key": "key.pem",
+    // "tls_cert": "cert.pem"
   };
   const clientConf = Object.assign({
     "host": "127.0.0.1",
@@ -69,9 +65,9 @@ function parseStdout(stdout) {
 function convertTransferToKBytes(transfer) {
   const [num, unit] = transfer.split(' ');
   const factor = {
-    'GBytes': 1024 * 1024,
-    'MBytes': 1024,
-    'KBytes': 1
+    'Gbits/sec': 1024 * 1024,
+    'Mbits/sec': 1024,
+    'Kbits/sec': 1
   }[unit];
   return num * factor;
 }
@@ -121,8 +117,7 @@ function run(cases) {
       const conv = convertTransferToKBytes;
       results.push({
         id: i,
-        transfers: [a.transfer, b.transfer],
-        recvTransfer: conv(b.transfer),
+        recvBitrate: conv(b.bitrate),
         conf: JSON.stringify(presets)
       });
     } catch (err) {
@@ -133,12 +128,12 @@ function run(cases) {
 }
 
 function summary(results) {
-  const sorted = [].concat(results).sort((a, b) => b.recvTransfer - a.recvTransfer);
+  const sorted = [].concat(results).sort((a, b) => b.recvBitrate - a.recvBitrate);
   console.log('(ranking):');
   console.log('');
   for (let i = 0; i < sorted.length; ++i) {
-    const {id, transfers, conf} = sorted[i];
-    console.log(`${(i + 1).toString().padStart(2)}: Test Case ${id}, Transfer=[${transfers.join(', ')}], ${conf}`);
+    const {id, recvBitrate, conf} = sorted[i];
+    console.log(`${(i + 1).toString().padStart(2)}: Test Case ${id}, Recv Bitrate=[${recvBitrate}], ${conf}`);
   }
   console.log('');
 }
