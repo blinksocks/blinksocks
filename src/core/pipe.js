@@ -2,13 +2,16 @@ import EventEmitter from 'events';
 import {MIDDLEWARE_DIRECTION_UPWARD} from './middleware';
 import {PRESET_FAILED} from '../presets/defs';
 
+// .on('broadcast')
+// .on(`pre_${direction}`)
+// .on(`post_${direction}`)
 export class Pipe extends EventEmitter {
 
   _upstream_middlewares = [];
 
   _downstream_middlewares = [];
 
-  _cacheBuffer = null; // buffer
+  _cacheBuffer = null;
 
   _destroyed = false;
 
@@ -35,10 +38,6 @@ export class Pipe extends EventEmitter {
     }
   }
 
-  /**
-   * setup two-way middlewares
-   * @param middlewares
-   */
   setMiddlewares(middlewares) {
     // set listeners
     for (const middleware of middlewares) {
@@ -66,29 +65,15 @@ export class Pipe extends EventEmitter {
   }
 
   feed(direction, buffer) {
+    // cache the current buffer for PRESET_FAILED action
     this._cacheBuffer = buffer;
-
-    const eventName = `next_${direction}`;
-    const middlewares = this.getMiddlewares(direction);
-
-    // methods to be injected
-    const direct = (buf, isReverse = false) => this.emit(isReverse ? `next_${-direction}` : eventName, buf);
-
-    // create event chain among middlewares
-    const last = middlewares.reduce((prev, next) => {
-      if (!prev.hasListener(eventName)) {
-        prev.on(eventName, (buf) => next.write(direction, {buffer: buf, direct}));
-      }
-      return next;
-    });
-
-    // the last middleware send data out via direct(buf, false)
-    if (!last.hasListener(eventName)) {
-      last.on(eventName, direct);
+    // pre-feed hook
+    const preEventName = `pre_${direction}`;
+    if (this.listenerCount(preEventName) > 0) {
+      this.emit(preEventName, buffer, (buf) => this._feed(direction, buf));
+    } else {
+      this._feed(direction, buffer);
     }
-
-    // begin pipe
-    middlewares[0].write(direction, {buffer, direct});
   }
 
   destroy() {
@@ -101,6 +86,25 @@ export class Pipe extends EventEmitter {
     this._cacheBuffer = null;
     this._destroyed = true;
     this.removeAllListeners();
+  }
+
+  _feed(direction, buffer) {
+    const middlewares = this.getMiddlewares(direction);
+    // methods to be injected
+    const direct = (buf, isReverse = false) => this.emit(isReverse ? `post_${-direction}` : `post_${direction}`, buf);
+    // create event chain among middlewares
+    const event = `next_${direction}`;
+    const first = middlewares[0];
+    if (!first.hasListener(event)) {
+      const last = middlewares.reduce((prev, next) => {
+        prev.on(event, (buf) => next.write(direction, {buffer: buf, direct}));
+        return next;
+      });
+      // the last middleware send data out via direct(buf, false)
+      last.on(event, direct);
+    }
+    // begin pipe
+    first.write(direction, {buffer, direct});
   }
 
 }

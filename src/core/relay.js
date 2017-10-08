@@ -1,6 +1,20 @@
 import EventEmitter from 'events';
-import {Pipe, createMiddleware, MIDDLEWARE_DIRECTION_UPWARD, MIDDLEWARE_DIRECTION_DOWNWARD} from '../core';
+import {Pipe} from './pipe';
+import {createMiddleware, MIDDLEWARE_DIRECTION_UPWARD, MIDDLEWARE_DIRECTION_DOWNWARD} from './middleware';
 import {CONNECTION_CREATED} from '../presets';
+
+function preparePresets() {
+  let presets = __PRESETS__;
+  // prepend "proxy" preset to the top of presets on client side
+  if (__IS_CLIENT__ && !['proxy', 'tunnel'].includes(presets[0].name)) {
+    presets = [{'name': 'proxy'}].concat(presets);
+  }
+  // add "tracker" preset to the preset list on both sides
+  if (presets[presets.length - 1].name !== 'tracker') {
+    presets = presets.concat([{'name': 'tracker'}]);
+  }
+  return presets;
+}
 
 // .on('close')
 export class Relay extends EventEmitter {
@@ -17,19 +31,11 @@ export class Relay extends EventEmitter {
     super();
     this.setPresets = this.setPresets.bind(this);
     this.onBroadcast = this.onBroadcast.bind(this);
-    this.sendForward = this.sendForward.bind(this);
-    this.sendBackward = this.sendBackward.bind(this);
-    let presets = __PRESETS__;
-    // prepend "proxy" preset to the top of presets on client side
-    if (__IS_CLIENT__ && !['proxy', 'tunnel'].includes(presets[0].name)) {
-      presets = [{name: 'proxy'}].concat(presets);
-    }
-    // add "tracker" preset to the preset list on both sides
-    if (presets[presets.length - 1].name !== 'tracker') {
-      presets = presets.concat([{name: 'tracker'}]);
-    }
-    this._presets = presets;
-    this._pipe = this.createPipe(presets);
+    this.postPipeForward = this.postPipeForward.bind(this);
+    this.postPipeBackward = this.postPipeBackward.bind(this);
+    // pipe
+    this._presets = preparePresets();
+    this._pipe = this.createPipe(this._presets);
     // outbound
     this._inbound = new Inbound({context: context, pipe: this._pipe});
     this._outbound = new Outbound({inbound: this._inbound, pipe: this._pipe});
@@ -38,7 +44,7 @@ export class Relay extends EventEmitter {
     this._inbound.setPresets = this.setPresets;
     this._inbound.setOutbound(this._outbound);
     this._inbound.on('close', () => this.emit('close'));
-
+    // initial action
     this._pipe.broadcast('pipe', {
       type: CONNECTION_CREATED,
       payload: {
@@ -48,30 +54,30 @@ export class Relay extends EventEmitter {
     });
   }
 
-  // events
+  // hooks of pipe
 
   onBroadcast(action) {
     this._inbound.onBroadcast(action);
     this._outbound.onBroadcast(action);
   }
 
+  postPipeForward(buffer) {
+    if (__IS_CLIENT__) {
+      this._outbound.write(buffer);
+    } else {
+      this._inbound.write(buffer);
+    }
+  }
+
+  postPipeBackward(buffer) {
+    if (__IS_CLIENT__) {
+      this._inbound.write(buffer);
+    } else {
+      this._outbound.write(buffer);
+    }
+  }
+
   // methods
-
-  sendForward(buffer) {
-    if (__IS_CLIENT__) {
-      this._outbound.write(buffer);
-    } else {
-      this._inbound.write(buffer);
-    }
-  }
-
-  sendBackward(buffer) {
-    if (__IS_CLIENT__) {
-      this._inbound.write(buffer);
-    } else {
-      this._outbound.write(buffer);
-    }
-  }
 
   /**
    * set a new presets and recreate the pipe
@@ -92,8 +98,8 @@ export class Relay extends EventEmitter {
     const middlewares = presets.map((preset) => createMiddleware(preset.name, preset.params || {}));
     const pipe = new Pipe();
     pipe.on('broadcast', this.onBroadcast.bind(this)); // if no action were caught by presets
-    pipe.on(`next_${MIDDLEWARE_DIRECTION_UPWARD}`, this.sendForward);
-    pipe.on(`next_${MIDDLEWARE_DIRECTION_DOWNWARD}`, this.sendBackward);
+    pipe.on(`post_${MIDDLEWARE_DIRECTION_UPWARD}`, this.postPipeForward);
+    pipe.on(`post_${MIDDLEWARE_DIRECTION_DOWNWARD}`, this.postPipeBackward);
     pipe.setMiddlewares(middlewares);
     return pipe;
   }
