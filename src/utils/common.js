@@ -121,3 +121,21 @@ export function getChunks(buffer, maxSize) {
   }
   return bufs;
 }
+
+/**
+ * generate random id from [0, max - 1] but exclude ids
+ * @param ids
+ * @param max
+ * @returns {Number}
+ */
+export function generateMutexId(ids = [], max = 0xff) {
+  const seqArr = Array.from(new Array(max).keys());
+  for (let i = 0; i < ids.length; ++i) {
+    seqArr.splice(ids[i] - i, 1);
+  }
+  if (seqArr.length > 0) {
+    return seqArr[crypto.randomBytes(1)[0] % seqArr.length];
+  } else {
+    return -1;
+  }
+}

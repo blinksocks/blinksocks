@@ -5,7 +5,8 @@ import {
   getRandomInt,
   getRandomChunks,
   getChunks,
-  BYTE_ORDER_LE
+  BYTE_ORDER_LE,
+  generateMutexId
 } from '../common';
 
 describe('numberToBuffer', () => {
@@ -121,6 +122,18 @@ describe('getChunks', () => {
     const chunks = getChunks([1, 2, 3], 2);
     expect(chunks[0]).toEqual([1, 2]);
     expect(chunks[1]).toEqual([3]);
+  });
+
+});
+
+describe('generateMutexId', () => {
+
+  it('should return mutex id', () => {
+    expect(generateMutexId([], 0)).toBe(-1);
+    expect(generateMutexId([1, 2, 3], 1)).toBe(0);
+    expect(generateMutexId([1, 2, 3])).not.toContain(1);
+    expect(generateMutexId([1, 2, 3])).not.toContain(2);
+    expect(generateMutexId([1, 2, 3])).not.toContain(3);
   });
 
 });
