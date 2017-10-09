@@ -38,31 +38,34 @@ Save stdout/stderr to files:
 $ npm run benchmark > report.txt 2> error.txt
 ```
 
-benchmark will take a few minutes to get a full report, the more test cases you specified in [benchmark/cases.js] the more time it will spend.
+benchmark will take a few minutes to get a full report, the more test cases you added in [benchmark/cases.js] the more time it will spend.
 
 ### 4. get report
 
-Here is an example output about network performance of different [shadowsocks stream ciphers] implemented by **blinksocks**:
+Here is an example output about network performance of different [shadowsocks stream ciphers] and [shadowsocks aead ciphers] implemented by **blinksocks**:
 
 ```
+blinksocks version:
+2.6.3
+
 Operating System:
 cpu             Intel(R) Core(TM) i3-4160 CPU @ 3.60GHz
 cores           4
-memory          16722907136
+memory          16722886656
 type            Linux
 platform        linux
 arch            x64
-release         4.4.0-92-generic
+release         4.4.0-96-generic
 
 Node.js Versions:
 http_parser     2.7.0
-node            8.4.0
-v8              6.0.286.52
-uv              1.13.1
+node            8.6.0
+v8              6.0.287.53
+uv              1.14.1
 zlib            1.2.11
 ares            1.10.1-DEV
 modules         57
-nghttp2         1.22.0
+nghttp2         1.25.0
 openssl         1.0.2l
 icu             59.1
 unicode         9.0
@@ -74,34 +77,42 @@ running tests...
 ------------ Test Case 0 ----------------
 [{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
 Interval         Transfer     Bitrate
-0.00-5.00   sec  3.36 GBytes  5.77 Gbits/sec  sender
-0.00-5.11   sec  3.25 GBytes  5.46 Gbits/sec  receiver
+0.00-3.00   sec  1.89 GBytes  5.42 Gbits/sec  sender
+0.00-3.11   sec  1.77 GBytes  4.88 Gbits/sec  receiver
 -----------------------------------------
 
 ------------ Test Case 1 ----------------
 [{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"aes-256-cfb"}}]
 Interval         Transfer     Bitrate
-0.00-5.00   sec  1.53 GBytes  2.64 Gbits/sec  sender
-0.00-5.26   sec  1.43 GBytes  2.33 Gbits/sec  receiver
+0.00-3.00   sec  994 MBytes  2.78 Gbits/sec  sender
+0.00-3.31   sec  890 MBytes  2.26 Gbits/sec  receiver
 -----------------------------------------
 
 ------------ Test Case 2 ----------------
 [{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"camellia-256-cfb"}}]
 Interval         Transfer     Bitrate
-0.00-5.00   sec  734 MBytes  1.23 Gbits/sec  sender
-0.00-5.78   sec  632 MBytes  917 Mbits/sec  receiver
+0.00-3.00   sec  502 MBytes  1.40 Gbits/sec  sender
+0.00-3.73   sec  394 MBytes  887 Mbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 3 ----------------
+[{"name":"ss-base"},{"name":"ss-aead-cipher","params":{"method":"aes-256-gcm"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  804 MBytes  2.25 Gbits/sec  sender
+0.00-3.31   sec  489 MBytes  1.24 Gbits/sec  receiver
 -----------------------------------------
 
 (ranking):
 
- 1: Test Case 0, Transfer=[3.36 GBytes, 3.25 GBytes], [{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
- 2: Test Case 1, Transfer=[1.53 GBytes, 1.43 GBytes], [{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"aes-256-cfb"}}]
- 3: Test Case 2, Transfer=[734 MBytes, 632 MBytes], [{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"camellia-256-cfb"}}]
+ 1: Test Case 0, Bitrate=[5.42 Gbits/sec, 4.88 Gbits/sec], [{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
+ 2: Test Case 1, Bitrate=[2.78 Gbits/sec, 2.26 Gbits/sec], [{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"aes-256-cfb"}}]
+ 3: Test Case 3, Bitrate=[2.25 Gbits/sec, 1.24 Gbits/sec], [{"name":"ss-base"},{"name":"ss-aead-cipher","params":{"method":"aes-256-gcm"}}]
+ 4: Test Case 2, Bitrate=[1.40 Gbits/sec, 887 Mbits/sec], [{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"camellia-256-cfb"}}]
 
-Done in 50.86s.
+Done in 59.51s.
 ```
 
-As you can see, the program first lists **Operating System** and **Node.js Versions** parameters of the current platform.
+As you can see, the program first lists **blinksocks version**, **Operating System** and **Node.js Versions** parameters of the current platform.
 
 Following the parameters, there are 3 test cases, each test case has different configuration(presets) defined in [benchmark/cases.js]. Test results are followed by configuration line.
 
@@ -114,7 +125,7 @@ The first line of results represents traffic from `iperf -c` to `bs-client` whil
 
 > You'd better check out [benchmark/iperf.sh] and figure out how it works.
 
-**In my environment**, `aes-256-ctr` has the maximum transfer and bitrate among these 3 test cases.
+**In my environment**, `aes-256-ctr` has the maximum transfer and bitrate among these 4 test cases.
 
 ## History Reports
 
@@ -128,8 +139,10 @@ The first line of results represents traffic from `iperf -c` to `bs-client` whil
 * [2017-09-15.txt](../../benchmark/reports/2017-09-15.txt)
 * [2017-09-21.txt](../../benchmark/reports/2017-09-21.txt)
 * [2017-10-04.txt](../../benchmark/reports/2017-10-04.txt)
+* [2017-10-09.txt](../../benchmark/reports/2017-10-09.txt)
 
 [benchmark/cases.js]: ../../benchmark/cases.js
 [benchmark/iperf.sh]: ../../benchmark/iperf.sh
 [docs/presets]: ../presets
 [shadowsocks stream ciphers]: https://shadowsocks.org/en/spec/Stream-Ciphers.html
+[shadowsocks aead ciphers]: https://shadowsocks.org/en/spec/AEAD-Ciphers.html
