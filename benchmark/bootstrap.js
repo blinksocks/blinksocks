@@ -7,7 +7,7 @@ const chalk = require('chalk');
 const testCases = require('./cases');
 
 const IPERF_PATH = path.join(__dirname, 'iperf.sh');
-const SEC_PER_CASE = 5;
+const SEC_PER_CASE = 3;
 
 function makeConfs(presets) {
   const common = {
@@ -117,6 +117,7 @@ function run(cases) {
       const conv = convertTransferToKBytes;
       results.push({
         id: i,
+        bitrates: [a.bitrate, b.bitrate],
         recvBitrate: conv(b.bitrate),
         conf: JSON.stringify(presets)
       });
@@ -132,8 +133,8 @@ function summary(results) {
   console.log('(ranking):');
   console.log('');
   for (let i = 0; i < sorted.length; ++i) {
-    const {id, recvBitrate, conf} = sorted[i];
-    console.log(`${(i + 1).toString().padStart(2)}: Test Case ${id}, Recv Bitrate=[${recvBitrate}], ${conf}`);
+    const {id, bitrates, conf} = sorted[i];
+    console.log(`${(i + 1).toString().padStart(2)}: Test Case ${id}, Bitrate=[${bitrates.join(', ')}], ${conf}`);
   }
   console.log('');
 }
