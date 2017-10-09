@@ -1,5 +1,31 @@
 #  Change Log
 
+## 2.6.3 (2017-10-09)
+
+### :rocket: Features & Improvements:
+
+- **benchmark**: rank by bitrate instead of transfer.
+- **core**: add "log_max_days" option to configuration.
+- **core**: improve pipe performance.
+- **package**: bundle node runtime v8.6.0 to binaries.
+
+To keep the last 30 days logs, add `log_max_days` to your configuration:
+
+```json
+{
+  "log_max_days": 30
+}
+```
+
+### :bug: Fixes:
+
+- **core**: clear preset cache after switched to another server.
+- **core**: fix compatibility to node v6.x.
+- **doc**: fix links of benchmark.
+- **transports**: make context sync return.
+- **transports**: fix TypeError: Cannot read property 'send' of null when using websocket.
+- **package**: fix "main" field.
+
 ## 2.6.2 (2017-09-21)
 
 ### Notable Changes
