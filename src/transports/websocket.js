@@ -117,7 +117,9 @@ export class WsInbound extends Inbound {
   }
 
   write(buffer) {
-    this._ws.send(buffer);
+    if (this.writable) {
+      this._ws.send(buffer);
+    }
   }
 
   destroy() {
@@ -172,7 +174,9 @@ export class WsOutbound extends Outbound {
   }
 
   write(buffer) {
-    this._ws.send(buffer);
+    if (this.writable) {
+      this._ws.send(buffer);
+    }
   }
 
   destroy() {
