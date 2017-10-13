@@ -8,6 +8,8 @@ import {Config} from './config';
 import * as MiddlewareManager from './middleware';
 import {createRelay} from '../transports';
 import {logger} from '../utils';
+import {http, socks} from '../proxies';
+import {CONNECT_TO_REMOTE} from '../presets';
 
 /**
  * @description
@@ -41,8 +43,7 @@ export class Hub extends EventEmitter {
     }
     this._server = await this._createServer();
     if (this._isFirstWorker) {
-      logger.info(`[hub] use configuration: ${JSON.stringify(__ALL_CONFIG__)}`);
-      logger.info(`[hub] running as: ${__IS_SERVER__ ? 'server' : 'client'}`);
+      logger.info(`[hub] blinksocks running at ${__LOCAL_PROTOCOL__}://${__LOCAL_HOST__}:${__LOCAL_PORT__}`);
     }
     if (__IS_CLIENT__) {
       this._isFirstWorker && logger.info('[balancer] started');
@@ -60,20 +61,34 @@ export class Hub extends EventEmitter {
       port: __LOCAL_PORT__
     };
     return new Promise((resolve) => {
-      let server = null;
-      // for server, server type depends on "transport" specified by user
-      if (__IS_SERVER__) {
-        // create tls server
-        if (__TRANSPORT__ === 'tls') {
-          server = tls.createServer({key: [__TLS_KEY__], cert: [__TLS_CERT__]});
-          server.on('secureConnection', this._onConnection);
+      switch (__LOCAL_PROTOCOL__) {
+        case 'tcp': {
+          const server = net.createServer();
+          server.on('connection', this._onConnection);
           server.on('close', this._onClose);
           server.listen(address, () => resolve(server));
-          return;
+          break;
         }
-        // create websocket server
-        if (__TRANSPORT__ === 'websocket') {
-          server = new ws.Server({
+        case 'socks':
+        case 'socks4':
+        case 'socks4a':
+        case 'socks5': {
+          const server = socks.createServer();
+          server.on('proxyConnection', this._onConnection);
+          server.on('close', this._onClose);
+          server.listen(address, () => resolve(server));
+          break;
+        }
+        case 'http':
+        case 'https': {
+          const server = http.createServer();
+          server.on('proxyConnection', this._onConnection);
+          server.on('close', this._onClose);
+          server.listen(address, () => resolve(server));
+          break;
+        }
+        case 'ws': {
+          const server = new ws.Server({
             ...address,
             perMessageDeflate: false
           });
@@ -83,14 +98,18 @@ export class Hub extends EventEmitter {
             this._onConnection(ws);
           });
           server.on('listening', () => resolve(server));
-          return;
+          break;
         }
+        case 'tls': {
+          const server = tls.createServer({key: [__TLS_KEY__], cert: [__TLS_CERT__]});
+          server.on('secureConnection', this._onConnection);
+          server.on('close', this._onClose);
+          server.listen(address, () => resolve(server));
+          break;
+        }
+        default:
+          break;
       }
-      // server fallback and clients, create tcp server
-      server = net.createServer();
-      server.on('connection', this._onConnection);
-      server.on('close', this._onClose);
-      server.listen(address, () => resolve(server));
     });
   }
 
@@ -100,17 +119,23 @@ export class Hub extends EventEmitter {
       this._fastestServer = server;
       Config.initServer(server);
       MiddlewareManager.reset();
-      logger.info(`[balancer] use: ${server.host}:${server.port}`);
+      logger.info(`[balancer] use server: ${__SERVER_HOST__}:${__SERVER_PORT__}`);
     }
   }
 
-  _onConnection(context) {
+  _onConnection(context, proxyRequest) {
     if (__IS_CLIENT__) {
       this._selectServer();
     }
     logger.verbose(`[hub] [${context.remoteAddress}:${context.remotePort}] connected`);
     const relay = createRelay(__TRANSPORT__, context);
     relay.on('close', () => this._onRelayClose(relay.id));
+    if (__IS_CLIENT__) {
+      relay.pipe.broadcast('client', {
+        type: CONNECT_TO_REMOTE,
+        payload: proxyRequest
+      });
+    }
     this._relays.push(relay);
   }
 
