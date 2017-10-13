@@ -57,7 +57,7 @@
     "jest": "^21.2.1",
     "pkg": "^4.2.5",
     "rimraf": "^2.6.2",
-    "webpack": "^3.6.0"
+    "webpack": "^3.7.1"
   },
   "repository": {
     "url": "https://github.com/blinksocks/blinksocks",
