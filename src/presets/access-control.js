@@ -300,11 +300,13 @@ export default class AccessControlPreset extends IPreset {
     const aclPath = path.resolve(process.cwd(), acl);
     // note: should load rules once server up
     reloadRules(aclPath);
-    fs.watchFile(aclPath, (curr, prev) => {
-      if (curr.mtime > prev.mtime) {
-        reloadRules(aclPath);
-      }
-    });
+    if (process.env.NODE_ENV !== 'test') {
+      fs.watchFile(aclPath, (curr, prev) => {
+        if (curr.mtime > prev.mtime) {
+          reloadRules(aclPath);
+        }
+      });
+    }
   }
 
   constructor({acl, max_tries = DEFAULT_MAX_TRIES}) {
