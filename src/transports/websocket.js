@@ -223,7 +223,7 @@ export class WsOutbound extends Outbound {
     }
     this._inbound._isConnectedToRemote = true; // TODO(refactor)
     if (typeof onConnected === 'function') {
-      onConnected();
+      onConnected(this._inbound.onReceive);
     }
   }
 

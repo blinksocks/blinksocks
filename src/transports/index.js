@@ -7,7 +7,7 @@ import {WsInbound, WsOutbound} from './websocket';
 const mapping = {
   'tcp': [TcpInbound, TcpOutbound],
   'tls': [TlsInbound, TlsOutbound],
-  'websocket': [WsInbound, WsOutbound]
+  'ws': [WsInbound, WsOutbound]
 };
 
 export function createRelay(transport, context) {
