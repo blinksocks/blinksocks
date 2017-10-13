@@ -3,19 +3,26 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import net from 'net';
+import url from 'url';
 import winston from 'winston';
 import isPlainObject from 'lodash.isplainobject';
 import {getPresetClassByName} from '../presets';
 import {isValidHostname, isValidPort, logger} from '../utils';
 import {DNS_DEFAULT_EXPIRE} from './dns-cache';
 
+export const AVAILABLE_PROTOCOLS = [
+  'tcp', 'socks', 'socks5', 'socks4', 'socks4a',
+  'http', 'https', 'ws', 'tls'
+];
+
+function loadFileSync(file) {
+  return fs.readFileSync(path.resolve(process.cwd(), file));
+}
+
 export class Config {
 
   static init(json) {
     this._validate(json);
-
-    global.__LOCAL_HOST__ = json.host;
-    global.__LOCAL_PORT__ = json.port;
 
     if (json.servers !== undefined) {
       global.__SERVERS__ = json.servers.filter((server) => server.enabled);
@@ -27,11 +34,21 @@ export class Config {
       this.initServer(json);
     }
 
+    if (json.service !== undefined) {
+      const {protocol, hostname: host, port} = url.parse(json.service);
+      global.__LOCAL_PROTOCOL__ = protocol.slice(0, -1);
+      global.__LOCAL_HOST__ = host;
+      global.__LOCAL_PORT__ = port;
+    } else {
+      global.__LOCAL_PROTOCOL__ = __IS_CLIENT__ ? 'socks5' : __TRANSPORT__;
+      global.__LOCAL_HOST__ = json.host;
+      global.__LOCAL_PORT__ = json.port;
+    }
+
     global.__TIMEOUT__ = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
     global.__REDIRECT__ = (json.redirect !== '') ? json.redirect : null;
     global.__WORKERS__ = (json.workers !== undefined) ? json.workers : 0;
     global.__DNS_EXPIRE__ = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
-    global.__ALL_CONFIG__ = json;
 
     // dns
     if (json.dns !== undefined && json.dns.length > 0) {
@@ -70,17 +87,28 @@ export class Config {
   }
 
   static initServer(server) {
-    global.__TRANSPORT__ = (server.transport !== undefined) ? server.transport : 'tcp';
+    // service
+    if (server.service !== undefined) {
+      const {protocol, hostname: host, port} = url.parse(server.service);
+      global.__TRANSPORT__ = protocol.slice(0, -1);
+      global.__SERVER_HOST__ = host;
+      global.__SERVER_PORT__ = port;
+    } else {
+      global.__TRANSPORT__ = server.transport || 'tcp';
+      global.__SERVER_HOST__ = server.host;
+      global.__SERVER_PORT__ = server.port;
+    }
+
+    // preload tls cert or tls key
     if (__TRANSPORT__ === 'tls') {
       logger.info(`[config] loading ${server.tls_cert}`);
-      global.__TLS_CERT__ = fs.readFileSync(path.resolve(process.cwd(), server.tls_cert));
+      global.__TLS_CERT__ = loadFileSync(server.tls_cert);
       if (__IS_SERVER__) {
         logger.info(`[config] loading ${server.tls_key}`);
-        global.__TLS_KEY__ = fs.readFileSync(path.resolve(process.cwd(), server.tls_key));
+        global.__TLS_KEY__ = loadFileSync(server.tls_key);
       }
     }
-    global.__SERVER_HOST__ = server.host;
-    global.__SERVER_PORT__ = server.port;
+
     global.__KEY__ = server.key;
     global.__PRESETS__ = server.presets;
   }
@@ -90,14 +118,18 @@ export class Config {
       throw Error('invalid configuration file');
     }
 
-    // host
-    if (typeof json.host !== 'string' || json.host === '') {
-      throw Error('\'host\' must be provided and is not empty');
-    }
-
-    // port
-    if (!isValidPort(json.port)) {
-      throw Error('\'port\' is invalid');
+    // service
+    if (json.service !== undefined) {
+      Config._validateService(json);
+    } else {
+      // host
+      if (!isValidHostname(json.host)) {
+        throw Error('\'host\' is invalid');
+      }
+      // port
+      if (!isValidPort(json.port)) {
+        throw Error('\'port\' is invalid');
+      }
     }
 
     // servers
@@ -211,8 +243,8 @@ export class Config {
   static _validateServer(server) {
     // transport
     if (server.transport !== undefined) {
-      if (!['tcp', 'tls', 'websocket'].includes(server.transport)) {
-        throw Error('\'server.transport\' must be "tcp", "tls" or "websocket"');
+      if (!['tcp', 'tls', 'ws'].includes(server.transport)) {
+        throw Error('\'server.transport\' must be "tcp", "tls" or "ws"');
       }
       if (server.transport === 'tls') {
         if (typeof server.tls_cert !== 'string') {
@@ -224,14 +256,18 @@ export class Config {
       }
     }
 
-    // host
-    if (!isValidHostname(server.host)) {
-      throw Error('\'server.host\' is invalid');
-    }
-
-    // port
-    if (!isValidPort(server.port)) {
-      throw Error('\'server.port\' is invalid');
+    // service
+    if (server.service !== undefined) {
+      Config._validateService(server);
+    } else {
+      // host
+      if (!isValidHostname(server.host)) {
+        throw Error('\'server.host\' is invalid');
+      }
+      // port
+      if (!isValidPort(server.port)) {
+        throw Error('\'server.port\' is invalid');
+      }
     }
 
     // key
@@ -265,6 +301,34 @@ export class Config {
       // check for existence of the preset
       const PresetClass = getPresetClassByName(preset.name);
       PresetClass.checkParams(preset.params || {});
+    }
+  }
+
+  static _validateService(json) {
+    const {protocol, hostname: host, port} = url.parse(json.service);
+    // protocol
+    if (typeof protocol !== 'string') {
+      throw Error('service protocol is invalid');
+    }
+    const _protocol = protocol.slice(0, -1);
+    if (!AVAILABLE_PROTOCOLS.includes(_protocol)) {
+      throw Error(`service protocol must be: ${AVAILABLE_PROTOCOLS.join(', ')}`);
+    }
+    if (_protocol === 'tls') {
+      if (typeof json.tls_cert !== 'string' || json.tls_cert === '') {
+        throw Error('\'tls_cert\' must be set');
+      }
+      if (json.tls_key !== undefined && typeof json.tls_key !== 'string') {
+        throw Error('\'tls_key\' must be set');
+      }
+    }
+    // host
+    if (!isValidHostname(host)) {
+      throw Error('service host is invalid');
+    }
+    // port
+    if (!isValidPort(+port)) {
+      throw Error('service port is invalid');
     }
   }
 

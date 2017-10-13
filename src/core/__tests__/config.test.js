@@ -11,13 +11,24 @@ describe('Config#init', () => {
     expect(() => Config.init([])).toThrow();
   });
 
-  it('should throw when host is not provided', () => {
+  it('should throw when host(if provided) is invalid', () => {
     expect(() => Config.init({})).toThrow();
     expect(() => Config.init({host: ''})).toThrow();
   });
 
-  it('should throw when port is not natural number', () => {
+  it('should throw when port(if provided) is invalid', () => {
     expect(() => Config.init({host: 'localhost', port: -1})).toThrow();
+  });
+
+  it('should throw when service(if provided) is invalid', () => {
+    expect(() => Config.init({service: null})).toThrow();
+    expect(() => Config.init({service: 'xxx'})).toThrow();
+    expect(() => Config.init({service: 'xxx://abc:1080'})).toThrow();
+    expect(() => Config.init({service: 'tcp://-:1080'})).toThrow();
+    expect(() => Config.init({service: 'tcp://abc:0'})).toThrow();
+    expect(() => Config.init({service: 'tls://abc:1080'})).toThrow();
+    expect(() => Config.init({service: 'tls://abc:1080', tls_cert: 'a'})).toThrow();
+    expect(() => Config.init({service: 'tls://abc:1080', tls_cert: 'a', tls_key: null})).toThrow();
   });
 
   it('should throw when servers(if provided) is invalid', () => {
@@ -122,12 +133,12 @@ describe('Config#init', () => {
 
 describe('Config#_validateServer', () => {
 
-  it('should throw when server.host is invalid', () => {
+  it('should throw when server.host(is provided) is invalid', () => {
     expect(() => Config._validateServer({host: null})).toThrow();
     expect(() => Config._validateServer({host: ''})).toThrow();
   });
 
-  it('should throw when server.port is invalid', () => {
+  it('should throw when server.port(is provided) is invalid', () => {
     expect(() => Config._validateServer({host: 'abc', port: null})).toThrow();
   });
 
@@ -136,7 +147,7 @@ describe('Config#_validateServer', () => {
     expect(() => Config._validateServer({host: 'abc', port: 123, key: ''})).toThrow();
   });
 
-  let baseConf = {host: 'abc', port: 123, key: 'secret'};
+  let baseConf = {service: 'tcp://abc:123', key: 'secret'};
 
   it('should throw when server.presets is not an array', () => {
     expect(() => Config._validateServer({...baseConf, presets: null})).toThrow();
@@ -178,7 +189,7 @@ describe('Config#_validateServer', () => {
   });
 
   it('__TLS_CERT__ and __TLS_KEY__ should be set', () => {
-    Config.init({...baseConf, transport: 'tls', tls_cert: 'mock_cert.pem', tls_key: 'mock_key.pem'});
+    Config.init({...baseConf, service: 'tls://abc:123', tls_cert: 'mock_cert.pem', tls_key: 'mock_key.pem'});
     expect(__TRANSPORT__).toBe('tls');
     expect(__TLS_CERT__).toBeDefined();
     expect(__TLS_KEY__).toBeDefined();
