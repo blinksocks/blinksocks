@@ -31,14 +31,11 @@ module.exports = function init({isMinimal}) {
   const timeout = getRandomInt(200, 1000);
 
   const clientJson = {
-    'host': '127.0.0.1',
-    'port': 1080,
+    'service': 'socks5://127.0.0.1:1080',
     'servers': [
       {
         'enabled': true,
-        'transport': 'tcp',
-        'host': '127.0.0.1',
-        'port': port,
+        'service': `tcp://127.0.0.1:${port}`,
         'key': key,
         'presets': [
           {'name': 'ss-base'},
@@ -57,7 +54,6 @@ module.exports = function init({isMinimal}) {
   };
 
   if (isMinimal) {
-    delete clientJson.servers[0].transport;
     delete clientJson.servers[0].tls_cert;
     delete clientJson.dns;
     delete clientJson.dns_expire;
@@ -69,10 +65,8 @@ module.exports = function init({isMinimal}) {
   }
 
   const serverJson = {
-    'host': '0.0.0.0',
-    'port': port,
+    'service': `tcp://0.0.0.0:${port}`,
     'key': key,
-    'transport': 'tcp',
     'presets': [
       {'name': 'ss-base'},
       {'name': 'ss-aead-cipher', 'params': {'method': 'aes-256-gcm'}}
@@ -90,7 +84,6 @@ module.exports = function init({isMinimal}) {
   };
 
   if (isMinimal) {
-    delete serverJson.transport;
     delete serverJson.tls_key;
     delete serverJson.tls_cert;
     delete serverJson.dns;
