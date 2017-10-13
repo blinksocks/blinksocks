@@ -32,8 +32,8 @@ export class PresetRunner extends EventEmitter {
       data = Buffer.from(data);
     }
     return new Promise((resolve, reject) => {
-      this.middleware.on('next_1', resolve);
-      this.middleware.on('next_-1', resolve);
+      this.middleware.on('post_1', resolve);
+      this.middleware.on('post_-1', resolve);
       this.middleware.on('fail', reject);
       this.middleware.on('broadcast', (name, action) => this.emit('broadcast', action));
       this.middleware.write(__IS_CLIENT__ ? MIDDLEWARE_DIRECTION_UPWARD : MIDDLEWARE_DIRECTION_DOWNWARD, {
@@ -48,8 +48,8 @@ export class PresetRunner extends EventEmitter {
       data = Buffer.from(data);
     }
     return new Promise((resolve, reject) => {
-      this.middleware.on('next_1', resolve);
-      this.middleware.on('next_-1', resolve);
+      this.middleware.on('post_1', resolve);
+      this.middleware.on('post_-1', resolve);
       this.middleware.on('fail', reject);
       this.middleware.on('broadcast', (name, action) => this.emit('broadcast', action));
       this.middleware.write(__IS_CLIENT__ ? MIDDLEWARE_DIRECTION_DOWNWARD : MIDDLEWARE_DIRECTION_UPWARD, {
