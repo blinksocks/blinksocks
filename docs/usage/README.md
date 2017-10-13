@@ -101,8 +101,7 @@ $ ./blinksocks-linux-x64-v2.5.3 --help
 
 You may want to use blinksocks to surf the Internet with **browsers**, so I give an advise here.
 
-For Google Chrome, [SwitchyOmega](https://github.com/FelisCatus/SwitchyOmega) extension is a great approach to proxy your
-connections by rules to blinksocks via socks5/socks4(a)/http.
+For Google Chrome, [SwitchyOmega](https://github.com/FelisCatus/SwitchyOmega) extension is a great approach to proxy your connections by rules to blinksocks via socks5/socks4(a)/http.
 
 For FireFox, you can configure proxy at `Preferences - Advanced - Network - Settings`.
 

@@ -257,7 +257,6 @@ export default class CustomPreset extends IPreset {
 
 |         NAME         |
 | :------------------- |
-| \_\_ALL_CONFIG\_\_   |
 | \_\_IS_SERVER\_\_    |
 | \_\_IS_CLIENT\_\_    |
 | \_\_LOCAL_HOST\_\_   |

@@ -74,7 +74,17 @@ You can use **http** or **tls** obfuscator to avoid bad [QoS], **tls** is recomm
 ]
 ```
 
-## To prevent statistical analysis and ensure integrity as well
+## To prevent traffic analysis
+
+```json
+"presets": [
+  {"name": "ss-base"},
+  {"name": "obfs-random-padding"},
+  {"name": "ss-stream-cipher","params": {"method": "aes-128-ctr"}}
+]
+```
+
+## To prevent traffic analysis and ensure integrity as well
 
 ```json
 "presets": [

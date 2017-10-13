@@ -6,7 +6,6 @@ Presets are chaining and composable, built-in presets are listed here. If you wa
 
 **functional**
 
-* [proxy](#proxy)
 * [tunnel](#tunnel)
 * [stats](#stats)
 * [tracker](#tracker)
@@ -45,39 +44,9 @@ Presets are chaining and composable, built-in presets are listed here. If you wa
 
 > You **MUST** put preset signed with * to the presets list(anywhere in theory) if you want to relay data.
 
-## [proxy]
-
-This preset turns blinksocks to a proxy server, works on both client and server side.
-
-* For client side, this preset is **added by default** on **client side**, so you don't have to put it into preset list if you are setting up a proxy service.
-* For server side, this preset is useful to setup a network middleware(act as Man-in-the-middle) to do traffic analysis.
-
-For example, setup a local proxy server using **blinksocks server** at 1080:
-
-```
-// blinksocks.server.json
-{
-  "host": "localhost",
-  "port": 1080,
-  "presets": [{
-    "name": "proxy"
-  }],
-  ...
-}
-```
-
-```
-applications <---Socks/HTTP---> [blinksocks server] <------> destinations
-```
-
-```
-$ blinksocks --config blinksocks.server.json
-$ curl -L --socks5-hostname localhost:1080 https://www.bing.com
-```
-
 ## [tunnel]
 
-This proxy does not use any proxy protocols, just proxy original traffic to a permanent destination.
+This preset performs transparent proxy, transfers original traffic to a permanent destination.
 
 |     PARAMS     |   DESCRIPTION    | DEFAULT |
 | :------------- | :--------------- | :------ |
@@ -591,7 +560,6 @@ all features from **ss-aead-cipher** and prevent server from being detected by p
 
 Here is a [list](./RECOMMENDATIONS.md) of recommended conbinations.
 
-[proxy]: ../../src/presets/proxy.js
 [tunnel]: ../../src/presets/tunnel.js
 [stats]: ../../src/presets/stats.js
 [tracker]: ../../src/presets/tracker.js

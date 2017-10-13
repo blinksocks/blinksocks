@@ -17,12 +17,12 @@
 ## Features
 
 * Cross-platform: running on Linux, Windows and macOS.
-* Simple proxy interface for Socks5/Socks4/Socks4a and HTTP.
+* Lightweight proxy interface for Socks5/Socks4/Socks4a and HTTP(S).
 * Transmit data over raw TCP, **real** [TLS] or **real** [WebSocket].
 * A variety of customizable protocols and functional middlewares: using [presets](docs/presets).
 * Easy and powerful Access Control([ACL]) and Traffic Control([TC]): auto ban, speed(upload/download) limiter.
 * Portable/Executable versions available: [download here](https://github.com/blinksocks/blinksocks/releases).
-* "Out of the box" distribution and deployment.
+* **Out of the box** distribution and deployment.
 * Compatible with **shadowsocks** (partially).
 * Compatible with **v2ray vmess** (partially).
 
@@ -45,7 +45,7 @@ You can get the latest blinksocks via package manager **yarn** or **npm**.
 $ npm install -g blinksocks
 ```
 
-**developing version**
+**development version**
 
 ```
 $ npm install -g git+https://github.com/blinksocks/blinksocks.git
