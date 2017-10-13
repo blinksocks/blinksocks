@@ -34,6 +34,7 @@ export class TcpInbound extends Inbound {
     this._socket.on('data', this.onReceive);
     this._socket.on('drain', () => this.emit('drain'));
     this._socket.on('timeout', this.onTimeout);
+    this._socket.on('end', this.destroy);
     this._socket.on('close', this.destroy);
     this._socket.setTimeout(__TIMEOUT__);
   }
@@ -271,7 +272,7 @@ export class TcpOutbound extends Outbound {
       }
       this._inbound._isConnectedToRemote = true; // TODO(refactor)
       if (typeof onConnected === 'function') {
-        onConnected();
+        onConnected(this._inbound.onReceive);
       }
     } catch (err) {
       logger.warn(`[tcp:outbound] [${this.remote}] fail to connect to ${host}:${port} err=${err.message}`);
@@ -297,6 +298,7 @@ export class TcpOutbound extends Outbound {
     }
     this._socket = await this._connect({host, port});
     this._socket.on('error', this.onError);
+    this._socket.on('end', this.destroy);
     this._socket.on('close', this.destroy);
     this._socket.on('timeout', this.onTimeout);
     this._socket.on('data', this.onReceive);
