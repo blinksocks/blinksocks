@@ -5,10 +5,6 @@ import {CONNECTION_CREATED} from '../presets';
 
 function preparePresets() {
   let presets = __PRESETS__;
-  // prepend "proxy" preset to the top of presets on client side
-  if (__IS_CLIENT__ && !['proxy', 'tunnel'].includes(presets[0].name)) {
-    presets = [{'name': 'proxy'}].concat(presets);
-  }
   // add "tracker" preset to the preset list on both sides
   if (presets[presets.length - 1].name !== 'tracker') {
     presets = presets.concat([{'name': 'tracker'}]);
@@ -52,6 +48,10 @@ export class Relay extends EventEmitter {
         port: context.remotePort
       }
     });
+  }
+
+  get pipe() {
+    return this._pipe;
   }
 
   // hooks of pipe

@@ -1,5 +1,4 @@
 // functional
-import ProxyPreset from './proxy';
 import TunnelPreset from './tunnel';
 import StatsPreset from './stats';
 import TrackerPreset from './tracker';
@@ -34,7 +33,6 @@ import ExpBaseAuthStreamPreset from './_exp-base-auth-stream';
 
 const mapping = {
   // functional
-  'proxy': ProxyPreset,
   'tunnel': TunnelPreset,
   'stats': StatsPreset,
   'tracker': TrackerPreset,
