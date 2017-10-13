@@ -1,4 +1,4 @@
-FROM node:6.11.3-slim
+FROM node:6.11.4-slim
 MAINTAINER Micooz<micooz@hotmail.com>
 
 # install blinksocks
