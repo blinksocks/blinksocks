@@ -1,7 +1,5 @@
-import ip from 'ip';
 import {
   numberToBuffer,
-  parseURI,
   getRandomInt,
   getRandomChunks,
   getChunks,
@@ -25,61 +23,6 @@ describe('numberToBuffer', () => {
 
   it('should throw when pass an out of range number', () => {
     expect(() => numberToBuffer(65535 + 1, 2)).toThrow();
-  });
-
-});
-
-describe('parseURI', () => {
-
-  it('should return expected object', () => {
-    let addr = parseURI('http://bing.com');
-    expect(addr).toMatchObject({
-      type: 3,
-      host: Buffer.from('bing.com'),
-      port: numberToBuffer(80)
-    });
-
-    addr = parseURI('bing.com');
-    expect(addr).toMatchObject({
-      type: 3,
-      host: Buffer.from('bing.com'),
-      port: numberToBuffer(80)
-    });
-
-    addr = parseURI('bing.com:443');
-    expect(addr).toMatchObject({
-      type: 3,
-      host: Buffer.from('bing.com'),
-      port: numberToBuffer(443)
-    });
-
-    addr = parseURI('https://bing.com');
-    expect(addr).toMatchObject({
-      type: 3,
-      host: Buffer.from('bing.com'),
-      port: numberToBuffer(443)
-    });
-
-    addr = parseURI('192.168.1.1:443');
-    expect(addr).toMatchObject({
-      type: 1,
-      host: ip.toBuffer('192.168.1.1'),
-      port: numberToBuffer(443)
-    });
-
-    addr = parseURI('https://[::1]:8080');
-    expect(addr).toMatchObject({
-      type: 4,
-      host: ip.toBuffer('::1'),
-      port: numberToBuffer(8080)
-    });
-
-    addr = parseURI('[::1]:443');
-    expect(addr).toMatchObject({
-      type: 4,
-      host: ip.toBuffer('::1'),
-      port: numberToBuffer(443)
-    });
   });
 
 });

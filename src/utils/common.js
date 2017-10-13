@@ -1,11 +1,4 @@
-import net from 'net';
 import crypto from 'crypto';
-import ip from 'ip';
-import url from 'urijs';
-
-export const ATYP_V4 = 1;
-export const ATYP_DOMAIN = 3;
-export const ATYP_V6 = 4;
 
 export const BYTE_ORDER_BE = 0;
 export const BYTE_ORDER_LE = 1;
@@ -34,38 +27,6 @@ export function numberToBuffer(num, len = 2, byteOrder = BYTE_ORDER_BE) {
     buf.writeUIntLE(num, 0, len);
   }
   return buf;
-}
-
-/**
- * convert a http(s) url to an address with type, host and port
- * @param uri
- * @returns {{type: Number, host: Buffer, port: Buffer}}
- */
-export function parseURI(uri) {
-  let _uri = uri;
-  let _port = null;
-
-  if (_uri.startsWith('http://')) {
-    _uri = _uri.substr(7);
-    _port = 80;
-  }
-
-  if (_uri.startsWith('https://')) {
-    _uri = _uri.substr(8);
-    _port = 443;
-  }
-
-  const parts = {};
-  url.parseHost(_uri, parts);
-
-  const {hostname, port} = parts;
-  const addrType = net.isIP(hostname) ? (net.isIPv4(hostname) ? ATYP_V4 : ATYP_V6) : ATYP_DOMAIN;
-
-  return {
-    type: addrType,
-    host: net.isIP(hostname) ? ip.toBuffer(hostname) : Buffer.from(hostname),
-    port: numberToBuffer(port || _port || 80)
-  };
 }
 
 /**
