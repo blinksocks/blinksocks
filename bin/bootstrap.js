@@ -17,7 +17,7 @@ function obtainConfig(file) {
   return json;
 }
 
-module.exports = function bootstrap(configPath, {Hub, Config}) {
+module.exports = function bootstrap(configPath, {core: {Hub, Config}}) {
   try {
     Config.init(obtainConfig(configPath));
     if (cluster.isMaster && __WORKERS__ > 0) {
