@@ -1,0 +1,257 @@
+import net from 'net';
+import ip from 'ip';
+
+// Socks4 Request Message
+// +----+-----+----------+--------+----------+--------+
+// |VER | CMD | DST.PORT | DST.IP | USER.ID  |  NULL  |
+// +----+-----+----------+--------+----------+--------+
+// | 1  |  1  |    2     |   4    | Variable |  X'00' |
+// +----+-----+----------+--------+----------+--------+
+
+// Socks4a Request Message
+// +----+-----+----------+--------+----------+--------+------------+--------+
+// |VER | CMD | DST.PORT | DST.IP | USER.ID  |  NULL  |  DST.ADDR  |  NULL  |
+// +----+-----+----------+--------+----------+--------+------------+--------+
+// | 1  |  1  |    2     |   4    | Variable |  X'00' |  Variable  |  X'00' |
+// +----+-----+----------+--------+----------+--------+------------+--------+
+//                        0.0.0.!0
+
+// Socks4 Reply Message
+// +----+-----+----------+--------+
+// |VER | CMD | DST.PORT | DST.IP |
+// +----+-----+----------+--------+
+// | 1  |  1  |    2     |   4    |
+// +----+-----+----------+--------+
+
+// ------------------------------------------------------ //
+
+// Socks5 Identifier Message
+// +----+----------+----------+
+// |VER | NMETHODS | METHODS  |
+// +----+----------+----------+
+// | 1  |    1     | 1 to 255 |
+// +----+----------+----------+
+
+// Socks5 Select Message
+// +----+--------+
+// |VER | METHOD |
+// +----+--------+
+// | 1  |   1    |
+// +----+--------+
+
+// Socks5 Request Message
+// +----+-----+-------+------+----------+----------+
+// |VER | CMD |  RSV  | ATYP | DST.ADDR | DST.PORT |
+// +----+-----+-------+------+----------+----------+
+// | 1  |  1  | X'00' |  1   | Variable |    2     |
+// +----+-----+-------+------+----------+----------+
+
+// Socks5 Reply Message
+// +----+-----+-------+------+----------+----------+
+// |VER | REP |  RSV  | ATYP | BND.ADDR | BND.PORT |
+// +----+-----+-------+------+----------+----------+
+// | 1  |  1  | X'00' |  1   | Variable |    2     |
+// +----+-----+-------+------+----------+----------+
+
+const NOOP = 0x00;
+const SOCKS_VERSION_V4 = 0x04;
+const SOCKS_VERSION_V5 = 0x05;
+const METHOD_NO_AUTH = 0x00;
+
+const REQUEST_COMMAND_CONNECT = 0x01;
+const REQUEST_COMMAND_BIND = 0x02;
+const REQUEST_COMMAND_UDP = 0x03;
+
+const ATYP_V4 = 0x01;
+const ATYP_DOMAIN = 0x03;
+const ATYP_V6 = 0x04;
+
+const REPLY_GRANTED = 0x5a;
+const REPLY_SUCCEEDED = 0x00;
+// const REPLY_FAILURE = 0x01;
+// const REPLY_NOT_ALLOWED = 0x02;
+// const REPLY_NETWORK_UNREACHABLE = 0x03;
+// const REPLY_HOST_UNREACHABLE = 0x04;
+// const REPLY_CONNECTION_REFUSED = 0x05;
+// const REPLY_TTL_EXPIRED = 0x06;
+const REPLY_COMMAND_NOT_SUPPORTED = 0x07;
+// const REPLY_ADDRESS_TYPE_NOT_SUPPORTED = 0x08;
+// const REPLY_UNASSIGNED = 0xff;
+
+function parseSocks5Identifier(buffer) {
+  if (buffer.length < 3) {
+    return null;
+  }
+  if (buffer[0] !== SOCKS_VERSION_V5) {
+    return null;
+  }
+  if (buffer[1] < 1) {
+    return null;
+  }
+  if (buffer.slice(2).length !== buffer[1]) {
+    return null;
+  }
+  return true;
+}
+
+function parseSocks5Request(buffer) {
+  if (buffer.length < 9) {
+    return null;
+  }
+  if (buffer[0] !== SOCKS_VERSION_V5) {
+    return null;
+  }
+  if (![REQUEST_COMMAND_CONNECT, REQUEST_COMMAND_BIND, REQUEST_COMMAND_UDP].includes(buffer[1])) {
+    return null;
+  }
+  if (buffer[2] !== NOOP) {
+    return null;
+  }
+  if (![ATYP_V4, ATYP_DOMAIN, ATYP_V6].includes(buffer[3])) {
+    return null;
+  }
+  let addr = null;
+  switch (buffer[3]) {
+    case ATYP_V4:
+      addr = ip.toString(buffer.slice(4, 8));
+      break;
+    case ATYP_DOMAIN:
+      addr = Buffer.from(buffer.slice(5, 5 + buffer[4]));
+      break;
+    case ATYP_V6:
+      addr = ip.toString(buffer.slice(4, 20));
+      break;
+    default:
+      break;
+  }
+  const port = buffer.slice(-2).readUInt16BE(0);
+  return {host: addr, port: port};
+}
+
+function parseSocks4Request(buffer) {
+  if (buffer.length < 9) {
+    return null;
+  }
+  if (buffer[0] !== SOCKS_VERSION_V4) {
+    return null;
+  }
+  if (![REQUEST_COMMAND_CONNECT, REQUEST_COMMAND_BIND].includes(buffer[1])) {
+    return null;
+  }
+  if (buffer[buffer.length - 1] !== NOOP) {
+    return null;
+  }
+
+  const DSTIP = buffer.slice(4, 8);
+  const DSTPORT = buffer.slice(2, 4);
+
+  let DSTADDR = [];
+
+  const isSocks4a =
+    DSTIP[0] === NOOP &&
+    DSTIP[1] === NOOP &&
+    DSTIP[2] === NOOP &&
+    DSTIP[3] !== NOOP;
+
+  // Socks4a
+  if (isSocks4a) {
+    const rest = buffer.slice(8);
+    const fields = [];
+    let field = [];
+    for (const byte of rest) {
+      if (byte === NOOP) {
+        fields.push(field);
+        field = [];
+      } else {
+        field.push(byte);
+      }
+    }
+    if (fields.length !== 2 || fields[1].length < 1) {
+      return null;
+    }
+    DSTADDR = Buffer.from(fields[1]);
+  }
+
+  return {
+    host: isSocks4a ? Buffer.from(DSTADDR) : ip.toString(DSTIP),
+    port: DSTPORT.readUInt16BE(0)
+  };
+}
+
+const STAGE_INIT = 0;
+const STAGE_SOCKS5_REQUEST_MESSAGE = 1;
+const STAGE_DONE = 2;
+
+export function createServer() {
+  const server = net.createServer();
+
+  server.on('connection', (socket) => {
+    let stage = STAGE_INIT;
+
+    socket.on('data', function onMessage(buffer) {
+      let request;
+
+      if (stage === STAGE_INIT) {
+        // try socks5
+        request = parseSocks5Identifier(buffer);
+        if (request !== null) {
+          stage = STAGE_SOCKS5_REQUEST_MESSAGE;
+          // Socks5 Select Message
+          socket.write(Buffer.from([SOCKS_VERSION_V5, METHOD_NO_AUTH]));
+          return;
+        }
+        // try socks4(a)
+        request = parseSocks4Request(buffer);
+        if (request !== null) {
+          stage = STAGE_DONE;
+          const {host, port} = request;
+          server.emit('proxyConnection', socket, {
+            host: host,
+            port: port,
+            onConnected: () => {
+              // Socks4 Reply Message
+              socket.write(Buffer.from([NOOP, REPLY_GRANTED, NOOP, NOOP, NOOP, NOOP, NOOP, NOOP]));
+            }
+          });
+          socket.removeListener('data', onMessage);
+        }
+      }
+      else if (stage === STAGE_SOCKS5_REQUEST_MESSAGE) {
+        request = parseSocks5Request(buffer);
+        if (request !== null) {
+          stage = STAGE_DONE;
+          const cmd = buffer[1];
+          switch (cmd) {
+            case REQUEST_COMMAND_UDP: // UDP ASSOCIATE
+            case REQUEST_COMMAND_CONNECT: {
+              const {host, port} = request;
+              server.emit('proxyConnection', socket, {
+                host: host,
+                port: port,
+                onConnected: () => {
+                  // Socks5 Reply Message
+                  socket.write(Buffer.from([
+                    SOCKS_VERSION_V5, REPLY_SUCCEEDED, NOOP,
+                    ATYP_V4, NOOP, NOOP, NOOP, NOOP, NOOP, NOOP
+                  ]));
+                }
+              });
+              socket.removeListener('data', onMessage);
+              break;
+            }
+            default: {
+              // Socks5 Reply Message
+              socket.write(Buffer.from([
+                SOCKS_VERSION_V5, REPLY_COMMAND_NOT_SUPPORTED, NOOP,
+                ATYP_V4, NOOP, NOOP, NOOP, NOOP, NOOP, NOOP
+              ]));
+              break;
+            }
+          }
+        }
+      }
+    });
+  });
+
+  return server;
+}
