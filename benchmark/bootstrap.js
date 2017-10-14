@@ -10,35 +10,24 @@ const IPERF_PATH = path.join(__dirname, 'iperf.sh');
 const SEC_PER_CASE = 3;
 
 function makeConfs(presets) {
-  const common = {
-    "log_level": "error"
-  };
-  const server = {
-    "host": "localhost",
-    "port": 1082,
+  const serverConf = {
+    "service": "tcp://localhost:1082",
     "key": "JJ9,$!.!sRG==v7$",
     "presets": presets,
-    // "transport": "tls",
     // "tls_key": "key.pem",
     // "tls_cert": "cert.pem"
+    "log_level": "error"
   };
-  const clientConf = Object.assign({
-    "host": "127.0.0.1",
-    "port": 1081,
-    "servers": [
-      Object.assign({}, server, {
-        "enabled": true,
-        "presets": [{
-          "name": "tunnel",
-          "params": {
-            "host": "127.0.0.1",
-            "port": 1083
-          }
-        }].concat(server.presets)
-      })
-    ]
-  }, common);
-  const serverConf = Object.assign({}, server, common);
+  const clientConf = {
+    "service": "tcp://127.0.0.1:1081",
+    // "tls_cert": "cert.pem"
+    "dstaddr": {
+      "host": "127.0.0.1",
+      "port": 1083
+    },
+    "servers": [Object.assign({}, serverConf, {"enabled": true})],
+    "log_level": "error"
+  };
   return [clientConf, serverConf];
 }
 
