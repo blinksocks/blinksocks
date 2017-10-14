@@ -1,25 +1,35 @@
 import crypto from 'crypto';
 import {IPreset} from './defs';
-import {
-  EVP_BytesToKey,
-  HKDF,
-  getRandomChunks,
-  numberToBuffer,
-  BYTE_ORDER_LE,
-  AdvancedBuffer
-} from '../utils';
+import {EVP_BytesToKey, HKDF, getRandomChunks, numberToBuffer, BYTE_ORDER_LE, AdvancedBuffer} from '../utils';
 
-const NONCE_SIZE = 12;
 const TAG_SIZE = 16;
 const MIN_CHUNK_LEN = TAG_SIZE * 2 + 3;
 const MIN_CHUNK_SPLIT_LEN = 0x0800;
 const MAX_CHUNK_SPLIT_LEN = 0x3FFF;
 
-// available ciphers and [key size, salt size]
+// available ciphers and [key size, salt size, nonce size]
 const ciphers = {
-  'aes-128-gcm': [16, 16],
-  'aes-192-gcm': [24, 24],
-  'aes-256-gcm': [32, 32]
+  'aes-128-gcm': [16, 16, 12],
+  'aes-192-gcm': [24, 24, 12],
+  'aes-256-gcm': [32, 32, 12],
+  'chacha20-poly1305': [32, 32, 8],
+  'chacha20-ietf-poly1305': [32, 32, 12],
+  'xchacha20-ietf-poly1305': [32, 32, 24]
+};
+
+const libsodium_functions = {
+  'chacha20-poly1305': [
+    'crypto_aead_chacha20poly1305_encrypt_detached',
+    'crypto_aead_chacha20poly1305_decrypt_detached'
+  ],
+  'chacha20-ietf-poly1305': [
+    'crypto_aead_chacha20poly1305_ietf_encrypt_detached',
+    'crypto_aead_chacha20poly1305_ietf_decrypt_detached'
+  ],
+  'xchacha20-ietf-poly1305': [
+    'crypto_aead_xchacha20poly1305_ietf_encrypt_detached',
+    'crypto_aead_xchacha20poly1305_ietf_decrypt_detached'
+  ]
 };
 
 const HKDF_HASH_ALGORITHM = 'sha1';
@@ -86,7 +96,11 @@ export default class SsAeadCipherPreset extends IPreset {
 
   static saltSize = 0;
 
+  static nonceSize = 0;
+
   static evpKey = null;
+
+  static isUseLibSodium = false;
 
   _cipherKey = null;
 
@@ -106,11 +120,13 @@ export default class SsAeadCipherPreset extends IPreset {
   }
 
   static onInit({method}) {
-    const [keySize, saltSize] = ciphers[method];
+    const [keySize, saltSize, nonceSize] = ciphers[method];
     SsAeadCipherPreset.cipherName = method;
     SsAeadCipherPreset.keySize = keySize;
     SsAeadCipherPreset.saltSize = saltSize;
+    SsAeadCipherPreset.nonceSize = nonceSize;
     SsAeadCipherPreset.evpKey = EVP_BytesToKey(__KEY__, keySize, 16);
+    SsAeadCipherPreset.isUseLibSodium = Object.keys(libsodium_functions).includes(method);
   }
 
   constructor() {
@@ -194,30 +210,52 @@ export default class SsAeadCipherPreset extends IPreset {
   }
 
   encrypt(message) {
-    const cipher = crypto.createCipheriv(
-      SsAeadCipherPreset.cipherName,
-      this._cipherKey,
-      numberToBuffer(this._cipherNonce, NONCE_SIZE, BYTE_ORDER_LE)
-    );
-    const encrypted = Buffer.concat([cipher.update(message), cipher.final()]);
-    const tag = cipher.getAuthTag();
+    const {isUseLibSodium, cipherName, nonceSize} = SsAeadCipherPreset;
+    const cipherKey = this._cipherKey;
+    const nonce = numberToBuffer(this._cipherNonce, nonceSize, BYTE_ORDER_LE);
+    let ciphertext = null;
+    let tag = null;
+    if (isUseLibSodium) {
+      const noop = Buffer.alloc(0);
+      const result = libsodium[libsodium_functions[cipherName][0]](
+        message, noop, noop, nonce, cipherKey
+      );
+      ciphertext = Buffer.from(result.ciphertext);
+      tag = Buffer.from(result.mac);
+    } else {
+      const cipher = crypto.createCipheriv(cipherName, cipherKey, nonce);
+      ciphertext = Buffer.concat([cipher.update(message), cipher.final()]);
+      tag = cipher.getAuthTag();
+    }
     this._cipherNonce += 1;
-    return [encrypted, tag];
+    return [ciphertext, tag];
   }
 
   decrypt(ciphertext, tag) {
-    const decipher = crypto.createDecipheriv(
-      SsAeadCipherPreset.cipherName,
-      this._decipherKey,
-      numberToBuffer(this._decipherNonce, NONCE_SIZE, BYTE_ORDER_LE)
-    );
-    decipher.setAuthTag(tag);
-    try {
-      const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
-      this._decipherNonce += 1;
-      return decrypted;
-    } catch (err) {
-      return null;
+    const {isUseLibSodium, cipherName, nonceSize} = SsAeadCipherPreset;
+    const decipherKey = this._decipherKey;
+    const nonce = numberToBuffer(this._decipherNonce, nonceSize, BYTE_ORDER_LE);
+    if (isUseLibSodium) {
+      const noop = Buffer.alloc(0);
+      try {
+        const plaintext = libsodium[libsodium_functions[cipherName][1]](
+          noop, ciphertext, tag, noop, nonce, decipherKey
+        );
+        this._decipherNonce += 1;
+        return Buffer.from(plaintext);
+      } catch (err) {
+        return null;
+      }
+    } else {
+      const decipher = crypto.createDecipheriv(cipherName, decipherKey, nonce);
+      decipher.setAuthTag(tag);
+      try {
+        const plaintext = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+        this._decipherNonce += 1;
+        return plaintext;
+      } catch (err) {
+        return null;
+      }
     }
   }
 
