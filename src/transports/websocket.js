@@ -242,7 +242,7 @@ export class WsOutbound extends Outbound {
     } catch (err) {
       logger.error(`[ws:outbound] [${this.remote}] fail to resolve host ${host}: ${err.message}`);
     }
-    logger.info(`[ws:outbound] [${this.remote}] connecting to: ws://${ip}:${port}`);
+    logger.info(`[ws:outbound] [${this.remote}] connecting to: ws://${host}:${port} resolve=${ip}`);
     return new Promise((resolve) => {
       this._ws = new WebSocket(`ws://${host}:${port}`, {
         perMessageDeflate: false

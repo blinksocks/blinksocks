@@ -163,12 +163,10 @@ export class TcpInbound extends Inbound {
 
   onPresetPauseRecv() {
     __IS_SERVER__ && (this._socket && this._socket.pause())
-    //(this._fsocket && this._fsocket.pause());
   }
 
   onPresetResumeRecv() {
     __IS_SERVER__ && (this._socket && this._socket.resume());
-    //(this._fsocket && this._fsocket.resume());
   }
 
 }
@@ -282,12 +280,10 @@ export class TcpOutbound extends Outbound {
 
   onPresetPauseSend() {
     __IS_SERVER__ && (this._socket && this._socket.pause());
-    //(this._bsocket && this._bsocket.pause());
   }
 
   onPresetResumeSend() {
     __IS_SERVER__ && (this._socket && this._socket.resume());
-    //(this._bsocket && this._bsocket.resume());
   }
 
   async connect({host, port}) {
@@ -308,7 +304,7 @@ export class TcpOutbound extends Outbound {
 
   async _connect({host, port}) {
     const ip = await this._dnsCache.get(host);
-    logger.info(`[tcp:outbound] [${this.remote}] connecting to: ${host}(${ip}):${port}`);
+    logger.info(`[tcp:outbound] [${this.remote}] connecting to: ${host}:${port} resolve=${ip}`);
     return net.connect({host: ip, port});
   }
 
