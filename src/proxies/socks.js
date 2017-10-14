@@ -116,7 +116,7 @@ function parseSocks5Request(buffer) {
       addr = ip.toString(buffer.slice(4, 8));
       break;
     case ATYP_DOMAIN:
-      addr = Buffer.from(buffer.slice(5, 5 + buffer[4]));
+      addr = buffer.slice(5, 5 + buffer[4]).toString();
       break;
     case ATYP_V6:
       addr = ip.toString(buffer.slice(4, 20));
@@ -173,7 +173,7 @@ function parseSocks4Request(buffer) {
   }
 
   return {
-    host: isSocks4a ? Buffer.from(DSTADDR) : ip.toString(DSTIP),
+    host: isSocks4a ? DSTADDR.toString() : ip.toString(DSTIP),
     port: DSTPORT.readUInt16BE(0)
   };
 }
