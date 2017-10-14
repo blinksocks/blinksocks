@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import {IPreset} from './defs';
 import {
   EVP_BytesToKey,
   HKDF,
@@ -7,22 +8,22 @@ import {
   BYTE_ORDER_LE,
   AdvancedBuffer
 } from '../utils';
-import {IPreset} from './defs';
 
-const NONCE_LEN = 12;
-const TAG_LEN = 16;
-const MIN_CHUNK_LEN = TAG_LEN * 2 + 3;
+const NONCE_SIZE = 12;
+const TAG_SIZE = 16;
+const MIN_CHUNK_LEN = TAG_SIZE * 2 + 3;
 const MIN_CHUNK_SPLIT_LEN = 0x0800;
 const MAX_CHUNK_SPLIT_LEN = 0x3FFF;
 
-// available ciphers and key lengths
+// available ciphers and [key size, salt size]
 const ciphers = {
-  'aes-128-gcm': 16,
-  'aes-192-gcm': 24,
-  'aes-256-gcm': 32
+  'aes-128-gcm': [16, 16],
+  'aes-192-gcm': [24, 24],
+  'aes-256-gcm': [32, 32]
 };
 
 const HKDF_HASH_ALGORITHM = 'sha1';
+const HKDF_INFO = 'ss-subkey';
 
 /**
  * @description
@@ -79,9 +80,11 @@ export default class SsAeadCipherPreset extends IPreset {
 
   static cipherName = '';
 
-  static info = Buffer.from('ss-subkey');
+  static info = Buffer.from(HKDF_INFO);
 
-  static keySaltSize = 0; // key and salt size
+  static keySize = 0;
+
+  static saltSize = 0;
 
   static evpKey = null;
 
@@ -103,9 +106,11 @@ export default class SsAeadCipherPreset extends IPreset {
   }
 
   static onInit({method}) {
+    const [keySize, saltSize] = ciphers[method];
     SsAeadCipherPreset.cipherName = method;
-    SsAeadCipherPreset.keySaltSize = ciphers[method];
-    SsAeadCipherPreset.evpKey = EVP_BytesToKey(__KEY__, SsAeadCipherPreset.keySaltSize, 16);
+    SsAeadCipherPreset.keySize = keySize;
+    SsAeadCipherPreset.saltSize = saltSize;
+    SsAeadCipherPreset.evpKey = EVP_BytesToKey(__KEY__, keySize, 16);
   }
 
   constructor() {
@@ -126,9 +131,9 @@ export default class SsAeadCipherPreset extends IPreset {
   beforeOut({buffer}) {
     let salt = null;
     if (this._cipherKey === null) {
-      const size = SsAeadCipherPreset.keySaltSize;
-      salt = crypto.randomBytes(size);
-      this._cipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, SsAeadCipherPreset.evpKey, SsAeadCipherPreset.info, size);
+      const {keySize, saltSize, evpKey, info} = SsAeadCipherPreset;
+      salt = crypto.randomBytes(saltSize);
+      this._cipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, evpKey, info, keySize);
     }
     const chunks = getRandomChunks(buffer, MIN_CHUNK_SPLIT_LEN, MAX_CHUNK_SPLIT_LEN).map((chunk) => {
       const dataLen = numberToBuffer(chunk.length);
@@ -149,13 +154,13 @@ export default class SsAeadCipherPreset extends IPreset {
 
   onReceiving(buffer, {fail}) {
     if (this._decipherKey === null) {
-      const size = SsAeadCipherPreset.keySaltSize;
-      if (buffer.length < size) {
+      const {keySize, saltSize, evpKey, info} = SsAeadCipherPreset;
+      if (buffer.length < saltSize) {
         return; // too short to get salt
       }
-      const salt = buffer.slice(0, size);
-      this._decipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, SsAeadCipherPreset.evpKey, SsAeadCipherPreset.info, size);
-      return buffer.slice(size); // drop salt
+      const salt = buffer.slice(0, saltSize);
+      this._decipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, evpKey, info, keySize);
+      return buffer.slice(saltSize); // drop salt
     }
 
     if (buffer.length < MIN_CHUNK_LEN) {
@@ -163,7 +168,7 @@ export default class SsAeadCipherPreset extends IPreset {
     }
 
     // verify DataLen, DataLen_TAG
-    const [encLen, lenTag] = [buffer.slice(0, 2), buffer.slice(2, 2 + TAG_LEN)];
+    const [encLen, lenTag] = [buffer.slice(0, 2), buffer.slice(2, 2 + TAG_SIZE)];
     const dataLenBuf = this.decrypt(encLen, lenTag);
     if (dataLenBuf === null) {
       fail(`unexpected DataLen_TAG=${lenTag.toString('hex')} when verify DataLen=${encLen.toString('hex')}, dump=${buffer.slice(0, 60).toString('hex')}`);
@@ -174,12 +179,12 @@ export default class SsAeadCipherPreset extends IPreset {
       fail(`invalid DataLen=${dataLen} is over ${MAX_CHUNK_SPLIT_LEN}, dump=${buffer.slice(0, 60).toString('hex')}`);
       return -1;
     }
-    return 2 + TAG_LEN + dataLen + TAG_LEN;
+    return 2 + TAG_SIZE + dataLen + TAG_SIZE;
   }
 
   onChunkReceived(chunk, {next, fail}) {
     // verify Data, Data_TAG
-    const [encData, dataTag] = [chunk.slice(2 + TAG_LEN, -TAG_LEN), chunk.slice(-TAG_LEN)];
+    const [encData, dataTag] = [chunk.slice(2 + TAG_SIZE, -TAG_SIZE), chunk.slice(-TAG_SIZE)];
     const data = this.decrypt(encData, dataTag);
     if (data === null) {
       fail(`unexpected Data_TAG=${dataTag.toString('hex')} when verify Data=${encData.slice(0, 60).toString('hex')}, dump=${chunk.slice(0, 60).toString('hex')}`);
@@ -192,7 +197,7 @@ export default class SsAeadCipherPreset extends IPreset {
     const cipher = crypto.createCipheriv(
       SsAeadCipherPreset.cipherName,
       this._cipherKey,
-      numberToBuffer(this._cipherNonce, NONCE_LEN, BYTE_ORDER_LE)
+      numberToBuffer(this._cipherNonce, NONCE_SIZE, BYTE_ORDER_LE)
     );
     const encrypted = Buffer.concat([cipher.update(message), cipher.final()]);
     const tag = cipher.getAuthTag();
@@ -204,7 +209,7 @@ export default class SsAeadCipherPreset extends IPreset {
     const decipher = crypto.createDecipheriv(
       SsAeadCipherPreset.cipherName,
       this._decipherKey,
-      numberToBuffer(this._decipherNonce, NONCE_LEN, BYTE_ORDER_LE)
+      numberToBuffer(this._decipherNonce, NONCE_SIZE, BYTE_ORDER_LE)
     );
     decipher.setAuthTag(tag);
     try {

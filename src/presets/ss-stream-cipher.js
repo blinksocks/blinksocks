@@ -1,22 +1,21 @@
 import crypto from 'crypto';
-import {EVP_BytesToKey} from '../utils';
 import {IPreset} from './defs';
+import {EVP_BytesToKey} from '../utils';
 
-const IV_LEN = 16;
-
-// available ciphers
-const ciphers = [
-  'aes-128-ctr', 'aes-192-ctr', 'aes-256-ctr',
-  'aes-128-cfb', 'aes-192-cfb', 'aes-256-cfb',
-  'camellia-128-cfb', 'camellia-192-cfb', 'camellia-256-cfb'
-];
+// available ciphers and [key size, iv size]
+const ciphers = {
+  'aes-128-ctr': [16, 16], 'aes-192-ctr': [24, 16], 'aes-256-ctr': [32, 16],
+  'aes-128-cfb': [16, 16], 'aes-192-cfb': [24, 16], 'aes-256-cfb': [32, 16],
+  'camellia-128-cfb': [16, 16], 'camellia-192-cfb': [24, 16], 'camellia-256-cfb': [32, 16],
+  // 'chacha20-ietf': [32, 12], wait for libsodium-wrappers
+};
 
 /**
  * @description
- *   Perform encrypt/decrypt using Node.js 'crypto' module(OpenSSL wrappers).
+ *   Perform stream encrypt/decrypt.
  *
  * @params
- *   method: A cipher picked from OpenSSL library.
+ *   method: The cipher name.
  *
  * @examples
  *   {
@@ -44,7 +43,7 @@ const ciphers = [
  *
  * @explain
  *   1. Key derivation function is EVP_BytesToKey.
- *   2. IV is plaintext.
+ *   2. IV is randomly generated.
  *   3. Client Cipher IV = Server Decipher IV, vice versa.
  *
  * @reference
@@ -58,6 +57,8 @@ export default class SsStreamCipherPreset extends IPreset {
 
   static key = null;
 
+  static ivSize = 0;
+
   _cipher = null;
 
   _decipher = null;
@@ -66,14 +67,17 @@ export default class SsStreamCipherPreset extends IPreset {
     if (typeof method !== 'string' || method === '') {
       throw Error('\'method\' must be set');
     }
-    if (!ciphers.includes(method)) {
-      throw Error(`'method' must be one of [${ciphers}]`);
+    const cipherNames = Object.keys(ciphers);
+    if (!cipherNames.includes(method)) {
+      throw Error(`'method' must be one of [${cipherNames}]`);
     }
   }
 
   static onInit({method}) {
+    const [keySize, ivSize] = ciphers[method];
     SsStreamCipherPreset.cipherName = method;
-    SsStreamCipherPreset.key = EVP_BytesToKey(__KEY__, method.split('-')[1] / 8, IV_LEN);
+    SsStreamCipherPreset.key = EVP_BytesToKey(__KEY__, keySize, ivSize);
+    SsStreamCipherPreset.ivSize = ivSize;
   }
 
   onDestroy() {
@@ -83,8 +87,9 @@ export default class SsStreamCipherPreset extends IPreset {
 
   beforeOut({buffer}) {
     if (!this._cipher) {
-      const iv = crypto.randomBytes(IV_LEN);
-      this._cipher = crypto.createCipheriv(SsStreamCipherPreset.cipherName, SsStreamCipherPreset.key, iv);
+      const {cipherName, key, ivSize} = SsStreamCipherPreset;
+      const iv = crypto.randomBytes(ivSize);
+      this._cipher = crypto.createCipheriv(cipherName, key, iv);
       return Buffer.concat([iv, this.encrypt(buffer)]);
     } else {
       return this.encrypt(buffer);
@@ -93,12 +98,13 @@ export default class SsStreamCipherPreset extends IPreset {
 
   beforeIn({buffer, fail}) {
     if (!this._decipher) {
-      if (buffer.length < IV_LEN) {
+      const {cipherName, key, ivSize} = SsStreamCipherPreset;
+      if (buffer.length < ivSize) {
         return fail(`buffer is too short ${buffer.length} bytes to get iv, dump=${buffer.toString('hex')}`);
       }
-      const iv = buffer.slice(0, IV_LEN);
-      this._decipher = crypto.createDecipheriv(SsStreamCipherPreset.cipherName, SsStreamCipherPreset.key, iv);
-      return this.decrypt(buffer.slice(IV_LEN));
+      const iv = buffer.slice(0, ivSize);
+      this._decipher = crypto.createDecipheriv(cipherName, key, iv);
+      return this.decrypt(buffer.slice(ivSize));
     } else {
       return this.decrypt(buffer);
     }
