@@ -21,9 +21,6 @@ import ObfsRandomPaddingPreset from './obfs-random-padding';
 import ObfsHttpPreset from './obfs-http';
 import ObfsTls12TicketPreset from './obfs-tls1.2-ticket';
 
-// experimental
-import ExpCompressPreset from './exp-compress';
-
 // others
 import AeadRandomCipherPreset from './aead-random-cipher';
 
@@ -54,9 +51,6 @@ const mapping = {
   'obfs-random-padding': ObfsRandomPaddingPreset,
   'obfs-http': ObfsHttpPreset,
   'obfs-tls1.2-ticket': ObfsTls12TicketPreset,
-
-  // experimental
-  'exp-compress': ExpCompressPreset,
 
   // others
   'aead-random-cipher': AeadRandomCipherPreset
