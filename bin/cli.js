@@ -99,8 +99,9 @@ function getOptionValue(opt) {
   }
 
   if (hasOption('--list-presets')) {
-    console.log(modules.presets.join(os.EOL));
-    console.log(modules.legacyPresets.map((name) => `${chalk.gray(name)} -> ${name.substr(4)}`).join(os.EOL));
+    const {presets: {presets, legacyPresets}} = modules;
+    console.log(presets.join(os.EOL));
+    console.log(legacyPresets.map((name) => `${chalk.gray(name)} -> ${name.substr(4)}`).join(os.EOL));
     return;
   }
 
