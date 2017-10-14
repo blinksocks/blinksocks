@@ -45,6 +45,14 @@ export class Config {
       global.__LOCAL_PORT__ = json.port;
     }
 
+    if (json.dstaddr !== undefined) {
+      global.__DSTADDR__ = json.dstaddr;
+    }
+
+    if (__IS_CLIENT__ && __LOCAL_PROTOCOL__ === 'tcp' && global.__DSTADDR__ === undefined) {
+      throw Error('"dstaddr" must be set on client side if use "tcp://" protocol');
+    }
+
     global.__TIMEOUT__ = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
     global.__REDIRECT__ = (json.redirect !== '') ? json.redirect : null;
     global.__WORKERS__ = (json.workers !== undefined) ? json.workers : 0;
@@ -129,6 +137,22 @@ export class Config {
       // port
       if (!isValidPort(json.port)) {
         throw Error('\'port\' is invalid');
+      }
+    }
+
+    // dstaddr
+    if (json.dstaddr !== undefined) {
+      if (!isPlainObject(json.dstaddr)) {
+        throw Error('\'dstaddr\' is invalid');
+      }
+      const {host, port} = json.dstaddr;
+      // host
+      if (!isValidHostname(host)) {
+        throw Error('\'dstaddr.host\' is invalid');
+      }
+      // port
+      if (!isValidPort(port)) {
+        throw Error('\'dstaddr.port\' is invalid');
       }
     }
 
