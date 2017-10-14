@@ -2975,6 +2975,16 @@ levn@^0.3.0, levn@~0.3.0:
     prelude-ls "~1.1.2"
     type-check "~0.3.2"
 
+libsodium-wrappers@^0.7.0:
+  version "0.7.0"
+  resolved "https://registry.yarnpkg.com/libsodium-wrappers/-/libsodium-wrappers-0.7.0.tgz#93cea7ab172e430d785320ac02fafd9fe1c917f8"
+  dependencies:
+    libsodium "0.7.0"
+
+libsodium@0.7.0:
+  version "0.7.0"
+  resolved "https://registry.yarnpkg.com/libsodium/-/libsodium-0.7.0.tgz#3d15b80511e45a4f10b0ba3d063ba6820e505d3b"
+
 load-json-file@^1.0.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/load-json-file/-/load-json-file-1.1.0.tgz#956905708d58b4bab4c2261b04f59f31c99374c0"

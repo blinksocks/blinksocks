@@ -31,6 +31,7 @@
     "chalk": "^2.1.0",
     "ip": "^1.1.5",
     "js-sha3": "^0.6.1",
+    "libsodium-wrappers": "^0.7.0",
     "lodash.isplainobject": "^4.0.6",
     "lodash.uniqueid": "^4.0.1",
     "winston": "^2.4.0",
