@@ -10,9 +10,9 @@ const mapping = {
   'ws': [WsInbound, WsOutbound]
 };
 
-export function createRelay(transport, context) {
+export function createRelay(transport, context, proxyRequest = null) {
   const [Inbound, Outbound] = __IS_CLIENT__ ? [TcpInbound, mapping[transport][1]] : [mapping[transport][0], TcpOutbound];
-  const props = {context, Inbound, Outbound};
+  const props = {context, Inbound, Outbound, proxyRequest};
   const relay = new Relay(props);
   relay.id = uniqueId(`${transport}_`);
   return relay;

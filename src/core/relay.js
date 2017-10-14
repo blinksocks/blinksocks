@@ -1,7 +1,7 @@
 import EventEmitter from 'events';
 import {Pipe} from './pipe';
 import {createMiddleware, MIDDLEWARE_DIRECTION_UPWARD, MIDDLEWARE_DIRECTION_DOWNWARD} from './middleware';
-import {CONNECTION_CREATED} from '../presets';
+import {CONNECT_TO_REMOTE, CONNECTION_CREATED} from '../presets';
 
 function preparePresets() {
   let presets = __PRESETS__;
@@ -23,7 +23,7 @@ export class Relay extends EventEmitter {
 
   _presets = [];
 
-  constructor({context, Inbound, Outbound}) {
+  constructor({context, Inbound, Outbound, proxyRequest = null}) {
     super();
     this.setPresets = this.setPresets.bind(this);
     this.onBroadcast = this.onBroadcast.bind(this);
@@ -48,10 +48,12 @@ export class Relay extends EventEmitter {
         port: context.remotePort
       }
     });
-  }
-
-  get pipe() {
-    return this._pipe;
+    if (__IS_CLIENT__) {
+      this._pipe.broadcast('client', {
+        type: CONNECT_TO_REMOTE,
+        payload: proxyRequest
+      });
+    }
   }
 
   // hooks of pipe

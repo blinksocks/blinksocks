@@ -8,8 +8,7 @@ import {Config} from './config';
 import * as MiddlewareManager from './middleware';
 import {createRelay} from '../transports';
 import {logger} from '../utils';
-import {http, socks} from '../proxies';
-import {CONNECT_TO_REMOTE} from '../presets';
+import {tcp, http, socks} from '../proxies';
 
 /**
  * @description
@@ -43,7 +42,7 @@ export class Hub extends EventEmitter {
     }
     this._server = await this._createServer();
     if (this._isFirstWorker) {
-      logger.info(`[hub] blinksocks running at ${__LOCAL_PROTOCOL__}://${__LOCAL_HOST__}:${__LOCAL_PORT__}`);
+      logger.info(`[hub] blinksocks ${__IS_CLIENT__ ? 'client' : 'server'} running at ${__LOCAL_PROTOCOL__}://${__LOCAL_HOST__}:${__LOCAL_PORT__}`);
     }
     if (__IS_CLIENT__) {
       this._isFirstWorker && logger.info('[balancer] started');
@@ -61,33 +60,28 @@ export class Hub extends EventEmitter {
       port: __LOCAL_PORT__
     };
     return new Promise((resolve) => {
-      switch (__LOCAL_PROTOCOL__) {
-        case 'tcp': {
-          const server = net.createServer();
+      let server = null;
+      if (__IS_CLIENT__) {
+        if (['tcp'].includes(__LOCAL_PROTOCOL__)) {
+          server = tcp.createServer();
+        }
+        else if (['socks', 'socks4', 'socks4a', 'socks5'].includes(__LOCAL_PROTOCOL__)) {
+          server = socks.createServer();
+        }
+        else if (['http', 'https'].includes(__LOCAL_PROTOCOL__)) {
+          server = http.createServer();
+        }
+        server.on('proxyConnection', this._onConnection);
+        server.on('close', this._onClose);
+        server.listen(address, () => resolve(server));
+      } else {
+        if (__LOCAL_PROTOCOL__ === 'tcp') {
+          server = net.createServer();
           server.on('connection', this._onConnection);
           server.on('close', this._onClose);
           server.listen(address, () => resolve(server));
-          break;
         }
-        case 'socks':
-        case 'socks4':
-        case 'socks4a':
-        case 'socks5': {
-          const server = socks.createServer();
-          server.on('proxyConnection', this._onConnection);
-          server.on('close', this._onClose);
-          server.listen(address, () => resolve(server));
-          break;
-        }
-        case 'http':
-        case 'https': {
-          const server = http.createServer();
-          server.on('proxyConnection', this._onConnection);
-          server.on('close', this._onClose);
-          server.listen(address, () => resolve(server));
-          break;
-        }
-        case 'ws': {
+        else if (__LOCAL_PROTOCOL__ === 'ws') {
           const server = new ws.Server({
             ...address,
             perMessageDeflate: false
@@ -98,17 +92,13 @@ export class Hub extends EventEmitter {
             this._onConnection(ws);
           });
           server.on('listening', () => resolve(server));
-          break;
         }
-        case 'tls': {
+        else if (__LOCAL_PROTOCOL__ === 'tls') {
           const server = tls.createServer({key: [__TLS_KEY__], cert: [__TLS_CERT__]});
           server.on('secureConnection', this._onConnection);
           server.on('close', this._onClose);
           server.listen(address, () => resolve(server));
-          break;
         }
-        default:
-          break;
       }
     });
   }
@@ -123,19 +113,13 @@ export class Hub extends EventEmitter {
     }
   }
 
-  _onConnection(context, proxyRequest) {
+  _onConnection(context, proxyRequest = null) {
     if (__IS_CLIENT__) {
       this._selectServer();
     }
     logger.verbose(`[hub] [${context.remoteAddress}:${context.remotePort}] connected`);
-    const relay = createRelay(__TRANSPORT__, context);
+    const relay = createRelay(__TRANSPORT__, context, proxyRequest);
     relay.on('close', () => this._onRelayClose(relay.id));
-    if (__IS_CLIENT__) {
-      relay.pipe.broadcast('client', {
-        type: CONNECT_TO_REMOTE,
-        payload: proxyRequest
-      });
-    }
     this._relays.push(relay);
   }
 
