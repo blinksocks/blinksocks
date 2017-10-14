@@ -1,5 +1,4 @@
 // functional
-import TunnelPreset from './tunnel';
 import StatsPreset from './stats';
 import TrackerPreset from './tracker';
 import AccessControlPreset from './access-control';
@@ -30,7 +29,6 @@ import ExpBaseAuthStreamPreset from './_exp-base-auth-stream';
 
 const mapping = {
   // functional
-  'tunnel': TunnelPreset,
   'stats': StatsPreset,
   'tracker': TrackerPreset,
   'access-control': AccessControlPreset,
