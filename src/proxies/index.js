@@ -1,4 +1,5 @@
+import * as tcp from './tcp';
 import * as http from './http';
 import * as socks from './socks';
 
-export {http, socks};
+export {tcp, http, socks};
