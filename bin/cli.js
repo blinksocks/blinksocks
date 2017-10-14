@@ -53,7 +53,7 @@ function getOptionValue(opt) {
   return undefined;
 }
 
-(function main() {
+function main() {
   if (argv.length < 3) {
     return console.log(usage);
   }
@@ -107,4 +107,13 @@ function getOptionValue(opt) {
 
   // other cases
   console.log(usage);
-})();
+}
+
+// libsodium-wrappers need to be loaded asynchronously
+// so we must wait for it ready before run main().
+// https://github.com/jedisct1/libsodium.js#usage-as-a-module
+const _sodium = require('libsodium-wrappers');
+_sodium.ready
+  // a handy way to access libsodium without fighting with Promise
+  .then(() => global.libsodium = _sodium)
+  .then(main);
