@@ -16,7 +16,6 @@
     "test:coverage": "jest --silent --coverage --bail",
     "lint": "eslint bin src test pkg",
     "compile": "cross-env NODE_ENV=production babel src --out-dir lib --minified --ignore __tests__,__mocks__",
-    "bundle": "cross-env NODE_ENV=production webpack --config webpack.config.js --progress",
     "prepkg": "rimraf build/blinksocks.js.map pkg/blinksocks-* pkg/sha256sum.txt",
     "pkg": "pkg --out-path pkg/ --targets node8.6.0-linux-x64,node8.6.0-macos-x64,node8.6.0-win-x64 .",
     "postpkg": "node pkg/postpkg.js",
@@ -42,8 +41,6 @@
     "babel-cli": "^6.26.0",
     "babel-eslint": "^8.0.1",
     "babel-jest": "^21.2.0",
-    "babel-loader": "^7.1.2",
-    "babel-minify-webpack-plugin": "^0.2.0",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-env": "^1.6.0",
@@ -51,14 +48,12 @@
     "cross-env": "^5.0.5",
     "eslint": "^4.8.0",
     "eslint-config-babel": "^7.0.2",
-    "eslint-loader": "^1.9.0",
     "eslint-plugin-babel": "^4.1.2",
     "eslint-plugin-flowtype": "^2.39.1",
     "husky": "^0.14.3",
     "jest": "^21.2.1",
     "pkg": "^4.2.5",
-    "rimraf": "^2.6.2",
-    "webpack": "^3.7.1"
+    "rimraf": "^2.6.2"
   },
   "repository": {
     "url": "https://github.com/blinksocks/blinksocks",
