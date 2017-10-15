@@ -5,7 +5,7 @@ const chalk = require('chalk');
 const init = require('./init');
 const bootstrap = require('./bootstrap');
 const modules = require('./modules');
-const version = global.__WEBPACK__ ? global.__VERSION__ : require('../package.json').version;
+const version = require('../package.json').version;
 
 const examples = [
   ['Generate json file with minimal options', '$ blinksocks init --minimal'],

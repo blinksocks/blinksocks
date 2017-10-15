@@ -21,10 +21,10 @@
 * Transmit data over raw TCP, **real** [TLS] or **real** [WebSocket].
 * A variety of customizable protocols and functional middlewares: using [presets](docs/presets).
 * Easy and powerful Access Control([ACL]) and Traffic Control([TC]): auto ban, speed(upload/download) limiter.
-* Portable/Executable versions available: [download here](https://github.com/blinksocks/blinksocks/releases).
+* Executable versions available: [download here](https://github.com/blinksocks/blinksocks/releases).
 * **Out of the box** distribution and deployment.
-* Compatible with **shadowsocks** (partially).
-* Compatible with **v2ray vmess** (partially).
+* Compatible with **shadowsocks**.
+* Compatible with **v2ray vmess**.
 
 ## Getting Started
 
@@ -52,34 +52,12 @@ $ npm install -g git+https://github.com/blinksocks/blinksocks.git
 $ npm install -g git+https://github.com/blinksocks/blinksocks.git#v2.5.5
 ```
 
-### Without yarn or npm?
-
-If you hate to install and want to get a even more portable version, we have all in one script:
-
-**the latest build(unstable)**
-
-```
-$ wget https://raw.githubusercontent.com/blinksocks/blinksocks/master/build/blinksocks.js
-```
-
-**previous build(with tag in url, stable)**
-
-```
-$ wget https://raw.githubusercontent.com/blinksocks/blinksocks/v2.5.1/build/blinksocks.js
-```
-
 ## Run blinksocks
 
 **npm version(require Node.js)**
 
 ```
 $ blinksocks -c blinksocks.client.json
-```
-
-**portable version(require Node.js)**
-
-```
-$ node blinksocks.js -c blinksocks.client.json
 ```
 
 **executable version(~~Node.js~~, not GUI)**
@@ -93,7 +71,7 @@ You can [download](https://github.com/blinksocks/blinksocks/releases) precompile
 
 > For configuring blinksocks, please refer to [Configuration](docs/config).
 
-## GUI ready
+## GUI ready(out-of-date)
 
 For desktop use, you can download official [blinksocks-desktop](https://github.com/blinksocks/blinksocks-desktop),
 a cross-platform GUI for blinksocks.

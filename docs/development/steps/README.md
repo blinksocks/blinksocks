@@ -35,7 +35,7 @@ $ npm run client
 $ npm run server
 ```
 
-This will run compiled code under **build/**.
+This will run compiled code under **lib/**.
 
 ## Test
 
@@ -60,7 +60,7 @@ $ curl -L -x http://localhost:1080 https://www.google.com
 
 ## Compile
 
-For production use, we are running our code under `build` not `src`, so compilation is necessary.
+For production use, we are running our code under `lib` not `src`, so compilation is necessary.
 
 Compilation of blinksocks is ultra easy:
 
@@ -68,15 +68,7 @@ Compilation of blinksocks is ultra easy:
 $ npm run compile
 ```
 
-This will compile `src/*` to `build/*`.
-
-## Bundle
-
-For portable use, we use **webpack** to compile, bundle and compress `src` into `build/blinksocks.js`:
-
-```
-$ npm run bundle
-```
+This will compile `src/*` to `lib/*`.
 
 ## Package
 
