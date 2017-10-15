@@ -1,6 +1,7 @@
 import EventEmitter from 'events';
 import {MIDDLEWARE_DIRECTION_UPWARD} from './middleware';
 import {PRESET_FAILED} from '../presets/defs';
+import {logger} from '../utils';
 
 // .on('broadcast')
 // .on(`pre_${direction}`)
@@ -65,14 +66,18 @@ export class Pipe extends EventEmitter {
   }
 
   feed(direction, buffer) {
-    // cache the current buffer for PRESET_FAILED action
-    this._cacheBuffer = buffer;
-    // pre-feed hook
-    const preEventName = `pre_${direction}`;
-    if (this.listenerCount(preEventName) > 0) {
-      this.emit(preEventName, buffer, (buf) => this._feed(direction, buf));
-    } else {
-      this._feed(direction, buffer);
+    try {
+      // cache the current buffer for PRESET_FAILED action
+      this._cacheBuffer = buffer;
+      // pre-feed hook
+      const preEventName = `pre_${direction}`;
+      if (this.listenerCount(preEventName) > 0) {
+        this.emit(preEventName, buffer, (buf) => this._feed(direction, buf));
+      } else {
+        this._feed(direction, buffer);
+      }
+    } catch (err) {
+      logger.error(`[pipe] error occurred while piping: ${err.message}`);
     }
   }
 
