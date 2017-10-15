@@ -6,7 +6,6 @@ Presets are chaining and composable, built-in presets are listed here. If you wa
 
 **functional**
 
-* [tunnel](#tunnel)
 * [stats](#stats)
 * [tracker](#tracker)
 * [access-control](#access-control)
@@ -43,44 +42,6 @@ Presets are chaining and composable, built-in presets are listed here. If you wa
 ### NOTICE
 
 > You **MUST** put preset signed with * to the presets list(anywhere in theory) if you want to relay data.
-
-## [tunnel]
-
-This preset performs transparent proxy, transfers original traffic to a permanent destination.
-
-|     PARAMS     |   DESCRIPTION    | DEFAULT |
-| :------------- | :--------------- | :------ |
-| host(optional) | destination host | -       |
-| port(optional) | destination port | -       |
-
-```
-// blinksocks.client.json
-{
-  "host": "localhost",
-  "port": 1080,
-  "servers": [{
-    "enabled": true,
-    "host": "localhost",
-    "port": 1081,
-    "presets": [{
-      "name": "tunnel",
-      "params": {
-        "host": "localhost",
-        "port": "1082"
-      }
-    }],
-    ...
-  }],
-  ...
-}
-```
-
-```
-applications <----> [blinksocks client] <----> [blinksocks server] <----> localhost:1082
- (iperf -c)           localhost:1080             localhost:1081             (iperf -s)
-```
-
-In this case, it's useful to test network performance between client and server using [iperf](https://en.wikipedia.org/wiki/Iperf).
 
 ## [stats]
 
@@ -327,7 +288,8 @@ The shadowsocks's [aead cipher](https://shadowsocks.org/en/spec/AEAD-Ciphers.htm
 
 `method` can be one of:
 
-aes-128-gcm, aes-192-gcm, aes-256-gcm
+aes-128-gcm, aes-192-gcm, aes-256-gcm,
+chacha20-poly1305, chacha20-ietf-poly1305, xchacha20-ietf-poly1305
 
 ```
 "presets": [
@@ -354,7 +316,7 @@ aes-128-gcm, aes-192-gcm, aes-256-gcm
 
 `method` can be one of:
 
-aes-128-gcm, none
+aes-128-gcm, chacha20-poly1305, none
 
 ```
 "presets": [
@@ -560,7 +522,6 @@ all features from **ss-aead-cipher** and prevent server from being detected by p
 
 Here is a [list](./RECOMMENDATIONS.md) of recommended conbinations.
 
-[tunnel]: ../../src/presets/tunnel.js
 [stats]: ../../src/presets/stats.js
 [tracker]: ../../src/presets/tracker.js
 [access-control]: ../../src/presets/access-control.js
