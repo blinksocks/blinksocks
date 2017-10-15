@@ -1,8 +1,7 @@
 import net from 'net';
 import crypto from 'crypto';
 import ip from 'ip';
-import {MIDDLEWARE_DIRECTION_UPWARD} from '../core/middleware';
-import {IPreset, CONNECT_TO_REMOTE, CONNECTION_WILL_CLOSE} from './defs';
+import {IPreset, CONNECT_TO_REMOTE} from './defs';
 import {
   hmac,
   hash,
@@ -31,14 +30,19 @@ function getAddrType(host) {
 }
 
 const SECURITY_TYPE_AES_128_GCM = 3;
-// const SECURITY_TYPE_CHACHA20_POLY1305 = 4;
+const SECURITY_TYPE_CHACHA20_POLY1305 = 4;
 const SECURITY_TYPE_NONE = 5;
 
 const securityTypes = {
   'aes-128-gcm': SECURITY_TYPE_AES_128_GCM,
-  // 'chacha20-poly1305': SECURITY_TYPE_CHACHA20_POLY1305,
+  'chacha20-poly1305': SECURITY_TYPE_CHACHA20_POLY1305,
   'none': SECURITY_TYPE_NONE
 };
+
+function createChacha20Poly1305Key(key) {
+  const md5Key = hash('md5', key);
+  return Buffer.concat([md5Key, hash('md5', md5Key)]);
+}
 
 /**
  * @description
@@ -176,8 +180,10 @@ export default class V2rayVmessPreset extends IPreset {
   _v = null;
   _opt = 0x05; // 0x01(S) or 0x05(S+M)
   _dataEncKey = null;
+  _dataEncKeyForChaCha20 = null;
   _dataEncIV = null;
   _dataDecKey = null;
+  _dataDecKeyForChaCha20 = null;
   _dataDecIV = null;
   _chunkLenEncMaskGenerator = null;
   _chunkLenDecMaskGenerator = null;
@@ -236,9 +242,12 @@ export default class V2rayVmessPreset extends IPreset {
     this._adBuf = null;
     this._host = null;
     this._port = null;
+    this._staging = null;
     this._dataEncKey = null;
+    this._dataEncKeyForChaCha20 = null;
     this._dataEncIV = null;
     this._dataDecKey = null;
+    this._dataDecKeyForChaCha20 = null;
     this._dataDecIV = null;
     this._chunkLenEncMaskGenerator = null;
     this._chunkLenDecMaskGenerator = null;
@@ -252,9 +261,9 @@ export default class V2rayVmessPreset extends IPreset {
       this._port = ntb(port);
       this._host = (type === ATYP_DOMAIN) ? Buffer.from(host) : ip.toBuffer(host);
     }
-    if (action.type === CONNECTION_WILL_CLOSE) {
-      this.next(MIDDLEWARE_DIRECTION_UPWARD, Buffer.alloc(2));
-    }
+    // if (action.type === CONNECTION_WILL_CLOSE) {
+    //   this.next(MIDDLEWARE_DIRECTION_UPWARD, Buffer.alloc(2));
+    // }
   }
 
   beforeOut({buffer}) {
@@ -332,8 +341,13 @@ export default class V2rayVmessPreset extends IPreset {
       this._dataDecKey = reqHeader.slice(17, 33);
       this._dataEncIV = hash('md5', this._dataDecIV);
       this._dataEncKey = hash('md5', this._dataDecKey);
+
+      this._dataDecKeyForChaCha20 = createChacha20Poly1305Key(this._dataDecKey);
+      this._dataEncKeyForChaCha20 = createChacha20Poly1305Key(this._dataEncKey);
+
       this._chunkLenDecMaskGenerator = shake128(this._dataDecIV);
       this._chunkLenEncMaskGenerator = shake128(this._dataEncIV);
+
       this._v = reqHeader[33];
       this._opt = reqHeader[34];
 
@@ -422,8 +436,12 @@ export default class V2rayVmessPreset extends IPreset {
     // IV and Key for data chunks encryption/decryption
     this._dataEncIV = rands.slice(0, 16);
     this._dataEncKey = rands.slice(16, 32);
-    this._dataDecKey = hash('md5', this._dataEncKey);
     this._dataDecIV = hash('md5', this._dataEncIV);
+    this._dataDecKey = hash('md5', this._dataEncKey);
+
+    this._dataEncKeyForChaCha20 = createChacha20Poly1305Key(this._dataEncKey);
+    this._dataDecKeyForChaCha20 = createChacha20Poly1305Key(this._dataDecKey);
+
     this._chunkLenEncMaskGenerator = shake128(this._dataEncIV);
     this._chunkLenDecMaskGenerator = shake128(this._dataDecIV);
 
@@ -471,7 +489,7 @@ export default class V2rayVmessPreset extends IPreset {
   getBufferChunks(buffer) {
     return getChunks(buffer, 0x3fff).map((chunk) => {
       let _chunk = chunk;
-      if (V2rayVmessPreset.security === SECURITY_TYPE_AES_128_GCM) {
+      if ([SECURITY_TYPE_AES_128_GCM, SECURITY_TYPE_CHACHA20_POLY1305].includes(V2rayVmessPreset.security)) {
         _chunk = Buffer.concat(this.encrypt(_chunk));
       }
       let _len = _chunk.length;
@@ -496,7 +514,7 @@ export default class V2rayVmessPreset extends IPreset {
   }
 
   onChunkReceived(chunk, {next, fail}) {
-    if (V2rayVmessPreset.security === SECURITY_TYPE_AES_128_GCM) {
+    if ([SECURITY_TYPE_AES_128_GCM, SECURITY_TYPE_CHACHA20_POLY1305].includes(V2rayVmessPreset.security)) {
       const tag = chunk.slice(-16);
       const data = this.decrypt(chunk.slice(2, -16), tag);
       if (data === null) {
@@ -508,24 +526,52 @@ export default class V2rayVmessPreset extends IPreset {
   }
 
   encrypt(plaintext) {
-    const iv = Buffer.concat([ntb(this._cipherNonce), this._dataEncIV.slice(2, 12)]);
-    const cipher = crypto.createCipheriv('aes-128-gcm', this._dataEncKey, iv);
-    const encrypted = Buffer.concat([cipher.update(plaintext), cipher.final()]);
-    const tag = cipher.getAuthTag();
+    const {security} = V2rayVmessPreset;
+    const nonce = Buffer.concat([ntb(this._cipherNonce), this._dataEncIV.slice(2, 12)]);
+    let ciphertext = null;
+    let tag = null;
+    if (security === SECURITY_TYPE_AES_128_GCM) {
+      const cipher = crypto.createCipheriv('aes-128-gcm', this._dataEncKey, nonce);
+      ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final()]);
+      tag = cipher.getAuthTag();
+    }
+    else if (security === SECURITY_TYPE_CHACHA20_POLY1305) {
+      const noop = Buffer.alloc(0);
+      const result = libsodium.crypto_aead_chacha20poly1305_ietf_encrypt_detached(
+        plaintext, noop, noop, nonce, this._dataEncKeyForChaCha20
+      );
+      ciphertext = Buffer.from(result.ciphertext);
+      tag = Buffer.from(result.mac);
+    }
     this._cipherNonce += 1;
-    return [encrypted, tag];
+    return [ciphertext, tag];
   }
 
   decrypt(ciphertext, tag) {
-    const iv = Buffer.concat([ntb(this._decipherNonce), this._dataDecIV.slice(2, 12)]);
-    const decipher = crypto.createDecipheriv('aes-128-gcm', this._dataDecKey, iv);
-    decipher.setAuthTag(tag);
-    try {
-      const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
-      this._decipherNonce += 1;
-      return decrypted;
-    } catch (err) {
-      return null;
+    const {security} = V2rayVmessPreset;
+    const nonce = Buffer.concat([ntb(this._decipherNonce), this._dataDecIV.slice(2, 12)]);
+    if (security === SECURITY_TYPE_AES_128_GCM) {
+      const decipher = crypto.createDecipheriv('aes-128-gcm', this._dataDecKey, nonce);
+      decipher.setAuthTag(tag);
+      try {
+        const plaintext = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+        this._decipherNonce += 1;
+        return plaintext;
+      } catch (err) {
+        return null;
+      }
+    }
+    else if (security === SECURITY_TYPE_CHACHA20_POLY1305) {
+      const noop = Buffer.alloc(0);
+      try {
+        const plaintext = libsodium.crypto_aead_chacha20poly1305_ietf_decrypt_detached(
+          noop, ciphertext, tag, noop, nonce, this._dataDecKeyForChaCha20
+        );
+        this._decipherNonce += 1;
+        return Buffer.from(plaintext);
+      } catch (err) {
+        return null;
+      }
     }
   }
 
