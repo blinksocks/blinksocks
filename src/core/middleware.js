@@ -132,14 +132,8 @@ export class Middleware extends EventEmitter {
  * @returns {Middleware}
  */
 export function createMiddleware(name, params = {}) {
-  try {
-    const preset = createPreset(name, params);
-    return new Middleware(preset);
-  } catch (err) {
-    console.error(err.message);
-    process.exit(-1);
-  }
-  return null;
+  const preset = createPreset(name, params);
+  return new Middleware(preset);
 }
 
 /**
