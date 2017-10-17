@@ -31,10 +31,6 @@ Presets are chaining and composable, built-in presets are listed here. If you wa
 * [obfs-http](#obfs-http)
 * [obfs-tls1.2-ticket](#obfs-tls1.2-ticket)
 
-**experimental**
-
-* [exp-compress](#exp-compress)
-
 **others**
 
 * [aead-random-cipher](#aead-random-cipher)
@@ -190,7 +186,7 @@ To recovery unwary ban, you can edit acl file, remove unwanted rule without rest
 
 ## [base-with-padding]
 
-An **experimental** and advanced preset based on [ss-base], **SHOULD BE** used with ciphers in **cfb** operation mode.
+An advanced preset based on [ss-base], **SHOULD BE** used with ciphers in **cfb** operation mode.
 It can prevent address from being tampered.
 
 **NOTE**: Using [base-with-padding] with non-cfb ciphers will lose protection. 
@@ -215,7 +211,7 @@ It can prevent address from being tampered.
 
 ## [base-auth-stream]
 
-An **experimental** preset combines HMAC and stream encryption. HMAC only guarantees integrity for addressing part.
+A preset combines HMAC and stream encryption. HMAC only guarantees integrity for addressing part.
 
 | PARAMS |           DESCRIPTION            | DEFAULT |
 | :----- | :------------------------------- | :------ |
@@ -289,6 +285,7 @@ The shadowsocks's [aead cipher](https://shadowsocks.org/en/spec/AEAD-Ciphers.htm
 `method` can be one of:
 
 aes-128-gcm, aes-192-gcm, aes-256-gcm,
+
 chacha20-poly1305, chacha20-ietf-poly1305, xchacha20-ietf-poly1305
 
 ```
@@ -467,27 +464,6 @@ A TLS1.2 obfuscator, do TLS handshake using SessionTicket TLS mechanism, transfe
 ]
 ```
 
-## [exp-compress]
-
-An **experimental** preset to do compression/decompression. It has bad performance, please **Use with caution.**
-
-|  PARAMS   |               DESCRIPTION               |  DEFAULT  |
-| :-------- | :-------------------------------------- | :-------- |
-| method    | compression and decompression method    | "deflate" |
-| threshold | the minimal chunk size to be compressed | "5kb"     |
-| options   | the options passed to zlib              | {}        |
-
-`method` can be one of:
-
-gzip, deflate
-
-```
-"presets": [
-  {"name": "ss-base"},
-  {"name": "exp-compress", "params": {"method": "deflate", "threshold": "10k", "options": {}}}
-]
-```
-
 ## [aead-random-cipher]
 
 This preset is based on **ss-aead-cipher**, but added random padding in the front of **each chunk**. This preset inherited
@@ -534,6 +510,5 @@ Here is a [list](./RECOMMENDATIONS.md) of recommended conbinations.
 [obfs-random-padding]: ../../src/presets/obfs-random-padding.js
 [obfs-http]: ../../src/presets/obfs-http.js
 [obfs-tls1.2-ticket]: ../../src/presets/obfs-tls1.2-ticket.js
-[exp-compress]: ../../src/presets/exp-compress.js
 [aead-random-cipher]: ../../src/presets/aead-random-cipher.js
 [Server Name Indication]: https://en.wikipedia.org/wiki/Server_Name_Indication

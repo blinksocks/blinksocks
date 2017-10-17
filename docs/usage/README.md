@@ -5,30 +5,34 @@ Once installed, you can access blinksocks via CLI:
 ```
 $ blinksocks --help
 
+  blinksocks v2.7.0
+
   Usage: blinksocks [command] [options] ...
 
   Commands:
 
-    init    generate a pair of json file
+    init    generate configuration pair
 
   Options:
 
     -h, --help          output usage information
     -v, --version       output blinksocks version
-    -c, --config        file with configuration, usually a json file
-    --list-presets      list all built-in presets
+    -c, --config        file json file with configuration
     -m, --minimal       generate minimal json files
+    --list-presets      list all built-in presets
 
   Examples:
 
-  - Generate json file with full options
-    $ blinksocks init
   - Generate json file with minimal options
     $ blinksocks init --minimal
   - Start blinksocks client
     $ blinksocks --config blinksocks.client.json
   - Start blinksocks server
     $ blinksocks --config blinksocks.server.json
+  - List all built-in presets
+    $ blinksocks --list-presets
+
+  About & Help: https://github.com/blinksocks/blinksocks
 
 ```
 
@@ -38,8 +42,10 @@ After init, you should edit `blinksocks.client.json` to tell blinksocks client w
 
 ```
 {
-  // server host name or ip address
-  host: "example.com"
+  "servers": [{
+    "service": "tcp://<server_address>:<server_port>",
+    ...
+  }]
 }
 ```
 
@@ -69,13 +75,6 @@ $ pm2 start blinksocks -- -c blinksocks.client.json
 
 ```
 $ pm2 start blinksocks -i 2 -- -c blinksocks.server.json
-```
-
-### Using node interpreter
-
-```
-$ wget https://raw.githubusercontent.com/blinksocks/blinksocks/master/build/blinksocks.js
-$ node blinksocks.js
 ```
 
 ### Using executables

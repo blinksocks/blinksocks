@@ -54,8 +54,9 @@ $ curl -L --socks4 localhost:1080 https://www.google.com
 # Socks4a
 $ curl -L --socks4a localhost:1080 https://www.google.com
 
-# HTTP
-$ curl -L -x http://localhost:1080 https://www.google.com
+# HTTP(S)
+$ curl -L -x localhost:1080 https://www.google.com
+$ curl -L -p localhost:1080 https://www.google.com
 ```
 
 ## Compile

@@ -8,7 +8,6 @@
 
 ## For Developers
 
-1. [Steps](development/steps)
-2. [Principle](development/principle)
-3. [Architecture](development/architecture)
-4. [Benchmark](benchmark)
+1. [Preparation](development/preparation)
+2. [Guideline](development/guideline)
+3. [Benchmark](benchmark)

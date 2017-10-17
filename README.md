@@ -86,10 +86,9 @@ a cross-platform GUI for blinksocks.
 
 ### For Developers
 
-1. [Steps](docs/development/steps)
-2. [Principle](docs/development/principle)
-3. [Architecture](docs/development/architecture)
-4. [Benchmark](docs/benchmark)
+1. [Preparation](docs/development/preparation)
+2. [Guideline](docs/development/guideline)
+3. [Benchmark](docs/benchmark)
 
 ## Contributors
 
