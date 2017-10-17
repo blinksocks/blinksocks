@@ -50,7 +50,7 @@ export default class ObfsRandomPaddingPreset extends IPreset {
   }
 
   beforeOut({buffer}) {
-    const chunks = getRandomChunks(buffer, 0, 0xffff).map((data) => {
+    const chunks = getRandomChunks(buffer, 0x3fff, 0xffff).map((data) => {
       const pLen = getRandomInt(0, 0xff);
       const padding = crypto.randomBytes(pLen);
       return Buffer.concat([numberToBuffer(pLen, 1), padding, numberToBuffer(data.length), data]);
