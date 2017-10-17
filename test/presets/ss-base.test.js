@@ -29,27 +29,36 @@ test('running on client', async () => {
 });
 
 test('running on server', async () => {
-  const runner = new PresetRunner({
-    name: 'ss-base'
-  }, {
-    __IS_CLIENT__: false,
-    __IS_SERVER__: true
-  });
-
-  runner.on('broadcast', (action) => {
-    expect(action).toMatchSnapshot();
-    action.payload.onConnected();
-  });
-
   // should decode address info correctly
-  const header = [3, 11, 101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109, 1, 187];
-  const payload = [0, 0, 0, 0];
-  const ret = await runner.forward(Buffer.from(header.concat(payload)));
-  expect(ret).toMatchSnapshot();
+  const headers = [
+    [1, 0, 0, 0, 0, 1, 187],
+    [4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 187],
+    [3, 11, 101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109, 1, 187]
+  ];
 
-  // just payload
-  expect(await runner.forward('12')).toMatchSnapshot();
+  for (const header of headers) {
+    const runner = new PresetRunner({
+      name: 'ss-base'
+    }, {
+      __IS_CLIENT__: false,
+      __IS_SERVER__: true
+    });
 
-  // just payload
-  expect(await runner.backward('34')).toMatchSnapshot();
+    runner.on('broadcast', (action) => {
+      expect(action).toMatchSnapshot();
+      action.payload.onConnected();
+    });
+
+    const handshakeBuf = Buffer.from([
+      ...header,
+      0, 0, 0, 0 // payload
+    ]);
+    expect(await runner.forward(handshakeBuf)).toMatchSnapshot();
+
+    // just payload
+    expect(await runner.forward('12')).toMatchSnapshot();
+
+    // just payload
+    expect(await runner.backward('34')).toMatchSnapshot();
+  }
 });

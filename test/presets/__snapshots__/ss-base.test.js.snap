@@ -48,7 +48,7 @@ Object {
 exports[`running on server 1`] = `
 Object {
   "payload": Object {
-    "host": "example.com",
+    "host": "0.0.0.0",
     "onConnected": [Function],
     "port": 443,
   },
@@ -79,6 +79,92 @@ Object {
 `;
 
 exports[`running on server 4`] = `
+Object {
+  "data": Array [
+    51,
+    52,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`running on server 5`] = `
+Object {
+  "payload": Object {
+    "host": "::",
+    "onConnected": [Function],
+    "port": 443,
+  },
+  "type": "@action:connect_to_remote",
+}
+`;
+
+exports[`running on server 6`] = `
+Object {
+  "data": Array [
+    0,
+    0,
+    0,
+    0,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`running on server 7`] = `
+Object {
+  "data": Array [
+    49,
+    50,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`running on server 8`] = `
+Object {
+  "data": Array [
+    51,
+    52,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`running on server 9`] = `
+Object {
+  "payload": Object {
+    "host": "example.com",
+    "onConnected": [Function],
+    "port": 443,
+  },
+  "type": "@action:connect_to_remote",
+}
+`;
+
+exports[`running on server 10`] = `
+Object {
+  "data": Array [
+    0,
+    0,
+    0,
+    0,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`running on server 11`] = `
+Object {
+  "data": Array [
+    49,
+    50,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`running on server 12`] = `
 Object {
   "data": Array [
     51,

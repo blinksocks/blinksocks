@@ -50,6 +50,16 @@ describe('Config#init', () => {
     }]
   };
 
+  it('should throw when dstaddr(if provided) is invalid', () => {
+    expect(() => Config.init({...baseConf, service: 'tcp://localhost:1080', dstaddr: undefined})).toThrow();
+    expect(() => Config.init({...baseConf, dstaddr: null})).toThrow();
+    expect(() => Config.init({...baseConf, dstaddr: {}})).toThrow();
+    expect(() => Config.init({...baseConf, dstaddr: {host: ''}})).toThrow();
+    expect(() => Config.init({...baseConf, dstaddr: {host: 'abc'}})).toThrow();
+    expect(() => Config.init({...baseConf, dstaddr: {host: 'abc', port: ''}})).toThrow();
+    expect(() => Config.init({...baseConf, dstaddr: {host: 'abc', port: 80}})).not.toThrow();
+  });
+
   it('should throw when timeout(if provided) is invalid', () => {
     expect(() => Config.init({...baseConf, timeout: '0'})).toThrow();
     expect(() => Config.init({...baseConf, timeout: 0})).toThrow();
