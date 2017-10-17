@@ -1,5 +1,67 @@
 #  Change Log
 
+## 2.7.0 (2017-10-17)
+
+### :boom: Breaking Changes:
+
+- **preset**: remove over designed "proxy" and "tunnel" preset.
+- **preset**: remove useless "exp-compress" preset.
+- **package**: remove unnecessary webpack bundle.
+- **transports**: change "websocket" to "ws".
+
+### :rocket: Features & Improvements:
+
+- **core**: add "service" and "dstaddr" option.
+- **core**: refactor service creation of hub.
+- **benchmark**: rearrange test cases.
+- **proxies**: refactor http, socks4(a) and socks5, use more lightweight approach.
+- **proxies**: add "tcp" transparent proxy.
+- **presets**: add `chacha20-poly1305`, `chacha20-ietf-poly1305`, `xchacha20-ietf-poly1305` support for ss-aead-cipher.
+- **presets**: add `chacha20-poly1305` support for v2ray-vmess.
+- **utils**: remove unsafe parseURI().
+
+### :bug: Fixes:
+
+- **core**: destroy socket when "end" emitted.
+- **presets**: fix "invalid length: 0" error caused by obfs-random-padding.
+- **test**: fix preset runner.
+
+### Upgrade from 2.6.3 to 2.7.0
+
+```
+$ npm install -g blinksocks@2.7.0
+```
+
+### :exclamation: Notice
+
+1. blinksocks client no longer handle both http and socks proxy connections at the same port now, please specify only one of them using `service`:
+
+```
+// client.json
+{
+  "service": "socks5://<host>:<port>"
+  // or "service": "http://<host>:<port>"
+}
+```
+
+2. If you are using websocket transport, please change `websocket` to `ws`:
+
+```
+// client.json
+{
+  "servers": [{
+    "service": "ws://<host>:<port>",
+    // or "transport": "ws"
+  }]
+}
+
+// server.json
+{
+  "service": "ws://<host>:<port>"
+  // or "transport": "ws"
+}
+```
+
 ## 2.6.3 (2017-10-09)
 
 ### :rocket: Features & Improvements:
