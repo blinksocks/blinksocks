@@ -66,5 +66,12 @@ export function createServer() {
     });
   });
 
+  // errors
+  server.on('clientError', (err, socket) => {
+    const {remoteAddress, remotePort} = socket;
+    logger.error(`[http] [${remoteAddress}:${remotePort}] invalid http request: ${err.message}`);
+    socket.destroy();
+  });
+
   return server;
 }

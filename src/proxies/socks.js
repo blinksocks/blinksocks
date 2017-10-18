@@ -1,5 +1,6 @@
 import net from 'net';
 import ip from 'ip';
+import {logger} from '../utils';
 
 // Socks4 Request Message
 // +----+-----+----------+--------+----------+--------+
@@ -186,6 +187,8 @@ export function createServer() {
   const server = net.createServer();
 
   server.on('connection', (socket) => {
+    const {remoteAddress, remotePort} = socket;
+
     let stage = STAGE_INIT;
 
     socket.on('data', function onMessage(buffer) {
@@ -214,7 +217,10 @@ export function createServer() {
             }
           });
           socket.removeListener('data', onMessage);
+          return;
         }
+        logger.error(`[socks] [${remoteAddress}:${remotePort}] invalid socks handshake message: ${buffer.slice(0, 60).toString('hex')}`);
+        socket.destroy();
       }
       else if (stage === STAGE_SOCKS5_REQUEST_MESSAGE) {
         request = parseSocks5Request(buffer);
@@ -248,6 +254,9 @@ export function createServer() {
               break;
             }
           }
+        } else {
+          logger.error(`[socks] [${remoteAddress}:${remotePort}] invalid socks5 request message: ${buffer.slice(0, 60).toString('hex')}`);
+          socket.destroy();
         }
       }
     });
