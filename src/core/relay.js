@@ -49,7 +49,7 @@ export class Relay extends EventEmitter {
       }
     });
     if (__IS_CLIENT__) {
-      this._pipe.broadcast('client', {
+      this._pipe.broadcast(null, {
         type: CONNECT_TO_REMOTE,
         payload: proxyRequest
       });

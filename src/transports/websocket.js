@@ -6,6 +6,7 @@ import {
   CONNECT_TO_REMOTE,
   CONNECTION_WILL_CLOSE,
   CONNECTION_CLOSED,
+  CONNECTED_TO_REMOTE,
   PRESET_FAILED,
   PRESET_CLOSE_CONNECTION,
   PRESET_PAUSE_SEND,
@@ -14,11 +15,15 @@ import {
   PRESET_RESUME_RECV
 } from '../presets/defs';
 
+const MAX_BUFFERED_SIZE = 512 * 1024; // 512KB
+
 // TODO: timeout mechanism for websocket
 
 export class WsInbound extends Inbound {
 
   _ws = null;
+
+  _isConnectedToRemote = false;
 
   constructor(props) {
     super(props);
@@ -37,8 +42,20 @@ export class WsInbound extends Inbound {
   }
 
   onReceive(buffer) {
-    const direction = __IS_CLIENT__ ? MIDDLEWARE_DIRECTION_UPWARD : MIDDLEWARE_DIRECTION_DOWNWARD;
-    this._pipe.feed(direction, buffer);
+    if (this._outbound.writable || !this._isConnectedToRemote) {
+      const direction = __IS_CLIENT__ ? MIDDLEWARE_DIRECTION_UPWARD : MIDDLEWARE_DIRECTION_DOWNWARD;
+      this._pipe.feed(direction, buffer);
+    }
+    if (this._outbound && this._outbound.bufferSize >= MAX_BUFFERED_SIZE) {
+      logger.debug(`[ws:inbound] recv paused due to outbound.bufferSize=${this._outbound.bufferSize} > ${MAX_BUFFERED_SIZE}`);
+      this._ws.pause();
+      this._outbound.once('drain', () => {
+        if (this._ws) {
+          logger.debug('[ws:inbound] resume to recv');
+          this._ws.resume();
+        }
+      });
+    }
   }
 
   get bufferSize() {
@@ -46,11 +63,14 @@ export class WsInbound extends Inbound {
   }
 
   get writable() {
-    return this._ws && this._ws.readyState === 1;
+    return this._ws && this._ws.readyState === WebSocket.OPEN;
   }
 
   onBroadcast(action) {
     switch (action.type) {
+      case CONNECTED_TO_REMOTE:
+        this._isConnectedToRemote = true;
+        break;
       case PRESET_FAILED:
         this.onPresetFailed(action);
         break;
@@ -161,8 +181,20 @@ export class WsOutbound extends Outbound {
   }
 
   onReceive(buffer) {
-    const direction = __IS_CLIENT__ ? MIDDLEWARE_DIRECTION_DOWNWARD : MIDDLEWARE_DIRECTION_UPWARD;
-    this._pipe.feed(direction, buffer);
+    if (this._inbound.writable) {
+      const direction = __IS_CLIENT__ ? MIDDLEWARE_DIRECTION_DOWNWARD : MIDDLEWARE_DIRECTION_UPWARD;
+      this._pipe.feed(direction, buffer);
+    }
+    if (this._inbound && this._inbound.bufferSize >= MAX_BUFFERED_SIZE) {
+      logger.debug(`[ws:outbound] recv paused due to inbound.bufferSize=${this._inbound.bufferSize} > ${MAX_BUFFERED_SIZE}`);
+      this._ws.pause();
+      this._inbound.once('drain', () => {
+        if (this._ws) {
+          logger.debug('[ws:outbound] resume to recv');
+          this._ws.resume();
+        }
+      });
+    }
   }
 
   get bufferSize() {
@@ -170,7 +202,7 @@ export class WsOutbound extends Outbound {
   }
 
   get writable() {
-    return this._ws && this._ws.readyState === 1;
+    return this._ws && this._ws.readyState === WebSocket.OPEN;
   }
 
   write(buffer) {
@@ -221,10 +253,10 @@ export class WsOutbound extends Outbound {
       logger.info(`[ws:outbound] [${this.remote}] request: ${host}:${port}`);
       await this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__});
     }
-    this._inbound._isConnectedToRemote = true; // TODO(refactor)
     if (typeof onConnected === 'function') {
       onConnected(this._inbound.onReceive);
     }
+    this._pipe.broadcast(null, {type: CONNECTED_TO_REMOTE, payload: {host, port}});
   }
 
   onPresetPauseSend() {

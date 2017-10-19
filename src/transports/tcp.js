@@ -6,6 +6,7 @@ import {
   CONNECTION_CLOSED,
   CONNECTION_WILL_CLOSE,
   CONNECT_TO_REMOTE,
+  CONNECTED_TO_REMOTE,
   PRESET_FAILED,
   PRESET_CLOSE_CONNECTION,
   PRESET_PAUSE_RECV,
@@ -104,6 +105,9 @@ export class TcpInbound extends Inbound {
 
   onBroadcast(action) {
     switch (action.type) {
+      case CONNECTED_TO_REMOTE:
+        this._isConnectedToRemote = true;
+        break;
       case PRESET_FAILED:
         this.onPresetFailed(action);
         break;
@@ -268,10 +272,10 @@ export class TcpOutbound extends Outbound {
         logger.info(`[tcp:outbound] [${this.remote}] request: ${host}:${port}`);
         await this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__});
       }
-      this._inbound._isConnectedToRemote = true; // TODO(refactor)
       if (typeof onConnected === 'function') {
         onConnected(this._inbound.onReceive);
       }
+      this._pipe.broadcast(null, {type: CONNECTED_TO_REMOTE, payload: {host, port}});
     } catch (err) {
       logger.warn(`[tcp:outbound] [${this.remote}] fail to connect to ${host}:${port} err=${err.message}`);
       this._inbound.destroy();
