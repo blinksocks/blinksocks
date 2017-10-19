@@ -27,10 +27,10 @@
     "precommit": "npm test"
   },
   "dependencies": {
-    "chalk": "^2.1.0",
+    "chalk": "^2.2.0",
     "ip": "^1.1.5",
     "js-sha3": "^0.6.1",
-    "libsodium-wrappers": "^0.7.0",
+    "libsodium-wrappers": "^0.7.2",
     "lodash.isplainobject": "^4.0.6",
     "lodash.uniqueid": "^4.0.1",
     "winston": "^2.4.0",
@@ -43,7 +43,7 @@
     "babel-jest": "^21.2.0",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
-    "babel-preset-env": "^1.6.0",
+    "babel-preset-env": "^1.6.1",
     "babel-register": "^6.26.0",
     "cross-env": "^5.1.0",
     "eslint": "^4.9.0",
