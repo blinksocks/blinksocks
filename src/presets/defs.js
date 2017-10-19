@@ -51,6 +51,17 @@ export const CONNECT_TO_REMOTE = '@action:connect_to_remote';
 
 /**
  *  {
+ *    type: CONNECTED_TO_REMOTE,
+ *    payload: {
+ *      host: 'bing.com',
+ *      port: 443
+ *    }
+ *  }
+ */
+export const CONNECTED_TO_REMOTE = '@action:connected_to_remote';
+
+/**
+ *  {
  *    type: PRESET_FAILED,
  *    payload: {
  *      name: 'custom' or null,
