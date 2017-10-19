@@ -175,3 +175,27 @@ export class IPresetStatic extends IPreset {
   }
 
 }
+
+/**
+ * check if a class is a valid preset class
+ * @param clazz
+ * @returns {boolean}
+ */
+export function checkClass(clazz) {
+  if (typeof clazz !== 'function') {
+    return false;
+  }
+  // check require hooks
+  const requiredMethods = [
+    'onNotified', 'onDestroy', 'beforeOut', 'beforeIn',
+    'clientOut', 'serverIn', 'serverOut', 'clientIn'
+  ];
+  if (requiredMethods.some((method) => typeof clazz.prototype[method] !== 'function')) {
+    return false;
+  }
+  const requiredStaticMethods = ['checkParams', 'onInit'];
+  if (requiredStaticMethods.some((method) => typeof clazz[method] !== 'function')) {
+    return false;
+  }
+  return true;
+}

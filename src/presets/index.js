@@ -1,3 +1,5 @@
+import {checkClass} from './defs';
+
 // functional
 import StatsPreset from './stats';
 import TrackerPreset from './tracker';
@@ -63,9 +65,16 @@ const presets = Object.keys(mapping);
 const legacyPresets = Object.keys(legacy);
 
 function getPresetClassByName(name) {
-  const clazz = {...mapping, ...legacy}[name];
+  let clazz = {...mapping, ...legacy}[name];
   if (clazz === undefined) {
-    throw Error(`cannot find preset: "${name}"`);
+    try {
+      clazz = require(name);
+    } catch (err) {
+      throw Error(`cannot find preset: "${name}" from built-in modules or external: ${err.message}`);
+    }
+    if (!checkClass(clazz)) {
+      throw Error(`definition of preset "${name}" is invalid`);
+    }
   }
   return clazz;
 }
