@@ -68,7 +68,11 @@ export class WsInbound extends Inbound {
 
   onBroadcast(action) {
     switch (action.type) {
+      case CONNECT_TO_REMOTE:
+        this._ws && this._ws.pause();
+        break;
       case CONNECTED_TO_REMOTE:
+        this._ws && this._ws.resume();
         this._isConnectedToRemote = true;
         break;
       case PRESET_FAILED:

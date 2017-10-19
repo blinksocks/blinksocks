@@ -105,7 +105,11 @@ export class TcpInbound extends Inbound {
 
   onBroadcast(action) {
     switch (action.type) {
+      case CONNECT_TO_REMOTE:
+        this._socket && this._socket.pause();
+        break;
       case CONNECTED_TO_REMOTE:
+        this._socket && this._socket.resume();
         this._isConnectedToRemote = true;
         break;
       case PRESET_FAILED:
