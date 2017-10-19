@@ -2,8 +2,8 @@ import EventEmitter from 'events';
 import {getPresetClassByName} from '../../src/presets';
 import {
   createMiddleware,
-  MIDDLEWARE_DIRECTION_UPWARD,
-  MIDDLEWARE_DIRECTION_DOWNWARD
+  PIPE_ENCODE,
+  PIPE_DECODE
 } from '../../src/core/middleware';
 
 export function setGlobals(obj) {
@@ -36,7 +36,7 @@ export class PresetRunner extends EventEmitter {
       this.middleware.on('post_-1', resolve);
       this.middleware.on('fail', reject);
       this.middleware.on('broadcast', (name, action) => this.emit('broadcast', action));
-      this.middleware.write(__IS_CLIENT__ ? MIDDLEWARE_DIRECTION_UPWARD : MIDDLEWARE_DIRECTION_DOWNWARD, {
+      this.middleware.write(__IS_CLIENT__ ? PIPE_ENCODE : PIPE_DECODE, {
         buffer: data,
         direct: resolve
       });
@@ -52,7 +52,7 @@ export class PresetRunner extends EventEmitter {
       this.middleware.on('post_-1', resolve);
       this.middleware.on('fail', reject);
       this.middleware.on('broadcast', (name, action) => this.emit('broadcast', action));
-      this.middleware.write(__IS_CLIENT__ ? MIDDLEWARE_DIRECTION_DOWNWARD : MIDDLEWARE_DIRECTION_UPWARD, {
+      this.middleware.write(__IS_CLIENT__ ? PIPE_DECODE : PIPE_ENCODE, {
         buffer: data,
         direct: resolve
       });

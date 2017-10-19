@@ -1,6 +1,6 @@
 import net from 'net';
 import {Inbound, Outbound} from './defs';
-import {MIDDLEWARE_DIRECTION_UPWARD, MIDDLEWARE_DIRECTION_DOWNWARD} from '../core';
+import {PIPE_ENCODE, PIPE_DECODE} from '../core';
 import {logger, getRandomInt} from '../utils';
 import {
   CONNECTION_CLOSED,
@@ -46,7 +46,7 @@ export class TcpInbound extends Inbound {
 
   onReceive(buffer) {
     if (this._outbound.writable || !this._isConnectedToRemote) {
-      const direction = __IS_CLIENT__ ? MIDDLEWARE_DIRECTION_UPWARD : MIDDLEWARE_DIRECTION_DOWNWARD;
+      const direction = __IS_CLIENT__ ? PIPE_ENCODE : PIPE_DECODE;
       this._pipe.feed(direction, buffer);
     }
     // throttle receiving data to reduce memory grow:
@@ -193,7 +193,7 @@ export class TcpOutbound extends Outbound {
 
   onReceive(buffer) {
     if (this._inbound.writable) {
-      const direction = __IS_CLIENT__ ? MIDDLEWARE_DIRECTION_DOWNWARD : MIDDLEWARE_DIRECTION_UPWARD;
+      const direction = __IS_CLIENT__ ? PIPE_DECODE : PIPE_ENCODE;
       this._pipe.feed(direction, buffer);
     }
     // throttle receiving data to reduce memory grow:

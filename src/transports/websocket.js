@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
 import {Inbound, Outbound} from './defs';
-import {MIDDLEWARE_DIRECTION_UPWARD, MIDDLEWARE_DIRECTION_DOWNWARD} from '../core';
+import {PIPE_ENCODE, PIPE_DECODE} from '../core';
 import {logger, getRandomInt} from '../utils';
 import {
   CONNECT_TO_REMOTE,
@@ -43,7 +43,7 @@ export class WsInbound extends Inbound {
 
   onReceive(buffer) {
     if (this._outbound.writable || !this._isConnectedToRemote) {
-      const direction = __IS_CLIENT__ ? MIDDLEWARE_DIRECTION_UPWARD : MIDDLEWARE_DIRECTION_DOWNWARD;
+      const direction = __IS_CLIENT__ ? PIPE_ENCODE : PIPE_DECODE;
       this._pipe.feed(direction, buffer);
     }
     if (this._outbound && this._outbound.bufferSize >= MAX_BUFFERED_SIZE) {
@@ -182,7 +182,7 @@ export class WsOutbound extends Outbound {
 
   onReceive(buffer) {
     if (this._inbound.writable) {
-      const direction = __IS_CLIENT__ ? MIDDLEWARE_DIRECTION_DOWNWARD : MIDDLEWARE_DIRECTION_UPWARD;
+      const direction = __IS_CLIENT__ ? PIPE_DECODE : PIPE_ENCODE;
       this._pipe.feed(direction, buffer);
     }
     if (this._inbound && this._inbound.bufferSize >= MAX_BUFFERED_SIZE) {

@@ -1,5 +1,5 @@
 import EventEmitter from 'events';
-import {MIDDLEWARE_DIRECTION_UPWARD} from './middleware';
+import {PIPE_ENCODE} from './middleware';
 import {PRESET_FAILED} from '../presets/defs';
 import {logger} from '../utils';
 
@@ -57,8 +57,8 @@ export class Pipe extends EventEmitter {
     this._downstream_middlewares = [].concat(middlewares).reverse();
   }
 
-  getMiddlewares(direction = MIDDLEWARE_DIRECTION_UPWARD) {
-    if (direction === MIDDLEWARE_DIRECTION_UPWARD) {
+  getMiddlewares(direction = PIPE_ENCODE) {
+    if (direction === PIPE_ENCODE) {
       return this._upstream_middlewares;
     } else {
       return this._downstream_middlewares;

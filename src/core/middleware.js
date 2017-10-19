@@ -32,8 +32,8 @@ function createPreset(name, params = {}) {
   return preset;
 }
 
-export const MIDDLEWARE_DIRECTION_UPWARD = 1;
-export const MIDDLEWARE_DIRECTION_DOWNWARD = -1;
+export const PIPE_ENCODE = 1;
+export const PIPE_DECODE = -1;
 
 /**
  * abstraction of middleware
@@ -92,7 +92,7 @@ export class Middleware extends EventEmitter {
    * @param direct
    */
   write(direction, {buffer, direct}) {
-    const type = (direction === MIDDLEWARE_DIRECTION_UPWARD) ? 'Out' : 'In';
+    const type = (direction === PIPE_ENCODE) ? 'Out' : 'In';
 
     // prepare args
     const broadcast = this.onPresetBroadcast;

@@ -262,7 +262,7 @@ export default class V2rayVmessPreset extends IPreset {
       this._host = (type === ATYP_DOMAIN) ? Buffer.from(host) : ip.toBuffer(host);
     }
     // if (action.type === CONNECTION_WILL_CLOSE) {
-    //   this.next(MIDDLEWARE_DIRECTION_UPWARD, Buffer.alloc(2));
+    //   this.next(PIPE_ENCODE, Buffer.alloc(2));
     // }
   }
 
