@@ -22,10 +22,10 @@ function random(array, len) {
 function getRandomInt(min, max) {
   min = Math.ceil(min);
   max = Math.ceil(max);
-  return Math.floor(crypto.randomBytes(1)[0] / 0xff * (max - min + 1)) + min;
+  return Math.floor(crypto.randomBytes(1)[0] / 0xff * (max - min)) + min;
 }
 
-module.exports = function init({isMinimal}) {
+module.exports = function init({isMinimal, isOverwrite}) {
   const key = random('abcdefghjkmnpqrstuvwxyz23456789!@#$%^&*()_+<>?:|{}-=[];,./ABCDEFGHJKLMNPQRSTUVWXYZ', 16);
   const port = getRandomInt(1024, 65535);
   const timeout = getRandomInt(200, 1000);
@@ -96,9 +96,21 @@ module.exports = function init({isMinimal}) {
     delete serverJson.log_max_days;
   }
 
-  fs.writeFileSync('blinksocks.client.json', JSON.stringify(clientJson, null, '  '));
-  fs.writeFileSync('blinksocks.server.json', JSON.stringify(serverJson, null, '  '));
+  const clientJsonPath = 'blinksocks.client.json';
+  const serverJsonPath = 'blinksocks.server.json';
 
-  console.log('> Generate Done. For help please see:');
+  if (fs.existsSync(clientJsonPath) && !isOverwrite) {
+    console.log(`> File ${clientJsonPath} exist, skip. Use "-w" to overwrite.`);
+  } else {
+    fs.writeFileSync(clientJsonPath, JSON.stringify(clientJson, null, '  '));
+  }
+
+  if (fs.existsSync(serverJsonPath) && !isOverwrite) {
+    console.log(`> File ${serverJsonPath} exist, skip. Use "-w" to overwrite.`);
+  } else {
+    fs.writeFileSync(serverJsonPath, JSON.stringify(serverJson, null, '  '));
+  }
+
+  console.log('> Generate Done, for help please refer to:');
   console.log('> https://github.com/blinksocks/blinksocks/tree/master/docs/config/README.md');
 };

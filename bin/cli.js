@@ -29,6 +29,7 @@ const usage = `
     -v, --version       output blinksocks version
     -c, --config        file json file with configuration
     -m, --minimal       generate minimal json files
+    -w, --write         overwrite previous json files
     --list-presets      list all built-in presets
 
   Examples:
@@ -69,7 +70,8 @@ function main() {
 
   if (options[0] === 'init') {
     const isMinimal = hasOption('-m') || hasOption('--minimal');
-    return init({isMinimal});
+    const isOverwrite = hasOption('-w') || hasOption('--write');
+    return init({isMinimal, isOverwrite});
   }
 
   // parse options
@@ -100,10 +102,10 @@ function main() {
 
   if (hasOption('--list-presets')) {
     const {presets: {presets, legacyPresets}} = modules;
-    console.log(chalk.bold.underline('Installed'));
+    console.log(chalk.bold.underline('[Built-In]'));
     console.log(presets.join(os.EOL));
     console.log('');
-    console.log(chalk.bold.underline('Deprecated'));
+    console.log(chalk.bold.underline('[Deprecated]'));
     console.log(legacyPresets.map((name) => `${chalk.gray(name)}`).join(os.EOL));
     return;
   }
