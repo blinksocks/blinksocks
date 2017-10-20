@@ -1,7 +1,7 @@
 import EventEmitter from 'events';
 import {getPresetClassByName} from '../../src/presets';
 import {
-  createMiddleware,
+  Middleware,
   PIPE_ENCODE,
   PIPE_DECODE
 } from '../../src/core/middleware';
@@ -16,7 +16,7 @@ export class PresetRunner extends EventEmitter {
     super();
     setGlobals(globals);
     getPresetClassByName(name).checkParams(params);
-    this.middleware = createMiddleware(name, params);
+    this.middleware = new Middleware({name, params});
   }
 
   notify(action) {

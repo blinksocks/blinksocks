@@ -42,12 +42,12 @@ export class Middleware extends EventEmitter {
 
   _impl = null;
 
-  constructor(impl) {
+  constructor(preset) {
     super();
     this.onPresetNext = this.onPresetNext.bind(this);
     this.onPresetBroadcast = this.onPresetBroadcast.bind(this);
     this.onPresetFail = this.onPresetFail.bind(this);
-    this._impl = impl;
+    this._impl = createPreset(preset.name, preset.params || {});
     this._impl.next = this.onPresetNext;
     this._impl.broadcast = this.onPresetBroadcast;
     this._impl.fail = this.onPresetFail;
@@ -123,17 +123,6 @@ export class Middleware extends EventEmitter {
     }
   }
 
-}
-
-/**
- * create an instance of Middleware
- * @param name
- * @param params
- * @returns {Middleware}
- */
-export function createMiddleware(name, params = {}) {
-  const preset = createPreset(name, params);
-  return new Middleware(preset);
 }
 
 /**

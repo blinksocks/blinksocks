@@ -1,5 +1,5 @@
 import EventEmitter from 'events';
-import {PIPE_ENCODE} from './middleware';
+import {Middleware, PIPE_ENCODE} from './middleware';
 import {PRESET_FAILED} from '../presets/defs';
 import {logger} from '../utils';
 
@@ -20,9 +20,10 @@ export class Pipe extends EventEmitter {
     return this._destroyed;
   }
 
-  constructor() {
+  constructor(presets) {
     super();
     this.broadcast = this.broadcast.bind(this);
+    this.createMiddlewares(presets);
   }
 
   broadcast(name, action) {
@@ -39,9 +40,10 @@ export class Pipe extends EventEmitter {
     }
   }
 
-  setMiddlewares(middlewares) {
-    // set listeners
-    for (const middleware of middlewares) {
+  createMiddlewares(presets) {
+    const middlewares = [];
+    for (const preset of presets) {
+      const middleware = new Middleware(preset);
       middleware.setMaxListeners(4);
       middleware.on('broadcast', this.broadcast);
       middleware.on('fail', (name, message) => void this.broadcast(name, {
@@ -52,6 +54,7 @@ export class Pipe extends EventEmitter {
           orgData: this._cacheBuffer
         }
       }));
+      middlewares.push(middleware);
     }
     this._upstream_middlewares = middlewares;
     this._downstream_middlewares = [].concat(middlewares).reverse();
@@ -77,7 +80,7 @@ export class Pipe extends EventEmitter {
         this._feed(direction, buffer);
       }
     } catch (err) {
-      logger.error(`[pipe] error occurred while piping: ${err.message}`);
+      logger.error(`[pipe] error occurred while piping`, err);
     }
   }
 

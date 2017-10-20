@@ -1,6 +1,6 @@
 import EventEmitter from 'events';
 import {Pipe} from './pipe';
-import {createMiddleware, PIPE_ENCODE, PIPE_DECODE} from './middleware';
+import {PIPE_ENCODE, PIPE_DECODE} from './middleware';
 import {CONNECT_TO_REMOTE, CONNECTION_CREATED} from '../presets';
 
 function preparePresets() {
@@ -97,12 +97,10 @@ export class Relay extends EventEmitter {
    * create pipes for both data forward and backward
    */
   createPipe(presets) {
-    const middlewares = presets.map((preset) => createMiddleware(preset.name, preset.params || {}));
-    const pipe = new Pipe();
+    const pipe = new Pipe(presets);
     pipe.on('broadcast', this.onBroadcast.bind(this)); // if no action were caught by presets
     pipe.on(`post_${PIPE_ENCODE}`, this.postPipeForward);
     pipe.on(`post_${PIPE_DECODE}`, this.postPipeBackward);
-    pipe.setMiddlewares(middlewares);
     return pipe;
   }
 
