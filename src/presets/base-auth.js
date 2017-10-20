@@ -55,9 +55,9 @@ export default class BaseAuthPreset extends IPreset {
 
   static hmacKey = null;
 
-  static cipher = null;
+  _cipher = null;
 
-  static decipher = null;
+  _decipher = null;
 
   _isConnecting = false;
 
@@ -79,19 +79,25 @@ export default class BaseAuthPreset extends IPreset {
   }
 
   static onInit({method = DEFAULT_HASH_METHOD}) {
-    const hmacKey = EVP_BytesToKey(__KEY__, 16, 16);
-    const iv = hash('md5', Buffer.from(__KEY__ + 'base-auth'));
     BaseAuthPreset.hmacMethod = method;
     BaseAuthPreset.hmacLen = HMAC_METHODS[method];
-    BaseAuthPreset.hmacKey = hmacKey;
+    BaseAuthPreset.hmacKey = EVP_BytesToKey(__KEY__, 16, 16);
+  }
+
+  constructor() {
+    super();
+    const {hmacKey: key} = BaseAuthPreset;
+    const iv = hash('md5', Buffer.from(__KEY__ + 'base-auth'));
     if (__IS_CLIENT__) {
-      BaseAuthPreset.cipher = crypto.createCipheriv('aes-128-cfb', hmacKey, iv);
+      this._cipher = crypto.createCipheriv('aes-128-cfb', key, iv);
     } else {
-      BaseAuthPreset.decipher = crypto.createDecipheriv('aes-128-cfb', hmacKey, iv);
+      this._decipher = crypto.createDecipheriv('aes-128-cfb', key, iv);
     }
   }
 
   onDestroy() {
+    this._cipher = null;
+    this._decipher = null;
     this._pending = null;
     this._host = null;
     this._port = null;
@@ -108,11 +114,9 @@ export default class BaseAuthPreset extends IPreset {
   clientOut({buffer}) {
     if (!this._isHeaderSent) {
       this._isHeaderSent = true;
-      const {hmacMethod, hmacKey, cipher} = BaseAuthPreset;
-
+      const {hmacMethod, hmacKey} = BaseAuthPreset;
       const header = Buffer.concat([numberToBuffer(this._host.length, 1), this._host, this._port]);
-      const encHeader = cipher.update(header);
-
+      const encHeader = this._cipher.update(header);
       const mac = hmac(hmacMethod, hmacKey, encHeader);
       return Buffer.concat([encHeader, mac, buffer]);
     } else {
@@ -122,7 +126,7 @@ export default class BaseAuthPreset extends IPreset {
 
   serverIn({buffer, next, broadcast, fail}) {
     if (!this._isHeaderRecv) {
-      const {hmacMethod, hmacLen, hmacKey, decipher} = BaseAuthPreset;
+      const {hmacMethod, hmacLen, hmacKey} = BaseAuthPreset;
 
       if (this._isConnecting) {
         this._pending = Buffer.concat([this._pending, buffer]);
@@ -135,7 +139,7 @@ export default class BaseAuthPreset extends IPreset {
       }
 
       // decrypt the first byte and check length overflow
-      const alen = decipher.update(buffer.slice(0, 1))[0];
+      const alen = this._decipher.update(buffer.slice(0, 1))[0];
       if (buffer.length <= 1 + alen + 2 + hmacLen) {
         return fail(`unexpected length: ${buffer.length}, dump=${buffer.toString('hex')}`);
       }
@@ -148,7 +152,7 @@ export default class BaseAuthPreset extends IPreset {
       }
 
       // decrypt the following bytes
-      const plaintext = decipher.update(buffer.slice(1, 1 + alen + 2));
+      const plaintext = this._decipher.update(buffer.slice(1, 1 + alen + 2));
 
       // addr, port, data
       const addr = plaintext.slice(0, alen);
