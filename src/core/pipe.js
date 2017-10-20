@@ -80,7 +80,7 @@ export class Pipe extends EventEmitter {
         this._feed(direction, buffer);
       }
     } catch (err) {
-      logger.error(`[pipe] error occurred while piping`, err);
+      logger.error('[pipe] error occurred while piping', err);
     }
   }
 
