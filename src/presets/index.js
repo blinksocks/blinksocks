@@ -6,8 +6,7 @@ import TrackerPreset from './tracker';
 import AccessControlPreset from './access-control';
 
 // basic
-import BaseWithPaddingPreset from './base-with-padding';
-import BaseAuthStreamPreset from './base-auth-stream';
+import BaseAuthPreset from './base-auth';
 
 // shadowsocks
 import SsBasePreset from './ss-base';
@@ -26,8 +25,8 @@ import ObfsTls12TicketPreset from './obfs-tls1.2-ticket';
 import AeadRandomCipherPreset from './aead-random-cipher';
 
 // legacy presets for backward compatibility
-import ExpBaseWithPaddingPreset from './_exp-base-with-padding';
-import ExpBaseAuthStreamPreset from './_exp-base-auth-stream';
+import BaseWithPaddingPreset from './_base-with-padding';
+import BaseAuthStreamPreset from './_base-auth-stream';
 
 const mapping = {
   // functional
@@ -36,8 +35,7 @@ const mapping = {
   'access-control': AccessControlPreset,
 
   // basic
-  'base-with-padding': BaseWithPaddingPreset,
-  'base-auth-stream': BaseAuthStreamPreset,
+  'base-auth': BaseAuthPreset,
 
   // shadowsocks
   'ss-base': SsBasePreset,
@@ -57,8 +55,8 @@ const mapping = {
 };
 
 const legacy = {
-  'exp-base-with-padding': ExpBaseWithPaddingPreset,
-  'exp-base-auth-stream': ExpBaseAuthStreamPreset
+  'base-with-padding': BaseWithPaddingPreset,
+  'base-auth-stream': BaseAuthStreamPreset
 };
 
 const presets = Object.keys(mapping);

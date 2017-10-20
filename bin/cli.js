@@ -100,8 +100,11 @@ function main() {
 
   if (hasOption('--list-presets')) {
     const {presets: {presets, legacyPresets}} = modules;
+    console.log(chalk.bold.underline('Installed'));
     console.log(presets.join(os.EOL));
-    console.log(legacyPresets.map((name) => `${chalk.gray(name)} -> ${name.substr(4)}`).join(os.EOL));
+    console.log('');
+    console.log(chalk.bold.underline('Deprecated'));
+    console.log(legacyPresets.map((name) => `${chalk.gray(name)}`).join(os.EOL));
     return;
   }
 

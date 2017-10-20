@@ -19,26 +19,21 @@ function getHostType(host) {
 
 /**
  * @description
- *   Carry the destination address(ip/hostname, and port) that needs to be relayed.
- *
- * @params
- *   no
+ *   Deliver destination address.
  *
  * @examples
- *   {
- *     "name": "ss-base"
- *   }
+ *   {"name": "ss-base"}
  *
  * @protocol
  *
- *   # TCP stream
+ *   # handshake (client -> server)
  *   +------+----------+----------+----------+---------+
  *   | ATYP | DST.ADDR | DST.PORT |   DATA   |   ...   |
  *   +------+----------+----------+----------+---------+
  *   |  1   | Variable |    2     | Variable |   ...   |
  *   +------+----------+----------+----------+---------+
  *
- *   # TCP chunks
+ *   # other packets
  *   +----------+
  *   |   DATA   |
  *   +----------+
@@ -49,15 +44,19 @@ function getHostType(host) {
  *   1. ATYP is one of [0x01(ipv4), 0x03(hostname), 0x04(ipv6)].
  *   2. If ATYP is 0x03, DST.ADDR[0] is len(DST.ADDR).
  *   3. If ATYP is 0x04, DST.ADDR must be a 16 bytes ipv6 address.
- *   4. The initial stream MUST contain a DATA chunk followed by [ATYP, DST.ADDR, DST.PORT].
+ *
+ * @reference
+ *    https://shadowsocks.org/en/spec/Protocol.html
  */
 export default class SsBasePreset extends IPreset {
 
-  _isHandshakeDone = false;
+  _isConnecting = false;
 
-  _isBroadCasting = false;
+  _pending = Buffer.alloc(0);
 
-  _staging = Buffer.alloc(0);
+  _isHeaderSent = false;
+
+  _isHeaderRecv = false;
 
   _atyp = ATYP_V4;
 
@@ -66,7 +65,7 @@ export default class SsBasePreset extends IPreset {
   _port = null; // buffer
 
   onDestroy() {
-    this._staging = null;
+    this._pending = null;
     this._host = null;
     this._port = null;
   }
@@ -82,8 +81,8 @@ export default class SsBasePreset extends IPreset {
   }
 
   clientOut({buffer}) {
-    if (!this._isHandshakeDone) {
-      this._isHandshakeDone = true;
+    if (!this._isHeaderSent) {
+      this._isHeaderSent = true;
       return Buffer.from([
         this._atyp,
         ...(this._atyp === ATYP_DOMAIN) ? numberToBuffer(this._host.length, 1) : [],
@@ -97,12 +96,12 @@ export default class SsBasePreset extends IPreset {
   }
 
   serverIn({buffer, next, broadcast, fail}) {
-    if (!this._isHandshakeDone) {
+    if (!this._isHeaderRecv) {
 
       // shadowsocks(python) aead cipher put [atyp][dst.addr][dst.port] into the first chunk
       // we must wait onConnected() before next().
-      if (this._isBroadCasting) {
-        this._staging = Buffer.concat([this._staging, buffer]);
+      if (this._isConnecting) {
+        this._pending = Buffer.concat([this._pending, buffer]);
         return;
       }
 
@@ -147,14 +146,13 @@ export default class SsBasePreset extends IPreset {
           offset += (domainLen + 1);
           break;
         default:
-          fail(`invalid atyp: ${atyp}`);
-          return;
+          return fail(`invalid atyp: ${atyp}`);
       }
 
       const data = buffer.slice(offset);
 
       // notify to connect to the real server
-      this._isBroadCasting = true;
+      this._isConnecting = true;
       broadcast({
         type: CONNECT_TO_REMOTE,
         payload: {
@@ -162,10 +160,10 @@ export default class SsBasePreset extends IPreset {
           port: port,
           // once connected
           onConnected: () => {
-            next(Buffer.concat([data, this._staging]));
-            this._isHandshakeDone = true;
-            this._isBroadCasting = false;
-            this._staging = null;
+            next(Buffer.concat([data, this._pending]));
+            this._isHeaderRecv = true;
+            this._isConnecting = false;
+            this._pending = null;
           }
         }
       });
