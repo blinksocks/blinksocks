@@ -67,53 +67,45 @@ const v2ray_obfs_presets = [
 
 const blinksocks_presets = [
   [
-    {"name": "base-auth-stream", "params": {"method": "aes-256-ctr"}}
-  ],
-  [
-    {"name": "base-with-padding", "params": {"salt": "any string"}},
+    {"name": "base-auth"},
     {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}}
   ],
   [
-    {"name": "base-with-padding", "params": {"salt": "any string"}},
+    {"name": "base-auth"},
     {"name": "ss-aead-cipher", "params": {"method": "aes-256-gcm"}}
   ],
   [
-    {"name": "base-with-padding", "params": {"salt": "any string"}},
+    {"name": "base-auth"},
     {"name": "aead-random-cipher", "params": {"method": "aes-256-gcm"}}
   ],
   [
     {"name": "ss-base"},
     {"name": "aead-random-cipher", "params": {"method": "aes-256-gcm"}}
-  ],
-
+  ]
 ];
 const blinksocks_obfs_presets = [
   [
-    {"name": "base-auth-stream", "params": {"method": "aes-256-ctr"}},
-    {"name": "obfs-tls1.2-ticket", "params": {"sni": ["test.com"]}}
-  ],
-  [
-    {"name": "base-with-padding", "params": {"salt": "any string"}},
+    {"name": "base-auth"},
     {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}},
     {"name": "obfs-tls1.2-ticket", "params": {"sni": ["test.com"]}}
   ],
   [
-    {"name": "base-with-padding", "params": {"salt": "any string"}},
+    {"name": "base-auth"},
     {"name": "obfs-random-padding"},
     {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}}
   ],
   [
-    {"name": "base-with-padding", "params": {"salt": "any string"}},
+    {"name": "base-auth"},
     {"name": "ss-aead-cipher", "params": {"method": "aes-256-gcm"}},
     {"name": "obfs-tls1.2-ticket", "params": {"sni": ["test.com"]}}
   ],
   [
-    {"name": "base-with-padding", "params": {"salt": "any string"}},
+    {"name": "base-auth"},
     {"name": "obfs-random-padding"},
     {"name": "ss-aead-cipher", "params": {"method": "aes-256-gcm"}}
   ],
   [
-    {"name": "base-with-padding", "params": {"salt": "any string"}},
+    {"name": "base-auth"},
     {"name": "aead-random-cipher", "params": {"method": "aes-256-gcm"}},
     {"name": "obfs-tls1.2-ticket", "params": {"sni": ["test.com"]}}
   ],
