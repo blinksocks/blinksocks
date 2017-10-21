@@ -99,7 +99,7 @@ blinksocks will detect which server is the fastest in intervals using [balancer.
 
 `presets` are chaining from the first to the last, and are almost free to compose.
 
-For more information about presets, please check out [presets].
+For usage about presets, please check out [presets].
 
 ### blinksocks over TLS
 
@@ -147,8 +147,6 @@ You don't have to use extra encryption when transport is "tls", your data is alr
 ```
 {
   "presets": [{"name": "ss-base"}]
-  // or "presets": [{"name": "base-with-padding", "params": {"salt": "any string"}}]
-  // or "presets": [{"name": "base-auth-stream", "params": {"method": "aes-256-ctr"}}]
 }
 ```
 

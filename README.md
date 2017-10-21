@@ -20,6 +20,7 @@
 * Lightweight proxy interface for Socks5/Socks4/Socks4a and HTTP(S).
 * Transmit data over raw TCP, **real** [TLS] or **real** [WebSocket].
 * A variety of customizable protocols and functional middlewares: using [presets](docs/presets).
+* External preset import.
 * Easy and powerful Access Control([ACL]) and Traffic Control([TC]): auto ban, speed(upload/download) limiter.
 * Executable versions available: [download here](https://github.com/blinksocks/blinksocks/releases).
 * **Out of the box** distribution and deployment.
@@ -88,7 +89,8 @@ a cross-platform GUI for blinksocks.
 
 1. [Preparation](docs/development/preparation)
 2. [Guideline](docs/development/guideline)
-3. [Benchmark](docs/benchmark)
+3. [Custom Preset](docs/development/custom-preset)
+4. [Benchmark](docs/benchmark)
 
 ## Contributors
 

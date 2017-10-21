@@ -1,8 +1,8 @@
 # Presets
 
-Presets are chaining and composable, built-in presets are listed here. If you want to customize a new preset, feel free to read [this](../development/architecture#preset) first.
+Presets are chaining and composable, built-in presets are listed here. If you want to customize a new preset, feel free to read [this](../development/guideline#preset) first.
 
-## Table of Contents
+## Built-In Presets
 
 **functional**
 
@@ -12,8 +12,9 @@ Presets are chaining and composable, built-in presets are listed here. If you wa
 
 **basic**
 
-* [base-with-padding](#base-with-padding)*
-* [base-auth-stream](#base-auth-stream)*
+* [base-auth](#base-auth)*
+* ~~[base-with-padding](#base-with-padding)*~~ (deprecated)
+* ~~[base-auth-stream](#base-auth-stream)*~~ (deprecated)
 
 **shadowsocks**
 
@@ -35,9 +36,35 @@ Presets are chaining and composable, built-in presets are listed here. If you wa
 
 * [aead-random-cipher](#aead-random-cipher)
 
-### NOTICE
+> You **MUST** put preset signed with (*) to the presets list if you want to relay application data to multiple destinations.
 
-> You **MUST** put preset signed with * to the presets list(anywhere in theory) if you want to relay data.
+## Use External Preset
+
+If you installed blinksocks via **npm install -g blinksocks**, you are free to use external presets.
+
+To use external presets, you can:
+
+**Use public npm package:**
+
+```
+$ npm install -g blinksocks-preset-demo
+```
+
+```
+"presets": [{"name": "blinksocks-preset-demo"}]
+```
+
+**Use private custom module:**
+
+```
+"presets": [{"name": "/path/to/your/preset.js"}]
+```
+
+> When use external preset, make sure that preset meets the requirements of the current Node.js environment.
+
+To write your own preset, please refer to [Custom Preset](../development/custom-preset).
+
+----
 
 ## [stats]
 
@@ -184,7 +211,33 @@ To recovery unwary ban, you can edit acl file, remove unwanted rule without rest
 
 > NOTE: rules will take effect immediately each time **acl.txt** was updated.
 
-## [base-with-padding]
+## [base-auth]
+
+A preset based on "ss-base" and provides a HMAC to ensure integrity for addressing part.
+
+| PARAMS |            DESCRIPTION             | DEFAULT |
+| :----- | :--------------------------------- | :------ |
+| method | a hash algorithm for creating HMAC | sha1    |
+
+`method` can be one of:
+
+md5, sha1, sha256
+
+```
+"presets": [{
+  "name": "base-auth",
+  "params": {
+    "method": "sha1"
+  }
+}, {
+  "name": "ss-stream-cipher",
+  "params": {
+    "method": "aes-256-cfb"
+  }
+}]
+```
+
+## ~~[base-with-padding]~~ (deprecated)
 
 An advanced preset based on [ss-base], **SHOULD BE** used with ciphers in **cfb** operation mode.
 It can prevent address from being tampered.
@@ -209,7 +262,7 @@ It can prevent address from being tampered.
 }]
 ```
 
-## [base-auth-stream]
+## ~~[base-auth-stream]~~ (deprecated)
 
 A preset combines HMAC and stream encryption. HMAC only guarantees integrity for addressing part.
 
@@ -501,6 +554,7 @@ Here is a [list](./RECOMMENDATIONS.md) of recommended conbinations.
 [stats]: ../../src/presets/stats.js
 [tracker]: ../../src/presets/tracker.js
 [access-control]: ../../src/presets/access-control.js
+[base-auth]: ../../src/presets/base-auth.js
 [base-with-padding]: ../../src/presets/base-with-padding.js
 [base-auth-stream]: ../../src/presets/base-auth-stream.js
 [ss-base]: ../../src/presets/ss-base.js

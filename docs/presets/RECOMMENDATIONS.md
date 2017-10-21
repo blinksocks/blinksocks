@@ -38,24 +38,7 @@ Please also check out [#27](https://github.com/blinksocks/blinksocks/issues/27) 
 ]
 ```
 
-## Best performance with only confidentiality
-
-```json
-"presets": [
-  {"name": "base-with-padding", "params": {"salt": "any string"}},
-  {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}}
-]
-```
-
-## Best performance with confidentiality and partial integrity
-
-```json
-"presets": [
-  {"name": "base-auth-stream", "params": {"method": "aes-256-ctr"}}
-]
-```
-
-## Avoid Bad QoS(using obfs)
+## Avoid Bad QoS
 
 You can use **http** or **tls** obfuscator to avoid bad [QoS], **tls** is recommended.
 
@@ -63,13 +46,6 @@ You can use **http** or **tls** obfuscator to avoid bad [QoS], **tls** is recomm
 "presets": [
   {"name": "ss-base"},
   {"name": "ss-aead-cipher", "params": {"method": "aes-256-gcm"}},
-  {"name": "obfs-tls1.2-ticket", "params": {"sni": ["example.com"]}}
-]
-```
-
-```json
-"presets": [
-  {"name": "base-auth-stream", "params":{"method": "aes-256-ctr"}},
   {"name": "obfs-tls1.2-ticket", "params": {"sni": ["example.com"]}}
 ]
 ```
