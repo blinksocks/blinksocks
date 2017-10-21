@@ -1,6 +1,7 @@
 if (process.env.NODE_ENV === 'development') {
   require('babel-register');
-  module.exports = require('../src');
+  // https://github.com/zeit/pkg/issues/261
+  module.exports = require('../src', 'must-exclude');
 } else {
   module.exports = require('../lib');
 }
