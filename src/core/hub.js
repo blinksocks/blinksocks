@@ -6,7 +6,7 @@ import ws from 'ws';
 import {Balancer} from './balancer';
 import {Config} from './config';
 import * as MiddlewareManager from './middleware';
-import {createRelay} from '../transports';
+import {createRelay} from './relay';
 import {logger} from '../utils';
 import {tcp, http, socks} from '../proxies';
 

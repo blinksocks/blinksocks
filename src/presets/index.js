@@ -1,4 +1,4 @@
-import {checkClass} from './defs';
+import {checkPresetClass} from './defs';
 
 // functional
 import StatsPreset from './stats';
@@ -70,7 +70,7 @@ function getPresetClassByName(name) {
     } catch (err) {
       throw Error(`cannot find preset: "${name}" from built-in modules or external: ${err.message}`);
     }
-    if (!checkClass(clazz)) {
+    if (!checkPresetClass(clazz)) {
       throw Error(`definition of preset "${name}" is invalid`);
     }
   }

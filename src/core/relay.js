@@ -1,7 +1,9 @@
 import EventEmitter from 'events';
+import uniqueId from 'lodash.uniqueid';
 import {Pipe} from './pipe';
 import {PIPE_ENCODE, PIPE_DECODE} from './middleware';
 import {CONNECT_TO_REMOTE, CONNECTION_CREATED} from '../presets';
+import {TcpInbound, TcpOutbound, TlsInbound, TlsOutbound, WsInbound, WsOutbound} from '../transports';
 
 function preparePresets() {
   let presets = __PRESETS__;
@@ -117,4 +119,18 @@ export class Relay extends EventEmitter {
     this._presets = null;
   }
 
+}
+
+const mapping = {
+  'tcp': [TcpInbound, TcpOutbound],
+  'tls': [TlsInbound, TlsOutbound],
+  'ws': [WsInbound, WsOutbound]
+};
+
+export function createRelay(transport, context, proxyRequest = null) {
+  const [Inbound, Outbound] = __IS_CLIENT__ ? [TcpInbound, mapping[transport][1]] : [mapping[transport][0], TcpOutbound];
+  const props = {context, Inbound, Outbound, proxyRequest};
+  const relay = new Relay(props);
+  relay.id = uniqueId(`${transport}_`);
+  return relay;
 }

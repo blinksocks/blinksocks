@@ -181,7 +181,7 @@ export class IPresetStatic extends IPreset {
  * @param clazz
  * @returns {boolean}
  */
-export function checkClass(clazz) {
+export function checkPresetClass(clazz) {
   if (typeof clazz !== 'function') {
     return false;
   }

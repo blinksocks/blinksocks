@@ -10,11 +10,6 @@ import {getPresetClassByName} from '../presets';
 import {isValidHostname, isValidPort, logger} from '../utils';
 import {DNS_DEFAULT_EXPIRE} from './dns-cache';
 
-export const AVAILABLE_PROTOCOLS = [
-  'tcp', 'socks', 'socks5', 'socks4', 'socks4a',
-  'http', 'https', 'ws', 'tls'
-];
-
 function loadFileSync(file) {
   return fs.readFileSync(path.resolve(process.cwd(), file));
 }
@@ -336,9 +331,13 @@ export class Config {
     if (typeof protocol !== 'string') {
       throw Error('service protocol is invalid');
     }
+    const AVAILABLE_LOCAL_PROTOCOLS = [
+      'tcp', 'socks', 'socks5', 'socks4', 'socks4a',
+      'http', 'https', 'ws', 'tls'
+    ];
     const _protocol = protocol.slice(0, -1);
-    if (!AVAILABLE_PROTOCOLS.includes(_protocol)) {
-      throw Error(`service protocol must be: ${AVAILABLE_PROTOCOLS.join(', ')}`);
+    if (!AVAILABLE_LOCAL_PROTOCOLS.includes(_protocol)) {
+      throw Error(`service protocol must be: ${AVAILABLE_LOCAL_PROTOCOLS.join(', ')}`);
     }
     if (_protocol === 'tls') {
       if (typeof json.tls_cert !== 'string' || json.tls_cert === '') {
