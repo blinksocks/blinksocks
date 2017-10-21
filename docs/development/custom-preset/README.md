@@ -114,8 +114,6 @@ class MyCustomPreset extends blinksocks.IPreset {
 module.exports = MyCustomPreset;
 ```
 
-All built-in actions are defined in `blinksocks.actions`.
-
 > NOTE: `onNotified` is called **synchronous** when broadcast().
 
 ### Handle Address
@@ -132,10 +130,9 @@ You are probably want to know the target host and port when write your own prese
 will be emitted once pipe created, you can access to it in `onNotified(action)` on client side or `broadcast(action)` it once decoded on server side:
 
 ```js
-const blinksocks = require('blinksocks');
-const {CONNECT_TO_REMOTE} = blinksocks.actions;
+const {IPreset, CONNECT_TO_REMOTE} = require('blinksocks');
 
-class MyCustomPreset extends blinksocks.IPreset {
+class MyCustomPreset extends IPreset {
 
   onNotified(action) {
     if (__IS_CLIENT__ && action.type === CONNECT_TO_REMOTE) {
