@@ -27,7 +27,7 @@
     "precommit": "npm test"
   },
   "dependencies": {
-    "chalk": "^2.2.0",
+    "chalk": "^2.3.0",
     "ip": "^1.1.5",
     "js-sha3": "^0.6.1",
     "libsodium-wrappers": "^0.7.2",
