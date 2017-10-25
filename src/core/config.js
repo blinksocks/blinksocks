@@ -33,7 +33,7 @@ export class Config {
       const {protocol, hostname: host, port} = url.parse(json.service);
       global.__LOCAL_PROTOCOL__ = protocol.slice(0, -1);
       global.__LOCAL_HOST__ = host;
-      global.__LOCAL_PORT__ = port;
+      global.__LOCAL_PORT__ = +port;
     } else {
       global.__LOCAL_PROTOCOL__ = __IS_CLIENT__ ? 'socks5' : __TRANSPORT__;
       global.__LOCAL_HOST__ = json.host;
@@ -97,7 +97,7 @@ export class Config {
       const {protocol, hostname: host, port} = url.parse(server.service);
       global.__TRANSPORT__ = protocol.slice(0, -1);
       global.__SERVER_HOST__ = host;
-      global.__SERVER_PORT__ = port;
+      global.__SERVER_PORT__ = +port;
     } else {
       global.__TRANSPORT__ = server.transport || 'tcp';
       global.__SERVER_HOST__ = server.host;
