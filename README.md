@@ -18,7 +18,7 @@
 
 * Cross-platform: running on Linux, Windows and macOS.
 * Lightweight proxy interface for Socks5/Socks4/Socks4a and HTTP(S).
-* Transmit data over raw TCP, **real** [TLS] or **real** [WebSocket].
+* Transmit data over raw TCP/UDP, **real** [TLS] or **real** [WebSocket].
 * A variety of customizable protocols and functional middlewares: using [presets](docs/presets).
 * External preset import.
 * Easy and powerful Access Control([ACL]) and Traffic Control([TC]): auto ban, speed(upload/download) limiter.
