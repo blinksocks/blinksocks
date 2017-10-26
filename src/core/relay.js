@@ -3,7 +3,12 @@ import uniqueId from 'lodash.uniqueid';
 import {Pipe} from './pipe';
 import {PIPE_ENCODE, PIPE_DECODE} from './middleware';
 import {CONNECT_TO_REMOTE, CONNECTION_CREATED} from '../presets';
-import {TcpInbound, TcpOutbound, TlsInbound, TlsOutbound, WsInbound, WsOutbound} from '../transports';
+import {
+  TcpInbound, TcpOutbound,
+  UdpInbound, UdpOutbound,
+  TlsInbound, TlsOutbound,
+  WsInbound, WsOutbound
+} from '../transports';
 
 function preparePresets() {
   let presets = __PRESETS__;
@@ -50,7 +55,7 @@ export class Relay extends EventEmitter {
         port: context.remotePort
       }
     });
-    if (__IS_CLIENT__) {
+    if (__IS_CLIENT__ && proxyRequest !== null) {
       this._pipe.broadcast(null, {
         type: CONNECT_TO_REMOTE,
         payload: proxyRequest
@@ -123,12 +128,19 @@ export class Relay extends EventEmitter {
 
 const mapping = {
   'tcp': [TcpInbound, TcpOutbound],
+  'udp': [UdpInbound, UdpOutbound],
   'tls': [TlsInbound, TlsOutbound],
   'ws': [WsInbound, WsOutbound]
 };
 
 export function createRelay(transport, context, proxyRequest = null) {
-  const [Inbound, Outbound] = __IS_CLIENT__ ? [TcpInbound, mapping[transport][1]] : [mapping[transport][0], TcpOutbound];
+  let Inbound = null;
+  let Outbound = null;
+  if (transport === 'udp') {
+    [Inbound, Outbound] = [UdpInbound, UdpOutbound];
+  } else {
+    [Inbound, Outbound] = __IS_CLIENT__ ? [TcpInbound, mapping[transport][1]] : [mapping[transport][0], TcpOutbound];
+  }
   const props = {context, Inbound, Outbound, proxyRequest};
   const relay = new Relay(props);
   relay.id = uniqueId(`${transport}_`);
