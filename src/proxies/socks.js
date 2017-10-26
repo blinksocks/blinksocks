@@ -1,6 +1,6 @@
 import net from 'net';
 import ip from 'ip';
-import {logger} from '../utils';
+import {logger, numberToBuffer} from '../utils';
 
 // Socks4 Request Message
 // +----+-----+----------+--------+----------+--------+
@@ -54,6 +54,13 @@ import {logger} from '../utils';
 // | 1  |  1  | X'00' |  1   | Variable |    2     |
 // +----+-----+-------+------+----------+----------+
 
+// Socks5 UDP Request/Response
+// +----+------+------+----------+----------+----------+
+// |RSV | FRAG | ATYP | DST.ADDR | DST.PORT |   DATA   |
+// +----+------+------+----------+----------+----------+
+// | 2  |  1   |  1   | Variable |    2     | Variable |
+// +----+------+------+----------+----------+----------+
+
 const NOOP = 0x00;
 const SOCKS_VERSION_V4 = 0x04;
 const SOCKS_VERSION_V5 = 0x05;
@@ -79,6 +86,16 @@ const REPLY_COMMAND_NOT_SUPPORTED = 0x07;
 // const REPLY_ADDRESS_TYPE_NOT_SUPPORTED = 0x08;
 // const REPLY_UNASSIGNED = 0xff;
 
+function getHostType(host) {
+  if (net.isIPv4(host)) {
+    return ATYP_V4;
+  }
+  if (net.isIPv6(host)) {
+    return ATYP_V6;
+  }
+  return ATYP_DOMAIN;
+}
+
 function parseSocks5Identifier(buffer) {
   if (buffer.length < 3) {
     return null;
@@ -96,7 +113,7 @@ function parseSocks5Identifier(buffer) {
 }
 
 function parseSocks5Request(buffer) {
-  if (buffer.length < 9) {
+  if (buffer.length < 10) {
     return null;
   }
   if (buffer[0] !== SOCKS_VERSION_V5) {
@@ -127,6 +144,40 @@ function parseSocks5Request(buffer) {
   }
   const port = buffer.slice(-2).readUInt16BE(0);
   return {host: addr, port: port};
+}
+
+function parseSocks5UdpRequest(buffer) {
+  if (buffer.length < 10) {
+    return null;
+  }
+  if (buffer[0] !== 0x00 || buffer[1] !== 0x00) {
+    return null;
+  }
+  const frag = buffer[2];
+  if (frag !== 0x00) {
+    return null; // doesn't support fragment
+  }
+  let addr = null;
+  let pos = 4;
+  switch (buffer[3]) {
+    case ATYP_V4:
+      addr = ip.toString(buffer.slice(4, 8));
+      pos = pos + 4;
+      break;
+    case ATYP_DOMAIN:
+      addr = buffer.slice(5, 5 + buffer[4]).toString();
+      pos = pos + 1 + buffer[4];
+      break;
+    case ATYP_V6:
+      addr = ip.toString(buffer.slice(4, 20));
+      pos = pos + 16;
+      break;
+    default:
+      break;
+  }
+  const port = buffer.slice(pos, pos + 2).readUInt16BE(0);
+  const data = buffer.slice(pos + 2);
+  return {host: addr, port: port, data: data};
 }
 
 function parseSocks4Request(buffer) {
@@ -179,6 +230,17 @@ function parseSocks4Request(buffer) {
   };
 }
 
+function encodeSocks5UdpResponse({host, port, data}) {
+  const atyp = getHostType(host);
+  const _host = atyp === ATYP_DOMAIN ? Buffer.from(host) : ip.toBuffer(host);
+  const _port = numberToBuffer(port);
+  return Buffer.from([
+    0x00, 0x00, 0x00, atyp,
+    ...(atyp === ATYP_DOMAIN ? [_host.length] : []),
+    ..._host, ..._port, ...data
+  ]);
+}
+
 const STAGE_INIT = 0;
 const STAGE_SOCKS5_REQUEST_MESSAGE = 1;
 const STAGE_DONE = 2;
@@ -228,7 +290,21 @@ export function createServer() {
           stage = STAGE_DONE;
           const cmd = buffer[1];
           switch (cmd) {
-            case REQUEST_COMMAND_UDP: // UDP ASSOCIATE
+            // UDP ASSOCIATE
+            case REQUEST_COMMAND_UDP: {
+              server.emit('udpAssociate', socket, ({bindAddress, bindPort}) => {
+                const atyp = getHostType(bindAddress);
+                const addr = atyp === ATYP_DOMAIN ? Buffer.from(bindAddress) : ip.toBuffer(bindAddress);
+                const port = numberToBuffer(bindPort);
+                // Socks5 Reply Message
+                socket.write(Buffer.from([
+                  SOCKS_VERSION_V5, REPLY_SUCCEEDED, NOOP,
+                  atyp, ...(atyp === ATYP_DOMAIN ? [addr.length] : []), ...addr, ...port
+                ]));
+              });
+              socket.removeListener('data', onMessage);
+              break;
+            }
             case REQUEST_COMMAND_CONNECT: {
               const {host, port} = request;
               server.emit('proxyConnection', socket, {
@@ -264,3 +340,5 @@ export function createServer() {
 
   return server;
 }
+
+export {parseSocks5UdpRequest, encodeSocks5UdpResponse};
