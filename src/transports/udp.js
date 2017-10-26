@@ -16,7 +16,7 @@ export class UdpInbound extends Inbound {
     this.onReceive = this.onReceive.bind(this);
     this.onPresetFailed = this.onPresetFailed.bind(this);
     this._socket = context;
-    this._socket.on('packet', this.onReceive);
+    // this._socket.on('packet', this.onReceive);
   }
 
   onReceive(buffer, rinfo) {
@@ -96,26 +96,33 @@ export class UdpOutbound extends Outbound {
   }
 
   write(buffer) {
-    this._socket.send(buffer, this._targetPort, this._targetHost, (err) => {
-      if (err) {
-        logger.warn(`[udp:outbound] ${this.remote}:`, err);
-      }
-    });
+    const host = this._targetHost;
+    const port = this._targetPort;
+    if (host !== null && port !== null) {
+      this._socket.send(buffer, port, host, (err) => {
+        if (err) {
+          logger.warn(`[udp:outbound] ${this.remote}:`, err);
+        }
+      });
+    } else {
+      logger.error('[udp:outbound] fail to send udp data, target address was not initialized.');
+    }
   }
 
   onConnectToRemote(action) {
+    const {host, port, onConnected} = action.payload;
     if (__IS_CLIENT__) {
       this._targetHost = __SERVER_HOST__;
       this._targetPort = __SERVER_PORT__;
     }
     if (__IS_SERVER__) {
-      const {host, port, onConnected} = action.payload;
       this._targetHost = host;
       this._targetPort = port;
       if (typeof onConnected === 'function') {
         onConnected();
       }
     }
+    logger.info(`[udp:outbound] [${this.remote}] request: ${host}:${port}`);
   }
 
   destroy() {

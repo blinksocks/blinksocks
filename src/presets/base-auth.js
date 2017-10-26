@@ -26,7 +26,7 @@ const DEFAULT_HASH_METHOD = 'sha1';
  *
  * @protocol
  *
- *   # handshake (client -> server)
+ *   # TCP stream (client -> server)
  *   +------+----------+----------+----------+----------+---------+
  *   | ALEN | DST.ADDR | DST.PORT |   HMAC   |   DATA   |   ...   |
  *   +------+----------+----------+----------+----------+---------+
@@ -34,7 +34,14 @@ const DEFAULT_HASH_METHOD = 'sha1';
  *   +------+----------+----------+----------+----------+---------+
  *   |<------ aes-128-cfb ------->|
  *
- *   # other packets
+ *   # UDP packet (client -> server)
+ *   +------+----------+----------+----------+----------+
+ *   | ALEN | DST.ADDR | DST.PORT |   HMAC   |   DATA   |
+ *   +------+----------+----------+----------+----------+
+ *   |  1   | Variable |    2     |  Fixed   | Variable |
+ *   +------+----------+----------+----------+----------+
+ *
+ *   # any others of TCP and UDP
  *   +----------+
  *   |   DATA   |
  *   +----------+

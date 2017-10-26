@@ -245,7 +245,7 @@ const STAGE_INIT = 0;
 const STAGE_SOCKS5_REQUEST_MESSAGE = 1;
 const STAGE_DONE = 2;
 
-export function createServer() {
+export function createServer({bindAddress, bindPort}) {
   const server = net.createServer();
 
   server.on('connection', (socket) => {
@@ -292,16 +292,14 @@ export function createServer() {
           switch (cmd) {
             // UDP ASSOCIATE
             case REQUEST_COMMAND_UDP: {
-              server.emit('udpAssociate', socket, ({bindAddress, bindPort}) => {
-                const atyp = getHostType(bindAddress);
-                const addr = atyp === ATYP_DOMAIN ? Buffer.from(bindAddress) : ip.toBuffer(bindAddress);
-                const port = numberToBuffer(bindPort);
-                // Socks5 Reply Message
-                socket.write(Buffer.from([
-                  SOCKS_VERSION_V5, REPLY_SUCCEEDED, NOOP,
-                  atyp, ...(atyp === ATYP_DOMAIN ? [addr.length] : []), ...addr, ...port
-                ]));
-              });
+              const atyp = getHostType(bindAddress);
+              const addr = atyp === ATYP_DOMAIN ? Buffer.from(bindAddress) : ip.toBuffer(bindAddress);
+              const port = numberToBuffer(bindPort);
+              // Socks5 Reply Message
+              socket.write(Buffer.from([
+                SOCKS_VERSION_V5, REPLY_SUCCEEDED, NOOP,
+                atyp, ...(atyp === ATYP_DOMAIN ? [addr.length] : []), ...addr, ...port
+              ]));
               socket.removeListener('data', onMessage);
               break;
             }

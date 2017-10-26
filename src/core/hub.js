@@ -26,16 +26,15 @@ export class Hub extends EventEmitter {
 
   _server = null;
 
-  _udpServer = null; // server side only
+  _udpServer = null;
 
   _relays = [];
 
-  _udpRelays = {}; // server side only
+  _udpRelays = {};
 
   constructor(config) {
     super();
     this._onConnection = this._onConnection.bind(this);
-    this._onUdpAssociate = this._onUdpAssociate.bind(this);
     if (config !== undefined) {
       Config.init(config);
     }
@@ -54,7 +53,7 @@ export class Hub extends EventEmitter {
     this._server.close();
     this._isFirstWorker && logger.info('[hub] shutdown');
     // udp server
-    if (__IS_SERVER__ && this._udpServer !== null) {
+    if (this._udpServer !== null) {
       this._udpServer._handle && this._udpServer.close();
       Object.keys(this._udpRelays).forEach((key) => this._udpRelays[key].destroy());
     }
@@ -71,9 +70,6 @@ export class Hub extends EventEmitter {
       this._selectServer();
     }
     await this._createServer();
-    if (this._isFirstWorker) {
-      logger.info(`[hub] blinksocks ${__IS_CLIENT__ ? 'client' : 'server'} is running at ${__LOCAL_PROTOCOL__}://${__LOCAL_HOST__}:${__LOCAL_PORT__}`);
-    }
   }
 
   async _createServer() {
@@ -82,8 +78,8 @@ export class Hub extends EventEmitter {
         this._server = await this._createServerOnClient();
       } else {
         this._server = await this._createServerOnServer();
-        this._udpServer = await this._createUdpServer();
       }
+      this._udpServer = await this._createUdpServer();
     } catch (err) {
       logger.error('[hub] fail to create server:', err);
       process.exit(-1);
@@ -101,8 +97,7 @@ export class Hub extends EventEmitter {
         case 'socks5':
         case 'socks4':
         case 'socks4a':
-          server = socks.createServer();
-          server.on('udpAssociate', this._onUdpAssociate);
+          server = socks.createServer({bindAddress: __LOCAL_HOST__, bindPort: __LOCAL_PORT__});
           break;
         case 'http':
         case 'https':
@@ -110,7 +105,6 @@ export class Hub extends EventEmitter {
           break;
         default:
           return reject(Error(`unsupported protocol: "${__LOCAL_PROTOCOL__}"`));
-          break;
       }
       const address = {
         host: __LOCAL_HOST__,
@@ -118,6 +112,9 @@ export class Hub extends EventEmitter {
       };
       server.on('proxyConnection', this._onConnection);
       server.listen(address, () => resolve(server));
+      if (this._isFirstWorker) {
+        logger.info(`[hub] blinksocks client is running at ${__LOCAL_PROTOCOL__}://${__LOCAL_HOST__}:${__LOCAL_PORT__}`);
+      }
     });
   }
 
@@ -155,7 +152,9 @@ export class Hub extends EventEmitter {
         }
         default:
           return reject(Error(`unsupported protocol: "${__LOCAL_PROTOCOL__}"`));
-          break;
+      }
+      if (this._isFirstWorker) {
+        logger.info(`[hub] blinksocks server is running at ${__LOCAL_PROTOCOL__}://${__LOCAL_HOST__}:${__LOCAL_PORT__}`);
       }
     });
   }
@@ -166,27 +165,59 @@ export class Hub extends EventEmitter {
       const server = dgram.createSocket('udp4');
 
       server.on('message', (msg, rinfo) => {
+        let proxyRequest = null;
+        let packet = msg;
+        if (__IS_CLIENT__) {
+          const parsed = socks.parseSocks5UdpRequest(msg);
+          if (parsed === null) {
+            logger.warn(`[hub] [${rinfo.address}:${rinfo.port}] drop invalid udp packet: ${msg.slice(0, 60).toString('hex')}`);
+            return;
+          }
+          const {host, port, data} = parsed;
+          proxyRequest = {host, port};
+          packet = data;
+        }
         const {address, port} = rinfo;
         const key = `${address}:${port}`;
         if (relays[key] === undefined) {
-          // TODO(refactor): pass remoteXXX to relay directly
           server.remoteAddress = address;
           server.remotePort = port;
-          relays[key] = createRelay('udp', server);
+          relays[key] = createRelay('udp', server, proxyRequest);
           relays[key].on('close', () => delete relays[key]);
         }
-        relays[key]._inbound.onReceive(msg, rinfo);
+        relays[key]._inbound.onReceive(packet, rinfo);
       });
 
       server.on('error', reject);
 
-      // monkey patch for Socket.close() to prevent closing shared udp socket on server side
+      // monkey patch for Socket.close() to prevent closing shared udp socket
       // eslint-disable-next-line
       server.close = ((close) => (...args) => {
         // close.call(server, ...args);
       })(server.close);
 
+      // monkey patch for Socket.send() to meet Socks5 protocol
+      if (__IS_CLIENT__) {
+        const isShadowsocks = function () {
+          return __PRESETS__.some(({name}) => ['ss-base'].includes(name));
+        };
+        server.send = ((send) => (data, port, host, ...args) => {
+          let packet = null;
+          if (isShadowsocks()) {
+            // compatible with shadowsocks udp addressing
+            packet = Buffer.from([0x00, 0x00, 0x00, ...data]);
+          } else {
+            packet = socks.encodeSocks5UdpResponse({host, port, data});
+          }
+          send.call(server, packet, port, host, ...args);
+        })(server.send);
+      }
+
       server.bind({address: __LOCAL_HOST__, port: __LOCAL_PORT__}, () => resolve(server));
+
+      if (this._isFirstWorker) {
+        logger.info(`[hub] blinksocks udp server is running at udp://${__LOCAL_HOST__}:${__LOCAL_PORT__}`);
+      }
     });
   }
 
@@ -198,48 +229,6 @@ export class Hub extends EventEmitter {
       MiddlewareManager.reset();
       logger.info(`[balancer] use server: ${__SERVER_HOST__}:${__SERVER_PORT__}`);
     }
-  }
-
-  _onUdpAssociate(tcpSocket, done) {
-    const socket = dgram.createSocket('udp4');
-
-    let relay = null;
-
-    socket.on('message', (msg, rinfo) => {
-      const parsed = socks.parseSocks5UdpRequest(msg);
-      if (parsed !== null) {
-        const {host, port, data} = parsed;
-        // create relay only once
-        if (relay === null) {
-          socket.remoteAddress = rinfo.address;
-          socket.remotePort = rinfo.port;
-          relay = createRelay('udp', socket, {host, port});
-        }
-        socket.emit('packet', data, rinfo);
-      } else {
-        logger.warn(`[hub] [${rinfo.address}:${rinfo.port}] drop invalid udp packet: ${msg.slice(0, 60).toString('hex')}`);
-      }
-    });
-
-    socket.on('error', (err) => {
-      logger.error('[hub] fail to create udp socket:', err);
-    });
-
-    // monkey patch for Socket.send() to support Socks5 protocol
-    socket.send = ((send) => (data, port, host, ...args) => {
-      const packet = socks.encodeSocks5UdpResponse({host, port, data});
-      send.call(socket, packet, port, host, ...args);
-    })(socket.send);
-
-    socket.bind({address: __LOCAL_HOST__/*, port: random */}, () => {
-      const {address, port} = socket.address();
-      done({bindAddress: address, bindPort: port});
-    });
-
-    tcpSocket.on('close', () => {
-      relay.destroy();
-      relay = null;
-    });
   }
 
   _onConnection(context, proxyRequest = null) {

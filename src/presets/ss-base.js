@@ -33,19 +33,19 @@ function getHostType(host) {
  *   |  1   | Variable |    2     | Variable |   ...   |
  *   +------+----------+----------+----------+---------+
  *
- *   # UDP packet (client -> server)
- *   +------+----------+----------+----------+
- *   | ATYP | DST.ADDR | DST.PORT |   DATA   |
- *   +------+----------+----------+----------+
- *   |  1   | Variable |    2     | Variable |
- *   +------+----------+----------+----------+
- *
- *   # any others
+ *   # TCP chunks
  *   +----------+
  *   |   DATA   |
  *   +----------+
  *   | Variable |
  *   +----------+
+ *
+ *   # UDP packet (client <-> server)
+ *   +------+----------+----------+----------+
+ *   | ATYP | DST.ADDR | DST.PORT |   DATA   |
+ *   +------+----------+----------+----------+
+ *   |  1   | Variable |    2     | Variable |
+ *   +------+----------+----------+----------+
  *
  * @explain
  *   1. ATYP is one of [0x01(ipv4), 0x03(hostname), 0x04(ipv6)].
@@ -190,7 +190,7 @@ export default class SsBasePreset extends IPreset {
 
   // udp
 
-  clientOutUdp({buffer}) {
+  beforeOutUdp({buffer}) {
     return Buffer.concat([this.encodeHeader(), buffer]);
   }
 
@@ -200,6 +200,9 @@ export default class SsBasePreset extends IPreset {
       return;
     }
     const {host, port, data} = decoded;
+    this._atyp = getHostType(host);
+    this._host = this._atyp === ATYP_DOMAIN ? Buffer.from(host) : ip.toBuffer(host);
+    this._port = numberToBuffer(port);
     broadcast({
       type: CONNECT_TO_REMOTE,
       payload: {
