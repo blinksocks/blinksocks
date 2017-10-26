@@ -36,14 +36,29 @@ export class Hub extends EventEmitter {
     super();
     this._onConnection = this._onConnection.bind(this);
     this._onUdpAssociate = this._onUdpAssociate.bind(this);
-    this._onClose = this._onClose.bind(this);
     if (config !== undefined) {
       Config.init(config);
     }
   }
 
   terminate() {
-    this._onClose();
+    // relays
+    this._relays.forEach((relay) => relay.destroy());
+    MiddlewareManager.cleanup();
+    // balancer
+    if (__IS_CLIENT__) {
+      Balancer.destroy();
+      this._isFirstWorker && logger.info('[balancer] stopped');
+    }
+    // server
+    this._server.close();
+    this._isFirstWorker && logger.info('[hub] shutdown');
+    // udp server
+    if (__IS_SERVER__ && this._udpServer !== null) {
+      this._udpServer._handle && this._udpServer.close();
+      Object.keys(this._udpRelays).forEach((key) => this._udpRelays[key].destroy());
+    }
+    this.emit('close');
   }
 
   async run() {
@@ -237,26 +252,6 @@ export class Hub extends EventEmitter {
       this._relays = this._relays.filter((r) => r.id !== relay.id);
     });
     this._relays.push(relay);
-  }
-
-  _onClose() {
-    // relays
-    this._relays.forEach((relay) => relay.destroy());
-    MiddlewareManager.cleanup();
-    // balancer
-    if (__IS_CLIENT__) {
-      Balancer.destroy();
-      this._isFirstWorker && logger.info('[balancer] stopped');
-    }
-    // server
-    this._server.close();
-    this._isFirstWorker && logger.info('[hub] shutdown');
-    // udp server
-    if (__IS_SERVER__ && this._udpServer !== null) {
-      this._udpServer._handle && this._udpServer.close();
-      Object.keys(this._udpRelays).forEach((key) => this._udpRelays[key].destroy());
-    }
-    this.emit('close');
   }
 
 }
