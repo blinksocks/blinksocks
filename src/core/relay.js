@@ -26,16 +26,19 @@ export class Relay extends EventEmitter {
 
   _outbound = null;
 
+  _transport = null;
+
   _pipe = null;
 
   _presets = [];
 
-  constructor({context, Inbound, Outbound, proxyRequest = null}) {
+  constructor({transport, context, Inbound, Outbound, proxyRequest = null}) {
     super();
     this.setPresets = this.setPresets.bind(this);
     this.onBroadcast = this.onBroadcast.bind(this);
     this.postPipeForward = this.postPipeForward.bind(this);
     this.postPipeBackward = this.postPipeBackward.bind(this);
+    this._transport = transport;
     // pipe
     this._presets = preparePresets();
     this._pipe = this.createPipe(this._presets);
@@ -104,7 +107,7 @@ export class Relay extends EventEmitter {
    * create pipes for both data forward and backward
    */
   createPipe(presets) {
-    const pipe = new Pipe(presets);
+    const pipe = new Pipe({presets, isUdp: this._transport === 'udp'});
     pipe.on('broadcast', this.onBroadcast.bind(this)); // if no action were caught by presets
     pipe.on(`post_${PIPE_ENCODE}`, this.postPipeForward);
     pipe.on(`post_${PIPE_DECODE}`, this.postPipeBackward);
@@ -141,7 +144,7 @@ export function createRelay(transport, context, proxyRequest = null) {
   } else {
     [Inbound, Outbound] = __IS_CLIENT__ ? [TcpInbound, mapping[transport][1]] : [mapping[transport][0], TcpOutbound];
   }
-  const props = {context, Inbound, Outbound, proxyRequest};
+  const props = {transport, context, Inbound, Outbound, proxyRequest};
   const relay = new Relay(props);
   relay.id = uniqueId(`${transport}_`);
   return relay;

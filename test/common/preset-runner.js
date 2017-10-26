@@ -36,7 +36,8 @@ export class PresetRunner extends EventEmitter {
       this.middleware.on('post_-1', resolve);
       this.middleware.on('fail', reject);
       this.middleware.on('broadcast', (name, action) => this.emit('broadcast', action));
-      this.middleware.write(__IS_CLIENT__ ? PIPE_ENCODE : PIPE_DECODE, {
+      this.middleware.write({
+        direction: __IS_CLIENT__ ? PIPE_ENCODE : PIPE_DECODE,
         buffer: data,
         direct: resolve
       });
@@ -52,7 +53,8 @@ export class PresetRunner extends EventEmitter {
       this.middleware.on('post_-1', resolve);
       this.middleware.on('fail', reject);
       this.middleware.on('broadcast', (name, action) => this.emit('broadcast', action));
-      this.middleware.write(__IS_CLIENT__ ? PIPE_DECODE : PIPE_ENCODE, {
+      this.middleware.write({
+        direction: __IS_CLIENT__ ? PIPE_DECODE : PIPE_ENCODE,
         buffer: data,
         direct: resolve
       });

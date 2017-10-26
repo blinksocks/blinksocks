@@ -90,9 +90,10 @@ export class Middleware extends EventEmitter {
    * @param direction
    * @param buffer
    * @param direct
+   * @param isUdp
    */
-  write(direction, {buffer, direct}) {
-    const type = (direction === PIPE_ENCODE) ? 'Out' : 'In';
+  write({direction, buffer, direct, isUdp}) {
+    const type = (direction === PIPE_ENCODE ? 'Out' : 'In') + (isUdp ? 'Udp' : '');
 
     // prepare args
     const broadcast = this.onPresetBroadcast;
@@ -105,7 +106,7 @@ export class Middleware extends EventEmitter {
       }
     };
 
-    // clientOut, serverOut, clientIn, serverIn
+    // clientXXX, serverXXX
     const nextLifeCycleHook = (buf/* , isReverse = false */) => {
       const args = {buffer: buf, next, broadcast, direct, fail};
       const ret = __IS_CLIENT__ ? this._impl[`client${type}`](args) : this._impl[`server${type}`](args);
@@ -114,8 +115,8 @@ export class Middleware extends EventEmitter {
       }
     };
 
-    // beforeOut, beforeIn
-    // NOTE: next(buf, isReverse) is not available in beforeOut/beforeIn
+    // beforeXXX
+    // NOTE: next(buf, isReverse) is not available in beforeXXX
     const args = {buffer, next: nextLifeCycleHook, broadcast, direct, fail};
     const ret = this._impl[`before${type}`](args);
     if (ret instanceof Buffer) {

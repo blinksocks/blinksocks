@@ -12,6 +12,8 @@ export class Pipe extends EventEmitter {
 
   _downstream_middlewares = [];
 
+  _isPipingUdp = false;
+
   _cacheBuffer = null;
 
   _destroyed = false;
@@ -20,10 +22,11 @@ export class Pipe extends EventEmitter {
     return this._destroyed;
   }
 
-  constructor(presets) {
+  constructor({presets, isUdp = false}) {
     super();
     this.broadcast = this.broadcast.bind(this);
     this.createMiddlewares(presets);
+    this._isPipingUdp = isUdp;
   }
 
   broadcast(name, action) {
@@ -80,7 +83,7 @@ export class Pipe extends EventEmitter {
         this._feed(direction, buffer);
       }
     } catch (err) {
-      logger.error('[pipe] error occurred while piping', err);
+      logger.error('[pipe] error occurred while piping:', err);
     }
   }
 
@@ -98,21 +101,22 @@ export class Pipe extends EventEmitter {
 
   _feed(direction, buffer) {
     const middlewares = this.getMiddlewares(direction);
-    // methods to be injected
+    // args to be injected
+    const isUdp = this._isPipingUdp;
     const direct = (buf, isReverse = false) => this.emit(isReverse ? `post_${-direction}` : `post_${direction}`, buf);
     // create event chain among middlewares
     const event = `next_${direction}`;
     const first = middlewares[0];
     if (!first.hasListener(event)) {
       const last = middlewares.reduce((prev, next) => {
-        prev.on(event, (buf) => next.write(direction, {buffer: buf, direct}));
+        prev.on(event, (buf) => next.write({direction, buffer: buf, direct, isUdp}));
         return next;
       });
       // the last middleware send data out via direct(buf, false)
       last.on(event, direct);
     }
     // begin pipe
-    first.write(direction, {buffer, direct});
+    first.write({direction, buffer, direct, isUdp});
   }
 
 }
