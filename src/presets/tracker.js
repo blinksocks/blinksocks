@@ -3,7 +3,7 @@ import {logger} from '../utils';
 
 const TRACK_CHAR_UPLOAD = 'u';
 const TRACK_CHAR_DOWNLOAD = 'd';
-const TRACK_MAX_SIZE = 40;
+const TRACK_MAX_SIZE = 60;
 
 /**
  * print connection track string, and only display the
@@ -91,6 +91,14 @@ export default class TrackerPreset extends IPreset {
     this._tracks.push(TRACK_CHAR_DOWNLOAD);
     this._tracks.push(buffer.length);
     return buffer;
+  }
+
+  beforeOutUdp(...args) {
+    return this.beforeOut(...args);
+  }
+
+  beforeInUdp(...args) {
+    return this.beforeIn(...args);
   }
 
 }

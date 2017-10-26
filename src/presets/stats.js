@@ -206,4 +206,12 @@ export default class StatsPreset extends IPresetStatic {
     return buffer;
   }
 
+  beforeOutUdp(...args) {
+    return this.beforeOut(...args);
+  }
+
+  beforeInUdp(...args) {
+    return this.beforeIn(...args);
+  }
+
 }

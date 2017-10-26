@@ -26,14 +26,21 @@ function getHostType(host) {
  *
  * @protocol
  *
- *   # handshake (client -> server)
+ *   # TCP stream (client -> server)
  *   +------+----------+----------+----------+---------+
  *   | ATYP | DST.ADDR | DST.PORT |   DATA   |   ...   |
  *   +------+----------+----------+----------+---------+
  *   |  1   | Variable |    2     | Variable |   ...   |
  *   +------+----------+----------+----------+---------+
  *
- *   # other packets
+ *   # UDP packet (client -> server)
+ *   +------+----------+----------+----------+
+ *   | ATYP | DST.ADDR | DST.PORT |   DATA   |
+ *   +------+----------+----------+----------+
+ *   |  1   | Variable |    2     | Variable |
+ *   +------+----------+----------+----------+
+ *
+ *   # any others
  *   +----------+
  *   |   DATA   |
  *   +----------+
@@ -80,16 +87,64 @@ export default class SsBasePreset extends IPreset {
     }
   }
 
+  encodeHeader() {
+    return Buffer.from([
+      this._atyp,
+      ...(this._atyp === ATYP_DOMAIN ? [this._host.length] : []),
+      ...this._host,
+      ...this._port
+    ]);
+  }
+
+  decodeHeader({buffer, fail}) {
+    if (buffer.length < 7) {
+      return fail(`invalid length: ${buffer.length}`);
+    }
+    const atyp = buffer[0];
+
+    let addr; // string
+    let port; // number
+    let offset = 3;
+
+    switch (atyp) {
+      case ATYP_V4:
+        addr = ip.toString(buffer.slice(1, 5));
+        port = buffer.slice(5, 7).readUInt16BE(0);
+        offset += 4;
+        break;
+      case ATYP_V6:
+        if (buffer.length < 19) {
+          return fail(`invalid length: ${buffer.length}`);
+        }
+        addr = ip.toString(buffer.slice(1, 17));
+        port = buffer.slice(17, 19).readUInt16BE(0);
+        offset += 16;
+        break;
+      case ATYP_DOMAIN:
+        const domainLen = buffer[1];
+        if (buffer.length < domainLen + 4) {
+          return fail(`invalid length: ${buffer.length}`);
+        }
+        addr = buffer.slice(2, 2 + domainLen).toString();
+        if (!isValidHostname(addr)) {
+          return fail(`addr=${addr} is an invalid hostname`);
+        }
+        port = buffer.slice(2 + domainLen, 4 + domainLen).readUInt16BE(0);
+        offset += (domainLen + 1);
+        break;
+      default:
+        return fail(`invalid atyp: ${atyp}`);
+    }
+    const data = buffer.slice(offset);
+    return {host: addr, port, data};
+  }
+
+  // tcp
+
   clientOut({buffer}) {
     if (!this._isHeaderSent) {
       this._isHeaderSent = true;
-      return Buffer.from([
-        this._atyp,
-        ...(this._atyp === ATYP_DOMAIN) ? numberToBuffer(this._host.length, 1) : [],
-        ...this._host,
-        ...this._port,
-        ...buffer
-      ]);
+      return Buffer.concat([this.encodeHeader(), buffer]);
     } else {
       return buffer;
     }
@@ -105,58 +160,19 @@ export default class SsBasePreset extends IPreset {
         return;
       }
 
-      if (buffer.length < 7) {
-        fail(`invalid length: ${buffer.length}`);
+      const decoded = this.decodeHeader({buffer, fail});
+      if (!decoded) {
         return;
       }
 
-      const atyp = buffer[0];
-
-      let addr; // string
-      let port; // number
-      let offset = 3;
-
-      switch (atyp) {
-        case ATYP_V4:
-          addr = ip.toString(buffer.slice(1, 5));
-          port = buffer.slice(5, 7).readUInt16BE(0);
-          offset += 4;
-          break;
-        case ATYP_V6:
-          if (buffer.length < 19) {
-            fail(`invalid length: ${buffer.length}`);
-            return;
-          }
-          addr = ip.toString(buffer.slice(1, 17));
-          port = buffer.slice(17, 19).readUInt16BE(0);
-          offset += 16;
-          break;
-        case ATYP_DOMAIN:
-          const domainLen = buffer[1];
-          if (buffer.length < domainLen + 4) {
-            fail(`invalid length: ${buffer.length}`);
-            return;
-          }
-          addr = buffer.slice(2, 2 + domainLen).toString();
-          if (!isValidHostname(addr)) {
-            fail(`addr=${addr} is an invalid hostname`);
-            return;
-          }
-          port = buffer.slice(2 + domainLen, 4 + domainLen).readUInt16BE(0);
-          offset += (domainLen + 1);
-          break;
-        default:
-          return fail(`invalid atyp: ${atyp}`);
-      }
-
-      const data = buffer.slice(offset);
+      const {host, port, data} = decoded;
 
       // notify to connect to the real server
       this._isConnecting = true;
       broadcast({
         type: CONNECT_TO_REMOTE,
         payload: {
-          host: addr,
+          host: host,
           port: port,
           // once connected
           onConnected: () => {
@@ -170,6 +186,28 @@ export default class SsBasePreset extends IPreset {
     } else {
       return buffer;
     }
+  }
+
+  // udp
+
+  clientOutUdp({buffer}) {
+    return Buffer.concat([this.encodeHeader(), buffer]);
+  }
+
+  serverInUdp({buffer, next, broadcast, fail}) {
+    const decoded = this.decodeHeader({buffer, fail});
+    if (!decoded) {
+      return;
+    }
+    const {host, port, data} = decoded;
+    broadcast({
+      type: CONNECT_TO_REMOTE,
+      payload: {
+        host: host,
+        port: port,
+        onConnected: () => next(data)
+      }
+    });
   }
 
 }

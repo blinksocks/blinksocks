@@ -52,19 +52,26 @@ const HKDF_INFO = 'ss-subkey';
  *
  * @protocol
  *
- *   # TCP packet
+ *   # TCP stream
  *   +---------+------------+------------+-----------+
  *   |  SALT   |   chunk_0  |   chunk_1  |    ...    |
  *   +---------+------------+------------+-----------+
  *   |  Fixed  |  Variable  |  Variable  |    ...    |
  *   +---------+------------+------------+-----------+
  *
- *   # TCP chunk
+ *   # TCP chunk_i
  *   +---------+-------------+----------------+--------------+
  *   | DataLen | DataLen_TAG |      Data      |   Data_TAG   |
  *   +---------+-------------+----------------+--------------+
  *   |    2    |    Fixed    |    Variable    |    Fixed     |
  *   +---------+-------------+----------------+--------------+
+ *
+ *   # UDP packet
+ *   +---------+----------------+--------------+
+ *   |  SALT   |      Data      |   Data_TAG   |
+ *   +---------+----------------+--------------+
+ *   |  Fixed  |    Variable    |    Fixed     |
+ *   +---------+----------------+--------------+
  *
  * @explain
  *   1. Salt is randomly generated, and is to derive the per-session subkey in HKDF.
@@ -144,6 +151,8 @@ export default class SsAeadCipherPreset extends IPreset {
     this._decipherNonce = 0;
   }
 
+  // tcp
+
   beforeOut({buffer}) {
     let salt = null;
     if (this._cipherKey === null) {
@@ -203,8 +212,7 @@ export default class SsAeadCipherPreset extends IPreset {
     const [encData, dataTag] = [chunk.slice(2 + TAG_SIZE, -TAG_SIZE), chunk.slice(-TAG_SIZE)];
     const data = this.decrypt(encData, dataTag);
     if (data === null) {
-      fail(`unexpected Data_TAG=${dataTag.toString('hex')} when verify Data=${encData.slice(0, 60).toString('hex')}, dump=${chunk.slice(0, 60).toString('hex')}`);
-      return;
+      return fail(`unexpected Data_TAG=${dataTag.toString('hex')} when verify Data=${encData.slice(0, 60).toString('hex')}, dump=${chunk.slice(0, 60).toString('hex')}`);
     }
     next(data);
   }
@@ -257,6 +265,36 @@ export default class SsAeadCipherPreset extends IPreset {
         return null;
       }
     }
+  }
+
+  // udp
+
+  beforeOutUdp({buffer}) {
+    const {keySize, saltSize, evpKey, info} = SsAeadCipherPreset;
+    const salt = crypto.randomBytes(saltSize);
+    this._cipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, evpKey, info, keySize);
+    this._cipherNonce = 0;
+    const [ciphertext, tag] = this.encrypt(buffer);
+    return Buffer.concat([salt, ciphertext, tag]);
+  }
+
+  beforeInUdp({buffer, fail}) {
+    const {keySize, saltSize, evpKey, info} = SsAeadCipherPreset;
+    if (buffer.length < saltSize) {
+      return fail(`too short to get salt, len=${buffer.length} dump=${buffer.toString('hex')}`);
+    }
+    const salt = buffer.slice(0, saltSize);
+    this._decipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, evpKey, info, keySize);
+    this._decipherNonce = 0;
+    if (buffer.length < saltSize + TAG_SIZE + 1) {
+      return fail(`too short to verify Data, len=${buffer.length} dump=${buffer.toString('hex')}`);
+    }
+    const [encData, dataTag] = [buffer.slice(saltSize, -TAG_SIZE), buffer.slice(-TAG_SIZE)];
+    const data = this.decrypt(encData, dataTag);
+    if (data === null) {
+      return fail(`unexpected Data_TAG=${dataTag.toString('hex')} when verify Data=${encData.slice(0, 60).toString('hex')}, dump=${buffer.slice(0, 60).toString('hex')}`);
+    }
+    return data;
   }
 
 }

@@ -120,7 +120,7 @@ export class IPreset {
 
   }
 
-  // life cycle hooks
+  // hooks for tcp
 
   beforeOut({buffer/* , next, broadcast, direct, fail */}) {
     return buffer;
@@ -143,6 +143,32 @@ export class IPreset {
   }
 
   clientIn({buffer/* , next, broadcast, direct, fail */}) {
+    return buffer;
+  }
+
+  // hooks for udp
+
+  beforeOutUdp({buffer/* , next, broadcast, direct, fail */}) {
+    return buffer;
+  }
+
+  beforeInUdp({buffer/* , next, broadcast, direct, fail */}) {
+    return buffer;
+  }
+
+  clientOutUdp({buffer/* , next, broadcast, direct, fail */}) {
+    return buffer;
+  }
+
+  serverInUdp({buffer/* , next, broadcast, direct, fail */}) {
+    return buffer;
+  }
+
+  serverOutUdp({buffer/* , next, broadcast, direct, fail */}) {
+    return buffer;
+  }
+
+  clientInUdp({buffer/* , next, broadcast, direct, fail */}) {
     return buffer;
   }
 
@@ -187,8 +213,9 @@ export function checkPresetClass(clazz) {
   }
   // check require hooks
   const requiredMethods = [
-    'onNotified', 'onDestroy', 'beforeOut', 'beforeIn',
-    'clientOut', 'serverIn', 'serverOut', 'clientIn'
+    'onNotified', 'onDestroy',
+    'beforeOut', 'beforeIn', 'clientOut', 'serverIn', 'serverOut', 'clientIn',
+    'beforeOutUdp', 'beforeInUdp', 'clientOutUdp', 'serverInUdp', 'serverOutUdp', 'clientInUdp'
   ];
   if (requiredMethods.some((method) => typeof clazz.prototype[method] !== 'function')) {
     return false;

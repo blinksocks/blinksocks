@@ -111,14 +111,52 @@ export default class BaseAuthPreset extends IPreset {
     }
   }
 
+  encodeHeader() {
+    const {hmacMethod, hmacKey} = BaseAuthPreset;
+    const header = Buffer.concat([numberToBuffer(this._host.length, 1), this._host, this._port]);
+    const encHeader = this._cipher.update(header);
+    const mac = hmac(hmacMethod, hmacKey, encHeader);
+    return Buffer.concat([encHeader, mac]);
+  }
+
+  decodeHeader({buffer, fail}) {
+    const {hmacMethod, hmacLen, hmacKey} = BaseAuthPreset;
+
+    // minimal length required
+    if (buffer.length < 31) {
+      return fail(`length is too short: ${buffer.length}, dump=${buffer.toString('hex')}`);
+    }
+
+    // decrypt the first byte and check length overflow
+    const alen = this._decipher.update(buffer.slice(0, 1))[0];
+    if (buffer.length <= 1 + alen + 2 + hmacLen) {
+      return fail(`unexpected length: ${buffer.length}, dump=${buffer.toString('hex')}`);
+    }
+
+    // check hmac
+    const givenHmac = buffer.slice(1 + alen + 2, 1 + alen + 2 + hmacLen);
+    const expHmac = hmac(hmacMethod, hmacKey, buffer.slice(0, 1 + alen + 2));
+    if (!givenHmac.equals(expHmac)) {
+      return fail(`unexpected HMAC=${givenHmac.toString('hex')} want=${expHmac.toString('hex')} dump=${buffer.slice(0, 60).toString('hex')}`);
+    }
+
+    // decrypt the following bytes
+    const plaintext = this._decipher.update(buffer.slice(1, 1 + alen + 2));
+
+    // addr, port, data
+    const addr = plaintext.slice(0, alen).toString();
+    const port = plaintext.slice(alen, alen + 2).readUInt16BE(0);
+    const data = buffer.slice(1 + alen + 2 + hmacLen);
+
+    return {host: addr, port, data};
+  }
+
+  // tcp
+
   clientOut({buffer}) {
     if (!this._isHeaderSent) {
       this._isHeaderSent = true;
-      const {hmacMethod, hmacKey} = BaseAuthPreset;
-      const header = Buffer.concat([numberToBuffer(this._host.length, 1), this._host, this._port]);
-      const encHeader = this._cipher.update(header);
-      const mac = hmac(hmacMethod, hmacKey, encHeader);
-      return Buffer.concat([encHeader, mac, buffer]);
+      return Buffer.concat([this.encodeHeader(), buffer]);
     } else {
       return buffer;
     }
@@ -126,49 +164,28 @@ export default class BaseAuthPreset extends IPreset {
 
   serverIn({buffer, next, broadcast, fail}) {
     if (!this._isHeaderRecv) {
-      const {hmacMethod, hmacLen, hmacKey} = BaseAuthPreset;
 
       if (this._isConnecting) {
         this._pending = Buffer.concat([this._pending, buffer]);
         return;
       }
 
-      // minimal length required
-      if (buffer.length < 31) {
-        return fail(`length is too short: ${buffer.length}, dump=${buffer.toString('hex')}`);
+      const decoded = this.decodeHeader({buffer, fail});
+      if (!decoded) {
+        return;
       }
 
-      // decrypt the first byte and check length overflow
-      const alen = this._decipher.update(buffer.slice(0, 1))[0];
-      if (buffer.length <= 1 + alen + 2 + hmacLen) {
-        return fail(`unexpected length: ${buffer.length}, dump=${buffer.toString('hex')}`);
-      }
-
-      // check hmac
-      const givenHmac = buffer.slice(1 + alen + 2, 1 + alen + 2 + hmacLen);
-      const expHmac = hmac(hmacMethod, hmacKey, buffer.slice(0, 1 + alen + 2));
-      if (!givenHmac.equals(expHmac)) {
-        return fail(`unexpected HMAC=${givenHmac.toString('hex')} want=${expHmac.toString('hex')} dump=${buffer.slice(0, 60).toString('hex')}`);
-      }
-
-      // decrypt the following bytes
-      const plaintext = this._decipher.update(buffer.slice(1, 1 + alen + 2));
-
-      // addr, port, data
-      const addr = plaintext.slice(0, alen);
-      const port = plaintext.slice(alen, alen + 2);
-      const data = buffer.slice(1 + alen + 2 + hmacLen);
+      const {host, port, data} = decoded;
 
       // notify to connect to the real server
       this._isConnecting = true;
       broadcast({
         type: CONNECT_TO_REMOTE,
         payload: {
-          host: addr.toString(),
-          port: port.readUInt16BE(0),
-          // once connected
+          host: host,
+          port: port,
           onConnected: () => {
-            next(data);
+            next(Buffer.concat([data, this._pending]));
             this._isHeaderRecv = true;
             this._isConnecting = false;
             this._pending = null;
@@ -178,6 +195,28 @@ export default class BaseAuthPreset extends IPreset {
     } else {
       return buffer;
     }
+  }
+
+  // udp
+
+  clientOutUdp({buffer}) {
+    return Buffer.concat([this.encodeHeader(), buffer]);
+  }
+
+  serverInUdp({buffer, next, broadcast, fail}) {
+    const decoded = this.decodeHeader({buffer, fail});
+    if (!decoded) {
+      return;
+    }
+    const {host, port, data} = decoded;
+    broadcast({
+      type: CONNECT_TO_REMOTE,
+      payload: {
+        host: host,
+        port: port,
+        onConnected: () => next(data)
+      }
+    });
   }
 
 }

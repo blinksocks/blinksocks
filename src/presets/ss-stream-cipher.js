@@ -41,6 +41,13 @@ const ciphers = {
  *   |      Variable       |
  *   +---------------------+
  *
+ *   # UDP packet
+ *   +-------+---------------------+
+ *   |  IV   |       PAYLOAD       |
+ *   +-------+---------------------+
+ *   | Fixed |      Variable       |
+ *   +-------+---------------------+
+ *
  * @explain
  *   1. Key derivation function is EVP_BytesToKey.
  *   2. IV is randomly generated.
@@ -85,14 +92,16 @@ export default class SsStreamCipherPreset extends IPreset {
     this._decipher = null;
   }
 
+  // tcp
+
   beforeOut({buffer}) {
     if (!this._cipher) {
       const {cipherName, key, ivSize} = SsStreamCipherPreset;
       const iv = crypto.randomBytes(ivSize);
       this._cipher = crypto.createCipheriv(cipherName, key, iv);
-      return Buffer.concat([iv, this.encrypt(buffer)]);
+      return Buffer.concat([iv, this._cipher.update(buffer)]);
     } else {
-      return this.encrypt(buffer);
+      return this._cipher.update(buffer);
     }
   }
 
@@ -100,22 +109,33 @@ export default class SsStreamCipherPreset extends IPreset {
     if (!this._decipher) {
       const {cipherName, key, ivSize} = SsStreamCipherPreset;
       if (buffer.length < ivSize) {
-        return fail(`buffer is too short ${buffer.length} bytes to get iv, dump=${buffer.toString('hex')}`);
+        return fail(`buffer is too short to get iv, len=${buffer.length} dump=${buffer.toString('hex')}`);
       }
       const iv = buffer.slice(0, ivSize);
       this._decipher = crypto.createDecipheriv(cipherName, key, iv);
-      return this.decrypt(buffer.slice(ivSize));
+      return this._decipher.update(buffer.slice(ivSize));
     } else {
-      return this.decrypt(buffer);
+      return this._decipher.update(buffer);
     }
   }
 
-  encrypt(buffer) {
-    return this._cipher.update(buffer);
+  // udp
+
+  beforeOutUdp({buffer}) {
+    const {cipherName, key, ivSize} = SsStreamCipherPreset;
+    const iv = crypto.randomBytes(ivSize);
+    const cipher = crypto.createCipheriv(cipherName, key, iv);
+    return Buffer.concat([iv, cipher.update(buffer), cipher.final()]);
   }
 
-  decrypt(buffer) {
-    return this._decipher.update(buffer);
+  beforeInUdp({buffer, fail}) {
+    const {cipherName, key, ivSize} = SsStreamCipherPreset;
+    if (buffer.length < ivSize) {
+      return fail(`buffer is too short to get iv, len=${buffer.length} dump=${buffer.toString('hex')}`);
+    }
+    const iv = buffer.slice(0, ivSize);
+    const decipher = crypto.createDecipheriv(cipherName, key, iv);
+    return Buffer.concat([decipher.update(buffer.slice(ivSize)), decipher.final()]);
   }
 
 }

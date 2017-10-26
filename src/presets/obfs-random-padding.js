@@ -8,9 +8,7 @@ import {AdvancedBuffer, getRandomInt, getRandomChunks, numberToBuffer} from '../
  *   It can be used to prevent statistical analysis based on packet length.
  *
  * @examples
- *   {
- *     "name": "obfs-random-padding"
- *   }
+ *   {"name": "obfs-random-padding"}
  *
  * @protocol
  *
@@ -21,12 +19,19 @@ import {AdvancedBuffer, getRandomInt, getRandomChunks, numberToBuffer} from '../
  *   | Variable  | Variable  | ... |
  *   +-----------+-----------+-----+
  *
- *   # Chunk_i
+ *   # TCP chunk_i
  *   +------------+-----------+----------+-----------+
  *   | PaddingLen |  Padding  |  DataLen |   Data    |
  *   +------------+-----------+----------+-----------+
  *   |     1      | Variable  |    2     | Variable  |
  *   +------------+-----------+----------+-----------+
+ *
+ *   # UDP packet
+ *   +------------+-----------+------------+
+ *   | PaddingLen |  Padding  |    Data    |
+ *   +------------+-----------+------------+
+ *   |     1      | Variable  |  Variable  |
+ *   +------------+-----------+------------+
  *
  * @explain
  *   1. PaddingLen is randomly picked from [0, 0xFF].
@@ -48,6 +53,8 @@ export default class ObfsRandomPaddingPreset extends IPreset {
     this._adBuf.clear();
     this._adBuf = null;
   }
+
+  // tcp
 
   beforeOut({buffer}) {
     const chunks = getRandomChunks(buffer, 0x3fff, 0xffff).map((data) => {
@@ -80,6 +87,25 @@ export default class ObfsRandomPaddingPreset extends IPreset {
   onChunkReceived(chunk, {next}) {
     const pLen = chunk[0];
     next(chunk.slice(1 + pLen + 2));
+  }
+
+  // udp
+
+  beforeOutUdp({buffer}) {
+    const pLen = getRandomInt(0, 0xff);
+    const padding = crypto.randomBytes(pLen);
+    return Buffer.concat([numberToBuffer(pLen, 1), padding, buffer]);
+  }
+
+  beforeInUdp({buffer, fail}) {
+    if (buffer.length < 1) {
+      return fail(`too short to get PaddingLen, len=${buffer.length} dump=${buffer.toString('hex')}`);
+    }
+    const pLen = buffer[0];
+    if (buffer.length < 1 + pLen) {
+      return fail(`too short to drop Padding, len=${buffer.length} dump=${buffer.slice(0, 60).toString('hex')}`);
+    }
+    return buffer.slice(1 + pLen);
   }
 
 }

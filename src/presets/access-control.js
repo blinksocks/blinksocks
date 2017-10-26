@@ -447,4 +447,12 @@ export default class AccessControlPreset extends IPreset {
     return buffer;
   }
 
+  beforeOutUdp(...args) {
+    return this.beforeOut(...args);
+  }
+
+  beforeInUdp(...args) {
+    return this.beforeIn(...args);
+  }
+
 }
