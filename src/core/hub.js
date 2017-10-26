@@ -166,6 +166,7 @@ export class Hub extends EventEmitter {
       server.on('error', reject);
 
       // monkey patch for Socket.close() to prevent closing shared udp socket on server side
+      // eslint-disable-next-line
       server.close = ((close) => (...args) => {
         // close.call(server, ...args);
       })(server.close);
