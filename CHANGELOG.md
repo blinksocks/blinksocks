@@ -1,5 +1,41 @@
 #  Change Log
 
+## 2.8.0 (2017-10-27)
+
+> UDP relay is now available for testing! :beers:
+
+### :boom: Breaking Changes:
+
+- **presets**: deprecated **base-auth-stream** and **base-with-padding** presets, please use **base-auth** instead.
+
+### :rocket: Features & Improvements
+
+- **bin**: add "-w" option to force overwrite exist jsons.
+- **src**: expose all api interfaces to the top package level.
+- **core**: add UDP relay support. :sparkles:
+- **core**: disable json output to reduce log size.
+- **core**: refactor presets creation.
+- **core**: convert port to Number after parsed by url.parse().
+- **proxies**: log error details when received invalid requests.
+- **transports**: reduce memory grow for websocket.
+- **transports**: pause inbound receiving before remote connection established.
+- **presets**: allow to use external presets. :sparkles:
+- **presets**: add [base-auth](docs/presets#base-auth) preset. :sparkles:
+- **presets**: implement protocols for UDP. :sparkles:
+- **test**: add test for `base-auth` preset.
+
+### :bug: Bug Fixes:
+
+- **package**: fix `pkg` command.
+
+### Upgrade from 2.7.0 to 2.8.0
+
+```
+$ npm install -g blinksocks@2.8.0
+```
+
+To use external presets, please read [presets](docs/presets#use-external-preset).
+
 ## 2.7.0 (2017-10-17)
 
 ### :boom: Breaking Changes:
