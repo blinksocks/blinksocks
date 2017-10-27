@@ -1,9 +1,9 @@
 import cluster from 'cluster';
-import EventEmitter from 'events';
 import dgram from 'dgram';
 import net from 'net';
 import tls from 'tls';
 import ws from 'ws';
+import LRU from 'lru-cache';
 import {Balancer} from './balancer';
 import {Config} from './config';
 import * as MiddlewareManager from './middleware';
@@ -18,7 +18,7 @@ import {tcp, http, socks} from '../proxies';
  * @events
  *   .on('close');
  */
-export class Hub extends EventEmitter {
+export class Hub {
 
   _isFirstWorker = cluster.worker ? (cluster.worker.id <= 1) : true;
 
@@ -30,18 +30,23 @@ export class Hub extends EventEmitter {
 
   _relays = [];
 
-  _udpRelays = {};
+  _udpRelays = null; // LRU cache
 
   constructor(config) {
-    super();
     this._onConnection = this._onConnection.bind(this);
     if (config !== undefined) {
       Config.init(config);
     }
+    this._udpRelays = LRU({
+      max: 500,
+      dispose: (key, relay) => relay.destroy(),
+      maxAge: 1e5
+    });
   }
 
-  terminate() {
+  terminate(callback) {
     // relays
+    this._udpRelays.reset();
     this._relays.forEach((relay) => relay.destroy());
     MiddlewareManager.cleanup();
     // balancer
@@ -53,11 +58,8 @@ export class Hub extends EventEmitter {
     this._server.close();
     this._isFirstWorker && logger.info('[hub] shutdown');
     // udp server
-    if (this._udpServer !== null) {
-      this._udpServer._handle && this._udpServer.close();
-      Object.keys(this._udpRelays).forEach((key) => this._udpRelays[key].destroy());
-    }
-    this.emit('close');
+    this._udpServer.close();
+    typeof callback === 'function' && callback();
   }
 
   async run() {
@@ -179,13 +181,18 @@ export class Hub extends EventEmitter {
         }
         const {address, port} = rinfo;
         const key = `${address}:${port}`;
-        if (relays[key] === undefined) {
+        let relay = relays.get(key);
+        if (relay === undefined) {
           server.remoteAddress = address;
           server.remotePort = port;
-          relays[key] = createRelay('udp', server, proxyRequest);
-          relays[key].on('close', () => delete relays[key]);
+          relay = createRelay('udp', server, proxyRequest);
+          relay.on('close', function onRelayClose() {
+            // relays.del(key);
+          });
+          relays.set(key, relay);
+          relays.prune(); // destroy old relays every time a new relay created
         }
-        relays[key]._inbound.onReceive(packet, rinfo);
+        relay._inbound.onReceive(packet, rinfo);
       });
 
       server.on('error', reject);

@@ -27,9 +27,8 @@ module.exports = function bootstrap(configPath, {Hub, Config}) {
       console.log(`==> [bootstrap] started ${__WORKERS__} workers`);
     } else {
       const hub = new Hub();
-      hub.on('close', () => process.exit(0));
       hub.run();
-      process.on('SIGINT', () => hub.terminate());
+      process.on('SIGINT', () => hub.terminate(() => process.exit(0)));
     }
   } catch (err) {
     console.error(err);

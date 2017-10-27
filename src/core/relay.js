@@ -118,9 +118,9 @@ export class Relay extends EventEmitter {
    * destroy pipe, inbound and outbound
    */
   destroy() {
-    this._pipe.destroy();
-    this._inbound.destroy();
-    this._outbound.destroy();
+    this._pipe && this._pipe.destroy();
+    this._inbound && this._inbound.destroy();
+    this._outbound && this._outbound.destroy();
     this._pipe = null;
     this._inbound = null;
     this._outbound = null;

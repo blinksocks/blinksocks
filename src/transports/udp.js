@@ -42,7 +42,7 @@ export class UdpInbound extends Inbound {
       this._outbound.destroy();
       this._outbound = null;
     }
-    this.emit('close');
+    this.destroy();
     this.broadcast({type: CONNECTION_CLOSED, payload: {host: this.remoteHost, port: this.remotePort}});
   }
 

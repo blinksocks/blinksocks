@@ -88,6 +88,9 @@ export class Pipe extends EventEmitter {
   }
 
   destroy() {
+    if (this._destroyed) {
+      return;
+    }
     const middlewares = this.getMiddlewares();
     for (const middleware of middlewares) {
       middleware.onDestroy();
