@@ -223,7 +223,18 @@ You can enable cluster mode by setting `workers` greater than zero, cluster mode
 }
 ```
 
+### UDP Relay
+
+UDP relay is supported since blinksocks v2.8.0, and it's enabled by default on client and server. UDP relay is prepared only for applications who support Socks5 [UDP ASSOCIATE].
+
+Note that Socks5 requires to relay UDP message over UDP, so does blinksocks:
+
+```
+apps <--SOCKS5--> [blinksocks client] <--UDP--> [blinksocks server] <--UDP--> dests
+```
+
 [balancer.js]: ../../src/core/balancer.js
 [presets]: ../presets
 [winston]: https://github.com/winstonjs/winston
 [RFC-6455]: https://tools.ietf.org/html/rfc6455
+[UDP ASSOCIATE]: https://tools.ietf.org/html/rfc1928#section-4

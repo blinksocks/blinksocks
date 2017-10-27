@@ -129,21 +129,10 @@ The first line of results represents traffic from `iperf -c` to `bs-client` whil
 
 ## History Reports
 
-* [2017-8-11.txt](../../benchmark/reports/2017-8-11.txt)
-* [2017-8-13.txt](../../benchmark/reports/2017-8-13.txt)
-* [2017-8-14.txt](../../benchmark/reports/2017-8-14.txt)
-* [2017-8-28.txt](../../benchmark/reports/2017-8-28.txt)
-* [2017-8-29.txt](../../benchmark/reports/2017-8-29.txt)
-* [2017-09-06.txt](../../benchmark/reports/2017-09-06.txt)
-* [2017-09-14.txt](../../benchmark/reports/2017-09-14.txt)
-* [2017-09-15.txt](../../benchmark/reports/2017-09-15.txt)
-* [2017-09-21.txt](../../benchmark/reports/2017-09-21.txt)
-* [2017-10-04.txt](../../benchmark/reports/2017-10-04.txt)
-* [2017-10-09.txt](../../benchmark/reports/2017-10-09.txt)
-* [2017-10-17.txt](../../benchmark/reports/2017-10-17.txt)
+[See here](../../benchmark/reports).
 
+[docs/presets]: ../presets
 [benchmark/cases.js]: ../../benchmark/cases.js
 [benchmark/iperf.sh]: ../../benchmark/iperf.sh
-[docs/presets]: ../presets
 [shadowsocks stream ciphers]: https://shadowsocks.org/en/spec/Stream-Ciphers.html
 [shadowsocks aead ciphers]: https://shadowsocks.org/en/spec/AEAD-Ciphers.html
