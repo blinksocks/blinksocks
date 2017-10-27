@@ -101,7 +101,7 @@ function main() {
   }
 
   if (hasOption('--list-presets')) {
-    const {presets: {presets, legacyPresets}} = modules;
+    const {presets, legacyPresets} = modules;
     console.log(chalk.bold.underline('[Built-In]'));
     console.log(presets.join(os.EOL));
     console.log('');
