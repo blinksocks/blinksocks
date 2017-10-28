@@ -94,7 +94,7 @@ a cross-platform GUI for blinksocks.
 
 ## Contributors
 
-See [authors](AUTHORS).
+See [contributors](https://github.com/blinksocks/blinksocks/graphs/contributors).
 
 ## License
 

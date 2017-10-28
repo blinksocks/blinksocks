@@ -5,8 +5,7 @@
   "main": "lib/index.js",
   "files": [
     "bin",
-    "lib",
-    "AUTHORS"
+    "lib"
   ],
   "bin": {
     "blinksocks": "bin/start.js"
