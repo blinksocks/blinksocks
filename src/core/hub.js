@@ -11,13 +11,6 @@ import {createRelay} from './relay';
 import {logger} from '../utils';
 import {tcp, http, socks} from '../proxies';
 
-/**
- * @description
- *   gather and manage connections.
- *
- * @events
- *   .on('close');
- */
 export class Hub {
 
   _isFirstWorker = cluster.worker ? (cluster.worker.id <= 1) : true;
@@ -167,19 +160,19 @@ export class Hub {
       const server = dgram.createSocket('udp4');
 
       server.on('message', (msg, rinfo) => {
+        const {address, port} = rinfo;
         let proxyRequest = null;
         let packet = msg;
         if (__IS_CLIENT__) {
           const parsed = socks.parseSocks5UdpRequest(msg);
           if (parsed === null) {
-            logger.warn(`[hub] [${rinfo.address}:${rinfo.port}] drop invalid udp packet: ${msg.slice(0, 60).toString('hex')}`);
+            logger.warn(`[hub] [${address}:${port}] drop invalid udp packet: ${msg.slice(0, 60).toString('hex')}`);
             return;
           }
           const {host, port, data} = parsed;
           proxyRequest = {host, port};
           packet = data;
         }
-        const {address, port} = rinfo;
         const key = `${address}:${port}`;
         let relay = relays.get(key);
         if (relay === undefined) {

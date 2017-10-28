@@ -88,7 +88,9 @@ export class UdpOutbound extends Outbound {
   onBroadcast(action) {
     switch (action.type) {
       case CONNECT_TO_REMOTE:
-        this.onConnectToRemote(action);
+        if (this._targetHost === null && this._targetPort === null) {
+          this.onConnectToRemote(action);
+        }
         break;
       default:
         break;
