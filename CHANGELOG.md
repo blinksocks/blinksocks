@@ -1,5 +1,21 @@
 #  Change Log
 
+## 2.8.1 (2017-10-28)
+
+### :rocket: Features & Improvements
+
+- **presets**: print transport type in tracker preset.
+
+### :bug: Bug Fixes:
+
+- **transports**: fix verbose log for udp transport.
+
+### Upgrade from 2.8.0 to 2.8.1
+
+```
+$ npm install -g blinksocks@2.8.1
+```
+
 ## 2.8.0 (2017-10-27)
 
 > UDP relay is now available for testing! :beers:
