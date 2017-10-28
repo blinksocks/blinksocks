@@ -54,6 +54,7 @@ export class Relay extends EventEmitter {
     this._pipe.broadcast('pipe', {
       type: CONNECTION_CREATED,
       payload: {
+        transport: transport,
         host: context.remoteAddress,
         port: context.remotePort
       }
