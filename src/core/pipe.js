@@ -57,6 +57,16 @@ export class Pipe extends EventEmitter {
           orgData: this._cacheBuffer
         }
       }));
+      // set readProperty()
+      const impl = middleware.getImplement();
+      impl.readProperty = function readProperty(presetName, propertyName) {
+        const ms = middlewares.find((m) => m.name === presetName);
+        if (ms) {
+          const impl = ms.getImplement();
+          const value = impl[propertyName];
+          return value !== undefined ? value : impl.constructor[propertyName];
+        }
+      };
       middlewares.push(middleware);
     }
     this._upstream_middlewares = middlewares;

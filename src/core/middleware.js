@@ -54,7 +54,11 @@ export class Middleware extends EventEmitter {
   }
 
   get name() {
-    return kebabCase(this._impl.constructor.name).replace(/(.*)-preset/i, '$1');
+    return this._impl.getName() || kebabCase(this._impl.constructor.name).replace(/(.*)-preset/i, '$1');
+  }
+
+  getImplement() {
+    return this._impl;
   }
 
   hasListener(event) {
