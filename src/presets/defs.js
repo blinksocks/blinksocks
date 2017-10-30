@@ -103,6 +103,16 @@ export class IPreset {
 
   }
 
+  // properties
+
+  /**
+   * return the preset name
+   * @returns {string}
+   */
+  getName() {
+
+  }
+
   // callbacks
 
   /**
@@ -186,6 +196,15 @@ export class IPreset {
 
   }
 
+  /**
+   * direct read any property(match non-static then static) of other preset
+   * @param presetName
+   * @param propertyName
+   */
+  readProperty(presetName, propertyName) {
+
+  }
+
 }
 
 export class IPresetStatic extends IPreset {
@@ -213,7 +232,7 @@ export function checkPresetClass(clazz) {
   }
   // check require hooks
   const requiredMethods = [
-    'onNotified', 'onDestroy',
+    'getName', 'onNotified', 'onDestroy',
     'beforeOut', 'beforeIn', 'clientOut', 'serverIn', 'serverOut', 'clientIn',
     'beforeOutUdp', 'beforeInUdp', 'clientOutUdp', 'serverInUdp', 'serverOutUdp', 'clientInUdp'
   ];
