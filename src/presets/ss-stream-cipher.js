@@ -70,6 +70,8 @@ export default class SsStreamCipherPreset extends IPreset {
 
   _decipher = null;
 
+  _iv = null;
+
   static checkParams({method}) {
     if (typeof method !== 'string' || method === '') {
       throw Error('\'method\' must be set');
@@ -87,19 +89,29 @@ export default class SsStreamCipherPreset extends IPreset {
     SsStreamCipherPreset.ivSize = ivSize;
   }
 
+  get iv() {
+    return this._iv;
+  }
+
+  constructor() {
+    super();
+    const {ivSize} = SsStreamCipherPreset;
+    this._iv = crypto.randomBytes(ivSize);
+  }
+
   onDestroy() {
     this._cipher = null;
     this._decipher = null;
+    this._iv = null;
   }
 
   // tcp
 
   beforeOut({buffer}) {
     if (!this._cipher) {
-      const {cipherName, key, ivSize} = SsStreamCipherPreset;
-      const iv = crypto.randomBytes(ivSize);
-      this._cipher = crypto.createCipheriv(cipherName, key, iv);
-      return Buffer.concat([iv, this._cipher.update(buffer)]);
+      const {cipherName, key} = SsStreamCipherPreset;
+      this._cipher = crypto.createCipheriv(cipherName, key, this._iv);
+      return Buffer.concat([this._iv, this._cipher.update(buffer)]);
     } else {
       return this._cipher.update(buffer);
     }
@@ -111,8 +123,8 @@ export default class SsStreamCipherPreset extends IPreset {
       if (buffer.length < ivSize) {
         return fail(`buffer is too short to get iv, len=${buffer.length} dump=${buffer.toString('hex')}`);
       }
-      const iv = buffer.slice(0, ivSize);
-      this._decipher = crypto.createDecipheriv(cipherName, key, iv);
+      this._iv = buffer.slice(0, ivSize);
+      this._decipher = crypto.createDecipheriv(cipherName, key, this._iv);
       return this._decipher.update(buffer.slice(ivSize));
     } else {
       return this._decipher.update(buffer);
