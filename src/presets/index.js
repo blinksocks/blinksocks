@@ -13,6 +13,9 @@ import SsBasePreset from './ss-base';
 import SsStreamCipherPreset from './ss-stream-cipher';
 import SsAeadCipherPreset from './ss-aead-cipher';
 
+// shadowsocksr
+import SsrAuthAes128Preset from './ssr-auth-aes128';
+
 // v2ray
 import V2rayVmessPreset from './v2ray-vmess';
 
@@ -41,6 +44,9 @@ const mapping = {
   'ss-base': SsBasePreset,
   'ss-stream-cipher': SsStreamCipherPreset,
   'ss-aead-cipher': SsAeadCipherPreset,
+
+  // shadowsocksr
+  'ssr-auth-aes128': SsrAuthAes128Preset,
 
   // v2ray
   'v2ray-vmess': V2rayVmessPreset,
