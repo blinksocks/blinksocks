@@ -71,6 +71,12 @@ export default class SsBasePreset extends IPreset {
 
   _port = null; // buffer
 
+  _headSize = 0;
+
+  get headSize() {
+    return this._headSize;
+  }
+
   onDestroy() {
     this._pending = null;
     this._host = null;
@@ -88,12 +94,14 @@ export default class SsBasePreset extends IPreset {
   }
 
   encodeHeader() {
-    return Buffer.from([
+    const head = Buffer.from([
       this._atyp,
       ...(this._atyp === ATYP_DOMAIN ? [this._host.length] : []),
       ...this._host,
       ...this._port
     ]);
+    this._headSize = head.length;
+    return head;
   }
 
   decodeHeader({buffer, fail}) {
