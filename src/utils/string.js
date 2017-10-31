@@ -16,3 +16,17 @@ export function kebabCase(str) {
   }
   return out.join('');
 }
+
+/**
+ * dump a slice of buffer into hex string
+ * @param buffer
+ * @param maxSize
+ * @returns {String}
+ */
+export function dumpHex(buffer, maxSize = 60) {
+  let str = buffer.slice(0, maxSize).toString('hex');
+  if (buffer.length > maxSize) {
+    str += '...';
+  }
+  return str;
+}
