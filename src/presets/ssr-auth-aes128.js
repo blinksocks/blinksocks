@@ -11,32 +11,13 @@ import {
   AdvancedBuffer
 } from '../utils';
 
-// hash function and salt
-const HMAC_HASH_FUNCTIONS = {
-  'md5': 'auth_aes128_md5',
-  'sha1': 'auth_aes128_sha1'
-};
-
 const DEFAULT_HMAC_HASH_FUNC = 'md5';
-
+const DEFAULT_SALT = 'auth_aes128_md5';
 const MAX_TIME_DIFF = 30; // seconds
 
 /**
  * @description
- *   shadowsocksr "auth_aes128_md5" and "auth_aes128_sha1" implementation.
- *
- * @notice
- *   This preset should be used together with "ss-base" and "ss-stream-cipher".
- *
- * @params
- *   method: The hash algorithm for HMAC, default is "md5".
- *
- * @examples
- *   [
- *     {"name": "ss-base"},
- *     {"name": "ssr-auth-aes128", "params": {"hash": "md5"}},
- *     {"name": "ss-stream-cipher","params": {"method": "aes-128-ctr"}}
- *   ]
+ *   shadowsocksr "auth_aes128" base class implementation.
  *
  * @protocol
  *
@@ -101,15 +82,15 @@ const MAX_TIME_DIFF = 30; // seconds
  */
 export default class SsrAuthAes128Preset extends IPreset {
 
-  static hashFunc = DEFAULT_HMAC_HASH_FUNC;
-
   static userKey = null;
-
-  static cryptoKey = null; // aes-128-cbc key
 
   static clientId = null;
 
   static connectionId = null;
+
+  _hashFunc = DEFAULT_HMAC_HASH_FUNC; // overwrite by subclass
+
+  _salt = DEFAULT_SALT; // overwrite by subclass
 
   _isHeaderSent = false;
 
@@ -123,19 +104,8 @@ export default class SsrAuthAes128Preset extends IPreset {
 
   _requestPending = null;
 
-  static checkParams({hash = DEFAULT_HMAC_HASH_FUNC}) {
-    const hashes = Object.keys(HMAC_HASH_FUNCTIONS);
-    if (!hashes.includes(hash)) {
-      throw Error(`"hash" must be one of ${hashes}`);
-    }
-  }
-
-  static onInit({hash = DEFAULT_HMAC_HASH_FUNC}) {
-    const salt = HMAC_HASH_FUNCTIONS[hash];
-    const userKey = EVP_BytesToKey(__KEY__, 16, 16);
-    SsrAuthAes128Preset.hashFunc = hash;
-    SsrAuthAes128Preset.userKey = userKey;
-    SsrAuthAes128Preset.cryptoKey = EVP_BytesToKey(userKey.toString('base64') + salt, 16, 16);
+  static onInit() {
+    SsrAuthAes128Preset.userKey = EVP_BytesToKey(__KEY__, 16, 16);
     SsrAuthAes128Preset.clientId = crypto.randomBytes(4);
     SsrAuthAes128Preset.connectionId = getRandomInt(0, 0x00ffffff);
   }
@@ -153,11 +123,11 @@ export default class SsrAuthAes128Preset extends IPreset {
   }
 
   createHmac(buffer, key = SsrAuthAes128Preset.userKey) {
-    return hmac(SsrAuthAes128Preset.hashFunc, key, buffer);
+    return hmac(this._hashFunc, key, buffer);
   }
 
   createRequest(buffer) {
-    const {userKey, cryptoKey, clientId, connectionId} = SsrAuthAes128Preset;
+    const {userKey, clientId, connectionId} = SsrAuthAes128Preset;
 
     const iv = this.readProperty('ss-stream-cipher', 'iv');
     const part12_hmac_key = Buffer.concat([iv, userKey]);
@@ -189,7 +159,8 @@ export default class SsrAuthAes128Preset extends IPreset {
     const header = Buffer.concat([utc, client_id, ntb(connection_id, 4, BYTE_ORDER_LE), pack_len, ntb(random_bytes_len, 2, BYTE_ORDER_LE)]);
 
     // prepare cipher for part2 encryption
-    const cipher = crypto.createCipheriv('aes-128-cbc', cryptoKey, Buffer.alloc(16));
+    const cipher_key = EVP_BytesToKey(userKey.toString('base64') + this._salt, 16, 16);
+    const cipher = crypto.createCipheriv('aes-128-cbc', cipher_key, Buffer.alloc(16));
     const cbc_enc_header = cipher.update(header);
 
     let part2 = Buffer.concat([uid, cbc_enc_header]);
@@ -250,7 +221,7 @@ export default class SsrAuthAes128Preset extends IPreset {
 
   serverIn({buffer, next, fail}) {
     if (!this._isHeaderRecv) {
-      const {userKey, cryptoKey} = SsrAuthAes128Preset;
+      const {userKey} = SsrAuthAes128Preset;
 
       if (buffer.length < 42) {
         return fail(`handshake request is too short to parse, request=${dumpHex(buffer)}`);
@@ -276,7 +247,8 @@ export default class SsrAuthAes128Preset extends IPreset {
         return fail(`unexpected hmac in part 2, dump=${dumpHex(buffer)}`);
       }
 
-      const decipher = crypto.createDecipheriv('aes-128-cbc', cryptoKey, Buffer.alloc(16));
+      const decipher_key = EVP_BytesToKey(userKey.toString('base64') + this._salt, 16, 16);
+      const decipher = crypto.createDecipheriv('aes-128-cbc', decipher_key, Buffer.alloc(16));
       const header = decipher.update(Buffer.concat([
         cbc_enc_header,
         Buffer.alloc(1) // we need one more byte to get plaintext from the second block
