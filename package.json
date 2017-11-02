@@ -32,6 +32,7 @@
     "libsodium-wrappers": "^0.7.2",
     "lodash.isplainobject": "^4.0.6",
     "lodash.uniqueid": "^4.0.1",
+    "long": "^3.2.0",
     "lru-cache": "^4.1.1",
     "winston": "^2.4.0",
     "winston-daily-rotate-file": "^1.7.2",
