@@ -17,7 +17,7 @@ const MAX_TIME_DIFF = 30; // seconds
 
 /**
  * @description
- *   shadowsocksr "auth_aes128" base class implementation.
+ *   shadowsocksr "auth_aes128_xxx" implementation.
  *
  * @protocol
  *
@@ -102,8 +102,6 @@ export default class SsrAuthAes128Preset extends IPreset {
 
   _adBuf = null;
 
-  _requestPending = null;
-
   static onInit() {
     SsrAuthAes128Preset.userKey = EVP_BytesToKey(__KEY__, 16, 16);
     SsrAuthAes128Preset.clientId = crypto.randomBytes(4);
@@ -119,7 +117,6 @@ export default class SsrAuthAes128Preset extends IPreset {
   onDestroy() {
     this._adBuf.clear();
     this._adBuf = null;
-    this._requestPending = null;
   }
 
   createHmac(buffer, key = SsrAuthAes128Preset.userKey) {
@@ -151,7 +148,7 @@ export default class SsrAuthAes128Preset extends IPreset {
       client_id = crypto.randomBytes(4);
       SsrAuthAes128Preset.connectionId = connection_id;
     } else {
-      SsrAuthAes128Preset.connectionId = connection_id++;
+      connection_id = ++SsrAuthAes128Preset.connectionId;
     }
 
     const random_bytes_len = getRandomInt(0, buffer.length > 400 ? 512 : 1024);
@@ -231,21 +228,21 @@ export default class SsrAuthAes128Preset extends IPreset {
       const part12_hmac_key = Buffer.concat([iv, userKey]);
 
       // part 1
-      const part1_random = buffer.slice(0, 1);
       const part1_hmac = buffer.slice(1, 7);
-      const part1_hmac_calc = this.createHmac(part1_random, part12_hmac_key).slice(0, 6);
+      const part1_hmac_calc = this.createHmac(buffer.slice(0, 1), part12_hmac_key).slice(0, 6);
       if (!part1_hmac_calc.equals(part1_hmac)) {
         return fail(`unexpected hmac in part 1, dump=${dumpHex(buffer)}`);
       }
 
       // part 2
-      const uid = buffer.slice(7, 11);
-      const cbc_enc_header = buffer.slice(11, 27);
       const part2_hmac = buffer.slice(27, 31);
-      const part2_hmac_calc = this.createHmac(Buffer.concat([uid, cbc_enc_header]), part12_hmac_key).slice(0, 4);
+      const part2_hmac_calc = this.createHmac(buffer.slice(7, 27), part12_hmac_key).slice(0, 4);
       if (!part2_hmac_calc.equals(part2_hmac)) {
         return fail(`unexpected hmac in part 2, dump=${dumpHex(buffer)}`);
       }
+
+      // const uid = buffer.slice(7, 11);
+      const cbc_enc_header = buffer.slice(11, 27);
 
       const decipher_key = EVP_BytesToKey(userKey.toString('base64') + this._salt, 16, 16);
       const decipher = crypto.createDecipheriv('aes-128-cbc', decipher_key, Buffer.alloc(16));
@@ -279,15 +276,14 @@ export default class SsrAuthAes128Preset extends IPreset {
       }
 
       const payload = buffer.slice(31 + random_bytes_len, pack_len - 4);
-      const extra_data = buffer.slice(pack_len);
+      const extra_chunk = buffer.slice(pack_len);
 
       this._isHeaderRecv = true;
 
-      if (extra_data.length > 0) {
-        this._requestPending = payload;
-        this._adBuf.put(extra_data, {next, fail});
-      } else {
-        next(payload);
+      next(payload);
+
+      if (extra_chunk.length > 0) {
+        this._adBuf.put(extra_chunk, {next, fail});
       }
     } else {
       this._adBuf.put(buffer, {next, fail});
@@ -335,12 +331,7 @@ export default class SsrAuthAes128Preset extends IPreset {
     this._decodeChunkId += 1;
     const random_bytes_len = chunk[4] < 0xff ? chunk[4] : chunk.readUInt16LE(5);
     const payload = chunk.slice(4 + random_bytes_len, -4);
-    if (this._requestPending !== null) {
-      next(Buffer.concat([this._requestPending, payload]));
-      this._requestPending = null;
-    } else {
-      next(payload);
-    }
+    next(payload);
   }
 
   // udp
