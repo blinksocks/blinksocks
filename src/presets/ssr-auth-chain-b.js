@@ -83,12 +83,12 @@ export default class SsrAuthChainBPreset extends SsrAuthChainPreset {
     }
 
     pos = bisect_left(list_2, base + overhead);
-    pos = pos + rng.next().mod(list_2.length).toNumber();
-    if (pos < list_2.length) {
-      return list_2[pos] - base - overhead;
+    const final_pos = pos + rng.next().mod(list_2.length).toNumber();
+    if (final_pos < list_2.length) {
+      return list_2[final_pos] - base - overhead;
     }
 
-    if (pos < pos + list_2.length - 1) {
+    if (final_pos < pos + list_2.length - 1) {
       return 0;
     }
 
