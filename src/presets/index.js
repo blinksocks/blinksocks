@@ -16,6 +16,8 @@ import SsAeadCipherPreset from './ss-aead-cipher';
 // shadowsocksr
 import SsrAuthAes128Md5Preset from './ssr-auth-aes128-md5';
 import SsrAuthAes128Sha1Preset from './ssr-auth-aes128-sha1';
+import SsrAuthChainAPreset from './ssr-auth-chain-a';
+import SsrAuthChainBPreset from './ssr-auth-chain-b';
 
 // v2ray
 import V2rayVmessPreset from './v2ray-vmess';
@@ -49,6 +51,8 @@ const mapping = {
   // shadowsocksr
   'ssr-auth-aes128-md5': SsrAuthAes128Md5Preset,
   'ssr-auth-aes128-sha1': SsrAuthAes128Sha1Preset,
+  'ssr-auth-chain-a': SsrAuthChainAPreset,
+  'ssr-auth-chain-b': SsrAuthChainBPreset,
 
   // v2ray
   'v2ray-vmess': V2rayVmessPreset,
