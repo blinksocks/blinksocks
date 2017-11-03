@@ -362,7 +362,8 @@ chacha20-poly1305, chacha20-ietf-poly1305, xchacha20-ietf-poly1305
 ]
 ```
 
-## [ssr-auth-aes128-md5], [ssr-auth-aes128-sha1]
+## [ssr-auth-aes128-md5]
+## [ssr-auth-aes128-sha1]
 
 shadowsocksr [auth_aes128](https://github.com/shadowsocksr-rm/shadowsocks-rss/blob/master/doc/auth_aes128.md) implementation.
 
@@ -374,7 +375,8 @@ shadowsocksr [auth_aes128](https://github.com/shadowsocksr-rm/shadowsocks-rss/bl
 ]
 ```
 
-## [ssr-auth-chain-a], [ssr-auth-chain-b]
+## [ssr-auth-chain-a]
+## [ssr-auth-chain-b]
 
 shadowsocksr [auth_chain](https://github.com/shadowsocksr-rm/shadowsocks-rss/blob/master/doc/auth_chain_a.md) implementation.
 
