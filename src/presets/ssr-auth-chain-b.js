@@ -74,7 +74,7 @@ export default class SsrAuthChainBPreset extends SsrAuthChainPreset {
 
     const list_1 = this._data_size_list;
     const list_2 = this._data_size_list2;
-    const overhead = this._overHead;
+    const overhead = this._overhead;
 
     let pos = bisect_left(list_1, base + overhead);
     pos = pos + rng.next().mod(list_1.length).toNumber();

@@ -138,8 +138,8 @@ export default class SsrAuthChainPreset extends IPreset {
   _cipher = null;
   _decipher = null;
 
-  _tcpMss = 1500;
-  _overHead = 4;
+  _tcpMss = 1460;
+  _overhead = 4;
 
   _adBuf = null;
 
@@ -207,7 +207,7 @@ export default class SsrAuthChainPreset extends IPreset {
       connection_id = ++SsrAuthChainPreset.connectionId;
     }
 
-    const overhead = ntb(this._overHead, 2, BYTE_ORDER_LE);
+    const overhead = ntb(this._overhead, 2, BYTE_ORDER_LE);
     const reserve = Buffer.alloc(2);
     const header = Buffer.concat([utc, client_id, ntb(connection_id, 4, BYTE_ORDER_LE), overhead, reserve]);
 
@@ -231,7 +231,7 @@ export default class SsrAuthChainPreset extends IPreset {
 
   createChunks(buffer) {
     const {userKey} = SsrAuthChainPreset;
-    const max_payload_size = __IS_CLIENT__ ? 2800 : (this._tcpMss - this._overHead);
+    const max_payload_size = __IS_CLIENT__ ? 2800 : (this._tcpMss - this._overhead);
     return getChunks(buffer, max_payload_size).map((payload) => {
       let _payload = payload;
       if (__IS_SERVER__ && this._encodeChunkId === 1) {
