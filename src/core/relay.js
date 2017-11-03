@@ -49,7 +49,10 @@ export class Relay extends EventEmitter {
     // inbound
     this._inbound.setPresets = this.setPresets;
     this._inbound.setOutbound(this._outbound);
-    this._inbound.on('close', () => this.emit('close'));
+    this._inbound.on('close', () => {
+      this.destroy();
+      this.emit('close');
+    });
     // initial action
     this._pipe.broadcast('pipe', {
       type: CONNECTION_CREATED,
@@ -70,8 +73,8 @@ export class Relay extends EventEmitter {
   // hooks of pipe
 
   onBroadcast(action) {
-    this._inbound.onBroadcast(action);
-    this._outbound.onBroadcast(action);
+    this._inbound && this._inbound.onBroadcast(action);
+    this._outbound && this._outbound.onBroadcast(action);
   }
 
   postPipeForward(buffer) {
