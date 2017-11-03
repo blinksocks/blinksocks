@@ -22,6 +22,13 @@ Presets are chaining and composable, built-in presets are listed here. If you wa
 * [ss-stream-cipher](#ss-stream-cipher)
 * [ss-aead-cipher](#ss-aead-cipher)
 
+**shadowsocksR**
+
+* [ssr-auth-aes128-md5](#ssr-auth-aes128-md5)
+* [ssr-auth-aes128-sha1](#ssr-auth-aes128-sha1)
+* [ssr-auth-chain-a](#ssr-auth-chain-a)
+* [ssr-auth-chain-b](#ssr-auth-chain-b)
+
 **v2ray**
 
 * [v2ray-vmess](#v2ray-vmess)*
@@ -352,6 +359,30 @@ chacha20-poly1305, chacha20-ietf-poly1305, xchacha20-ietf-poly1305
       "method": "aes-256-gcm"
     }
   }
+]
+```
+
+## [ssr-auth-aes128-md5], [ssr-auth-aes128-sha1]
+
+shadowsocksr [auth_aes128](https://github.com/shadowsocksr-rm/shadowsocks-rss/blob/master/doc/auth_aes128.md) implementation.
+
+```
+"presets": [
+  {"name": "ss-base"},
+  {"name": "ssr-auth-aes128-md5"},
+  {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}}
+]
+```
+
+## [ssr-auth-chain-a], [ssr-auth-chain-b]
+
+shadowsocksr [auth_chain](https://github.com/shadowsocksr-rm/shadowsocks-rss/blob/master/doc/auth_chain_a.md) implementation.
+
+```
+"presets": [
+  {"name": "ss-base"},
+  {"name": "ssr-auth-chain-a"},
+  {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}}
 ]
 ```
 

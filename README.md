@@ -24,8 +24,9 @@
 * Easy and powerful Access Control([ACL]) and Traffic Control([TC]): auto ban, speed(upload/download) limiter.
 * Executable versions available: [download here](https://github.com/blinksocks/blinksocks/releases).
 * **Out of the box** distribution and deployment.
-* Compatible with **shadowsocks**.
-* Compatible with **v2ray vmess**.
+* Compatible with [shadowsocks](docs/presets/RECOMMENDATIONS.md#work-with-shadowsocks).
+* Compatible with [shadowsocksR](docs/presets/RECOMMENDATIONS.md#work-with-shadowsocksr).
+* Compatible with [v2ray vmess](docs/presets/RECOMMENDATIONS.md#work-with-v2ray-vmess).
 
 ## Getting Started
 

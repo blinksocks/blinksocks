@@ -6,7 +6,7 @@ To work with **shadowsocks**, please choose one of the following configurations:
 
 **Steam Ciphers(Older Versions)**
 
-```json
+```
 "presets": [
   {"name": "ss-base"},
   {"name": "ss-stream-cipher", "params": {"method": "aes-256-cfb"}}
@@ -15,18 +15,57 @@ To work with **shadowsocks**, please choose one of the following configurations:
 
 **AEAD Ciphers(Newer Versions)**
 
-```json
+```
 "presets": [
   {"name": "ss-base"},
   {"name": "ss-aead-cipher", "params": {"method": "aes-256-gcm"}}
 ]
 ```
 
-Please also check out [#27](https://github.com/blinksocks/blinksocks/issues/27) for ciphers we supported.
+## Work with shadowsocksR
+
+> NOTE: To work with shadowsocksR, you must add both "ss-base" and "ss-stream-cipher".
+
+<details>
+  <summary>shaodowsocksR config</summary>
+
+  ```
+  {
+    ...
+    "method": "aes-128-ctr",
+    "protocol": "auth_aes128_md5",
+    "protocol_param": "", // protocol_param must be empty
+    "obfs": "plain", // obfs must be "plain"
+    "obfs_param": "",
+    ...
+  }
+  ```
+
+</details>
+
+**auth_aes128_md5/auth_aes128_sha1**
+
+```
+"presets": [
+  {"name": "ss-base"},
+  {"name": "ssr-auth-aes128-md5"},
+  {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}}
+]
+```
+
+**auth_chain_a/auth_chain_b**
+
+```
+"presets": [
+  {"name": "ss-base"},
+  {"name": "ssr-auth-chain-a"},
+  {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}}
+]
+```
 
 ## Work with v2ray vmess
 
-```json
+```
 "presets": [
   {
     "name": "v2ray-vmess",
@@ -42,7 +81,7 @@ Please also check out [#27](https://github.com/blinksocks/blinksocks/issues/27) 
 
 You can use **http** or **tls** obfuscator to avoid bad [QoS], **tls** is recommended.
 
-```json
+```
 "presets": [
   {"name": "ss-base"},
   {"name": "ss-aead-cipher", "params": {"method": "aes-256-gcm"}},
@@ -52,7 +91,7 @@ You can use **http** or **tls** obfuscator to avoid bad [QoS], **tls** is recomm
 
 ## To prevent traffic analysis
 
-```json
+```
 "presets": [
   {"name": "ss-base"},
   {"name": "obfs-random-padding"},
@@ -62,7 +101,7 @@ You can use **http** or **tls** obfuscator to avoid bad [QoS], **tls** is recomm
 
 ## To prevent traffic analysis and ensure integrity as well
 
-```json
+```
 "presets": [
   {"name": "ss-base"},
   {"name": "obfs-random-padding"},
