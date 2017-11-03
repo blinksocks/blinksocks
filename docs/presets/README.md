@@ -591,6 +591,10 @@ Here is a [list](./RECOMMENDATIONS.md) of recommended conbinations.
 [ss-base]: ../../src/presets/ss-base.js
 [ss-stream-cipher]: ../../src/presets/ss-stream-cipher.js
 [ss-aead-cipher]: ../../src/presets/ss-aead-cipher.js
+[ssr-auth-aes128-md5]: ../../src/presets/ssr-auth-aes128-md5.js
+[ssr-auth-aes128-sha1]: ../../src/presets/ssr-auth-aes128-sha1.js
+[ssr-auth-chain-a]: ../../src/presets/ssr-auth-chain-a.js
+[ssr-auth-chain-b]: ../../src/presets/ssr-auth-chain-b.js
 [v2ray-vmess]: ../../src/presets/v2ray-vmess.js
 [obfs-random-padding]: ../../src/presets/obfs-random-padding.js
 [obfs-http]: ../../src/presets/obfs-http.js

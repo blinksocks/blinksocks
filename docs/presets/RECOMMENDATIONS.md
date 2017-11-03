@@ -27,7 +27,7 @@ To work with **shadowsocks**, please choose one of the following configurations:
 > NOTE: To work with shadowsocksR, you must add both "ss-base" and "ss-stream-cipher".
 
 <details>
-  <summary>shaodowsocksR config</summary>
+  <summary>Notice in shadowsocksR config</summary>
 
   ```
   {
@@ -43,7 +43,7 @@ To work with **shadowsocks**, please choose one of the following configurations:
 
 </details>
 
-**auth_aes128_md5/auth_aes128_sha1**
+**auth_aes128_md5 / auth_aes128_sha1**
 
 ```
 "presets": [
@@ -53,7 +53,7 @@ To work with **shadowsocks**, please choose one of the following configurations:
 ]
 ```
 
-**auth_chain_a/auth_chain_b**
+**auth_chain_a / auth_chain_b**
 
 ```
 "presets": [
