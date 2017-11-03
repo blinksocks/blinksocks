@@ -44,6 +44,7 @@ function parseStdout(stdout) {
   const matches = stdout.match(/\[SUM].*sec/g);
   if (matches === null) {
     console.error(stdout);
+    return null;
   }
   return matches.slice(-2).map((line) => {
     const [interval, transfer, bitrate] = line.match(/\d+[.\d\-\s]+\w+[\/\w]+/g);
@@ -95,7 +96,11 @@ function run(cases) {
       const stdout = child_process.execFileSync(
         IPERF_PATH, [clientJson, serverJson, SEC_PER_CASE.toString()], {encoding: 'utf-8'}
       );
-      const [a, b] = parseStdout(stdout);
+      const parsed = parseStdout(stdout);
+      if (parsed === null) {
+        continue;
+      }
+      const [a, b] = parsed;
       console.log(`------------ ${chalk.green(`Test Case ${i}`)} ----------------`);
       console.log(JSON.stringify(presets));
       console.log('Interval         Transfer     Bitrate');
