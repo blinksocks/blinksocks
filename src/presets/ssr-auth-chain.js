@@ -170,7 +170,7 @@ export default class SsrAuthChainPreset extends IPreset {
 
   // implement in subclasses
   getRandomBytesLengthForTcp(/* seed, base, rng */) {
-
+    return 0;
   }
 
   getRandomBytesLengthForUdp(seed, rng) {
@@ -346,10 +346,8 @@ export default class SsrAuthChainPreset extends IPreset {
     this._adBuf.put(buffer, {next, fail});
   }
 
-  _random_bytes_lens = []; // TODO(refactor): remove this queue hack
-
   onReceiving(buffer, {fail}) {
-    if (buffer.length < 4 || this._adBuf === null) {
+    if (buffer.length < 2 || this._adBuf === null) {
       return; // too short to get size
     }
     const hash = __IS_CLIENT__ ? this._lastServerHash : this._lastClientHash;
@@ -361,7 +359,6 @@ export default class SsrAuthChainPreset extends IPreset {
       fail(`invalid chunk, chunk size=${chunk_size} is greater than 4096, dump=${dumpHex(buffer)}`);
       return -1;
     }
-    this._random_bytes_lens.push(random_bytes_len);
     return chunk_size;
   }
 
@@ -382,7 +379,7 @@ export default class SsrAuthChainPreset extends IPreset {
     const hash = __IS_CLIENT__ ? this._lastServerHash : this._lastClientHash;
     const payload_len = chunk.readUInt16LE(0) ^ hash.readUInt16LE(14);
     const rng = __IS_CLIENT__ ? this._rngServer : this._rngClient;
-    const random_bytes_len = this._random_bytes_lens.shift(); // this.getRandomBytesLengthForTcp(hash, payload_len, rng);
+    const random_bytes_len = this.getRandomBytesLengthForTcp(hash, payload_len, rng);
     let enc_payload = null;
     if (random_bytes_len > 0) {
       const random_divide_pos = rng.next().mod(8589934609).mod(random_bytes_len).toNumber();
