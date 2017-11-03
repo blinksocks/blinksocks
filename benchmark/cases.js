@@ -53,6 +53,29 @@ const shadowsocks_obfs_presets = [
   ]
 ];
 
+const shadowsocksr_presets = [
+  [
+    {"name": "ss-base"},
+    {"name": "ssr-auth-aes128-md5"},
+    {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}}
+  ],
+  [
+    {"name": "ss-base"},
+    {"name": "ssr-auth-aes128-sha1"},
+    {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}}
+  ],
+  [
+    {"name": "ss-base"},
+    {"name": "ssr-auth-chain-a"},
+    {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}}
+  ],
+  [
+    {"name": "ss-base"},
+    {"name": "ssr-auth-chain-b"},
+    {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}}
+  ]
+];
+
 const v2ray_presets = [
   [{"name": "v2ray-vmess", "params": {"id": "a3482e88-686a-4a58-8126-99c9df64b7bf", "security": "none"}}],
   [{"name": "v2ray-vmess", "params": {"id": "a3482e88-686a-4a58-8126-99c9df64b7bf", "security": "aes-128-gcm"}}],
@@ -119,6 +142,7 @@ const blinksocks_obfs_presets = [
 module.exports = [
   ...shadowsocks_presets,
   ...shadowsocks_obfs_presets,
+  ...shadowsocksr_presets,
   ...v2ray_presets,
   ...v2ray_obfs_presets,
   ...blinksocks_presets,
