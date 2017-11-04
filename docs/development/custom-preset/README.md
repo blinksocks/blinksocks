@@ -49,7 +49,7 @@ MyCustomPreset.onInit = function onInit(params) {
 module.exports = MyCustomPreset;
 ```
 
-### API Details
+### Hooks
 
 You can implement some of the following methods to interpret data flow:
 
@@ -64,11 +64,14 @@ You can implement some of the following methods to interpret data flow:
 
 > Hint: `server*()` are running on the server side while `client*()` are running on the client side. `before*()` are running on both sides.
 
+> Hint: To transfer **UDP** packets, just postfix "Udp" to each methods and implement UDP specific protocol in them, e.g, `clientOutUdp()`.
+
 Each method gets an object which contains several parameters and callbacks you may need:
 
 ```js
 clientOut({buffer, next, broadcast, direct, fail}) {
   // your magic here
+  // return a buffer or next(a buffer)
 }
 ```
 
@@ -230,7 +233,7 @@ module.exports = MyCustomPreset;
 
 **Available Items**
 
-|                        |                      |
+|          NAME          |         NAME         |
 | :--------------------- | :------------------- |
 | \_\_IS_SERVER\_\_      | \_\_DNS\_\_          |
 | \_\_IS_CLIENT\_\_      | \_\_DNS_EXPIRE\_\_   |
@@ -243,3 +246,23 @@ module.exports = MyCustomPreset;
 | \_\_SERVERS\_\_        | \_\_LOG_LEVEL\_\_    |
 | \_\_KEY\_\_            | \_\_LOG_MAX_DAYS\_\_ |
 | \_\_PRESETS\_\_        | \_\_WORKERS\_\_      |
+
+### Helper Functions
+
+The following functions are auto-generated to your preset, DO NOT overwrite them:
+
+**this.next(direction, buffer)**
+
+The same as `next` parameter in each hook function, but here you should provide `direction` to tell which direction the data should transfer to.
+
+**this.broadcast(action)**
+
+The same as `broadcast` parameter in each hook function.
+
+**this.fail(message)**
+
+The same as `fail` parameter in each hook function.
+
+**this.readProperty(presetName, propertyName)**
+
+Direclty read a property from other presets, this is useful when your logic have to depend on other presets.
