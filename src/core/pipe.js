@@ -65,6 +65,8 @@ export class Pipe extends EventEmitter {
           const impl = ms.getImplement();
           const value = impl[propertyName];
           return value !== undefined ? value : impl.constructor[propertyName];
+        } else {
+          logger.warn(`[preset] "${middleware.name}" cannot read property from nonexistent preset "${presetName}".`);
         }
       };
       middlewares.push(middleware);
