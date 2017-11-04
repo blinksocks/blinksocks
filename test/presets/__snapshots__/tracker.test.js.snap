@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`running on both client and server 1`] = `
+exports[`tcp relay on client and server 1`] = `
 Object {
   "data": Array [
     49,
@@ -10,7 +10,7 @@ Object {
 }
 `;
 
-exports[`running on both client and server 2`] = `
+exports[`tcp relay on client and server 2`] = `
 Object {
   "data": Array [
     51,
@@ -20,7 +20,7 @@ Object {
 }
 `;
 
-exports[`running on both client and server 3`] = `
+exports[`tcp relay on client and server 3`] = `
 Object {
   "data": Array [
     53,
@@ -30,11 +30,31 @@ Object {
 }
 `;
 
-exports[`running on both client and server 4`] = `
+exports[`tcp relay on client and server 4`] = `
 Object {
   "data": Array [
     55,
     56,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`udp relay on client and server 1`] = `
+Object {
+  "data": Array [
+    49,
+    50,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`udp relay on client and server 2`] = `
+Object {
+  "data": Array [
+    51,
+    52,
   ],
   "type": "Buffer",
 }

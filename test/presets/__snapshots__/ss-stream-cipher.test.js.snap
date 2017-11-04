@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`running on both client and server 1`] = `
+exports[`tcp relay on client and server 1`] = `
 Object {
   "data": Array [
     18,

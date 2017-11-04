@@ -1,6 +1,6 @@
 import {PresetRunner} from '../common';
 
-test('running on both client and server', async () => {
+test('tcp relay on client and server', async () => {
   const runner = new PresetRunner({
     name: 'ss-stream-cipher',
     params: {
@@ -24,6 +24,27 @@ test('running on both client and server', async () => {
   expect(await runner.backward(iv)).toHaveLength(0);
   // just payload
   expect(await runner.backward('45')).toMatchSnapshot();
+
+  runner.destroy();
+});
+
+test('udp relay on client and server', async () => {
+  const runner = new PresetRunner({
+    name: 'ss-stream-cipher',
+    params: {
+      method: 'rc4-md5-6'
+    }
+  }, {
+    __KEY__: 'secret',
+    __IS_CLIENT__: true,
+    __IS_SERVER__: false
+  });
+
+  expect(await runner.forwardUdp('1')).toHaveLength(6 + 1);
+
+  const iv = Buffer.alloc(6);
+  expect(await runner.backwardUdp(iv)).toHaveLength(0);
+  await expect(runner.backwardUdp('2')).rejects.toBeDefined();
 
   runner.destroy();
 });

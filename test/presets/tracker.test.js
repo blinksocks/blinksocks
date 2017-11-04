@@ -1,7 +1,7 @@
 import {CONNECTION_CREATED, CONNECT_TO_REMOTE, CONNECTION_CLOSED} from '../../src/presets';
 import {PresetRunner} from '../common';
 
-test('running on both client and server', async () => {
+test('tcp relay on client and server', async () => {
   const runner = new PresetRunner({
     name: 'tracker'
   }, {
@@ -25,4 +25,20 @@ test('running on both client and server', async () => {
   expect(await runner.backward('78')).toMatchSnapshot();
 
   runner.notify({type: CONNECTION_CLOSED});
+
+  runner.destroy();
+});
+
+test('udp relay on client and server', async () => {
+  const runner = new PresetRunner({
+    name: 'tracker'
+  }, {
+    __IS_CLIENT__: true,
+    __IS_SERVER__: false
+  });
+
+  expect(await runner.forwardUdp('12')).toMatchSnapshot();
+  expect(await runner.backwardUdp('34')).toMatchSnapshot();
+
+  runner.destroy();
 });

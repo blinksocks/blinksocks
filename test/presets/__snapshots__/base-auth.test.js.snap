@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`running on client and server 1`] = `
+exports[`tcp relay on client and server 1`] = `
 Object {
   "data": Array [
     254,
@@ -44,7 +44,7 @@ Object {
 }
 `;
 
-exports[`running on client and server 2`] = `
+exports[`tcp relay on client and server 2`] = `
 Object {
   "data": Array [
     51,
@@ -54,7 +54,7 @@ Object {
 }
 `;
 
-exports[`running on client and server 3`] = `
+exports[`tcp relay on client and server 3`] = `
 Object {
   "data": Array [
     53,
@@ -64,7 +64,7 @@ Object {
 }
 `;
 
-exports[`running on client and server 4`] = `
+exports[`tcp relay on client and server 4`] = `
 Object {
   "payload": Object {
     "host": "example.com",
@@ -75,7 +75,7 @@ Object {
 }
 `;
 
-exports[`running on client and server 5`] = `
+exports[`tcp relay on client and server 5`] = `
 Object {
   "data": Array [
     49,
@@ -85,7 +85,7 @@ Object {
 }
 `;
 
-exports[`running on client and server 6`] = `
+exports[`tcp relay on client and server 6`] = `
 Object {
   "data": Array [
     49,
@@ -95,7 +95,92 @@ Object {
 }
 `;
 
-exports[`running on client and server 7`] = `
+exports[`tcp relay on client and server 7`] = `
+Object {
+  "data": Array [
+    51,
+    52,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`udp relay on client and server 1`] = `
+Object {
+  "data": Array [
+    254,
+    185,
+    104,
+    226,
+    233,
+    140,
+    217,
+    93,
+    245,
+    246,
+    200,
+    4,
+    244,
+    255,
+    81,
+    190,
+    50,
+    72,
+    106,
+    215,
+    69,
+    80,
+    74,
+    142,
+    1,
+    39,
+    236,
+    117,
+    248,
+    80,
+    156,
+    72,
+    113,
+    182,
+    49,
+    50,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`udp relay on client and server 2`] = `
+Object {
+  "data": Array [
+    51,
+    52,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`udp relay on client and server 3`] = `
+Object {
+  "payload": Object {
+    "host": "example.com",
+    "onConnected": [Function],
+    "port": 443,
+  },
+  "type": "@action:connect_to_remote",
+}
+`;
+
+exports[`udp relay on client and server 4`] = `
+Object {
+  "data": Array [
+    49,
+    50,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`udp relay on client and server 5`] = `
 Object {
   "data": Array [
     51,

@@ -27,7 +27,7 @@ export class PresetRunner extends EventEmitter {
     this.middleware.onDestroy();
   }
 
-  async forward(data) {
+  async forward(data, isUdp = false) {
     if (typeof data === 'string') {
       data = Buffer.from(data);
     }
@@ -39,12 +39,13 @@ export class PresetRunner extends EventEmitter {
       this.middleware.write({
         direction: __IS_CLIENT__ ? PIPE_ENCODE : PIPE_DECODE,
         buffer: data,
-        direct: resolve
+        direct: resolve,
+        isUdp
       });
     });
   }
 
-  async backward(data) {
+  async backward(data, isUdp = false) {
     if (typeof data === 'string') {
       data = Buffer.from(data);
     }
@@ -56,9 +57,18 @@ export class PresetRunner extends EventEmitter {
       this.middleware.write({
         direction: __IS_CLIENT__ ? PIPE_DECODE : PIPE_ENCODE,
         buffer: data,
-        direct: resolve
+        direct: resolve,
+        isUdp
       });
     });
+  }
+
+  async forwardUdp(data) {
+    return await this.forward(data, true);
+  }
+
+  async backwardUdp(data) {
+    return await this.backward(data, true);
   }
 
 }
