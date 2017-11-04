@@ -1,14 +1,17 @@
 import crypto from 'crypto';
 import {IPreset} from './defs';
-import {EVP_BytesToKey} from '../utils';
+import {dumpHex, EVP_BytesToKey, hash} from '../utils';
 
 // available ciphers and [key size, iv size]
 const ciphers = {
   'aes-128-ctr': [16, 16], 'aes-192-ctr': [24, 16], 'aes-256-ctr': [32, 16],
   'aes-128-cfb': [16, 16], 'aes-192-cfb': [24, 16], 'aes-256-cfb': [32, 16],
   'camellia-128-cfb': [16, 16], 'camellia-192-cfb': [24, 16], 'camellia-256-cfb': [32, 16],
+  'rc4-md5': [16, 16], 'rc4-md5-6': [16, 6]
   // 'chacha20-ietf': [32, 12], wait for libsodium-wrappers
 };
+
+const NOOP = Buffer.alloc(0);
 
 /**
  * @description
@@ -60,17 +63,16 @@ const ciphers = {
  */
 export default class SsStreamCipherPreset extends IPreset {
 
-  static cipherName = '';
+  _algorithm = '';
 
-  static key = null;
+  _key = null;
+  _iv = null;
 
-  static ivSize = 0;
+  _keySize = 0;
+  _ivSize = 0;
 
   _cipher = null;
-
   _decipher = null;
-
-  _iv = null;
 
   static checkParams({method}) {
     if (typeof method !== 'string' || method === '') {
@@ -82,35 +84,59 @@ export default class SsStreamCipherPreset extends IPreset {
     }
   }
 
-  static onInit({method}) {
-    const [keySize, ivSize] = ciphers[method];
-    SsStreamCipherPreset.cipherName = method;
-    SsStreamCipherPreset.key = EVP_BytesToKey(__KEY__, keySize, ivSize);
-    SsStreamCipherPreset.ivSize = ivSize;
+  get key() {
+    return this._key;
   }
 
   get iv() {
     return this._iv;
   }
 
-  constructor() {
+  constructor({method}) {
     super();
-    const {ivSize} = SsStreamCipherPreset;
-    this._iv = crypto.randomBytes(ivSize);
+    const [keySize, ivSize] = ciphers[method];
+    const iv = crypto.randomBytes(ivSize);
+    this._algorithm = ['rc4-md5', 'rc4-md5-6'].includes(method) ? 'rc4' : method;
+    this._keySize = keySize;
+    this._ivSize = ivSize;
+    this._key = EVP_BytesToKey(__KEY__, keySize, ivSize);
+    this._iv = method === 'rc4-md5-6' ? iv.slice(0, 6) : iv;
   }
 
   onDestroy() {
+    this._key = null;
+    this._iv = null;
     this._cipher = null;
     this._decipher = null;
-    this._iv = null;
+  }
+
+  createCipher(key, iv) {
+    const algorithm = this._algorithm;
+    let _key = key;
+    let _iv = iv;
+    if (algorithm === 'rc4') {
+      _key = hash('md5', Buffer.concat([_key, _iv]));
+      _iv = NOOP;
+    }
+    return crypto.createCipheriv(algorithm, _key, _iv);
+  }
+
+  createDecipher(key, iv) {
+    const algorithm = this._algorithm;
+    let _key = key;
+    let _iv = iv;
+    if (algorithm === 'rc4') {
+      _key = hash('md5', Buffer.concat([_key, _iv]));
+      _iv = NOOP;
+    }
+    return crypto.createDecipheriv(algorithm, _key, _iv);
   }
 
   // tcp
 
   beforeOut({buffer}) {
     if (!this._cipher) {
-      const {cipherName, key} = SsStreamCipherPreset;
-      this._cipher = crypto.createCipheriv(cipherName, key, this._iv);
+      this._cipher = this.createCipher(this._key, this._iv);
       return Buffer.concat([this._iv, this._cipher.update(buffer)]);
     } else {
       return this._cipher.update(buffer);
@@ -119,13 +145,13 @@ export default class SsStreamCipherPreset extends IPreset {
 
   beforeIn({buffer, fail}) {
     if (!this._decipher) {
-      const {cipherName, key, ivSize} = SsStreamCipherPreset;
-      if (buffer.length < ivSize) {
-        return fail(`buffer is too short to get iv, len=${buffer.length} dump=${buffer.toString('hex')}`);
+      const {_ivSize} = this;
+      if (buffer.length < _ivSize) {
+        return fail(`buffer is too short to get iv, len=${buffer.length} dump=${dumpHex(buffer)}`);
       }
-      this._iv = buffer.slice(0, ivSize);
-      this._decipher = crypto.createDecipheriv(cipherName, key, this._iv);
-      return this._decipher.update(buffer.slice(ivSize));
+      this._iv = buffer.slice(0, _ivSize);
+      this._decipher = this.createDecipher(this._key, this._iv);
+      return this._decipher.update(buffer.slice(_ivSize));
     } else {
       return this._decipher.update(buffer);
     }
@@ -134,20 +160,19 @@ export default class SsStreamCipherPreset extends IPreset {
   // udp
 
   beforeOutUdp({buffer}) {
-    const {cipherName, key, ivSize} = SsStreamCipherPreset;
-    const iv = crypto.randomBytes(ivSize);
-    const cipher = crypto.createCipheriv(cipherName, key, iv);
-    return Buffer.concat([iv, cipher.update(buffer), cipher.final()]);
+    this._iv = crypto.randomBytes(this._ivSize);
+    this._cipher = this.createCipher(this._key, this._iv);
+    return Buffer.concat([this._iv, this._cipher.update(buffer)]);
   }
 
   beforeInUdp({buffer, fail}) {
-    const {cipherName, key, ivSize} = SsStreamCipherPreset;
-    if (buffer.length < ivSize) {
-      return fail(`buffer is too short to get iv, len=${buffer.length} dump=${buffer.toString('hex')}`);
+    const {_ivSize} = this;
+    if (buffer.length < _ivSize) {
+      return fail(`buffer is too short to get iv, len=${buffer.length} dump=${dumpHex(buffer)}`);
     }
-    const iv = buffer.slice(0, ivSize);
-    const decipher = crypto.createDecipheriv(cipherName, key, iv);
-    return Buffer.concat([decipher.update(buffer.slice(ivSize)), decipher.final()]);
+    this._iv = buffer.slice(0, _ivSize);
+    this._decipher = this.createDecipher(this._key, this._iv);
+    return this._decipher.update(buffer.slice(_ivSize));
   }
 
 }
