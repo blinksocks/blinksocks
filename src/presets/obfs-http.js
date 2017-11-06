@@ -1,64 +1,48 @@
 import fs from 'fs';
-import readline from 'readline';
 import crypto from 'crypto';
 import {IPreset} from './defs';
 
-class Faker {
-
-  static _fakes = [
-    // {
-    //   'request': <Buffer>,
-    //   'response': <Buffer>
-    // },
-    // ...
-  ];
-
-  static _parse(file, callback) {
-    if (this._fakes.length > 0) {
-      callback(this._fakes);
-      return;
-    }
-    const parts = [];
-    let part = '';
-    const rl = readline.createInterface({input: fs.createReadStream(file)});
-    rl.on('line', function (line) {
-      switch (line[0]) {
-        case '=':
-        case '-':
-          if (part !== '') {
-            part += '\r\n';
-            parts.push(part);
-            part = '';
-          }
-          break;
-        default:
-          part += line;
+/**
+ * parse text file into {request: response} pairs
+ * @param file
+ * @returns {Array}
+ */
+function parseFile(file) {
+  const txt = fs.readFileSync(file, {encoding: 'utf-8'});
+  const lines = txt.split(/\r\n|\n|\r/);
+  const parts = [];
+  let part = '';
+  for (const line of lines) {
+    switch (line[0]) {
+      case '=':
+      case '-':
+        if (part !== '') {
           part += '\r\n';
-          break;
-      }
-    });
-    rl.on('close', () => {
-      for (let i = 0; i < parts.length; i += 2) {
-        const prev = parts[i];
-        const next = parts[i + 1];
-        this._fakes.push({
-          request: Buffer.from(prev),
-          response: Buffer.from(next)
-        });
-      }
-      callback(this._fakes);
+          parts.push(part);
+          part = '';
+        }
+        break;
+      default:
+        part += line;
+        part += '\r\n';
+        break;
+    }
+  }
+  const pairs = [];
+  for (let i = 0; i < parts.length; i += 2) {
+    const prev = parts[i];
+    const next = parts[i + 1];
+    pairs.push({
+      request: Buffer.from(prev),
+      response: Buffer.from(next)
     });
   }
-
-  static get(file, callback) {
-    this._parse(file, callback);
-  }
-
+  return pairs;
 }
 
 /**
  * @description
- *   Wrap packet with pre-shared HTTP header.
+ *   Wrap packet with pre-shared HTTP header in the first request/response.
  *
  * @params
  *   file: A text file which contains several HTTP header paris.
@@ -73,25 +57,17 @@ class Faker {
  *
  * @protocol
  *
- *   # TCP handshake
- *   +-----------+----------------------------+
- *   | obfs.DATA |          PAYLOAD           |
- *   +-----------+----------------------------+
- *   | Variable  |         Variable           |
- *   +-----------+----------------------------+
+ *   C ---- [http header][data] ---> S
+ *   C <---------- [data] ---------> S
  *
- *   # TCP chunk
- *   +----------------------------+
- *   |          PAYLOAD           |
- *   +----------------------------+
- *   |         Variable           |
- *   +----------------------------+
  */
 export default class ObfsHttpPreset extends IPreset {
 
-  _isHandshakeDone = false;
+  static pairs = null;
 
-  _file = null;
+  _isHeaderSent = false;
+
+  _isHeaderRecv = false;
 
   _response = null;
 
@@ -101,65 +77,61 @@ export default class ObfsHttpPreset extends IPreset {
     }
   }
 
-  constructor({file}) {
-    super();
-    this._file = file;
+  static onInit({file}) {
+    ObfsHttpPreset.pairs = parseFile(file);
+  }
+
+  onDestroy() {
+    this._response = null;
   }
 
   clientOut({buffer, next}) {
-    if (this._isHandshakeDone) {
-      return buffer;
+    if (!this._isHeaderSent) {
+      const {pairs} = ObfsHttpPreset;
+      this._isHeaderSent = true;
+      const index = crypto.randomBytes(1)[0] % pairs.length;
+      const {request} = pairs[index];
+      return Buffer.concat([request, buffer]);
     } else {
-      Faker.get(this._file, (fakes) => {
-        const index = crypto.randomBytes(1)[0] % fakes.length;
-        const {request} = fakes[index];
-        next(Buffer.concat([request, buffer]));
-      });
+      return buffer;
     }
   }
 
   serverIn({buffer, next, fail}) {
-    if (this._isHandshakeDone) {
-      return buffer;
+    if (!this._isHeaderRecv) {
+      const found = ObfsHttpPreset.pairs.find(({request}) => buffer.indexOf(request) === 0);
+      if (found !== undefined) {
+        this._isHeaderRecv = true;
+        this._response = found.response;
+        return buffer.slice(found.request.length);
+      } else {
+        return fail('http header mismatch');
+      }
     } else {
-      Faker.get(this._file, (fakes) => {
-        const found = fakes.find(
-          ({request}) => buffer.indexOf(request) === 0
-        );
-        if (typeof found !== 'undefined') {
-          this._response = found.response;
-          next(buffer.slice(found.request.length));
-        } else {
-          fail('http header mismatch');
-        }
-      });
+      return buffer;
     }
   }
 
   serverOut({buffer}) {
-    if (this._isHandshakeDone) {
-      return buffer;
-    } else {
-      this._isHandshakeDone = true;
+    if (!this._isHeaderSent) {
+      this._isHeaderSent = true;
       return Buffer.concat([this._response, buffer]);
+    } else {
+      return buffer;
     }
   }
 
   clientIn({buffer, next, fail}) {
-    if (this._isHandshakeDone) {
-      return buffer;
+    if (!this._isHeaderRecv) {
+      const found = ObfsHttpPreset.pairs.find(({response}) => buffer.indexOf(response) === 0);
+      if (found !== undefined) {
+        this._isHeaderRecv = true;
+        return buffer.slice(found.response.length);
+      } else {
+        return fail('http header mismatch');
+      }
     } else {
-      Faker.get(this._file, (fakes) => {
-        const found = fakes.find(
-          ({response}) => buffer.indexOf(response) === 0
-        );
-        if (typeof found !== 'undefined') {
-          next(buffer.slice(found.response.length));
-        } else {
-          fail('http header mismatch');
-        }
-      });
-      this._isHandshakeDone = true;
+      return buffer;
     }
   }
 
