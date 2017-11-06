@@ -128,14 +128,15 @@ function summary(results) {
   console.log('');
   for (let i = 0; i < sorted.length; ++i) {
     const {id, bitrates, conf} = sorted[i];
-    console.log(`${(i + 1).toString().padStart(2)}: Test Case ${id}, Bitrate=[${bitrates.join(', ')}], ${conf}`);
+    console.log(`${(i + 1).toString().padStart(2)}: Test Case ${id}, Bitrate = ${bitrates.join(', ')}`);
+    console.log(`    ${conf}`);
   }
   console.log('');
 }
 
 printTestEnv();
 
-console.log('running tests...');
+console.log(`running ${testCases.length} tests...`);
 console.log('');
 
 summary(run(testCases));
