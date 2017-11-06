@@ -85,7 +85,7 @@ export default class ObfsHttpPreset extends IPreset {
     this._response = null;
   }
 
-  clientOut({buffer, next}) {
+  clientOut({buffer}) {
     if (!this._isHeaderSent) {
       const {pairs} = ObfsHttpPreset;
       this._isHeaderSent = true;
@@ -97,7 +97,7 @@ export default class ObfsHttpPreset extends IPreset {
     }
   }
 
-  serverIn({buffer, next, fail}) {
+  serverIn({buffer, fail}) {
     if (!this._isHeaderRecv) {
       const found = ObfsHttpPreset.pairs.find(({request}) => buffer.indexOf(request) === 0);
       if (found !== undefined) {
@@ -121,7 +121,7 @@ export default class ObfsHttpPreset extends IPreset {
     }
   }
 
-  clientIn({buffer, next, fail}) {
+  clientIn({buffer, fail}) {
     if (!this._isHeaderRecv) {
       const found = ObfsHttpPreset.pairs.find(({response}) => buffer.indexOf(response) === 0);
       if (found !== undefined) {
