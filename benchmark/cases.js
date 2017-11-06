@@ -10,6 +10,10 @@ const shadowsocks_presets = [
   ],
   [
     {"name": "ss-base"},
+    {"name": "ss-stream-cipher", "params": {"method": "rc4-md5"}}
+  ],
+  [
+    {"name": "ss-base"},
     {"name": "ss-stream-cipher", "params": {"method": "camellia-256-cfb"}}
   ],
   // [aead ciphers]
