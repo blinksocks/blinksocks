@@ -3685,9 +3685,9 @@ write@^0.2.1:
   dependencies:
     mkdirp "^0.5.1"
 
-ws@^3.2.0:
-  version "3.2.0"
-  resolved "https://registry.yarnpkg.com/ws/-/ws-3.2.0.tgz#d5d3d6b11aff71e73f808f40cc69d52bb6d4a185"
+ws@^3.3.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/ws/-/ws-3.3.0.tgz#f8b948a1378af7efa702f5513da08dd516897c31"
   dependencies:
     async-limiter "~1.0.0"
     safe-buffer "~5.1.0"
