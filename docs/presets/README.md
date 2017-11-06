@@ -320,6 +320,8 @@ aes-128-cfb, aes-192-cfb, aes-256-cfb,
 
 camellia-128-cfb, camellia-192-cfb, camellia-256-cfb
 
+rc4-md5, rc4-md5-6
+
 ```
 "presets": [
   {
@@ -413,58 +415,6 @@ aes-128-gcm, chacha20-poly1305, none
 ]
 ```
 
-**Notice in v2ray configs:**
-
-<details>
-  <summary>v2ray client</summary>
-
-  ```
-    "outbound": {
-      "protocol": "vmess",
-      "settings": {
-        "vnext": [
-          {
-            "address": "127.0.0.1",
-            "port": 10086,
-            "users": [
-              {
-                "id": "c2485913-4e9e-41eb-8cc5-b2e7db8d3bc7",
-                "security": "aes-128-gcm",
-                "alterId": 0 // [must be the default value: 0]
-              }
-            ]
-          }
-        ]
-      },
-      "mux": {
-        "enabled": false // [must be false]
-      }
-    },
-  ```
-
-</details>
-
-<details>
-  <summary>v2ray server</summary>
-
-```
-  "inbound": {
-    "port": 10086,
-    "protocol": "vmess",
-    "settings": {
-      "clients": [
-        {
-          "id": "c2485913-4e9e-41eb-8cc5-b2e7db8d3bc7",
-          "level": 1,
-          "alterId": 0 // [must be the default value: 0]
-        }
-      ]
-    }
-  },
-```
-
-</details>
-
 ## [obfs-random-padding]
 
 A simple obfuscator to significantly randomize the length of each packet. It can be used to prevent statistical analysis based on packet length.
@@ -488,8 +438,7 @@ A simple obfuscator to significantly randomize the length of each packet. It can
 
 ## [obfs-http]
 
-A http obfuscator, the first round after TCP handshake will wrap data within a random http header
-selected from a text file.
+A http obfuscator, the first request will wrap a http header randomly selected from a text file.
 
 | PARAMS |                  DESCRIPTION                  | DEFAULT |
 | :----- | :-------------------------------------------- | :------ |
