@@ -44,8 +44,17 @@ export default class SsrAuthChainBPreset extends SsrAuthChainPreset {
   constructor(params) {
     super(params);
     this._salt = 'auth_chain_b';
+  }
+
+  onDestroy() {
+    super.onDestroy();
+    this._data_size_list = null;
+    this._data_size_list2 = null;
+  }
+
+  initDataSizeLists() {
     const rng = xorshift128plus();
-    rng.init_from_bin(SsrAuthChainPreset.userKey);
+    rng.init_from_bin(this.readProperty('ss-stream-cipher', 'key'));
     // _data_size_list
     let len = rng.next().mod(8).add(4).toNumber();
     for (let i = 0; i < len; ++i) {
@@ -60,13 +69,10 @@ export default class SsrAuthChainBPreset extends SsrAuthChainPreset {
     this._data_size_list2.sort((a, b) => a - b);
   }
 
-  onDestroy() {
-    super.onDestroy();
-    this._data_size_list = null;
-    this._data_size_list2 = null;
-  }
-
   getRandomBytesLengthForTcp(seed, base, rng) {
+    if (this._data_size_list.length < 1 || this._data_size_list2.length < 1) {
+      this.initDataSizeLists();
+    }
     if (base >= 1440) {
       return 0;
     }

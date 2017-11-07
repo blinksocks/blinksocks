@@ -169,7 +169,7 @@ export default class SsrAuthAes128Preset extends IPreset {
     // part 3, chunks
     const random_bytes = crypto.randomBytes(random_bytes_len);
     let part3 = Buffer.concat([random_bytes, buffer]);
-    const part3_hmac = this.createHmac(Buffer.concat([part1, part2, part3])).slice(0, 4);
+    const part3_hmac = this.createHmac(Buffer.concat([part1, part2, part3]), userKey).slice(0, 4);
     part3 = Buffer.concat([part3, part3_hmac]);
 
     return Buffer.concat([part1, part2, part3]);
@@ -266,7 +266,7 @@ export default class SsrAuthAes128Preset extends IPreset {
       // part 3
       // const random_bytes = buffer.slice(31, 31 + random_bytes_len);
       const part3_hmac = buffer.slice(pack_len - 4, pack_len);
-      const part3_hmac_calc = this.createHmac(buffer.slice(0, pack_len - 4)).slice(0, 4);
+      const part3_hmac_calc = this.createHmac(buffer.slice(0, pack_len - 4), userKey).slice(0, 4);
       if (!part3_hmac_calc.equals(part3_hmac)) {
         return fail(`unexpected hmac in part 3, dump=${dumpHex(buffer)}`);
       }
