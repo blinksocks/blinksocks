@@ -1,5 +1,17 @@
 #  Change Log
 
+## 2.8.3 (2017-11-07)
+
+### :bug: Bug Fixes:
+
+- **presets**: fix hard coded "userKey" in ssr-auth-xxx.
+
+### Upgrade from 2.8.2 to 2.8.3
+
+```
+$ npm install -g blinksocks@2.8.3
+```
+
 ## 2.8.2 (2017-11-07)
 
 ### :rocket: Features & Improvements
