@@ -1,5 +1,30 @@
 #  Change Log
 
+## 2.8.2 (2017-11-07)
+
+### :rocket: Features & Improvements
+
+- **presets**: add **ssr-auth-aes128-md5**, **ssr-auth-aes128-sha1**. :sparkles:
+- **presets**: add **ssr-auth-chain-a**, **ssr-auth-chain-b**. :sparkles:
+- **presets**: add **rc4-md5**, **rc4-md5-6** methods to **ss-stream-cipher**.
+- **presets**: refactor **obfs-http**.
+- **presets**: apply a padding strategy to reduce heavy bandwidth usage of **obfs-random-padding**.
+- **presets**: add getName() interface and readProperty() helper function.
+- **presets**: expose headSize getter of ss-base, expose iv getter of ss-stream-cipher.
+- **benchmark**: add test cases for ssr-*.
+- **utils**: add dumpHex().
+
+### :bug: Bug Fixes:
+
+- **core**: destroy relay when inbound closed.
+- **benchmark**: bypass error cases.
+
+### Upgrade from 2.8.1 to 2.8.2
+
+```
+$ npm install -g blinksocks@2.8.2
+```
+
 ## 2.8.1 (2017-10-28)
 
 ### :rocket: Features & Improvements
