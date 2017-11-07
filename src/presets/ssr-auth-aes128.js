@@ -82,11 +82,11 @@ const MAX_TIME_DIFF = 30; // seconds
  */
 export default class SsrAuthAes128Preset extends IPreset {
 
-  static userKey = null;
-
   static clientId = null;
 
   static connectionId = null;
+
+  _userKey = null;
 
   _hashFunc = DEFAULT_HMAC_HASH_FUNC; // overwrite by subclass
 
@@ -115,17 +115,19 @@ export default class SsrAuthAes128Preset extends IPreset {
   }
 
   onDestroy() {
+    this._userKey = null;
     this._adBuf.clear();
     this._adBuf = null;
   }
 
-  createHmac(buffer, key = SsrAuthAes128Preset.userKey) {
+  createHmac(buffer, key) {
     return hmac(this._hashFunc, key, buffer);
   }
 
   createRequest(buffer) {
-    const {userKey, clientId, connectionId} = SsrAuthAes128Preset;
+    const {clientId, connectionId} = SsrAuthAes128Preset;
 
+    const userKey = this._userKey = this.readProperty('ss-stream-cipher', 'key');
     const iv = this.readProperty('ss-stream-cipher', 'iv');
     const part12_hmac_key = Buffer.concat([iv, userKey]);
 
@@ -174,7 +176,7 @@ export default class SsrAuthAes128Preset extends IPreset {
   }
 
   createChunks(buffer) {
-    const {userKey} = SsrAuthAes128Preset;
+    const userKey = this._userKey;
     return getRandomChunks(buffer, 0x1fff - 0xff - 8 - 1, 0x2000 - 0xff - 8 - 1).map((payload) => {
       const [first, len] = crypto.randomBytes(2);
       let random_bytes = null;
@@ -218,12 +220,11 @@ export default class SsrAuthAes128Preset extends IPreset {
 
   serverIn({buffer, next, fail}) {
     if (!this._isHeaderRecv) {
-      const {userKey} = SsrAuthAes128Preset;
-
       if (buffer.length < 42) {
         return fail(`handshake request is too short to parse, request=${dumpHex(buffer)}`);
       }
 
+      const userKey = this._userKey = this.readProperty('ss-stream-cipher', 'key');
       const iv = this.readProperty('ss-stream-cipher', 'iv');
       const part12_hmac_key = Buffer.concat([iv, userKey]);
 
@@ -295,7 +296,7 @@ export default class SsrAuthAes128Preset extends IPreset {
   }
 
   onReceiving(buffer, {fail}) {
-    const {userKey} = SsrAuthAes128Preset;
+    const userKey = this._userKey;
     if (buffer.length < 4) {
       return; // too short to get size and size_hmac
     }
@@ -317,7 +318,7 @@ export default class SsrAuthAes128Preset extends IPreset {
   }
 
   onChunkReceived(chunk, {next, fail}) {
-    const {userKey} = SsrAuthAes128Preset;
+    const userKey = this._userKey;
     if (chunk.length < 9) {
       return fail(`invalid chunk size=${chunk.length} dump=${dumpHex(chunk)}`);
     }
@@ -337,17 +338,19 @@ export default class SsrAuthAes128Preset extends IPreset {
   // udp
 
   clientOutUdp({buffer}) {
+    const userKey = this.readProperty('ss-stream-cipher', 'key');
     const uid = crypto.randomBytes(4);
     const packet = Buffer.concat([buffer, uid]);
-    const packet_hmac = this.createHmac(packet).slice(0, 4);
+    const packet_hmac = this.createHmac(packet, userKey).slice(0, 4);
     return Buffer.concat([packet, packet_hmac]);
   }
 
   serverInUdp({buffer, fail}) {
+    const userKey = this.readProperty('ss-stream-cipher', 'key');
     const payload = buffer.slice(0, -8);
     // const uid = buffer.slice(-8, -4);
     const packet_hmac = buffer.slice(-4);
-    const packet_hmac_calc = this.createHmac(buffer.slice(0, -4)).slice(0, 4);
+    const packet_hmac_calc = this.createHmac(buffer.slice(0, -4), userKey).slice(0, 4);
     if (!packet_hmac_calc.equals(packet_hmac)) {
       return fail(`unexpected hmac when verify client udp packet, dump=${dumpHex(buffer)}`);
     }
@@ -355,14 +358,16 @@ export default class SsrAuthAes128Preset extends IPreset {
   }
 
   serverOutUdp({buffer}) {
-    const payload_hmac = this.createHmac(buffer).slice(0, 4);
+    const userKey = this.readProperty('ss-stream-cipher', 'key');
+    const payload_hmac = this.createHmac(buffer, userKey).slice(0, 4);
     return Buffer.concat([buffer, payload_hmac]);
   }
 
   clientInUdp({buffer, fail}) {
+    const userKey = this.readProperty('ss-stream-cipher', 'key');
     const payload = buffer.slice(0, -4);
     const payload_hmac = buffer.slice(-4);
-    const payload_hmac_calc = this.createHmac(payload).slice(0, 4);
+    const payload_hmac_calc = this.createHmac(payload, userKey).slice(0, 4);
     if (!payload_hmac_calc.equals(payload_hmac)) {
       return fail(`unexpected hmac when verify server udp packet, dump=${dumpHex(buffer)}`);
     }

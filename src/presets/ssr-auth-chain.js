@@ -111,11 +111,11 @@ export function xorshift128plus() {
  */
 export default class SsrAuthChainPreset extends IPreset {
 
-  static userKey = null;
-
   static clientId = null;
 
   static connectionId = null;
+
+  _userKey = null;
 
   _salt = DEFAULT_SALT; // overwrite by subclass
 
@@ -144,7 +144,6 @@ export default class SsrAuthChainPreset extends IPreset {
   _adBuf = null;
 
   static onInit() {
-    SsrAuthChainPreset.userKey = EVP_BytesToKey(__KEY__, 16, 16);
     SsrAuthChainPreset.clientId = crypto.randomBytes(4);
     SsrAuthChainPreset.connectionId = getRandomInt(0, 0x00ffffff);
   }
@@ -158,6 +157,7 @@ export default class SsrAuthChainPreset extends IPreset {
   }
 
   onDestroy() {
+    this._userKey = null;
     this._lastClientHash = null;
     this._lastServerHash = null;
     this._rngClient = null;
@@ -179,8 +179,9 @@ export default class SsrAuthChainPreset extends IPreset {
   }
 
   createRequest() {
-    const {userKey, clientId, connectionId} = SsrAuthChainPreset;
+    const {clientId, connectionId} = SsrAuthChainPreset;
 
+    const userKey = this._userKey = this.readProperty('ss-stream-cipher', 'key');
     const iv = this.readProperty('ss-stream-cipher', 'iv');
     const part1_hmac_key = Buffer.concat([iv, userKey]);
 
@@ -230,7 +231,7 @@ export default class SsrAuthChainPreset extends IPreset {
   }
 
   createChunks(buffer) {
-    const {userKey} = SsrAuthChainPreset;
+    const userKey = this._userKey;
     const max_payload_size = __IS_CLIENT__ ? 2800 : (this._tcpMss - this._overhead);
     return getChunks(buffer, max_payload_size).map((payload) => {
       let _payload = payload;
@@ -279,12 +280,11 @@ export default class SsrAuthChainPreset extends IPreset {
 
   serverIn({buffer, next, fail}) {
     if (!this._isHeaderRecv) {
-      const {userKey} = SsrAuthChainPreset;
-
       if (buffer.length < 36) {
         return fail(`handshake request is too short to parse, request=${dumpHex(buffer)}`);
       }
 
+      const userKey = this._userKey = this.readProperty('ss-stream-cipher', 'key');
       const iv = this.readProperty('ss-stream-cipher', 'iv');
       const part12_hmac_key = Buffer.concat([iv, userKey]);
 
@@ -363,7 +363,7 @@ export default class SsrAuthChainPreset extends IPreset {
   }
 
   onChunkReceived(chunk, {next, fail}) {
-    const {userKey} = SsrAuthChainPreset;
+    const userKey = this._userKey;
     if (chunk.length < 2) {
       return fail(`invalid chunk, size=${chunk.length} dump=${dumpHex(chunk)}`);
     }
@@ -406,7 +406,7 @@ export default class SsrAuthChainPreset extends IPreset {
   // udp
 
   clientOutUdp({buffer}) {
-    const {userKey} = SsrAuthChainPreset;
+    const userKey = this.readProperty('ss-stream-cipher', 'key');
     const random = crypto.randomBytes(3);
     const tmp_mac = hmac('md5', userKey, random);
     const uid = xor(crypto.randomBytes(4), tmp_mac.slice(0, 4));
@@ -423,7 +423,7 @@ export default class SsrAuthChainPreset extends IPreset {
   }
 
   serverInUdp({buffer, fail}) {
-    const {userKey} = SsrAuthChainPreset;
+    const userKey = this.readProperty('ss-stream-cipher', 'key');
     const packet = buffer.slice(0, -1);
     const packet_hmac = buffer.slice(-1);
     const packet_hmac_calc = hmac('md5', userKey, packet).slice(0, 1);
@@ -443,7 +443,7 @@ export default class SsrAuthChainPreset extends IPreset {
   }
 
   serverOutUdp({buffer}) {
-    const {userKey} = SsrAuthChainPreset;
+    const userKey = this.readProperty('ss-stream-cipher', 'key');
     const random = crypto.randomBytes(7);
     const tmp_mac = hmac('md5', userKey, random);
     const random_bytes = crypto.randomBytes(this.getRandomBytesLengthForUdp(tmp_mac, this._rngServer));
@@ -459,7 +459,7 @@ export default class SsrAuthChainPreset extends IPreset {
   }
 
   clientInUdp({buffer, fail}) {
-    const {userKey} = SsrAuthChainPreset;
+    const userKey = this.readProperty('ss-stream-cipher', 'key');
     const packet = buffer.slice(0, -1);
     const packet_hmac = buffer.slice(-1);
     const packet_hmac_calc = hmac('md5', userKey, packet).slice(0, 1);
