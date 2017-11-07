@@ -1,0 +1,305 @@
+yarn run v1.3.2
+$ node benchmark/bootstrap.js
+blinksocks version:
+2.8.2
+
+Operating System:
+cpu             Intel(R) Core(TM) i3-4160 CPU @ 3.60GHz
+cores           4
+memory          16722878464
+type            Linux
+platform        linux
+arch            x64
+release         4.4.0-98-generic
+
+Node.js Versions:
+http_parser     2.7.0
+node            8.9.0
+v8              6.1.534.46
+uv              1.15.0
+zlib            1.2.11
+ares            1.10.1-DEV
+modules         57
+nghttp2         1.25.0
+openssl         1.0.2l
+icu             59.1
+unicode         9.0
+cldr            31.0.1
+tz              2017b
+
+running 30 tests...
+
+------------ Test Case 0 ----------------
+[{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  1.78 GBytes  5.09 Gbits/sec  sender
+0.00-3.11   sec  1.65 GBytes  4.54 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 1 ----------------
+[{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"aes-256-cfb"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  992 MBytes  2.77 Gbits/sec  sender
+0.00-3.38   sec  896 MBytes  2.23 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 2 ----------------
+[{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"rc4-md5"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  1.25 GBytes  3.57 Gbits/sec  sender
+0.00-3.15   sec  1.11 GBytes  3.03 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 3 ----------------
+[{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"camellia-256-cfb"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  502 MBytes  1.40 Gbits/sec  sender
+0.00-3.72   sec  400 MBytes  903 Mbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 4 ----------------
+[{"name":"ss-base"},{"name":"ss-aead-cipher","params":{"method":"aes-256-gcm"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  713 MBytes  1.99 Gbits/sec  sender
+0.00-3.45   sec  602 MBytes  1.47 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 5 ----------------
+[{"name":"ss-base"},{"name":"ss-aead-cipher","params":{"method":"chacha20-poly1305"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  342 MBytes  956 Mbits/sec  sender
+0.00-6.00   sec  266 MBytes  371 Mbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 6 ----------------
+[{"name":"ss-base"},{"name":"ss-aead-cipher","params":{"method":"chacha20-ietf-poly1305"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  313 MBytes  875 Mbits/sec  sender
+0.00-5.66   sec  222 MBytes  329 Mbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 7 ----------------
+[{"name":"ss-base"},{"name":"ss-aead-cipher","params":{"method":"xchacha20-ietf-poly1305"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  339 MBytes  949 Mbits/sec  sender
+0.00-5.44   sec  238 MBytes  367 Mbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 8 ----------------
+[{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}},{"name":"obfs-tls1.2-ticket","params":{"sni":["test.com"]}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  1.08 GBytes  3.10 Gbits/sec  sender
+0.00-3.58   sec  1000 MBytes  2.34 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 9 ----------------
+[{"name":"ss-base"},{"name":"obfs-random-padding"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  1.27 GBytes  3.63 Gbits/sec  sender
+0.00-3.17   sec  1.15 GBytes  3.11 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 10 ----------------
+[{"name":"ss-base"},{"name":"ss-aead-cipher","params":{"method":"aes-256-gcm"}},{"name":"obfs-tls1.2-ticket","params":{"sni":["test.com"]}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  651 MBytes  1.82 Gbits/sec  sender
+0.00-3.46   sec  522 MBytes  1.27 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 11 ----------------
+[{"name":"ss-base"},{"name":"obfs-random-padding"},{"name":"ss-aead-cipher","params":{"method":"aes-256-gcm"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  573 MBytes  1.60 Gbits/sec  sender
+0.00-3.63   sec  470 MBytes  1.09 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 12 ----------------
+[{"name":"ss-base"},{"name":"ssr-auth-aes128-md5"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  606 MBytes  1.69 Gbits/sec  sender
+0.00-3.33   sec  471 MBytes  1.19 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 13 ----------------
+[{"name":"ss-base"},{"name":"ssr-auth-aes128-sha1"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  644 MBytes  1.80 Gbits/sec  sender
+0.00-3.41   sec  517 MBytes  1.27 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 14 ----------------
+[{"name":"ss-base"},{"name":"ssr-auth-chain-a"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  498 MBytes  1.39 Gbits/sec  sender
+0.00-4.83   sec  425 MBytes  738 Mbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 15 ----------------
+[{"name":"ss-base"},{"name":"ssr-auth-chain-b"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  505 MBytes  1.41 Gbits/sec  sender
+0.00-4.52   sec  407 MBytes  756 Mbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 16 ----------------
+[{"name":"v2ray-vmess","params":{"id":"a3482e88-686a-4a58-8126-99c9df64b7bf","security":"none"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  1.53 GBytes  4.37 Gbits/sec  sender
+0.00-3.23   sec  1.42 GBytes  3.79 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 17 ----------------
+[{"name":"v2ray-vmess","params":{"id":"a3482e88-686a-4a58-8126-99c9df64b7bf","security":"aes-128-gcm"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  873 MBytes  2.44 Gbits/sec  sender
+0.00-3.56   sec  788 MBytes  1.86 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 18 ----------------
+[{"name":"v2ray-vmess","params":{"id":"a3482e88-686a-4a58-8126-99c9df64b7bf","security":"chacha20-poly1305"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  339 MBytes  947 Mbits/sec  sender
+0.00-4.95   sec  240 MBytes  407 Mbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 19 ----------------
+[{"name":"v2ray-vmess","params":{"id":"a3482e88-686a-4a58-8126-99c9df64b7bf","security":"aes-128-gcm"}},{"name":"obfs-tls1.2-ticket","params":{"sni":["test.com"]}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  663 MBytes  1.85 Gbits/sec  sender
+0.00-3.42   sec  546 MBytes  1.34 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 20 ----------------
+[{"name":"base-auth"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  1.87 GBytes  5.36 Gbits/sec  sender
+0.00-3.14   sec  1.76 GBytes  4.81 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 21 ----------------
+[{"name":"base-auth"},{"name":"ss-aead-cipher","params":{"method":"aes-256-gcm"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  787 MBytes  2.20 Gbits/sec  sender
+0.00-3.70   sec  630 MBytes  1.43 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 22 ----------------
+[{"name":"base-auth"},{"name":"aead-random-cipher","params":{"method":"aes-256-gcm"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  639 MBytes  1.79 Gbits/sec  sender
+0.00-3.70   sec  495 MBytes  1.12 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 23 ----------------
+[{"name":"ss-base"},{"name":"aead-random-cipher","params":{"method":"aes-256-gcm"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  702 MBytes  1.96 Gbits/sec  sender
+0.00-3.86   sec  592 MBytes  1.29 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 24 ----------------
+[{"name":"base-auth"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}},{"name":"obfs-tls1.2-ticket","params":{"sni":["test.com"]}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  1.06 GBytes  3.02 Gbits/sec  sender
+0.00-3.51   sec  877 MBytes  2.10 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 25 ----------------
+[{"name":"base-auth"},{"name":"obfs-random-padding"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  1.30 GBytes  3.71 Gbits/sec  sender
+0.00-3.17   sec  1.18 GBytes  3.19 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 26 ----------------
+[{"name":"base-auth"},{"name":"ss-aead-cipher","params":{"method":"aes-256-gcm"}},{"name":"obfs-tls1.2-ticket","params":{"sni":["test.com"]}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  635 MBytes  1.78 Gbits/sec  sender
+0.00-3.46   sec  514 MBytes  1.24 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 27 ----------------
+[{"name":"base-auth"},{"name":"obfs-random-padding"},{"name":"ss-aead-cipher","params":{"method":"aes-256-gcm"}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  644 MBytes  1.80 Gbits/sec  sender
+0.00-3.41   sec  508 MBytes  1.25 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 28 ----------------
+[{"name":"base-auth"},{"name":"aead-random-cipher","params":{"method":"aes-256-gcm"}},{"name":"obfs-tls1.2-ticket","params":{"sni":["test.com"]}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  571 MBytes  1.60 Gbits/sec  sender
+0.00-3.69   sec  478 MBytes  1.09 Gbits/sec  receiver
+-----------------------------------------
+
+------------ Test Case 29 ----------------
+[{"name":"ss-base"},{"name":"aead-random-cipher","params":{"method":"aes-256-gcm"}},{"name":"obfs-tls1.2-ticket","params":{"sni":["test.com"]}}]
+Interval         Transfer     Bitrate
+0.00-3.00   sec  619 MBytes  1.73 Gbits/sec  sender
+0.00-3.94   sec  527 MBytes  1.12 Gbits/sec  receiver
+-----------------------------------------
+
+(ranking):
+
+ 1: Test Case 20, Bitrate = 5.36 Gbits/sec, 4.81 Gbits/sec
+    [{"name":"base-auth"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
+ 2: Test Case 0, Bitrate = 5.09 Gbits/sec, 4.54 Gbits/sec
+    [{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
+ 3: Test Case 16, Bitrate = 4.37 Gbits/sec, 3.79 Gbits/sec
+    [{"name":"v2ray-vmess","params":{"id":"a3482e88-686a-4a58-8126-99c9df64b7bf","security":"none"}}]
+ 4: Test Case 25, Bitrate = 3.71 Gbits/sec, 3.19 Gbits/sec
+    [{"name":"base-auth"},{"name":"obfs-random-padding"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
+ 5: Test Case 9, Bitrate = 3.63 Gbits/sec, 3.11 Gbits/sec
+    [{"name":"ss-base"},{"name":"obfs-random-padding"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
+ 6: Test Case 2, Bitrate = 3.57 Gbits/sec, 3.03 Gbits/sec
+    [{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"rc4-md5"}}]
+ 7: Test Case 8, Bitrate = 3.10 Gbits/sec, 2.34 Gbits/sec
+    [{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}},{"name":"obfs-tls1.2-ticket","params":{"sni":["test.com"]}}]
+ 8: Test Case 1, Bitrate = 2.77 Gbits/sec, 2.23 Gbits/sec
+    [{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"aes-256-cfb"}}]
+ 9: Test Case 24, Bitrate = 3.02 Gbits/sec, 2.10 Gbits/sec
+    [{"name":"base-auth"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}},{"name":"obfs-tls1.2-ticket","params":{"sni":["test.com"]}}]
+10: Test Case 17, Bitrate = 2.44 Gbits/sec, 1.86 Gbits/sec
+    [{"name":"v2ray-vmess","params":{"id":"a3482e88-686a-4a58-8126-99c9df64b7bf","security":"aes-128-gcm"}}]
+11: Test Case 4, Bitrate = 1.99 Gbits/sec, 1.47 Gbits/sec
+    [{"name":"ss-base"},{"name":"ss-aead-cipher","params":{"method":"aes-256-gcm"}}]
+12: Test Case 21, Bitrate = 2.20 Gbits/sec, 1.43 Gbits/sec
+    [{"name":"base-auth"},{"name":"ss-aead-cipher","params":{"method":"aes-256-gcm"}}]
+13: Test Case 19, Bitrate = 1.85 Gbits/sec, 1.34 Gbits/sec
+    [{"name":"v2ray-vmess","params":{"id":"a3482e88-686a-4a58-8126-99c9df64b7bf","security":"aes-128-gcm"}},{"name":"obfs-tls1.2-ticket","params":{"sni":["test.com"]}}]
+14: Test Case 23, Bitrate = 1.96 Gbits/sec, 1.29 Gbits/sec
+    [{"name":"ss-base"},{"name":"aead-random-cipher","params":{"method":"aes-256-gcm"}}]
+15: Test Case 13, Bitrate = 1.80 Gbits/sec, 1.27 Gbits/sec
+    [{"name":"ss-base"},{"name":"ssr-auth-aes128-sha1"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
+16: Test Case 10, Bitrate = 1.82 Gbits/sec, 1.27 Gbits/sec
+    [{"name":"ss-base"},{"name":"ss-aead-cipher","params":{"method":"aes-256-gcm"}},{"name":"obfs-tls1.2-ticket","params":{"sni":["test.com"]}}]
+17: Test Case 27, Bitrate = 1.80 Gbits/sec, 1.25 Gbits/sec
+    [{"name":"base-auth"},{"name":"obfs-random-padding"},{"name":"ss-aead-cipher","params":{"method":"aes-256-gcm"}}]
+18: Test Case 26, Bitrate = 1.78 Gbits/sec, 1.24 Gbits/sec
+    [{"name":"base-auth"},{"name":"ss-aead-cipher","params":{"method":"aes-256-gcm"}},{"name":"obfs-tls1.2-ticket","params":{"sni":["test.com"]}}]
+19: Test Case 12, Bitrate = 1.69 Gbits/sec, 1.19 Gbits/sec
+    [{"name":"ss-base"},{"name":"ssr-auth-aes128-md5"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
+20: Test Case 29, Bitrate = 1.73 Gbits/sec, 1.12 Gbits/sec
+    [{"name":"ss-base"},{"name":"aead-random-cipher","params":{"method":"aes-256-gcm"}},{"name":"obfs-tls1.2-ticket","params":{"sni":["test.com"]}}]
+21: Test Case 22, Bitrate = 1.79 Gbits/sec, 1.12 Gbits/sec
+    [{"name":"base-auth"},{"name":"aead-random-cipher","params":{"method":"aes-256-gcm"}}]
+22: Test Case 11, Bitrate = 1.60 Gbits/sec, 1.09 Gbits/sec
+    [{"name":"ss-base"},{"name":"obfs-random-padding"},{"name":"ss-aead-cipher","params":{"method":"aes-256-gcm"}}]
+23: Test Case 28, Bitrate = 1.60 Gbits/sec, 1.09 Gbits/sec
+    [{"name":"base-auth"},{"name":"aead-random-cipher","params":{"method":"aes-256-gcm"}},{"name":"obfs-tls1.2-ticket","params":{"sni":["test.com"]}}]
+24: Test Case 3, Bitrate = 1.40 Gbits/sec, 903 Mbits/sec
+    [{"name":"ss-base"},{"name":"ss-stream-cipher","params":{"method":"camellia-256-cfb"}}]
+25: Test Case 15, Bitrate = 1.41 Gbits/sec, 756 Mbits/sec
+    [{"name":"ss-base"},{"name":"ssr-auth-chain-b"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
+26: Test Case 14, Bitrate = 1.39 Gbits/sec, 738 Mbits/sec
+    [{"name":"ss-base"},{"name":"ssr-auth-chain-a"},{"name":"ss-stream-cipher","params":{"method":"aes-256-ctr"}}]
+27: Test Case 18, Bitrate = 947 Mbits/sec, 407 Mbits/sec
+    [{"name":"v2ray-vmess","params":{"id":"a3482e88-686a-4a58-8126-99c9df64b7bf","security":"chacha20-poly1305"}}]
+28: Test Case 5, Bitrate = 956 Mbits/sec, 371 Mbits/sec
+    [{"name":"ss-base"},{"name":"ss-aead-cipher","params":{"method":"chacha20-poly1305"}}]
+29: Test Case 7, Bitrate = 949 Mbits/sec, 367 Mbits/sec
+    [{"name":"ss-base"},{"name":"ss-aead-cipher","params":{"method":"xchacha20-ietf-poly1305"}}]
+30: Test Case 6, Bitrate = 875 Mbits/sec, 329 Mbits/sec
+    [{"name":"ss-base"},{"name":"ss-aead-cipher","params":{"method":"chacha20-ietf-poly1305"}}]
+
+Done in 459.52s.
