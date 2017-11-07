@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import {IPreset} from './defs';
-import {AdvancedBuffer, getRandomInt, getRandomChunks, numberToBuffer} from '../utils';
+import {AdvancedBuffer, getRandomChunks, numberToBuffer as ntb} from '../utils';
 
 /**
  * @description
@@ -56,11 +56,35 @@ export default class ObfsRandomPaddingPreset extends IPreset {
 
   // tcp
 
+  /**
+   * return length of random bytes base on dataLen,
+   * idea is took from ssr auth_chain_a.
+   * @param dataLen
+   * @returns {Number}
+   */
+  getRandomBytesLength(dataLen) {
+    if (dataLen > 1440) {
+      return 0;
+    }
+    const rand = crypto.randomBytes(1)[0];
+    let random_bytes_len;
+    if (dataLen > 1300) {
+      random_bytes_len = rand % 31;
+    } else if (dataLen > 900) {
+      random_bytes_len = rand % 127;
+    } else if (dataLen > 400) {
+      random_bytes_len = rand % 521;
+    } else {
+      random_bytes_len = rand % 1021;
+    }
+    return random_bytes_len;
+  }
+
   beforeOut({buffer}) {
     const chunks = getRandomChunks(buffer, 0x3fff, 0xffff).map((data) => {
-      const pLen = getRandomInt(0, 0xff);
+      const pLen = this.getRandomBytesLength(data.length);
       const padding = crypto.randomBytes(pLen);
-      return Buffer.concat([numberToBuffer(pLen, 1), padding, numberToBuffer(data.length), data]);
+      return Buffer.concat([ntb(pLen, 1), padding, ntb(data.length), data]);
     });
     return Buffer.concat(chunks);
   }
@@ -92,9 +116,9 @@ export default class ObfsRandomPaddingPreset extends IPreset {
   // udp
 
   beforeOutUdp({buffer}) {
-    const pLen = getRandomInt(0, 0xff);
+    const pLen = crypto.randomBytes(1)[0] % 128;
     const padding = crypto.randomBytes(pLen);
-    return Buffer.concat([numberToBuffer(pLen, 1), padding, buffer]);
+    return Buffer.concat([ntb(pLen, 1), padding, buffer]);
   }
 
   beforeInUdp({buffer, fail}) {
