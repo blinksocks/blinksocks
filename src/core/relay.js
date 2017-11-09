@@ -9,7 +9,6 @@ import {
   TlsInbound, TlsOutbound,
   WsInbound, WsOutbound
 } from '../transports';
-import {logger} from '../utils';
 
 function preparePresets(presets) {
   // add at least one "tracker" preset to the list
