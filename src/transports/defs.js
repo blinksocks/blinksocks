@@ -24,7 +24,7 @@ class Bound extends EventEmitter {
 
   }
 
-  setPresets(callback) {
+  updatePresets(value) {
 
   }
 

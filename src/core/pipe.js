@@ -25,6 +25,7 @@ export class Pipe extends EventEmitter {
   constructor({presets, isUdp = false}) {
     super();
     this.broadcast = this.broadcast.bind(this);
+    this.onReadProperty = this.onReadProperty.bind(this);
     this.createMiddlewares(presets);
     this._isPipingUdp = isUdp;
   }
@@ -43,34 +44,20 @@ export class Pipe extends EventEmitter {
     }
   }
 
-  createMiddlewares(presets) {
-    const middlewares = [];
-    for (const preset of presets) {
-      const middleware = new Middleware(preset);
-      middleware.setMaxListeners(4);
-      middleware.on('broadcast', this.broadcast);
-      middleware.on('fail', (name, message) => void this.broadcast(name, {
-        type: PRESET_FAILED,
-        payload: {
-          name,
-          message,
-          orgData: this._cacheBuffer
-        }
-      }));
-      // set readProperty()
-      const impl = middleware.getImplement();
-      impl.readProperty = function readProperty(presetName, propertyName) {
-        const ms = middlewares.find((m) => m.name === presetName);
-        if (ms) {
-          const impl = ms.getImplement();
-          const value = impl[propertyName];
-          return value !== undefined ? value : impl.constructor[propertyName];
-        } else {
-          logger.warn(`[preset] "${middleware.name}" cannot read property from nonexistent preset "${presetName}".`);
-        }
-      };
-      middlewares.push(middleware);
+  onReadProperty(name, presetName, propertyName) {
+    const middlewares = this.getMiddlewares();
+    const ms = middlewares.find((m) => m.name === presetName);
+    if (ms) {
+      const impl = ms.getImplement();
+      const value = impl[propertyName];
+      return value !== undefined ? value : impl.constructor[propertyName];
+    } else {
+      logger.warn(`[preset] "${name}" cannot read property from nonexistent preset "${presetName}".`);
     }
+  }
+
+  createMiddlewares(presets) {
+    const middlewares = presets.map((preset) => this._createMiddleware(preset));
     this._upstream_middlewares = middlewares;
     this._downstream_middlewares = [].concat(middlewares).reverse();
   }
@@ -81,6 +68,34 @@ export class Pipe extends EventEmitter {
     } else {
       return this._downstream_middlewares;
     }
+  }
+
+  updateMiddlewares(presets) {
+    // create index of previous middlewares for fast locate
+    const mdIndex = {};
+    for (const md of this.getMiddlewares()) {
+      mdIndex[md.name] = md;
+    }
+    // create non-exist middleware and reuse exist one
+    const middlewares = [];
+    for (const preset of presets) {
+      let md = mdIndex[preset.name];
+      if (md) {
+        // remove all listeners for later re-chain later in _feed()
+        md.removeAllListeners();
+        // keep common listeners
+        this._attachEvents(md);
+        delete mdIndex[preset.name];
+      } else {
+        md = this._createMiddleware(preset);
+      }
+      middlewares.push(md);
+    }
+    // destroy redundant middlewares
+    Object.keys(mdIndex).forEach((key) => mdIndex[key].onDestroy());
+    // update members
+    this._upstream_middlewares = middlewares;
+    this._downstream_middlewares = [].concat(middlewares).reverse();
   }
 
   feed(direction, buffer) {
@@ -112,6 +127,28 @@ export class Pipe extends EventEmitter {
     this._cacheBuffer = null;
     this._destroyed = true;
     this.removeAllListeners();
+  }
+
+  _createMiddleware(preset) {
+    const middleware = new Middleware(preset);
+    this._attachEvents(middleware);
+    // set readProperty()
+    const impl = middleware.getImplement();
+    impl.readProperty = (...args) => this.onReadProperty(middleware.name, ...args);
+    return middleware;
+  }
+
+  _attachEvents(middleware) {
+    middleware.setMaxListeners(4);
+    middleware.on('broadcast', this.broadcast);
+    middleware.on('fail', (name, message) => void this.broadcast(name, {
+      type: PRESET_FAILED,
+      payload: {
+        name,
+        message,
+        orgData: this._cacheBuffer
+      }
+    }));
   }
 
   _feed(direction, buffer) {

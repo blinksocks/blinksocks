@@ -12,18 +12,10 @@ import {
 import {logger} from '../utils';
 
 function preparePresets(presets) {
-  const auto_conf_preset = presets.find(({name}) => name === 'auto-conf');
-  if (auto_conf_preset !== undefined) {
-    if (presets.length > 1) {
-      logger.warn('[relay] ignore redundant presets because "auto-conf" is added');
-    }
-    presets = [auto_conf_preset]; // drop any other presets when have "auto-conf" preset
-  } else {
-    // add at least one "tracker" preset to the list on both sides
-    const last = presets[presets.length - 1];
-    if (!last || last.name !== 'tracker') {
-      presets = presets.concat([{'name': 'tracker'}]);
-    }
+  // add at least one "tracker" preset to the list
+  const last = presets[presets.length - 1];
+  if (!last || last.name !== 'tracker') {
+    presets = presets.concat([{'name': 'tracker'}]);
   }
   return presets;
 }
@@ -47,7 +39,7 @@ export class Relay extends EventEmitter {
 
   constructor({transport, context, Inbound, Outbound, proxyRequest = null}) {
     super();
-    this.setPresets = this.setPresets.bind(this);
+    this.updatePresets = this.updatePresets.bind(this);
     this.onBroadcast = this.onBroadcast.bind(this);
     this.postPipeEncode = this.postPipeEncode.bind(this);
     this.postPipeDecode = this.postPipeDecode.bind(this);
@@ -60,9 +52,9 @@ export class Relay extends EventEmitter {
     // outbound
     this._inbound = new Inbound({context: context, pipe: this._pipe});
     this._outbound = new Outbound({inbound: this._inbound, pipe: this._pipe});
-    this._outbound.setPresets = this.setPresets;
+    this._outbound.updatePresets = this.updatePresets;
     // inbound
-    this._inbound.setPresets = this.setPresets;
+    this._inbound.updatePresets = this.updatePresets;
     this._inbound.setOutbound(this._outbound);
     this._inbound.on('close', () => {
       this.destroy();
@@ -100,19 +92,10 @@ export class Relay extends EventEmitter {
   }
 
   onChangePresetSuite(action) {
-    const {type, presets, data, createWrapper} = action.payload;
-    // 1. replace preset list
-    this.setPresets(preparePresets(presets));
-    // 2. handle post-pipe event when encode
-    if (__IS_CLIENT__ && type === PIPE_ENCODE) {
-      const event = `post_${PIPE_ENCODE}`;
-      this._pipe.removeListener(event, this.postPipeEncode);
-      this._pipe.once(event, (buffer) => {
-        this.postPipeEncode(createWrapper(buffer));
-        this._pipe.on(event, this.postPipeEncode);
-      });
-    }
-    // 3. initialize newly created presets
+    const {type, presets, data} = action.payload;
+    // 1. update preset list
+    this.updatePresets(preparePresets(presets.concat([{'name': 'auto-conf'}])));
+    // 2. initialize newly created presets
     const transport = this._transport;
     const context = this._context;
     const proxyRequest = this._proxyRequest;
@@ -130,7 +113,7 @@ export class Relay extends EventEmitter {
         payload: {...proxyRequest, keepAlive: true} // keep previous connection alive, don't re-connect
       });
     }
-    // 4. re-pipe
+    // 3. re-pipe
     this._pipe.feed(type, data);
   }
 
@@ -153,15 +136,12 @@ export class Relay extends EventEmitter {
   // methods
 
   /**
-   * set a new presets and recreate the pipe
+   * update presets of pipe
    * @param value
    */
-  setPresets(value) {
+  updatePresets(value) {
     this._presets = typeof value === 'function' ? value(this._presets) : value;
-    this._pipe.destroy();
-    this._pipe = this.createPipe(this._presets);
-    this._inbound._pipe = this._pipe;
-    this._outbound._pipe = this._pipe;
+    this._pipe.updateMiddlewares(this._presets);
   }
 
   /**

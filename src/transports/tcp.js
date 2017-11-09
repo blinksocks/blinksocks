@@ -148,7 +148,7 @@ export class TcpInbound extends Inbound {
         logger.warn(`[tcp:inbound] [${this.remote}] connection is redirecting to: ${host}:${port}`);
 
         // replace presets to tracker only
-        this.setPresets([{name: 'tracker'}]);
+        this.updatePresets([{name: 'tracker'}]);
 
         // connect to "redirect" remote
         await this._outbound.connect({host, port: +port});
