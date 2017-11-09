@@ -10,6 +10,7 @@ function getInstanceFromCache(ImplClass, params) {
   let impl = presetCache[ImplClass.name];
   if (impl === undefined) {
     // only create one instance for IPresetStatic
+    ImplClass.checkParams(params);
     ImplClass.onInit(params);
     impl = new ImplClass(params);
     presetCache[ImplClass.name] = impl;
@@ -24,6 +25,7 @@ function createPreset(name, params = {}) {
     preset = getInstanceFromCache(ImplClass, params);
   } else {
     if (!ImplClass.initialized) {
+      ImplClass.checkParams(params);
       ImplClass.onInit(params);
       ImplClass.initialized = true;
     }
