@@ -8,7 +8,7 @@ import {Balancer} from './balancer';
 import {Config} from './config';
 import * as MiddlewareManager from './middleware';
 import {createRelay} from './relay';
-import {logger} from '../utils';
+import {logger, dumpHex} from '../utils';
 import {tcp, http, socks} from '../proxies';
 
 export class Hub {
@@ -166,7 +166,7 @@ export class Hub {
         if (__IS_CLIENT__) {
           const parsed = socks.parseSocks5UdpRequest(msg);
           if (parsed === null) {
-            logger.warn(`[hub] [${address}:${port}] drop invalid udp packet: ${msg.slice(0, 60).toString('hex')}`);
+            logger.warn(`[hub] [${address}:${port}] drop invalid udp packet: ${dumpHex(msg)}`);
             return;
           }
           const {host, port, data} = parsed;
