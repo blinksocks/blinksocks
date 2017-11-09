@@ -148,7 +148,7 @@ export class TcpInbound extends Inbound {
         logger.warn(`[tcp:inbound] [${this.remote}] connection is redirecting to: ${host}:${port}`);
 
         // replace presets to tracker only
-        this.setPresets((/* prevPresets */) => [{name: 'tracker'}]);
+        this.setPresets([{name: 'tracker'}]);
 
         // connect to "redirect" remote
         await this._outbound.connect({host, port: +port});
@@ -267,19 +267,21 @@ export class TcpOutbound extends Outbound {
   }
 
   async onConnectToRemote(action) {
-    const {host, port, onConnected} = action.payload;
+    const {host, port, keepAlive, onConnected} = action.payload;
     try {
       if (__IS_SERVER__) {
-        await this.connect({host, port});
+        (!keepAlive || !this._socket) && await this.connect({host, port});
       }
       if (__IS_CLIENT__) {
-        logger.info(`[tcp:outbound] [${this.remote}] request: ${host}:${port}`);
-        await this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__});
+        !keepAlive && logger.info(`[tcp:outbound] [${this.remote}] request: ${host}:${port}`);
+        (!keepAlive || !this._socket) && await this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__});
       }
-      if (typeof onConnected === 'function') {
-        onConnected(this._inbound.onReceive);
-      }
-      this._pipe.broadcast(null, {type: CONNECTED_TO_REMOTE, payload: {host, port}});
+      this._socket.on('connect', () => {
+        if (typeof onConnected === 'function') {
+          onConnected(this._inbound.onReceive);
+        }
+        this._pipe.broadcast(null, {type: CONNECTED_TO_REMOTE, payload: {host, port}});
+      });
     } catch (err) {
       logger.warn(`[tcp:outbound] [${this.remote}] fail to connect to ${host}:${port} err=${err.message}`);
       this._inbound.destroy();
@@ -295,7 +297,7 @@ export class TcpOutbound extends Outbound {
   }
 
   async connect({host, port}) {
-    // close living connection before create a new connection
+    // close alive connection before create a new one
     if (this._socket && !this._socket.destroyed) {
       this._socket.destroy();
       this._socket = null;

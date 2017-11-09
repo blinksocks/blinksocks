@@ -111,7 +111,7 @@ export class WsInbound extends Inbound {
         logger.warn(`[ws:inbound] [${this.remote}] connection is redirecting to: ${host}:${port}`);
 
         // replace presets to tracker only
-        this.setPresets((/* prevPresets */) => [{name: 'tracker'}]);
+        this.setPresets([{name: 'tracker'}]);
 
         // connect to "redirect" remote
         await this._outbound.connect({host, port: +port});
@@ -249,18 +249,25 @@ export class WsOutbound extends Outbound {
   }
 
   async onConnectToRemote(action) {
-    const {host, port, onConnected} = action.payload;
-    if (__IS_SERVER__) {
-      await this.connect({host, port});
+    const {host, port, keepAlive, onConnected} = action.payload;
+    try {
+      if (__IS_SERVER__) {
+        (!keepAlive || !this._ws) && await this.connect({host, port});
+      }
+      if (__IS_CLIENT__) {
+        !keepAlive && logger.info(`[ws:outbound] [${this.remote}] request: ${host}:${port}`);
+        (!keepAlive || !this._ws) && await this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__});
+      }
+      this._ws.on('open', () => {
+        if (typeof onConnected === 'function') {
+          onConnected(this._inbound.onReceive);
+        }
+        this._pipe.broadcast(null, {type: CONNECTED_TO_REMOTE, payload: {host, port}});
+      });
+    } catch (err) {
+      logger.warn(`[ws:outbound] [${this.remote}] fail to connect to ${host}:${port} err=${err.message}`);
+      this._inbound.destroy();
     }
-    if (__IS_CLIENT__) {
-      logger.info(`[ws:outbound] [${this.remote}] request: ${host}:${port}`);
-      await this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__});
-    }
-    if (typeof onConnected === 'function') {
-      onConnected(this._inbound.onReceive);
-    }
-    this._pipe.broadcast(null, {type: CONNECTED_TO_REMOTE, payload: {host, port}});
   }
 
   onPresetPauseSend() {
@@ -272,22 +279,12 @@ export class WsOutbound extends Outbound {
   }
 
   async connect({host, port}) {
-    let ip = null;
-    try {
-      ip = await this._dnsCache.get(host);
-    } catch (err) {
-      logger.error(`[ws:outbound] [${this.remote}] fail to resolve host ${host}: ${err.message}`);
-    }
+    const ip = await this._dnsCache.get(host);
     logger.info(`[ws:outbound] [${this.remote}] connecting to: ws://${host}:${port} resolve=${ip}`);
-    return new Promise((resolve) => {
-      this._ws = new WebSocket(`ws://${host}:${port}`, {
-        perMessageDeflate: false
-      });
-      this._ws.on('open', () => resolve(this._ws));
-      this._ws.on('message', this.onReceive);
-      this._ws.on('close', this.destroy);
-      this._ws.on('error', this.onError);
-    });
+    this._ws = new WebSocket(`ws://${host}:${port}`, {perMessageDeflate: false});
+    this._ws.on('message', this.onReceive);
+    this._ws.on('close', this.destroy);
+    this._ws.on('error', this.onError);
   }
 
 }
