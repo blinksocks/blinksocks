@@ -9,13 +9,17 @@ import {
   TlsInbound, TlsOutbound,
   WsInbound, WsOutbound
 } from '../transports';
+import {logger} from '../utils';
 
 function preparePresets(presets) {
   const auto_conf_preset = presets.find(({name}) => name === 'auto-conf');
   if (auto_conf_preset !== undefined) {
+    if (presets.length > 1) {
+      logger.warn('[relay] ignore redundant presets because "auto-conf" is added');
+    }
     presets = [auto_conf_preset]; // drop any other presets when have "auto-conf" preset
   } else {
-    // add "tracker" preset to the preset list on both sides
+    // add at least one "tracker" preset to the list on both sides
     const last = presets[presets.length - 1];
     if (!last || last.name !== 'tracker') {
       presets = presets.concat([{'name': 'tracker'}]);

@@ -320,8 +320,7 @@ export class Config {
         }
       }
       // check for existence of the preset
-      const PresetClass = getPresetClassByName(preset.name);
-      PresetClass.checkParams(preset.params || {});
+      getPresetClassByName(preset.name);
     }
   }
 

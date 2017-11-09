@@ -79,7 +79,7 @@ export function getPresetClassByName(name) {
     try {
       clazz = require(name);
     } catch (err) {
-      throw Error(`cannot find preset: "${name}" from built-in modules or external: ${err.message}`);
+      throw Error(`cannot load preset: "${name}" from built-in modules or external`);
     }
     if (!checkPresetClass(clazz)) {
       throw Error(`definition of preset "${name}" is invalid`);
