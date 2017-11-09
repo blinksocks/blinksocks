@@ -79,8 +79,7 @@ export const PRESET_FAILED = '@action:preset_failed';
  *    payload: {
  *      type: <PIPE_ENCODE|PIPE_DECODE>,
  *      presets: [...],
- *      data: <Buffer>,
- *      createWrapper: <Function>
+ *      data: <Buffer>
  *    }
  *  }
  */

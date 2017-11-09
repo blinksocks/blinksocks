@@ -33,10 +33,12 @@ export default class TrackerPreset extends IPreset {
     switch (type) {
       case CONNECTION_CREATED: {
         const {host, port, transport} = payload;
-        this._transport = transport;
-        this._sourceHost = host;
-        this._sourcePort = port;
-        this._tracks.push(`${host}:${port}`);
+        if (this._sourceHost !== host && this._sourceHost !== port) {
+          this._transport = transport;
+          this._sourceHost = host;
+          this._sourcePort = port;
+          this._tracks.push(`${host}:${port}`);
+        }
         break;
       }
       case CONNECT_TO_REMOTE: {
