@@ -4,6 +4,7 @@ import {checkPresetClass} from './defs';
 import StatsPreset from './stats';
 import TrackerPreset from './tracker';
 import AccessControlPreset from './access-control';
+import AutoConfPreset from './auto-conf';
 
 // basic
 import BaseAuthPreset from './base-auth';
@@ -39,6 +40,7 @@ const mapping = {
   'stats': StatsPreset,
   'tracker': TrackerPreset,
   'access-control': AccessControlPreset,
+  'auto-conf': AutoConfPreset,
 
   // basic
   'base-auth': BaseAuthPreset,
@@ -71,10 +73,7 @@ const legacy = {
   'base-auth-stream': BaseAuthStreamPreset
 };
 
-const presets = Object.keys(mapping);
-const legacyPresets = Object.keys(legacy);
-
-function getPresetClassByName(name) {
+export function getPresetClassByName(name) {
   let clazz = {...mapping, ...legacy}[name];
   if (clazz === undefined) {
     try {
@@ -89,5 +88,6 @@ function getPresetClassByName(name) {
   return clazz;
 }
 
-export {getPresetClassByName, presets, legacyPresets};
+export const presets = Object.keys(mapping);
+export const legacyPresets = Object.keys(legacy);
 export * from './defs';

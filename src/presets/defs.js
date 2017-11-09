@@ -43,7 +43,8 @@ export const CONNECTION_WILL_CLOSE = '@action:connection_will_close';
  *    payload: {
  *      host: 'bing.com',
  *      port: 443,
- *      onConnected: () => {}
+ *      onConnected: () => {},
+ *      keepAlive: false
  *    }
  *  }
  */
@@ -72,6 +73,19 @@ export const CONNECTED_TO_REMOTE = '@action:connected_to_remote';
  */
 export const PRESET_FAILED = '@action:preset_failed';
 
+/**
+ *  {
+ *    type: CHANGE_PRESET_SUITE,
+ *    payload: {
+ *      type: <PIPE_ENCODE|PIPE_DECODE>,
+ *      presets: [...],
+ *      data: <Buffer>,
+ *      createWrapper: <Function>
+ *    }
+ *  }
+ */
+export const CHANGE_PRESET_SUITE = '@action:change_preset_suite';
+
 export const PRESET_CLOSE_CONNECTION = '@action:preset_close_connection';
 
 export const PRESET_PAUSE_RECV = '@action:preset_pause_recv';
@@ -82,8 +96,8 @@ export const PRESET_RESUME_SEND = '@action:preset_resume_send';
 /**
  *
  * @lifecycle
- *   [static checkParams() -> static onInit()] -> constructor() -> ... -> onDestroy()
- *                Only call once
+ *   static checkParams() -> static onInit() -> constructor() -> ... -> onDestroy()
+ *                          Only called once
  */
 export class IPreset {
 
