@@ -9,6 +9,7 @@ Presets are chaining and composable, built-in presets are listed here. If you wa
 * [stats](#stats)
 * [tracker](#tracker)
 * [access-control](#access-control)
+* [auto-conf](#auto-conf)
 
 **basic**
 
@@ -217,6 +218,27 @@ If server fail to process client(**by host**) requests over **max_tries** times,
 To recovery unwary ban, you can edit acl file, remove unwanted rule without restarting the program.
 
 > NOTE: rules will take effect immediately each time **acl.txt** was updated.
+
+## [auto-conf]
+
+An **experimental** preset used for auto-configure preset list. It will randomly choose a suite from `suites` for each connection.
+
+| PARAMS |                    DESCRIPTION                    | DEFAULT |
+| :----- | :------------------------------------------------ | :------ |
+| suites | A json file includes a set of preset combinations | -       |
+
+```
+"presets": [
+  {
+    "name": "auto-conf",
+    "params": {
+      "suites": "suites.json"
+    }
+  }
+]
+```
+
+> You can custom `suites.json` or just use one of the [official versions](../../suites).
 
 ## [base-auth]
 
@@ -536,6 +558,7 @@ Here is a [list](./RECOMMENDATIONS.md) of recommended conbinations.
 [stats]: ../../src/presets/stats.js
 [tracker]: ../../src/presets/tracker.js
 [access-control]: ../../src/presets/access-control.js
+[auto-conf]: ../../src/presets/auto-conf.js
 [base-auth]: ../../src/presets/base-auth.js
 [base-with-padding]: ../../src/presets/base-with-padding.js
 [base-auth-stream]: ../../src/presets/base-auth-stream.js

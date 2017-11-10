@@ -1,0 +1,127 @@
+[
+  {
+    "description": "shadowsocks stream cipher with tls obfs",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "ss-stream-cipher",
+        "params": {
+          "method": "aes-128-ctr"
+        }
+      },
+      {
+        "name": "obfs-tls1.2-ticket",
+        "params": {
+          "sni": "cloudfront.net"
+        }
+      }
+    ]
+  },
+  {
+    "description": "shadowsocks aead cipher with tls obfs",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "ss-aead-cipher",
+        "params": {
+          "method": "aes-128-gcm"
+        }
+      },
+      {
+        "name": "obfs-tls1.2-ticket",
+        "params": {
+          "sni": "cloudfront.net"
+        }
+      }
+    ]
+  },
+  {
+    "description": "shadowsocksr auth_aes128_sha1 without obfs",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "ssr-auth-aes128-sha1"
+      },
+      {
+        "name": "ss-stream-cipher",
+        "params": {
+          "method": "aes-128-ctr"
+        }
+      }
+    ]
+  },
+  {
+    "description": "shadowsocksr auth_chain_a without obfs",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "ssr-auth-chain-a"
+      },
+      {
+        "name": "ss-stream-cipher",
+        "params": {
+          "method": "aes-128-ctr"
+        }
+      }
+    ]
+  },
+  {
+    "description": "shadowsocksr auth_chain_b without obfs",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "ssr-auth-chain-b"
+      },
+      {
+        "name": "ss-stream-cipher",
+        "params": {
+          "method": "aes-128-ctr"
+        }
+      }
+    ]
+  },
+  {
+    "description": "shadowsocks stream cipher with random padding",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "obfs-random-padding"
+      },
+      {
+        "name": "ss-stream-cipher",
+        "params": {
+          "method": "aes-128-ctr"
+        }
+      }
+    ]
+  },
+  {
+    "description": "shadowsocks aead cipher with random padding",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "obfs-random-padding"
+      },
+      {
+        "name": "ss-aead-cipher",
+        "params": {
+          "method": "aes-128-gcm"
+        }
+      }
+    ]
+  }
+]

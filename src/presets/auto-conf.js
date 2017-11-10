@@ -22,6 +22,9 @@ const MAX_TIME_DIFF = 30; // seconds
  * @notice
  *   This is an experimental preset, protocol can be changed at any time.
  *
+ * @params
+ *   suites: A json file includes a set of preset combinations.
+ *
  * @examples
  *
  *   // use local file
