@@ -268,23 +268,27 @@ export class TcpOutbound extends Outbound {
 
   async onConnectToRemote(action) {
     const {host, port, keepAlive, onConnected} = action.payload;
-    try {
-      if (__IS_SERVER__) {
-        (!keepAlive || !this._socket) && await this.connect({host, port});
-      }
-      if (__IS_CLIENT__) {
-        !keepAlive && logger.info(`[tcp:outbound] [${this.remote}] request: ${host}:${port}`);
-        (!keepAlive || !this._socket) && await this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__});
-      }
-      this._socket.on('connect', () => {
-        if (typeof onConnected === 'function') {
-          onConnected(this._inbound.onReceive);
+    if (!keepAlive || !this._socket) {
+      try {
+        if (__IS_SERVER__) {
+          await this.connect({host, port});
         }
-        this._pipe.broadcast(null, {type: CONNECTED_TO_REMOTE, payload: {host, port}});
-      });
-    } catch (err) {
-      logger.warn(`[tcp:outbound] [${this.remote}] fail to connect to ${host}:${port} err=${err.message}`);
-      this._inbound.destroy();
+        if (__IS_CLIENT__) {
+          logger.info(`[tcp:outbound] [${this.remote}] request: ${host}:${port}`);
+          await this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__});
+        }
+        this._socket.on('connect', () => {
+          if (typeof onConnected === 'function') {
+            onConnected(this._inbound.onReceive);
+          }
+          this._pipe.broadcast(null, {type: CONNECTED_TO_REMOTE, payload: {host, port}});
+        });
+      } catch (err) {
+        logger.warn(`[tcp:outbound] [${this.remote}] fail to connect to ${host}:${port} err=${err.message}`);
+        this._inbound.destroy();
+      }
+    } else {
+      this._pipe.broadcast(null, {type: CONNECTED_TO_REMOTE, payload: {host, port}});
     }
   }
 
