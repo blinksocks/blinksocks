@@ -34,7 +34,24 @@
     ]
   },
   {
-    "description": "shadowsocksr auth_aes128_sha1 without obfs",
+    "description": "shadowsocksr auth_aes128_md5",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "ssr-auth-aes128-md5"
+      },
+      {
+        "name": "ss-stream-cipher",
+        "params": {
+          "method": "aes-128-ctr"
+        }
+      }
+    ]
+  },
+  {
+    "description": "shadowsocksr auth_aes128_sha1",
     "presets": [
       {
         "name": "ss-base"
@@ -51,7 +68,7 @@
     ]
   },
   {
-    "description": "shadowsocksr auth_chain_a without obfs",
+    "description": "shadowsocksr auth_chain_a",
     "presets": [
       {
         "name": "ss-base"
@@ -68,7 +85,7 @@
     ]
   },
   {
-    "description": "shadowsocksr auth_chain_b without obfs",
+    "description": "shadowsocksr auth_chain_b",
     "presets": [
       {
         "name": "ss-base"

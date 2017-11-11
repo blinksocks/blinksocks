@@ -1,0 +1,21 @@
+[
+  {
+    "description": "fastest address delivery",
+    "presets": [
+      {
+        "name": "base-auth"
+      }
+    ]
+  },
+  {
+    "description": "address delivery with random padding",
+    "presets": [
+      {
+        "name": "base-auth"
+      },
+      {
+        "name": "obfs-random-padding"
+      }
+    ]
+  }
+]
