@@ -1,6 +1,8 @@
-# Suites
+# Suites (Dynamic Protocol Stack)
 
-Here I prepared a set of suites file used by [auto-conf] preset, feel free to add/delete/modify them to meet your own needs.
+Like TLS cipher suite negotiation, blinksocks uses [auto-conf] to dynamic switch protocol stack once connection established.
+
+Here I prepared a set of suites file, feel free to add/delete/modify them to meet your own needs.
 
 ```
 "presets": [
@@ -12,6 +14,8 @@ Here I prepared a set of suites file used by [auto-conf] preset, feel free to ad
   }
 ]
 ```
+
+> Note that client and server should pre-share exactly the same **suites.json**.
 
 ## [suites-0.json]
 

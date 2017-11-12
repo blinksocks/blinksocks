@@ -21,12 +21,13 @@
 * Transmit data over raw TCP/UDP, **real** [TLS] or **real** [WebSocket].
 * A variety of customizable protocols and functional middlewares: using [presets](docs/presets).
 * External preset import.
-* Easy and powerful Access Control([ACL]) and Traffic Control([TC]): auto ban, speed(upload/download) limiter.
+* Easy and powerful Access Control([ACL]) and Traffic Control([TC]).
 * Executable versions available: [download here](https://github.com/blinksocks/blinksocks/releases).
 * **Out of the box** distribution and deployment.
-* Compatible with [shadowsocks](docs/presets/RECOMMENDATIONS.md#work-with-shadowsocks).
-* Compatible with [shadowsocksR](docs/presets/RECOMMENDATIONS.md#work-with-shadowsocksr).
-* Compatible with [v2ray vmess](docs/presets/RECOMMENDATIONS.md#work-with-v2ray-vmess).
+* Support [shadowsocks](docs/presets/RECOMMENDATIONS.md#work-with-shadowsocks) protocols.
+* Support [shadowsocksR](docs/presets/RECOMMENDATIONS.md#work-with-shadowsocksr) protocols.
+* Support [v2ray vmess](docs/presets/RECOMMENDATIONS.md#work-with-v2ray-vmess) protocol.
+* **Experimental**: [dynamic protocol stack](suites).
 
 ## Getting Started
 
