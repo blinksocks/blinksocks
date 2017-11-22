@@ -3,21 +3,22 @@ import {Inbound, Outbound} from './defs';
 import {PIPE_ENCODE, PIPE_DECODE} from '../core';
 import {logger, getRandomInt} from '../utils';
 import {
-  CONNECT_TO_REMOTE,
-  CONNECTION_WILL_CLOSE,
   CONNECTION_CLOSED,
+  CONNECTION_WILL_CLOSE,
+  CONNECT_TO_REMOTE,
   CONNECTED_TO_REMOTE,
   PRESET_FAILED,
   PRESET_CLOSE_CONNECTION,
-  PRESET_PAUSE_SEND,
   PRESET_PAUSE_RECV,
-  PRESET_RESUME_SEND,
-  PRESET_RESUME_RECV
+  PRESET_PAUSE_SEND,
+  PRESET_RESUME_RECV,
+  PRESET_RESUME_SEND
 } from '../presets/defs';
 
 const MAX_BUFFERED_SIZE = 512 * 1024; // 512KB
 
-// TODO: timeout mechanism for websocket
+// TODO(feature): timeout mechanism for websocket.
+// TODO(refactor): make class extend from TcpInbound and TcpOutbound.
 
 export class WsInbound extends Inbound {
 
@@ -64,6 +65,32 @@ export class WsInbound extends Inbound {
 
   get writable() {
     return this._ws && this._ws.readyState === WebSocket.OPEN;
+  }
+
+  write(buffer) {
+    if (this.writable) {
+      this._ws.send(buffer);
+    }
+  }
+
+  destroy() {
+    if (this._ws) {
+      const payload = {host: this.remoteHost, port: this.remotePort};
+      this.broadcast({type: CONNECTION_WILL_CLOSE, payload});
+      this._ws.close(1000);
+      this._ws = null;
+      this.emit('close');
+      this.broadcast({type: CONNECTION_CLOSED, payload});
+    }
+    if (this._outbound && !this._outbound.destroying) {
+      this._outbound.destroying = true;
+      if (this._outbound.bufferSize > 0) {
+        this._outbound.once('drain', () => this._outbound.destroy());
+      } else {
+        this._outbound.destroy();
+        this._outbound = null;
+      }
+    }
   }
 
   onBroadcast(action) {
@@ -140,33 +167,6 @@ export class WsInbound extends Inbound {
     __IS_SERVER__ && (this._ws && this._ws.resume());
   }
 
-  write(buffer) {
-    if (this.writable) {
-      this._ws.send(buffer);
-    }
-  }
-
-  destroy() {
-    if (this._ws) {
-      const payload = {host: this.remoteHost, port: this.remotePort};
-      this.broadcast({type: CONNECTION_WILL_CLOSE, payload});
-      this._ws.close(1000);
-      this._ws = null;
-      this.emit('close');
-      this.broadcast({type: CONNECTION_CLOSED, payload});
-    }
-    if (this._outbound && !this._outbound.destroying) {
-      this._outbound.destroying = true;
-      const bufferSize = this._outbound.bufferSize;
-      if (bufferSize > 0) {
-        this._outbound.once('drain', () => this._outbound.destroy());
-      } else {
-        this._outbound.destroy();
-        this._outbound = null;
-      }
-    }
-  }
-
 }
 
 export class WsOutbound extends Outbound {
@@ -222,8 +222,7 @@ export class WsOutbound extends Outbound {
     }
     if (this._inbound && !this._inbound.destroying) {
       this._inbound.destroying = true;
-      const bufferSize = this._inbound.bufferSize;
-      if (bufferSize > 0) {
+      if (this._inbound.bufferSize > 0) {
         this._inbound.once('drain', () => this._inbound.destroy());
       } else {
         this._inbound.destroy();
