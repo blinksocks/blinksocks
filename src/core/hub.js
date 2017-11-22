@@ -185,7 +185,9 @@ export class Hub {
           relays.set(key, relay);
           relays.prune(); // destroy old relays every time a new relay created
         }
-        relay._inbound.onReceive(packet, rinfo);
+        if (relay._inbound) {
+          relay._inbound.onReceive(packet, rinfo);
+        }
       });
 
       server.on('error', reject);
