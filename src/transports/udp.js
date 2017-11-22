@@ -100,14 +100,18 @@ export class UdpOutbound extends Outbound {
   write(buffer) {
     const host = this._targetHost;
     const port = this._targetPort;
-    if (host !== null && port !== null) {
+    if (host === null || port === null) {
+      logger.error('[udp:outbound] fail to send udp data, target address was not initialized.');
+    }
+    else if (port <= 0 || port >= 65536) {
+      logger.error(`[udp:outbound] fail to send udp data, target port "${port}" is invalid.`);
+    }
+    else {
       this._socket.send(buffer, port, host, (err) => {
         if (err) {
           logger.warn(`[udp:outbound] ${this.remote}:`, err);
         }
       });
-    } else {
-      logger.error('[udp:outbound] fail to send udp data, target address was not initialized.');
     }
   }
 
