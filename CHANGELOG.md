@@ -32,7 +32,7 @@ To use dynamic protocol, prepare a `suites.json` or pick one from the [official 
 ### Upgrade from 2.8.3 to 2.8.4
 
 ```
-$ npm install -g blinksocks@2.9.0
+$ npm install -g blinksocks@2.8.4
 ```
 
 ## 2.8.3 (2017-11-07)
