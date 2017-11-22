@@ -1,5 +1,40 @@
 #  Change Log
 
+## 2.8.4 (2017-11-22)
+
+> dynamic protocol is introduced in this version, it's an **experimental** feature.
+
+To use dynamic protocol, prepare a `suites.json` or pick one from the [official versions](suites), then change your preset list(on both client and server) to:
+
+```
+"presets": [
+  {
+    "name": "auto-conf",
+    "params": {
+      "suites": "suites.json"
+    }
+  },
+  // no other presets
+]
+```
+
+### :rocket: Features & Improvements
+
+- **core**: support dynamic protocol. :sparkles:
+- **presets**: add **auto-conf**. :sparkles:
+
+### :bug: Bug Fixes:
+
+- **core**: prevent calling onReceive() on null inbound during udp relay.
+- **transports**: wait until connection established before reply to peer.
+- **transports**: fix RangeError \[ERR_SOCKET_BAD_PORT\] when sending data via udp socket.
+
+### Upgrade from 2.8.3 to 2.8.4
+
+```
+$ npm install -g blinksocks@2.9.0
+```
+
 ## 2.8.3 (2017-11-07)
 
 ### :bug: Bug Fixes:
