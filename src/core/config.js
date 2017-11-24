@@ -116,6 +116,15 @@ export class Config {
 
     global.__KEY__ = server.key;
     global.__PRESETS__ = server.presets;
+
+    // pre-init presets
+    for (const {name, params = {}} of server.presets) {
+      const clazz = getPresetClassByName(name);
+      clazz.checked = false;
+      clazz.checkParams(params);
+      clazz.initialized = false;
+      clazz.onInit(params);
+    }
   }
 
   static _validate(json) {
@@ -319,8 +328,6 @@ export class Config {
           throw Error('\'server.presets[].params\' must be an plain object');
         }
       }
-      // check for existence of the preset
-      getPresetClassByName(preset.name);
     }
   }
 
