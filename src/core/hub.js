@@ -15,8 +15,6 @@ export class Hub {
 
   _isFirstWorker = cluster.worker ? (cluster.worker.id <= 1) : true;
 
-  _fastestServer = null;
-
   _server = null;
 
   _udpServer = null;
@@ -62,7 +60,7 @@ export class Hub {
     if (__IS_CLIENT__) {
       Balancer.start(__SERVERS__);
       this._isFirstWorker && logger.info('[balancer] started');
-      this._selectServer();
+      this._switchServer();
     }
     await this._createServer();
   }
@@ -223,19 +221,9 @@ export class Hub {
     });
   }
 
-  _selectServer() {
-    const server = Balancer.getFastest();
-    if (this._fastestServer === null || server.id !== this._fastestServer.id) {
-      this._fastestServer = server;
-      Config.initServer(server);
-      MiddlewareManager.reset();
-      logger.info(`[balancer] use server: ${__SERVER_HOST__}:${__SERVER_PORT__}`);
-    }
-  }
-
   _onConnection(context, proxyRequest = null) {
     if (__IS_CLIENT__) {
-      this._selectServer();
+      this._switchServer();
     }
     logger.verbose(`[hub] [${context.remoteAddress}:${context.remotePort}] connected`);
     const relay = createRelay(__TRANSPORT__, context, proxyRequest);
@@ -243,6 +231,14 @@ export class Hub {
       this._relays = this._relays.filter((r) => r.id !== relay.id);
     });
     this._relays.push(relay);
+  }
+
+  _switchServer() {
+    const server = Balancer.getFastest();
+    if (server) {
+      Config.initServer(server);
+      logger.info(`[balancer] use server: ${__SERVER_HOST__}:${__SERVER_PORT__}`);
+    }
   }
 
 }

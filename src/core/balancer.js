@@ -1,11 +1,14 @@
 import net from 'net';
+import url from 'url';
 import {logger} from '../utils';
 
 const QUERY_INTERVAL = 12e4; // 2min
 
 export class Balancer {
 
-  static _servers = [];
+  static _servers = []; // server list
+
+  static _server = null; // current server
 
   static _pings = [];
 
@@ -36,7 +39,7 @@ export class Balancer {
 
   /**
    * returns the fastest server
-   * @returns {{host, port}}
+   * @returns {*}
    */
   static getFastest() {
     let index = 0;
@@ -47,7 +50,12 @@ export class Balancer {
         index = i;
       }
     }
-    return this._servers[index];
+    const server = this._servers[index];
+    if (!this._server || (this._server.id !== server.id)) {
+      return this._server = server;
+    } else {
+      return null; // null indicates to keep use the previous one
+    }
   }
 
   // private
@@ -68,11 +76,20 @@ export class Balancer {
   }
 
   static _query() {
-    this._servers.map((server, i) => {
-      const sstr = `${server.host}:${server.port}`;
+    this._servers.forEach((server, i) => {
+      let _host, _port;
+      if (server.service) {
+        const {hostname: host, port} = url.parse(server.service);
+        _host = host;
+        _port = +port;
+      } else {
+        _host = server.host;
+        _port = server.port;
+      }
+      const sstr = `${_host}:${_port}`;
       logger.verbose(`[balancer] querying ${sstr}`);
       const startTime = Date.now();
-      const socket = net.connect({host: server.host, port: server.port}, () => {
+      const socket = net.connect({host: _host, port: _port}, () => {
         const ping = Date.now() - startTime;
         this._pings[i] = ping;
         logger.verbose(`[balancer] ${sstr} = ${ping}ms`);
