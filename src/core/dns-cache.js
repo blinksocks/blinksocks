@@ -17,7 +17,7 @@ export class DNSCache {
   }
 
   _now() {
-    return (new Date()).getTime();
+    return Date.now();
   }
 
   async _lookup(hostname) {

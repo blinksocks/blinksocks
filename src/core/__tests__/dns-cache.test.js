@@ -25,7 +25,7 @@ describe('DNSCache#get', function () {
     const dns = new DNSCache({expire: 1e3});
     dns.clear();
     await dns.get('localhost');
-    dns._now = () => (new Date()).getTime() + 1e3;
+    dns._now = () => Date.now() + 1e3;
     await dns.get('localhost');
     expect(DNSCache._pool).toEqual({});
   });
@@ -37,7 +37,7 @@ describe('DNSCache#_now', function () {
   it('should return a timestamp', function () {
     const dns = new DNSCache();
     dns.clear();
-    const now = (new Date()).getTime();
+    const now = Date.now();
     expect(dns._now()).toBeGreaterThanOrEqual(now);
   });
 

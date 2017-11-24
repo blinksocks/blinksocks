@@ -3,8 +3,6 @@ import {logger} from '../utils';
 
 const QUERY_INTERVAL = 12e4; // 2min
 
-const now = () => (new Date()).getTime();
-
 export class Balancer {
 
   static _servers = [];
@@ -73,9 +71,9 @@ export class Balancer {
     this._servers.map((server, i) => {
       const sstr = `${server.host}:${server.port}`;
       logger.verbose(`[balancer] querying ${sstr}`);
-      const startTime = now();
+      const startTime = Date.now();
       const socket = net.connect({host: server.host, port: server.port}, () => {
-        const ping = now() - startTime;
+        const ping = Date.now() - startTime;
         this._pings[i] = ping;
         logger.verbose(`[balancer] ${sstr} = ${ping}ms`);
         socket.end();

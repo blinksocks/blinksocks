@@ -2,8 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import {IPresetStatic, PRESET_FAILED, CONNECTION_CLOSED, CONNECTION_CREATED} from './defs';
 
-const now = () => (new Date()).getTime();
-
 const DEFAULT_SAMPLE_INTERVAL = 30;
 const DEFAULT_SAVE_INTERVAL = 60;
 
@@ -40,7 +38,7 @@ export default class StatsPreset extends IPresetStatic {
 
   // statistics
 
-  startedAt = now();
+  startedAt = Date.now();
 
   totalOutBytes = 0;
 
@@ -119,7 +117,7 @@ export default class StatsPreset extends IPresetStatic {
 
   onSave() {
     const startedAt = this.startedAt;
-    const endAt = now();
+    const endAt = Date.now();
     const durationMilliSec = endAt - startedAt;
     const durationSec = durationMilliSec / 1e3;
     const totalPackets = this.totalInPackets + this.totalOutPackets;
@@ -160,7 +158,7 @@ export default class StatsPreset extends IPresetStatic {
         memoryUsage: process.memoryUsage()
       }
     };
-    fs.writeFileSync(this.saveTo, JSON.stringify(json, null, '  '));
+    fs.writeFile(this.saveTo, JSON.stringify(json, null, '  '), () => 0);
   }
 
   onSample() {
