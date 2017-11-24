@@ -1,6 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import fetch from 'node-fetch';
+import promisify from 'pify';
 import {IPreset, CHANGE_PRESET_SUITE} from './defs';
 import {
   logger,
@@ -13,6 +15,7 @@ import {
 } from '../utils';
 import {PIPE_DECODE, PIPE_ENCODE} from '../core/middleware';
 
+const readFile = promisify(fs.readFile);
 const MAX_TIME_DIFF = 30; // seconds
 
 /**
@@ -30,7 +33,7 @@ const MAX_TIME_DIFF = 30; // seconds
  *   // use local file
  *   {"name": "auto-conf", "params": {"suites": "suites.json"}}
  *
- *   // load from remote (doesn't support yet)
+ *   // load from remote use http(s)
  *   {"name": "auto-conf", "params": {"suites": "https://some.where/suites.json"}}
  *
  * @protocol
@@ -85,12 +88,24 @@ export default class AutoConfPreset extends IPreset {
     }
   }
 
-  static onInit({suites}) {
-    const rawText = fs.readFileSync(path.resolve(process.cwd(), suites), {encoding: 'utf-8'});
-    AutoConfPreset.suites = JSON.parse(rawText);
-    if (AutoConfPreset.suites.length < 1) {
-      throw Error(`you must provide at least one suite in ${suites}`);
+  static async onInit({suites: uri}) {
+    logger.info(`[auto-conf] loading suites from: ${uri}`);
+    let suites = [];
+    if (uri.startsWith('http')) {
+      // load from remote
+      const res = await fetch(uri);
+      suites = await res.json();
+    } else {
+      // load from file system
+      const suiteJson = path.resolve(process.cwd(), uri);
+      const rawText = await readFile(suiteJson, {encoding: 'utf-8'});
+      suites = JSON.parse(rawText);
     }
+    if (suites.length < 1) {
+      throw Error(`you must provide at least one suite in ${uri}`);
+    }
+    logger.info(`[auto-conf] ${suites.length} suites loaded`);
+    AutoConfPreset.suites = suites;
   }
 
   onDestroy() {
