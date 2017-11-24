@@ -34,12 +34,15 @@
     "lodash.uniqueid": "^4.0.1",
     "long": "^3.2.0",
     "lru-cache": "^4.1.1",
+    "node-fetch": "^1.7.3",
+    "pify": "^3.0.0",
     "winston": "^2.4.0",
     "winston-daily-rotate-file": "^1.7.2",
     "ws": "^3.3.2"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.0",
     "babel-eslint": "^8.0.2",
     "babel-jest": "^21.2.0",
     "babel-plugin-transform-class-properties": "^6.24.1",
