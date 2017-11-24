@@ -114,15 +114,17 @@ export default class AutoConfPreset extends IPreset {
 
   // tcp
 
-  clientOut({buffer, broadcast}) {
+  clientOut({buffer, broadcast, fail}) {
     if (!this._isSuiteChanged) {
+      const {suites} = AutoConfPreset;
+      if (suites.length < 1){
+        return fail('suites are not initialized properly');
+      }
       this._isSuiteChanged = true;
       const sid = crypto.randomBytes(2);
       const utc = ntb(getCurrentTimestampInt(), 4, BYTE_ORDER_LE);
       const hmac_key = EVP_BytesToKey(Buffer.from(__KEY__).toString('base64') + hash('md5', sid).toString('base64'), 16, 16);
       const request_hmac = hmac('md5', hmac_key, Buffer.concat([sid, utc]));
-
-      const {suites} = AutoConfPreset;
       const suite = suites[sid.readUInt16LE(0) % suites.length];
       logger.verbose(`[auto-conf] changing presets suite to: ${JSON.stringify(suite)}`);
 
@@ -146,6 +148,10 @@ export default class AutoConfPreset extends IPreset {
 
   serverIn({buffer, broadcast, fail}) {
     if (!this._isSuiteChanged) {
+      const {suites} = AutoConfPreset;
+      if (suites.length < 1){
+        return fail('suites are not initialized properly');
+      }
       if (buffer.length < 22) {
         return fail(`client request is too short, dump=${dumpHex(buffer)}`);
       }
@@ -162,7 +168,6 @@ export default class AutoConfPreset extends IPreset {
         return fail(`timestamp diff is over ${MAX_TIME_DIFF}s, dump=${dumpHex(buffer)}`);
       }
 
-      const {suites} = AutoConfPreset;
       const suite = suites[sid.readUInt16LE(0) % suites.length];
       logger.verbose(`[auto-conf] changing presets suite to: ${JSON.stringify(suite)}`);
 
