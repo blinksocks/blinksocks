@@ -2,6 +2,7 @@ import EventEmitter from 'events';
 import uniqueId from 'lodash.uniqueid';
 import {Pipe} from './pipe';
 import {PIPE_ENCODE, PIPE_DECODE} from './middleware';
+import {logger} from '../utils';
 import {CONNECT_TO_REMOTE, CONNECTION_CREATED, CHANGE_PRESET_SUITE} from '../presets';
 import {
   TcpInbound, TcpOutbound,
@@ -91,9 +92,14 @@ export class Relay extends EventEmitter {
   }
 
   onChangePresetSuite(action) {
-    const {type, presets, data} = action.payload;
+    const {type, suite, data} = action.payload;
+    logger.verbose(`[relay] changing presets suite to: ${JSON.stringify(suite)}`);
     // 1. update preset list
-    this.updatePresets(preparePresets(presets.concat([{'name': 'auto-conf'}])));
+    this.updatePresets(preparePresets([
+      ...suite.presets,
+      {'name': 'auto-conf'},
+      // TODO(discussion): need any other protections here, or improve auto-conf itself instead?
+    ]));
     // 2. initialize newly created presets
     const transport = this._transport;
     const context = this._context;

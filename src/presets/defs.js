@@ -78,7 +78,7 @@ export const PRESET_FAILED = '@action:preset_failed';
  *    type: CHANGE_PRESET_SUITE,
  *    payload: {
  *      type: <PIPE_ENCODE|PIPE_DECODE>,
- *      presets: [...],
+ *      suite: [...],
  *      data: <Buffer>
  *    }
  *  }
