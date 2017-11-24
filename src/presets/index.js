@@ -35,6 +35,28 @@ import AeadRandomCipherPreset from './aead-random-cipher';
 import BaseWithPaddingPreset from './_base-with-padding';
 import BaseAuthStreamPreset from './_base-auth-stream';
 
+function monkeyPatch(clazz) {
+  // patch onInit()
+  clazz.onInit = (function (onInit) {
+    return function _onInit(...args) {
+      if (!clazz.initialized) {
+        onInit(...args);
+        clazz.initialized = true;
+      }
+    };
+  })(clazz.onInit);
+
+  // patch checkParams()
+  clazz.checkParams = (function (checkParams) {
+    return function _checkParams(...args) {
+      if (!clazz.checked) {
+        checkParams(...args);
+        clazz.checked = true;
+      }
+    };
+  })(clazz.checkParams);
+}
+
 const mapping = {
   // functional
   'stats': StatsPreset,
@@ -73,8 +95,12 @@ const legacy = {
   'base-auth-stream': BaseAuthStreamPreset
 };
 
+const presetClasses = {...mapping, ...legacy};
+
+Object.keys(presetClasses).forEach((clazzName) => monkeyPatch(presetClasses[clazzName]));
+
 export function getPresetClassByName(name) {
-  let clazz = {...mapping, ...legacy}[name];
+  let clazz = presetClasses[name];
   if (clazz === undefined) {
     try {
       clazz = require(name);

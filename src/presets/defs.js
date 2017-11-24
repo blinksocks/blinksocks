@@ -101,6 +101,18 @@ export const PRESET_RESUME_SEND = '@action:preset_resume_send';
 export class IPreset {
 
   /**
+   * will become true after checkParams()
+   * @type {boolean}
+   */
+  static checked = false;
+
+  /**
+   * will become true after onInit()
+   * @type {boolean}
+   */
+  static initialized = false;
+
+  /**
    * check params passed to the preset, if any errors, should throw directly
    * @param params
    */
