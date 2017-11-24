@@ -2,33 +2,28 @@ import EventEmitter from 'events';
 import {getPresetClassByName, IPresetStatic} from '../presets';
 import {kebabCase} from '../utils';
 
-let presetCache = {
-  // 'ClassName': <preset>
-};
+const staticPresetCache = new Map(/* 'ClassName': <preset> */);
 
 function getInstanceFromCache(ImplClass, params) {
-  let impl = presetCache[ImplClass.name];
-  if (impl === undefined) {
+  let preset = staticPresetCache.get(ImplClass.name);
+  if (preset === undefined) {
     // only create one instance for IPresetStatic
     ImplClass.checkParams(params);
     ImplClass.onInit(params);
-    impl = new ImplClass(params);
-    presetCache[ImplClass.name] = impl;
+    preset = new ImplClass(params);
+    staticPresetCache.set(ImplClass.name, preset);
   }
-  return impl;
+  return preset;
 }
 
 function createPreset(name, params = {}) {
   const ImplClass = getPresetClassByName(name);
   let preset = null;
-  if (ImplClass.__proto__.name === IPresetStatic.name) {
+  if (IPresetStatic.isPrototypeOf(ImplClass)) {
     preset = getInstanceFromCache(ImplClass, params);
   } else {
-    if (!ImplClass.initialized) {
-      ImplClass.checkParams(params);
-      ImplClass.onInit(params);
-      ImplClass.initialized = true;
-    }
+    ImplClass.checkParams(params);
+    ImplClass.onInit(params);
     preset = new ImplClass(params);
   }
   return preset;
@@ -136,18 +131,7 @@ export class Middleware extends EventEmitter {
  * destroy cached presets when program exit()
  */
 export function cleanup() {
-  const classNames = Object.keys(presetCache);
-  for (const className of classNames) {
-    presetCache[className].onDestroy();
+  for (const preset of staticPresetCache.values()) {
+    preset.onDestroy();
   }
-}
-
-/**
- * clear preset cache and reset them to fresh status
- */
-export function reset() {
-  presetCache = {};
-  __PRESETS__
-    .map(({name}) => getPresetClassByName(name))
-    .forEach((ImplClass) => ImplClass.initialized = false);
 }
