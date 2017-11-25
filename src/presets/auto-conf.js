@@ -38,7 +38,7 @@ const MAX_TIME_DIFF = 30; // seconds
  *
  * @protocol
  *
- *   # TCP handshake request (client -> server)
+ *   # TCP handshake request & UDP packets (client -> server)
  *   +------------+-----------+------------+-------------+
  *   |  Suite ID  |    UTC    |  HMAC-MD5  |   PAYLOAD   |
  *   +------------+-----------+------------+-------------+
@@ -51,13 +51,6 @@ const MAX_TIME_DIFF = 30; // seconds
  *   +-------------+
  *   |  Variable   |
  *   +-------------+
- *
- *   # UDP packets (client -> server)
- *   +------------+-----------+------------+-------------+
- *   |  Suite ID  |    UTC    |  HMAC-MD5  |   PAYLOAD   |
- *   +------------+-----------+------------+-------------+
- *   |     2      |     4     |     16     |  Variable   |
- *   +------------+-----------+------------+-------------+
  *
  *   # UDP packets (client <- server)
  *   +-------------+
@@ -112,30 +105,73 @@ export default class AutoConfPreset extends IPreset {
     this._header = null;
   }
 
+  createRequestHeader(suites) {
+    const sid = crypto.randomBytes(2);
+    const utc = ntb(getCurrentTimestampInt(), 4, BYTE_ORDER_LE);
+    const hmac_key = EVP_BytesToKey(Buffer.from(__KEY__).toString('base64') + hash('md5', sid).toString('base64'), 16, 16);
+    const request_hmac = hmac('md5', hmac_key, Buffer.concat([sid, utc]));
+    const suite = suites[sid.readUInt16LE(0) % suites.length];
+    return {
+      header: Buffer.concat([sid, utc, request_hmac]),
+      suite: suite
+    };
+  }
+
+  encodeChangeSuite({buffer, broadcast, fail}) {
+    const {suites} = AutoConfPreset;
+    if (suites.length < 1) {
+      return fail('suites are not initialized properly');
+    }
+    const {header, suite} = this.createRequestHeader(suites);
+    this._header = header;
+    this._isSuiteChanged = true;
+    return broadcast({
+      type: CHANGE_PRESET_SUITE,
+      payload: {
+        type: PIPE_ENCODE,
+        suite: suite,
+        data: buffer
+      }
+    });
+  }
+
+  decodeChangeSuite({buffer, broadcast, fail}) {
+    const {suites} = AutoConfPreset;
+    if (suites.length < 1) {
+      return fail('suites are not initialized properly');
+    }
+    if (buffer.length < 22) {
+      return fail(`client request is too short, dump=${dumpHex(buffer)}`);
+    }
+    const sid = buffer.slice(0, 2);
+    const request_hmac = buffer.slice(6, 22);
+    const hmac_key = EVP_BytesToKey(Buffer.from(__KEY__).toString('base64') + hash('md5', sid).toString('base64'), 16, 16);
+    const hmac_calc = hmac('md5', hmac_key, buffer.slice(0, 6));
+    if (!hmac_calc.equals(request_hmac)) {
+      return fail(`unexpected hmac of client request, dump=${dumpHex(buffer)}`);
+    }
+    const utc = buffer.readUInt32LE(2);
+    const time_diff = Math.abs(utc - getCurrentTimestampInt());
+    if (time_diff > MAX_TIME_DIFF) {
+      return fail(`timestamp diff is over ${MAX_TIME_DIFF}s, dump=${dumpHex(buffer)}`);
+    }
+    const suite = suites[sid.readUInt16LE(0) % suites.length];
+    this._isSuiteChanged = true;
+    return broadcast({
+      type: CHANGE_PRESET_SUITE,
+      payload: {
+        type: PIPE_DECODE,
+        suite: suite,
+        data: buffer.slice(22)
+      }
+    });
+  }
+
   // tcp
 
   clientOut({buffer, broadcast, fail}) {
     if (!this._isSuiteChanged) {
-      const {suites} = AutoConfPreset;
-      if (suites.length < 1){
-        return fail('suites are not initialized properly');
-      }
-      this._isSuiteChanged = true;
-      const sid = crypto.randomBytes(2);
-      const utc = ntb(getCurrentTimestampInt(), 4, BYTE_ORDER_LE);
-      const hmac_key = EVP_BytesToKey(Buffer.from(__KEY__).toString('base64') + hash('md5', sid).toString('base64'), 16, 16);
-      const request_hmac = hmac('md5', hmac_key, Buffer.concat([sid, utc]));
-      const suite = suites[sid.readUInt16LE(0) % suites.length];
-
-      this._header = Buffer.concat([sid, utc, request_hmac]);
-      return broadcast({
-        type: CHANGE_PRESET_SUITE,
-        payload: {
-          type: PIPE_ENCODE,
-          suite: suite,
-          data: buffer
-        }
-      });
+      return this.encodeChangeSuite({buffer, broadcast, fail})
     }
     if (!this._isHeaderSent) {
       this._isHeaderSent = true;
@@ -147,61 +183,17 @@ export default class AutoConfPreset extends IPreset {
 
   serverIn({buffer, broadcast, fail}) {
     if (!this._isSuiteChanged) {
-      const {suites} = AutoConfPreset;
-      if (suites.length < 1){
-        return fail('suites are not initialized properly');
-      }
-      if (buffer.length < 22) {
-        return fail(`client request is too short, dump=${dumpHex(buffer)}`);
-      }
-      const sid = buffer.slice(0, 2);
-      const request_hmac = buffer.slice(6, 22);
-      const hmac_key = EVP_BytesToKey(Buffer.from(__KEY__).toString('base64') + hash('md5', sid).toString('base64'), 16, 16);
-      const hmac_calc = hmac('md5', hmac_key, buffer.slice(0, 6));
-      if (!hmac_calc.equals(request_hmac)) {
-        return fail(`unexpected hmac of client request, dump=${dumpHex(buffer)}`);
-      }
-      const utc = buffer.readUInt32LE(2);
-      const time_diff = Math.abs(utc - getCurrentTimestampInt());
-      if (time_diff > MAX_TIME_DIFF) {
-        return fail(`timestamp diff is over ${MAX_TIME_DIFF}s, dump=${dumpHex(buffer)}`);
-      }
-      const suite = suites[sid.readUInt16LE(0) % suites.length];
-      this._isSuiteChanged = true;
-      return broadcast({
-        type: CHANGE_PRESET_SUITE,
-        payload: {
-          type: PIPE_DECODE,
-          suite: suite,
-          data: buffer.slice(22)
-        }
-      });
+      return this.decodeChangeSuite({buffer, broadcast, fail});
+    } else {
+      return buffer;
     }
-    return buffer;
   }
 
   // udp
 
-  clientOutUdp({buffer, broadcast}) {
+  clientOutUdp({buffer, broadcast, fail}) {
     if (!this._isSuiteChanged) {
-      this._isSuiteChanged = true;
-      const sid = crypto.randomBytes(2);
-      const utc = ntb(getCurrentTimestampInt(), 4, BYTE_ORDER_LE);
-      const hmac_key = EVP_BytesToKey(Buffer.from(__KEY__).toString('base64') + hash('md5', sid).toString('base64'), 16, 16);
-      const request_hmac = hmac('md5', hmac_key, Buffer.concat([sid, utc]));
-
-      const {suites} = AutoConfPreset;
-      const suite = suites[sid.readUInt16LE(0) % suites.length];
-
-      this._header = Buffer.concat([sid, utc, request_hmac]);
-      return broadcast({
-        type: CHANGE_PRESET_SUITE,
-        payload: {
-          type: PIPE_ENCODE,
-          suite: suite,
-          data: buffer
-        }
-      });
+      return this.encodeChangeSuite({buffer, broadcast, fail});
     } else {
       this._isSuiteChanged = false;
       return Buffer.concat([this._header, buffer]);
@@ -210,35 +202,7 @@ export default class AutoConfPreset extends IPreset {
 
   serverInUdp({buffer, broadcast, fail}) {
     if (!this._isSuiteChanged) {
-      if (buffer.length < 22) {
-        return fail(`client request is too short, dump=${dumpHex(buffer)}`);
-      }
-      const sid = buffer.slice(0, 2);
-      const request_hmac = buffer.slice(6, 22);
-      const hmac_key = EVP_BytesToKey(Buffer.from(__KEY__).toString('base64') + hash('md5', sid).toString('base64'), 16, 16);
-      const hmac_calc = hmac('md5', hmac_key, buffer.slice(0, 6));
-      if (!hmac_calc.equals(request_hmac)) {
-        return fail(`unexpected hmac of client request, dump=${dumpHex(buffer)}`);
-      }
-      const utc = buffer.readUInt32LE(2);
-      const time_diff = Math.abs(utc - getCurrentTimestampInt());
-      if (time_diff > MAX_TIME_DIFF) {
-        return fail(`timestamp diff is over ${MAX_TIME_DIFF}s, dump=${dumpHex(buffer)}`);
-      }
-
-      const {suites} = AutoConfPreset;
-      const suite = suites[sid.readUInt16LE(0) % suites.length];
-
-      this._isSuiteChanged = true;
-
-      return broadcast({
-        type: CHANGE_PRESET_SUITE,
-        payload: {
-          type: PIPE_DECODE,
-          suite: suite,
-          data: buffer.slice(22)
-        }
-      });
+      return this.decodeChangeSuite({buffer, broadcast, fail});
     } else {
       this._isSuiteChanged = false;
       return buffer;
