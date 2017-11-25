@@ -18,8 +18,14 @@ export class Pipe extends EventEmitter {
 
   _destroyed = false;
 
+  _presets = null;
+
   get destroyed() {
     return this._destroyed;
+  }
+
+  get presets() {
+    return this._presets;
   }
 
   constructor({presets, isUdp = false}) {
@@ -60,6 +66,7 @@ export class Pipe extends EventEmitter {
     const middlewares = presets.map((preset) => this._createMiddleware(preset));
     this._upstream_middlewares = middlewares;
     this._downstream_middlewares = [].concat(middlewares).reverse();
+    this._presets = presets;
   }
 
   getMiddlewares(direction = PIPE_ENCODE) {
@@ -96,6 +103,7 @@ export class Pipe extends EventEmitter {
     // update members
     this._upstream_middlewares = middlewares;
     this._downstream_middlewares = [].concat(middlewares).reverse();
+    this._presets = presets;
   }
 
   feed(direction, buffer) {
@@ -124,6 +132,7 @@ export class Pipe extends EventEmitter {
     }
     this._upstream_middlewares = null;
     this._downstream_middlewares = null;
+    this._presets = null;
     this._cacheBuffer = null;
     this._destroyed = true;
     this.removeAllListeners();

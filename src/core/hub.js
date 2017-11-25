@@ -198,12 +198,9 @@ export class Hub {
 
       // monkey patch for Socket.send() to meet Socks5 protocol
       if (__IS_CLIENT__) {
-        const isShadowsocks = function () {
-          return __PRESETS__.some(({name}) => ['ss-base'].includes(name));
-        };
-        server.send = ((send) => (data, port, host, ...args) => {
+        server.send = ((send) => (data, port, host, isSs, ...args) => {
           let packet = null;
-          if (isShadowsocks()) {
+          if (isSs) {
             // compatible with shadowsocks udp addressing
             packet = Buffer.from([0x00, 0x00, 0x00, ...data]);
           } else {

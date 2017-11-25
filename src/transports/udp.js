@@ -48,11 +48,17 @@ export class UdpInbound extends Inbound {
 
   write(buffer) {
     const {address, port} = this._rinfo;
-    this._socket.send(buffer, port, address, (err) => {
+    const onSendError = (err) => {
       if (err) {
         logger.warn(`[udp:inbound] ${this.remote}:`, err);
       }
-    });
+    };
+    if (__IS_CLIENT__) {
+      const isSs = this._pipe.presets.some(({name}) => ['ss-base'].includes(name));
+      this._socket.send(buffer, port, address, isSs, onSendError);
+    } else {
+      this._socket.send(buffer, port, address, onSendError);
+    }
   }
 
   destroy() {
