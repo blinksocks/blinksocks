@@ -4,27 +4,23 @@ import {kebabCase} from '../utils';
 
 const staticPresetCache = new Map(/* 'ClassName': <preset> */);
 
-function getInstanceFromCache(ImplClass, params) {
-  let preset = staticPresetCache.get(ImplClass.name);
-  if (preset === undefined) {
-    // only create one instance for IPresetStatic
-    ImplClass.checkParams(params);
-    ImplClass.onInit(params);
-    preset = new ImplClass(params);
-    staticPresetCache.set(ImplClass.name, preset);
-  }
-  return preset;
-}
-
 function createPreset(name, params = {}) {
   const ImplClass = getPresetClassByName(name);
-  let preset = null;
-  if (IPresetStatic.isPrototypeOf(ImplClass)) {
-    preset = getInstanceFromCache(ImplClass, params);
-  } else {
+  const createOne = () => {
     ImplClass.checkParams(params);
     ImplClass.onInit(params);
-    preset = new ImplClass(params);
+    return new ImplClass(params);
+  };
+  let preset = null;
+  if (IPresetStatic.isPrototypeOf(ImplClass)) {
+    // only create one instance for IPresetStatic
+    preset = staticPresetCache.get(ImplClass.name);
+    if (preset === undefined) {
+      preset = createOne();
+      staticPresetCache.set(ImplClass.name, preset);
+    }
+  } else {
+    preset = createOne();
   }
   return preset;
 }
