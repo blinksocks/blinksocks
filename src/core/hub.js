@@ -13,7 +13,7 @@ import {tcp, http, socks} from '../proxies';
 
 export class Hub {
 
-  _isFirstWorker = cluster.worker ? (cluster.worker.id <= 1) : true;
+  _wkId = cluster.worker ? cluster.worker.id : 0;
 
   _server = null;
 
@@ -43,11 +43,11 @@ export class Hub {
     // balancer
     if (__IS_CLIENT__) {
       Balancer.destroy();
-      this._isFirstWorker && logger.info('[balancer] stopped');
+      logger.info(`[balancer-${this._wkId}] stopped`);
     }
     // server
     this._server.close();
-    this._isFirstWorker && logger.info('[hub] shutdown');
+    logger.info(`[hub-${this._wkId}] shutdown`);
     // udp server
     this._udpServer.close();
     typeof callback === 'function' && callback();
@@ -59,24 +59,24 @@ export class Hub {
     }
     if (__IS_CLIENT__) {
       Balancer.start(__SERVERS__);
-      this._isFirstWorker && logger.info('[balancer] started');
+      logger.info(`[balancer-${this._wkId}] started`);
       this._switchServer();
     }
-    await this._createServer();
-  }
-
-  async _createServer() {
     try {
-      if (__IS_CLIENT__) {
-        this._server = await this._createServerOnClient();
-      } else {
-        this._server = await this._createServerOnServer();
-      }
-      this._udpServer = await this._createUdpServer();
+      await this._createServer();
     } catch (err) {
       logger.error('[hub] fail to create server:', err);
       process.exit(-1);
     }
+  }
+
+  async _createServer() {
+    if (__IS_CLIENT__) {
+      this._server = await this._createServerOnClient();
+    } else {
+      this._server = await this._createServerOnServer();
+    }
+    this._udpServer = await this._createUdpServer();
   }
 
   async _createServerOnClient() {
@@ -105,9 +105,7 @@ export class Hub {
       };
       server.on('proxyConnection', this._onConnection);
       server.listen(address, () => resolve(server));
-      if (this._isFirstWorker) {
-        logger.info(`[hub] blinksocks client is running at ${__LOCAL_PROTOCOL__}://${__LOCAL_HOST__}:${__LOCAL_PORT__}`);
-      }
+      logger.info(`[hub-${this._wkId}] blinksocks client is running at ${__LOCAL_PROTOCOL__}://${__LOCAL_HOST__}:${__LOCAL_PORT__}`);
     });
   }
 
@@ -146,9 +144,7 @@ export class Hub {
         default:
           return reject(Error(`unsupported protocol: "${__LOCAL_PROTOCOL__}"`));
       }
-      if (this._isFirstWorker) {
-        logger.info(`[hub] blinksocks server is running at ${__LOCAL_PROTOCOL__}://${__LOCAL_HOST__}:${__LOCAL_PORT__}`);
-      }
+      logger.info(`[hub-${this._wkId}] blinksocks server is running at ${__LOCAL_PROTOCOL__}://${__LOCAL_HOST__}:${__LOCAL_PORT__}`);
     });
   }
 
@@ -192,7 +188,7 @@ export class Hub {
 
       // monkey patch for Socket.close() to prevent closing shared udp socket
       // eslint-disable-next-line
-      server.close = ((close) => (...args) => {
+      server.close = ((/* close */) => (...args) => {
         // close.call(server, ...args);
       })(server.close);
 
@@ -212,9 +208,7 @@ export class Hub {
 
       server.bind({address: __LOCAL_HOST__, port: __LOCAL_PORT__}, () => resolve(server));
 
-      if (this._isFirstWorker) {
-        logger.info(`[hub] blinksocks udp server is running at udp://${__LOCAL_HOST__}:${__LOCAL_PORT__}`);
-      }
+      logger.info(`[hub-${this._wkId}] blinksocks udp server is running at udp://${__LOCAL_HOST__}:${__LOCAL_PORT__}`);
     });
   }
 

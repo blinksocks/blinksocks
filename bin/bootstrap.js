@@ -24,7 +24,7 @@ module.exports = function bootstrap(configPath, {Hub, Config}) {
       for (let i = 0; i < __WORKERS__; ++i) {
         cluster.fork();
       }
-      console.log(`==> [bootstrap] started ${__WORKERS__} workers`);
+      console.log(`[bootstrap] started ${__WORKERS__} workers`);
     } else {
       const hub = new Hub();
       hub.run();
