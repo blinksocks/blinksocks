@@ -16,7 +16,7 @@
     "lint": "eslint bin src test pkg",
     "compile": "cross-env NODE_ENV=production babel src --out-dir lib --minified --ignore __tests__,__mocks__",
     "prepkg": "rimraf pkg/blinksocks-* pkg/sha256sum.txt",
-    "pkg": "pkg --out-path pkg/ --targets node8.6.0-linux-x64,node8.6.0-macos-x64,node8.6.0-win-x64 .",
+    "pkg": "pkg --out-path pkg/ --targets node8.9.0-linux-x64,node8.9.0-macos-x64,node8.9.0-win-x64 .",
     "postpkg": "node pkg/postpkg.js",
     "debug:client": "cross-env NODE_ENV=development node --inspect --inspect-port=9200 bin/cli.js blinksocks.client.json",
     "debug:server": "cross-env NODE_ENV=development node --inspect --inspect-port=9300 bin/cli.js blinksocks.server.json",
