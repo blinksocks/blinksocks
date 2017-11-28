@@ -19,7 +19,7 @@ export class Hub {
 
   _udpServer = null;
 
-  _relays = [];
+  _relays = new Map(/* id: <relay> */);
 
   _udpRelays = null; // LRU cache
 
@@ -39,6 +39,7 @@ export class Hub {
     // relays
     this._udpRelays.reset();
     this._relays.forEach((relay) => relay.destroy());
+    this._relays.clear();
     MiddlewareManager.cleanup();
     // balancer
     if (__IS_CLIENT__) {
@@ -219,9 +220,9 @@ export class Hub {
     logger.verbose(`[hub] [${context.remoteAddress}:${context.remotePort}] connected`);
     const relay = createRelay(__TRANSPORT__, context, proxyRequest);
     relay.on('close', () => {
-      this._relays = this._relays.filter((r) => r.id !== relay.id);
+      this._relays.delete(relay.id);
     });
-    this._relays.push(relay);
+    this._relays.set(relay.id, relay);
   }
 
   _switchServer() {
