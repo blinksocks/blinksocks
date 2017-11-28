@@ -4,6 +4,7 @@ import net from 'net';
 import tls from 'tls';
 import ws from 'ws';
 import LRU from 'lru-cache';
+import uniqueId from 'lodash.uniqueid';
 import {Balancer} from './balancer';
 import {Config} from './config';
 import * as MiddlewareManager from './middleware';
@@ -217,12 +218,14 @@ export class Hub {
     if (__IS_CLIENT__) {
       this._switchServer();
     }
+    const cid = uniqueId(`${__TRANSPORT__}_`);
     logger.verbose(`[hub] [${context.remoteAddress}:${context.remotePort}] connected`);
     const relay = createRelay(__TRANSPORT__, context, proxyRequest);
+    relay.id = cid;
     relay.on('close', () => {
-      this._relays.delete(relay.id);
+      this._relays.delete(cid);
     });
-    this._relays.set(relay.id, relay);
+    this._relays.set(cid, relay);
   }
 
   _switchServer() {

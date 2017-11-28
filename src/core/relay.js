@@ -1,5 +1,4 @@
 import EventEmitter from 'events';
-import uniqueId from 'lodash.uniqueid';
 import {Pipe} from './pipe';
 import {PIPE_ENCODE, PIPE_DECODE} from './middleware';
 import {logger} from '../utils';
@@ -193,7 +192,5 @@ export function createRelay(transport, context, proxyRequest = null) {
     [Inbound, Outbound] = __IS_CLIENT__ ? [TcpInbound, mapping[transport][1]] : [mapping[transport][0], TcpOutbound];
   }
   const props = {transport, context, Inbound, Outbound, proxyRequest};
-  const relay = new Relay(props);
-  relay.id = uniqueId(`${transport}_`);
-  return relay;
+  return new Relay(props);
 }
