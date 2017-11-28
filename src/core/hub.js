@@ -15,7 +15,7 @@ export class Hub {
 
   _wkId = cluster.worker ? cluster.worker.id : 0;
 
-  _server = null;
+  _tcpServer = null;
 
   _udpServer = null;
 
@@ -47,7 +47,7 @@ export class Hub {
       logger.info(`[balancer-${this._wkId}] stopped`);
     }
     // server
-    this._server.close();
+    this._tcpServer.close();
     logger.info(`[hub-${this._wkId}] shutdown`);
     // udp server
     this._udpServer.close();
@@ -55,7 +55,7 @@ export class Hub {
   }
 
   async run() {
-    if (this._server !== null) {
+    if (this._tcpServer !== null) {
       this.terminate();
     }
     if (__IS_CLIENT__) {
@@ -73,9 +73,9 @@ export class Hub {
 
   async _createServer() {
     if (__IS_CLIENT__) {
-      this._server = await this._createServerOnClient();
+      this._tcpServer = await this._createServerOnClient();
     } else {
-      this._server = await this._createServerOnServer();
+      this._tcpServer = await this._createServerOnServer();
     }
     this._udpServer = await this._createUdpServer();
   }
