@@ -56,7 +56,7 @@ export default class MuxPreset extends IPreset {
     return 5 + dataLen;
   }
 
-  onChunkReceived(chunk, {next, broadcast}) {
+  onChunkReceived(chunk, {broadcast}) {
     const cmd = chunk[0];
     const cid = chunk.readUInt16BE(1);
     const dataLen = chunk.readUInt16BE(3);
@@ -64,7 +64,7 @@ export default class MuxPreset extends IPreset {
       type: MUX_FRAME,
       payload: {
         host: this._host, port: this._port, cmd, cid,
-        onResolved: () => next(chunk.slice(-dataLen))
+        data: chunk.slice(-dataLen)
       }
     });
   }
@@ -78,8 +78,8 @@ export default class MuxPreset extends IPreset {
     return Buffer.concat(chunks);
   }
 
-  beforeIn({buffer, next, broadcast, fail}) {
-    this._adBuf.put(buffer, {next, broadcast, fail});
+  beforeIn({buffer, broadcast, fail}) {
+    this._adBuf.put(buffer, {broadcast, fail});
   }
 
 }

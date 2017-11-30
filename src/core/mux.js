@@ -15,62 +15,79 @@ export class Mux {
 
   // on client side
   couple(relay) {
-    const muxRelay = this._getMuxRelay(relay.getContext());
-    if (!relay.hasListener('encode')) {
-      relay.on('encode', muxRelay.onPipeEncoded.bind(muxRelay));
-    }
-    if (!muxRelay.hasListener('decode')) {
-      muxRelay.on('decode', relay.onPipeDecoded.bind(relay));
-    }
+    const muxRelay = this._getOrCreateMuxRelay(relay.getContext());
+    relay.on('encode', muxRelay.onPipeEncoded.bind(muxRelay));
+    relay.on('close', () => this._relays.delete(relay.id));
+    this._relays.set(relay.id, relay);
+    logger.debug(`[mux] mix relay ${relay.id} into mux relay ${muxRelay.id}`);
   }
 
   // on server side
   decouple(muxRelay) {
-    muxRelay.on('frame', ({host, port, cid, onResolved}) => {
-      const relay = this._getRelay(muxRelay.getContext(), {host, port, cid}, onResolved);
-      if (!relay.hasListener('encode')) {
-        relay.on('encode', muxRelay.onPipeEncoded.bind(muxRelay)); // TODO: pick a random mux relay?
+    muxRelay.on('frame', ({host, port, cid, data}) => {
+      let relay;
+      if (relay = this._relays.get(cid)) {
+        relay.onPipeDecoded(data);
+      } else {
+        relay = this._createRelay({
+          context: muxRelay.getContext(), host, port, cid,
+          onCreated() {
+            relay.onPipeDecoded(data);
+          }
+        });
       }
-      if (!muxRelay.hasListener('decode')) {
-        muxRelay.on('decode', relay.onPipeDecoded.bind(relay));
+      if (!relay.hasListener('encode')) {
+        // const leftRelay = this.getRandomMuxRelay(); TODO: pick a random mux relay?
+        const leftRelay = muxRelay;
+        relay.on('encode', leftRelay.onPipeEncoded.bind(leftRelay));
       }
     });
+    muxRelay.on('close', () => {
+      logger.debug(`[mux] mux relay ${muxRelay.id} is destroyed`);
+      this._muxRelays.delete(muxRelay.id);
+      // TODO: cleanup associate relays?
+    });
+    this._muxRelays.set(muxRelay.id, muxRelay);
   }
 
-  _getRelay(context, {host, port, cid}, cb) {
-    let relay = this._relays.get(cid);
-    if (!relay) {
-      relay = Relay.create({transport: __TRANSPORT__, context, presets: []});
-      relay.id = cid;
-      relay.on('close', () => this._relays.delete(cid));
-      relay.onBroadcast({
-        type: CONNECT_TO_REMOTE,
-        payload: {
-          host: host,
-          port: port,
-          onConnected: cb
-        }
-      });
-      this._relays.set(cid, relay);
-    } else {
-      cb();
-    }
-    logger.verbose(`[mux] total relay: ${this._relays.size}/${__MUX_CONCURRENCY__}, use: ${relay.id}`);
-    return relay;
+  // server
+  _createRelay({context, host, port, cid, onResolved}) {
+    const relay = Relay.create({transport: __TRANSPORT__, context, presets: []});
+    relay.id = cid;
+    relay.on('close', () => this._relays.delete(cid));
+    relay.onBroadcast({
+      type: CONNECT_TO_REMOTE,
+      payload: {
+        host: host,
+        port: port,
+        onConnected: onResolved
+      }
+    });
+    this._relays.set(cid, relay);
+    logger.verbose(`[mux] create sub relay ${relay.id}, total: ${this._relays.size}`);
   }
 
-  _getMuxRelay(context) {
+  // client
+  _getOrCreateMuxRelay(context) {
     const relays = this._muxRelays;
     const concurrency = relays.size;
     let relay = null;
     if (concurrency < __MUX_CONCURRENCY__) {
       // create mux relay if necessary
-      const cid = uniqueId('mux_');
+      const cid = uniqueId() | 0;
       relay = Relay.create({transport: __TRANSPORT__, context, presets: [], isMux: true});
       relay.id = cid;
       relay.on('close', () => {
         relays.delete(cid);
         logger.debug(`[mux] relay ${relay.id} is destroyed`);
+      });
+      relay.on('frame', ({cid, data}) => {
+        const leftRelay = this._relays.get(cid);
+        if (!leftRelay) {
+          logger.error(`leftRelay ${cid} is not found`);
+          return;
+        }
+        leftRelay.onPipeDecoded(data);
       });
       relays.set(cid, relay);
     } else {

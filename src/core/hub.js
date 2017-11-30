@@ -8,6 +8,7 @@ import uniqueId from 'lodash.uniqueid';
 import * as MiddlewareManager from './middleware';
 import {Balancer} from './balancer';
 import {Config} from './config';
+import {Mux} from './mux';
 import {Relay} from './relay';
 import {dumpHex, logger} from '../utils';
 import {http, socks, tcp} from '../proxies';
@@ -19,6 +20,8 @@ export class Hub {
   _tcpServer = null;
 
   _udpServer = null;
+
+  _mux = new Mux();
 
   _tcpRelays = new Map(/* id: <relay> */);
 
@@ -172,7 +175,7 @@ export class Hub {
         if (relay === undefined) {
           server.remoteAddress = address;
           server.remotePort = port;
-          relay = new Relay({transport: 'udp', context: server, proxyRequest});
+          relay = Relay.create({transport: 'udp', presets: __PRESETS__, context: server, proxyRequest});
           relay.on('close', function onRelayClose() {
             // relays.del(key);
           });
@@ -218,10 +221,24 @@ export class Hub {
     }
     logger.verbose(`[hub] [${context.remoteAddress}:${context.remotePort}] connected`);
     const cid = uniqueId() | 0;
-    const relay = new Relay({transport: __TRANSPORT__, context, proxyRequest});
+    const props = {
+      transport: __TRANSPORT__,
+      presets: __PRESETS__,
+      context,
+      proxyRequest,
+      isMux: (__MUX__ && __IS_SERVER__)
+    };
+    const relay = Relay.create(props);
     relay.id = cid;
     relay.on('close', () => this._tcpRelays.delete(cid));
     this._tcpRelays.set(cid, relay);
+    if (__MUX__ && __IS_CLIENT__) {
+      this._mux.couple(relay);
+      proxyRequest.onConnected();
+    }
+    if (__MUX__ && __IS_SERVER__) {
+      this._mux.decouple(relay);
+    }
   }
 
   _switchServer() {
