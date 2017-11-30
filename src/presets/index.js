@@ -5,6 +5,7 @@ import StatsPreset from './stats';
 import TrackerPreset from './tracker';
 import AccessControlPreset from './access-control';
 import AutoConfPreset from './auto-conf';
+import MuxPreset from './mux';
 
 // basic
 import BaseAuthPreset from './base-auth';
@@ -59,6 +60,7 @@ const mapping = {
   'tracker': TrackerPreset,
   'access-control': AccessControlPreset,
   'auto-conf': AutoConfPreset,
+  'mux': MuxPreset,
 
   // basic
   'base-auth': BaseAuthPreset,

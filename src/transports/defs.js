@@ -39,8 +39,8 @@ export class Inbound extends Bound {
   constructor({context, pipe}) {
     super();
     this._pipe = pipe;
-    this._remoteHost = context.remoteAddress;
-    this._remotePort = context.remotePort;
+    this._remoteHost = context ? context.remoteAddress : '?';
+    this._remotePort = context ? context.remotePort : '?';
   }
 
   get remote() {
