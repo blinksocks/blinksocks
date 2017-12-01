@@ -36,8 +36,9 @@ export class Inbound extends Bound {
 
   _pipe = null;
 
-  constructor({context, pipe}) {
+  constructor({context, pipe, isMux}) {
     super();
+    this._isMux = isMux;
     this._pipe = pipe;
     this._remoteHost = context ? context.remoteAddress : '?';
     this._remotePort = context ? context.remotePort : '?';
@@ -73,9 +74,10 @@ export class Outbound extends Bound {
 
   _dnsCache = null;
 
-  constructor({inbound, pipe}) {
+  constructor({inbound, pipe, isMux}) {
     super();
     this._inbound = inbound;
+    this._isMux = isMux;
     this._pipe = pipe;
     this._dnsCache = new DNSCache({expire: __DNS_EXPIRE__});
   }

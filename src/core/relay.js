@@ -63,8 +63,8 @@ export class Relay extends EventEmitter {
     this._presets = this.preparePresets(presets);
     this._pipe = this.createPipe(this._presets);
     // outbound
-    this._inbound = new Inbound({context: context, pipe: this._pipe});
-    this._outbound = new Outbound({inbound: this._inbound, pipe: this._pipe});
+    this._inbound = new Inbound({context: context, pipe: this._pipe, isMux});
+    this._outbound = new Outbound({inbound: this._inbound, pipe: this._pipe, isMux});
     this._outbound.updatePresets = this.updatePresets;
     // inbound
     this._inbound.updatePresets = this.updatePresets;
@@ -74,16 +74,14 @@ export class Relay extends EventEmitter {
       this.emit('close');
     });
     // initial action
-    if (!isMux) {
-      this._pipe.broadcast('pipe', {
-        type: CONNECTION_CREATED,
-        payload: {
-          transport: transport,
-          host: context ? context.remoteAddress : '*',
-          port: context ? context.remotePort : '*'
-        }
-      });
-    }
+    this._pipe.broadcast('pipe', {
+      type: CONNECTION_CREATED,
+      payload: {
+        transport: transport,
+        host: context ? context.remoteAddress : '*',
+        port: context ? context.remotePort : '*'
+      }
+    });
     if (__IS_CLIENT__ && proxyRequest !== null) {
       this._pipe.broadcast(null, {
         type: CONNECT_TO_REMOTE,
@@ -198,8 +196,10 @@ export class Relay extends EventEmitter {
     const first = presets[0];
     const last = presets[presets.length - 1];
     // auto add "mux" preset
-    if (this._isMux && (!first || first.name !== 'mux')) {
-      presets = [{'name': 'mux'}].concat(presets);
+    if ((!first || first.name !== 'mux') && __MUX__) {
+      if ((__IS_CLIENT__ && !this._isMux) || (__IS_SERVER__ && this._isMux)) {
+        presets = [{'name': 'mux'}].concat(presets);
+      }
     }
     // add at least one "tracker" preset to the list
     if (!last || last.name !== 'tracker') {

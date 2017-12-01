@@ -25,15 +25,13 @@ export class Mux {
   // on server side
   decouple(muxRelay) {
     muxRelay.on('frame', ({host, port, cid, data}) => {
-      let relay;
-      if (relay = this._relays.get(cid)) {
+      let relay = this._relays.get(cid);
+      if (relay) {
         relay.onPipeDecoded(data);
       } else {
         relay = this._createRelay({
           context: muxRelay.getContext(), host, port, cid,
-          onCreated() {
-            relay.onPipeDecoded(data);
-          }
+          onConnected: () => relay.onPipeDecoded(data)
         });
       }
       if (!relay.hasListener('encode')) {
@@ -51,7 +49,7 @@ export class Mux {
   }
 
   // server
-  _createRelay({context, host, port, cid, onResolved}) {
+  _createRelay({context, host, port, cid, onConnected}) {
     const relay = Relay.create({transport: __TRANSPORT__, context, presets: []});
     relay.id = cid;
     relay.on('close', () => this._relays.delete(cid));
@@ -60,11 +58,12 @@ export class Mux {
       payload: {
         host: host,
         port: port,
-        onConnected: onResolved
+        onConnected: onConnected
       }
     });
     this._relays.set(cid, relay);
     logger.verbose(`[mux] create sub relay ${relay.id}, total: ${this._relays.size}`);
+    return relay;
   }
 
   // client

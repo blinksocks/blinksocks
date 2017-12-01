@@ -32,13 +32,15 @@ export class TcpInbound extends Inbound {
     this.onHalfClose = this.onHalfClose.bind(this);
     this.destroy = this.destroy.bind(this);
     this._socket = context;
-    this._socket.on('error', this.onError);
-    this._socket.on('data', this.onReceive);
-    this._socket.on('drain', () => this.emit('drain'));
-    this._socket.on('timeout', this.onTimeout);
-    this._socket.on('end', this.onHalfClose);
-    this._socket.on('close', this.destroy);
-    this._socket.setTimeout && this._socket.setTimeout(__TIMEOUT__);
+    if (__IS_SERVER__ || !this._isMux) {
+      this._socket.on('error', this.onError);
+      this._socket.on('data', this.onReceive);
+      this._socket.on('drain', () => this.emit('drain'));
+      this._socket.on('timeout', this.onTimeout);
+      this._socket.on('end', this.onHalfClose);
+      this._socket.on('close', this.destroy);
+      this._socket.setTimeout && this._socket.setTimeout(__TIMEOUT__);
+    }
   }
 
   onError(err) {
