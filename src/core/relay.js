@@ -2,7 +2,7 @@ import EventEmitter from 'events';
 import {Pipe} from './pipe';
 import {PIPE_ENCODE, PIPE_DECODE} from './middleware';
 import {logger} from '../utils';
-import {CONNECT_TO_REMOTE, CONNECTION_CREATED, CHANGE_PRESET_SUITE, MUX_FRAME} from '../presets';
+
 import {
   TcpInbound, TcpOutbound,
   UdpInbound, UdpOutbound,
@@ -10,12 +10,36 @@ import {
   WsInbound, WsOutbound
 } from '../transports';
 
-const mapping = {
-  'tcp': [TcpInbound, TcpOutbound],
-  'udp': [UdpInbound, UdpOutbound],
-  'tls': [TlsInbound, TlsOutbound],
-  'ws': [WsInbound, WsOutbound]
-};
+import {
+  CONNECT_TO_REMOTE,
+  CONNECTION_CREATED,
+  CHANGE_PRESET_SUITE,
+  MUX_DATA_FRAME,
+  MUX_SUB_CLOSE
+} from '../presets/defs';
+
+/**
+ * get Inbound and Outbound classes by transport
+ * @param transport
+ * @returns {{Inbound: *, Outbound: *}}
+ */
+function getBounds(transport) {
+  const mapping = {
+    'mux': [TcpInbound, TcpOutbound],
+    'tcp': [TcpInbound, TcpOutbound],
+    'udp': [UdpInbound, UdpOutbound],
+    'tls': [TlsInbound, TlsOutbound],
+    'ws': [WsInbound, WsOutbound]
+  };
+  let Inbound = null;
+  let Outbound = null;
+  if (transport === 'udp') {
+    [Inbound, Outbound] = [UdpInbound, UdpOutbound];
+  } else {
+    [Inbound, Outbound] = __IS_CLIENT__ ? [TcpInbound, mapping[transport][1]] : [mapping[transport][0], TcpOutbound];
+  }
+  return {Inbound, Outbound};
+}
 
 // .on('encode')
 // .on('decode')
@@ -38,18 +62,7 @@ export class Relay extends EventEmitter {
 
   _presets = [];
 
-  static create({transport, presets, isMux, context, proxyRequest = null}) {
-    let Inbound = null;
-    let Outbound = null;
-    if (transport === 'udp') {
-      [Inbound, Outbound] = [UdpInbound, UdpOutbound];
-    } else {
-      [Inbound, Outbound] = __IS_CLIENT__ ? [TcpInbound, mapping[transport][1]] : [mapping[transport][0], TcpOutbound];
-    }
-    return new Relay({transport, presets, isMux, context, Inbound, Outbound, proxyRequest});
-  }
-
-  constructor({transport, presets, isMux, context, Inbound, Outbound, proxyRequest = null}) {
+  constructor({transport, presets, isMux, context, cid, proxyRequest = null}) {
     super();
     this.updatePresets = this.updatePresets.bind(this);
     this.onBroadcast = this.onBroadcast.bind(this);
@@ -63,6 +76,7 @@ export class Relay extends EventEmitter {
     this._presets = this.preparePresets(presets);
     this._pipe = this.createPipe(this._presets);
     // outbound
+    const {Inbound, Outbound} = getBounds(transport);
     this._inbound = new Inbound({context: context, pipe: this._pipe, isMux});
     this._outbound = new Outbound({inbound: this._inbound, pipe: this._pipe, isMux});
     this._outbound.updatePresets = this.updatePresets;
@@ -82,16 +96,10 @@ export class Relay extends EventEmitter {
         port: context ? context.remotePort : '*'
       }
     });
-    if (__IS_CLIENT__ && proxyRequest !== null) {
+    if (__IS_CLIENT__ && (proxyRequest !== null || isMux)) {
       this._pipe.broadcast(null, {
         type: CONNECT_TO_REMOTE,
-        payload: proxyRequest
-      });
-    }
-    if (__IS_CLIENT__ && isMux) {
-      this._pipe.broadcast(null, {
-        type: CONNECT_TO_REMOTE,
-        payload: {}
+        payload: {...(proxyRequest || {}), cid}
       });
     }
   }
@@ -100,22 +108,26 @@ export class Relay extends EventEmitter {
 
   onBroadcast(action) {
     const type = action.type;
-    if (type === CONNECT_TO_REMOTE) {
-      if (__MUX__) {
-        if (__IS_CLIENT__ && !this._isMux) {
-          return;
-        }
-        if (__IS_SERVER__ && this._isMux) {
-          action.payload.onConnected();
-          return;
-        }
+    if (__MUX__) {
+      switch (type) {
+        case CONNECT_TO_REMOTE:
+          if (__IS_CLIENT__ && !this._isMux) {
+            return;
+          }
+          if (__IS_SERVER__ && this._isMux) {
+            action.payload.onConnected();
+            return;
+          }
+          break;
+        case MUX_DATA_FRAME:
+          return this.emit('frame', action.payload);
+        case MUX_SUB_CLOSE:
+          return this.emit('subClose', action.payload);
+        default:
+          break;
       }
     }
-    else if (type === MUX_FRAME) {
-      this.emit('frame', action.payload);
-      return;
-    }
-    else if (type === CHANGE_PRESET_SUITE) {
+    if (type === CHANGE_PRESET_SUITE) {
       this.onChangePresetSuite(action);
       return;
     }

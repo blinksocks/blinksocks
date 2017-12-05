@@ -1,5 +1,9 @@
 import {AdvancedBuffer, getRandomChunks, numberToBuffer as ntb} from '../utils';
-import {CONNECT_TO_REMOTE, MUX_FRAME, IPreset} from './defs';
+import {CONNECT_TO_REMOTE, CONNECTION_WILL_CLOSE, IPreset, MUX_DATA_FRAME, MUX_SUB_CLOSE} from './defs';
+import {PIPE_ENCODE} from '../core';
+
+const CMD_DATA_FRAME = 0x00;
+const CMD_SUB_CLOSE = 0x01;
 
 /**
  * @description
@@ -19,8 +23,7 @@ import {CONNECT_TO_REMOTE, MUX_FRAME, IPreset} from './defs';
  *
  *   CMD
  *     0x00: data frame
- *     0x01: new connection
- *     0x02: close connection
+ *     0x01: close sub connection
  */
 export default class MuxPreset extends IPreset {
 
@@ -30,6 +33,8 @@ export default class MuxPreset extends IPreset {
 
   _port = null;
 
+  _cid = 0;
+
   constructor() {
     super();
     this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});
@@ -38,8 +43,13 @@ export default class MuxPreset extends IPreset {
 
   onNotified(action) {
     if (action.type === CONNECT_TO_REMOTE) {
-      this._host = action.payload.host;
-      this._port = action.payload.port;
+      const {host, port, cid} = action.payload;
+      this._host = host;
+      this._port = port;
+      this._cid = cid;
+    }
+    if (__IS_CLIENT__ && action.type === CONNECTION_WILL_CLOSE) {
+      this.next(PIPE_ENCODE, this.createChunk(CMD_SUB_CLOSE, this._cid, Buffer.alloc(0)));
     }
   }
 
@@ -56,25 +66,43 @@ export default class MuxPreset extends IPreset {
     return 5 + dataLen;
   }
 
-  onChunkReceived(chunk, {broadcast}) {
+  onChunkReceived(chunk, {broadcast, fail}) {
     const cmd = chunk[0];
     const cid = chunk.readUInt16BE(1);
     const dataLen = chunk.readUInt16BE(3);
-    broadcast({
-      type: MUX_FRAME,
-      payload: {
-        host: this._host, port: this._port, cmd, cid,
-        data: chunk.slice(-dataLen)
-      }
-    });
+    switch (cmd) {
+      case CMD_DATA_FRAME:
+        broadcast({
+          type: MUX_DATA_FRAME,
+          payload: {
+            // TODO(refactor): find a way to remove wordy "host" and "port".
+            host: this._host,
+            port: this._port,
+            cid,
+            data: chunk.slice(-dataLen)
+          }
+        });
+        break;
+      case CMD_SUB_CLOSE:
+        broadcast({
+          type: MUX_SUB_CLOSE,
+          payload: cid
+        });
+        break;
+      default:
+        fail(`unknown command: ${cmd}`);
+        break;
+    }
+  }
+
+  createChunk(cmd, cid, buffer) {
+    return Buffer.concat([ntb(cmd, 1), ntb(cid, 2), ntb(buffer.length), buffer]);
   }
 
   beforeOut({buffer}) {
-    const chunks = getRandomChunks(buffer, 0x0800, 0x3fff).map((chunk) => {
-      const cmd = Buffer.alloc(1);
-      const cid = Buffer.alloc(2);
-      return Buffer.concat([cmd, cid, ntb(chunk.length), chunk]);
-    });
+    const chunks = getRandomChunks(buffer, 0x0800, 0x3fff).map((chunk) =>
+      this.createChunk(CMD_DATA_FRAME, this._cid, chunk)
+    );
     return Buffer.concat(chunks);
   }
 

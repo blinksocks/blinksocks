@@ -8,7 +8,7 @@ import uniqueId from 'lodash.uniqueid';
 import * as MiddlewareManager from './middleware';
 import {Balancer} from './balancer';
 import {Config} from './config';
-import {Mux} from './mux';
+import {Multiplexer} from './multiplexer';
 import {Relay} from './relay';
 import {dumpHex, logger} from '../utils';
 import {http, socks, tcp} from '../proxies';
@@ -21,7 +21,7 @@ export class Hub {
 
   _udpServer = null;
 
-  _mux = new Mux();
+  _mux = new Multiplexer();
 
   _tcpRelays = new Map(/* id: <relay> */);
 
@@ -175,7 +175,7 @@ export class Hub {
         if (relay === undefined) {
           server.remoteAddress = address;
           server.remotePort = port;
-          relay = Relay.create({transport: 'udp', presets: __PRESETS__, context: server, proxyRequest});
+          relay = new Relay({transport: 'udp', presets: __PRESETS__, context: server, proxyRequest});
           relay.on('close', function onRelayClose() {
             // relays.del(key);
           });
@@ -221,14 +221,10 @@ export class Hub {
     }
     logger.verbose(`[hub] [${context.remoteAddress}:${context.remotePort}] connected`);
     const cid = uniqueId() | 0;
-    const props = {
-      transport: __TRANSPORT__,
-      presets: __PRESETS__,
-      context,
-      proxyRequest,
-      isMux: (__MUX__ && __IS_SERVER__)
-    };
-    const relay = Relay.create(props);
+    const isMux = __MUX__ && __IS_SERVER__;
+    const transport = isMux ? 'mux' : __TRANSPORT__;
+    const presets = __PRESETS__;
+    const relay = new Relay({transport, presets, context, proxyRequest, isMux, cid});
     relay.id = cid;
     relay.on('close', () => this._tcpRelays.delete(cid));
     this._tcpRelays.set(cid, relay);
@@ -237,6 +233,13 @@ export class Hub {
       proxyRequest.onConnected();
     }
     if (__MUX__ && __IS_SERVER__) {
+      // TODO(fix): monkey-patch context.destroy() to prevent closing mux relay
+      context.destroy = ((destroy) => (force = false) => {
+        logger.debug('prevent closing mux relay');
+        if (force) {
+          destroy.call(context);
+        }
+      })(context.destroy);
       this._mux.decouple(relay);
     }
   }
