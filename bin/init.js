@@ -39,7 +39,8 @@ module.exports = function init({isMinimal, isOverwrite}) {
         'key': key,
         'presets': [
           {'name': 'ss-base'},
-          {'name': 'ss-aead-cipher', 'params': {'method': 'aes-256-gcm'}}
+          {'name': 'obfs-random-padding'},
+          {'name': 'ss-stream-cipher', 'params': {'method': 'aes-128-ctr'}}
         ],
         'tls_cert': 'cert.pem'
       }
@@ -69,7 +70,8 @@ module.exports = function init({isMinimal, isOverwrite}) {
     'key': key,
     'presets': [
       {'name': 'ss-base'},
-      {'name': 'ss-aead-cipher', 'params': {'method': 'aes-256-gcm'}}
+      {'name': 'obfs-random-padding'},
+      {'name': 'ss-stream-cipher', 'params': {'method': 'aes-128-ctr'}}
     ],
     'tls_key': 'key.pem',
     'tls_cert': 'cert.pem',
