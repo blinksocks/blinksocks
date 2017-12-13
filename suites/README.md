@@ -15,6 +15,12 @@ Here I prepared a set of suites file, feel free to add/delete/modify them to mee
 ]
 ```
 
+You can also load from remote use `http` or `https`:
+
+```
+"suites": "https://raw.githubusercontent.com/blinksocks/blinksocks/master/suites/suites-0.json"
+```
+
 > Note that client and server should pre-share exactly the same **suites.json**.
 
 ## [suites-0.json]
