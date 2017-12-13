@@ -7,7 +7,12 @@ const ciphers = {
   'aes-128-ctr': [16, 16], 'aes-192-ctr': [24, 16], 'aes-256-ctr': [32, 16],
   'aes-128-cfb': [16, 16], 'aes-192-cfb': [24, 16], 'aes-256-cfb': [32, 16],
   'camellia-128-cfb': [16, 16], 'camellia-192-cfb': [24, 16], 'camellia-256-cfb': [32, 16],
-  'rc4-md5': [16, 16], 'rc4-md5-6': [16, 6]
+  'rc4-md5': [16, 16], 'rc4-md5-6': [16, 6],
+
+  // NOTE: "none" cipher is just prepared for "ssr-auth-chain-*" presets.
+  // DO NOT use "none" without "ssr-auth-chain-*".
+  'none': [16, 0]
+
   // 'chacha20-ietf': [32, 12], wait for libsodium-wrappers
 };
 
@@ -118,6 +123,11 @@ export default class SsStreamCipherPreset extends IPreset {
       _key = hash('md5', Buffer.concat([_key, _iv]));
       _iv = NOOP;
     }
+    else if (algorithm === 'none') {
+      return {
+        update: (buffer) => buffer
+      };
+    }
     return crypto.createCipheriv(algorithm, _key, _iv);
   }
 
@@ -128,6 +138,11 @@ export default class SsStreamCipherPreset extends IPreset {
     if (algorithm === 'rc4') {
       _key = hash('md5', Buffer.concat([_key, _iv]));
       _iv = NOOP;
+    }
+    else if (algorithm === 'none') {
+      return {
+        update: (buffer) => buffer
+      };
     }
     return crypto.createDecipheriv(algorithm, _key, _iv);
   }
