@@ -19,6 +19,28 @@ function preparePresets(presets) {
   return presets;
 }
 
+/**
+ * get Inbound and Outbound classes by transport
+ * @param transport
+ * @returns {{Inbound: *, Outbound: *}}
+ */
+function getBounds(transport) {
+  const mapping = {
+    'tcp': [TcpInbound, TcpOutbound],
+    'udp': [UdpInbound, UdpOutbound],
+    'tls': [TlsInbound, TlsOutbound],
+    'ws': [WsInbound, WsOutbound]
+  };
+  let Inbound = null;
+  let Outbound = null;
+  if (transport === 'udp') {
+    [Inbound, Outbound] = [UdpInbound, UdpOutbound];
+  } else {
+    [Inbound, Outbound] = __IS_CLIENT__ ? [TcpInbound, mapping[transport][1]] : [mapping[transport][0], TcpOutbound];
+  }
+  return {Inbound, Outbound};
+}
+
 // .on('close')
 export class Relay extends EventEmitter {
 
@@ -36,12 +58,12 @@ export class Relay extends EventEmitter {
 
   _presets = [];
 
-  constructor({transport, context, Inbound, Outbound, proxyRequest = null}) {
+  constructor({transport, context, proxyRequest = null}) {
     super();
     this.updatePresets = this.updatePresets.bind(this);
     this.onBroadcast = this.onBroadcast.bind(this);
-    this.postPipeEncode = this.postPipeEncode.bind(this);
-    this.postPipeDecode = this.postPipeDecode.bind(this);
+    this.onPipeEncoded = this.onPipeEncoded.bind(this);
+    this.onPipeDecoded = this.onPipeDecoded.bind(this);
     this._transport = transport;
     this._context = context;
     this._proxyRequest = proxyRequest;
@@ -49,6 +71,7 @@ export class Relay extends EventEmitter {
     this._presets = preparePresets(__PRESETS__);
     this._pipe = this.createPipe(this._presets);
     // outbound
+    const {Inbound, Outbound} = getBounds(transport);
     this._inbound = new Inbound({context: context, pipe: this._pipe});
     this._outbound = new Outbound({inbound: this._inbound, pipe: this._pipe});
     this._outbound.updatePresets = this.updatePresets;
@@ -96,8 +119,7 @@ export class Relay extends EventEmitter {
     // 1. update preset list
     this.updatePresets(preparePresets([
       ...suite.presets,
-      {'name': 'auto-conf'},
-      // TODO(discussion): need any other protections here, or improve auto-conf itself instead?
+      {'name': 'auto-conf'}
     ]));
     // 2. initialize newly created presets
     const transport = this._transport;
@@ -121,7 +143,7 @@ export class Relay extends EventEmitter {
     this._pipe.feed(type, data);
   }
 
-  postPipeEncode(buffer) {
+  onPipeEncoded(buffer) {
     if (__IS_CLIENT__) {
       this._outbound.write(buffer);
     } else {
@@ -129,7 +151,7 @@ export class Relay extends EventEmitter {
     }
   }
 
-  postPipeDecode(buffer) {
+  onPipeDecoded(buffer) {
     if (__IS_CLIENT__) {
       this._inbound.write(buffer);
     } else {
@@ -154,8 +176,8 @@ export class Relay extends EventEmitter {
   createPipe(presets) {
     const pipe = new Pipe({presets, isUdp: this._transport === 'udp'});
     pipe.on('broadcast', this.onBroadcast.bind(this)); // if no action were caught by presets
-    pipe.on(`post_${PIPE_ENCODE}`, this.postPipeEncode);
-    pipe.on(`post_${PIPE_DECODE}`, this.postPipeDecode);
+    pipe.on(`post_${PIPE_ENCODE}`, this.onPipeEncoded);
+    pipe.on(`post_${PIPE_DECODE}`, this.onPipeDecoded);
     return pipe;
   }
 
@@ -174,23 +196,4 @@ export class Relay extends EventEmitter {
     this._proxyRequest = null;
   }
 
-}
-
-const mapping = {
-  'tcp': [TcpInbound, TcpOutbound],
-  'udp': [UdpInbound, UdpOutbound],
-  'tls': [TlsInbound, TlsOutbound],
-  'ws': [WsInbound, WsOutbound]
-};
-
-export function createRelay(transport, context, proxyRequest = null) {
-  let Inbound = null;
-  let Outbound = null;
-  if (transport === 'udp') {
-    [Inbound, Outbound] = [UdpInbound, UdpOutbound];
-  } else {
-    [Inbound, Outbound] = __IS_CLIENT__ ? [TcpInbound, mapping[transport][1]] : [mapping[transport][0], TcpOutbound];
-  }
-  const props = {transport, context, Inbound, Outbound, proxyRequest};
-  return new Relay(props);
 }
