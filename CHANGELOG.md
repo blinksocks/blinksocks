@@ -1,5 +1,30 @@
 #  Change Log
 
+## 2.8.5 (2017-12-13)
+
+### :rocket: Features & Improvements
+
+- **bin/init**: add `obfs-random-padding` to presets by default.
+- **benchmark**: use project version rather than installed version.
+- **core**: pre-init presets at startup.
+- **package**: bundle Node.js runtime v8.9.0 to binaries.
+- **package**: run compile before benchmark.
+- **presets/ss-stream-cipher**: add `none` method for `ssr-auth-chain-*`.
+- **presets/auto-conf**: protocol change: UTC field is now encrypted by rc4.
+- **presets/auto-conf**: allow to load suites from remote.
+
+### :bug: Bug Fixes:
+
+- **balancer**: fix `undefined` bug when only use `service` in configuration.
+- **transports/tcp**: handle half-close correctly.
+- **transports/udp**: fix a bug when use `auto-conf` preset.
+
+### Upgrade from 2.8.4 to 2.8.5
+
+```
+$ npm install -g blinksocks@2.8.5
+```
+
 ## 2.8.4 (2017-11-22)
 
 > dynamic protocol is introduced in this version, it's an **experimental** feature.
