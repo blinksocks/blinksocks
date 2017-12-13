@@ -22,6 +22,7 @@
     "debug:server": "cross-env NODE_ENV=development node --inspect --inspect-port=9300 bin/cli.js blinksocks.server.json",
     "client": "node bin/cli.js blinksocks.client.json",
     "server": "node bin/cli.js blinksocks.server.json",
+    "prebenchmark": "npm run compile",
     "benchmark": "node benchmark/bootstrap.js",
     "precommit": "npm test"
   },
