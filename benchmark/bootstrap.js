@@ -6,6 +6,7 @@ const os = require('os');
 const chalk = require('chalk');
 const testCases = require('./cases');
 
+const BLINKSOCKS_PATH = path.resolve(__dirname, '../bin/start.js');
 const IPERF_PATH = path.join(__dirname, 'iperf.sh');
 const SEC_PER_CASE = 3;
 
@@ -64,7 +65,7 @@ function convertTransferToKBytes(transfer) {
 
 function printTestEnv() {
   console.log(chalk.bold.underline('blinksocks version:'));
-  console.log(child_process.execFileSync('blinksocks', ['-v'], {encoding: 'utf-8'}).trim());
+  console.log(child_process.execSync(`node ${BLINKSOCKS_PATH} -v`, {encoding: 'utf-8'}).trim());
   console.log('');
   console.log(chalk.bold.underline('Operating System:'));
   const osParams = [
