@@ -342,7 +342,7 @@ aes-128-cfb, aes-192-cfb, aes-256-cfb,
 
 camellia-128-cfb, camellia-192-cfb, camellia-256-cfb
 
-rc4-md5, rc4-md5-6
+rc4-md5, rc4-md5-6, none
 
 ```
 "presets": [
@@ -408,7 +408,7 @@ shadowsocksr [auth_chain](https://github.com/shadowsocksr-rm/shadowsocks-rss/blo
 "presets": [
   {"name": "ss-base"},
   {"name": "ssr-auth-chain-a"},
-  {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}}
+  {"name": "ss-stream-cipher", "params": {"method": "none"}}
 ]
 ```
 

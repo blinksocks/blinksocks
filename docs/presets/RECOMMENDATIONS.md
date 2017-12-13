@@ -59,7 +59,7 @@ To work with **shadowsocks**, please choose one of the following configurations:
 "presets": [
   {"name": "ss-base"},
   {"name": "ssr-auth-chain-a"},
-  {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}}
+  {"name": "ss-stream-cipher", "params": {"method": "none"}}
 ]
 ```
 
