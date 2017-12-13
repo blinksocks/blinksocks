@@ -9,10 +9,14 @@ client_conf=$1
 server_conf=$2
 seconds=$3
 
-blinksocks -c ${client_conf} > /dev/null &
+BLINKSOCKS="node bin/start.js"
+
+export NODE_ENV=production
+
+${BLINKSOCKS} -c ${client_conf} > /dev/null &
 bs_client_pid=$!
 
-blinksocks -c ${server_conf} > /dev/null &
+${BLINKSOCKS} -c ${server_conf} > /dev/null &
 bs_server_pid=$!
 
 # because cluster mode will take a while to start
