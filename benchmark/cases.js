@@ -71,12 +71,26 @@ const shadowsocksr_presets = [
   [
     {"name": "ss-base"},
     {"name": "ssr-auth-chain-a"},
-    {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}}
+    {"name": "ss-stream-cipher", "params": {"method": "none"}}
   ],
   [
     {"name": "ss-base"},
     {"name": "ssr-auth-chain-b"},
-    {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}}
+    {"name": "ss-stream-cipher", "params": {"method": "none"}}
+  ]
+];
+const shadowsocksr_obfs_presets = [
+  [
+    {"name": "ss-base"},
+    {"name": "ssr-auth-aes128-sha1"},
+    {"name": "ss-stream-cipher", "params": {"method": "aes-256-ctr"}},
+    {"name": "obfs-tls1.2-ticket", "params": {"sni": ["test.com"]}}
+  ],
+  [
+    {"name": "ss-base"},
+    {"name": "ssr-auth-chain-a"},
+    {"name": "ss-stream-cipher", "params": {"method": "none"}},
+    {"name": "obfs-tls1.2-ticket", "params": {"sni": ["test.com"]}}
   ]
 ];
 
@@ -147,6 +161,7 @@ module.exports = [
   ...shadowsocks_presets,
   ...shadowsocks_obfs_presets,
   ...shadowsocksr_presets,
+  ...shadowsocksr_obfs_presets,
   ...v2ray_presets,
   ...v2ray_obfs_presets,
   ...blinksocks_presets,
