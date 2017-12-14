@@ -21,7 +21,7 @@ export class TcpInbound extends Inbound {
 
   _socket = null;
 
-  _isConnectedToRemote = false;
+  _isConnected = false;
 
   constructor(props) {
     super(props);
@@ -46,7 +46,7 @@ export class TcpInbound extends Inbound {
   }
 
   onReceive(buffer) {
-    if ((this._outbound && this._outbound.writable) || !this._isConnectedToRemote) {
+    if ((this._outbound && this._outbound.writable) || !this._isConnected) {
       const direction = __IS_CLIENT__ ? PIPE_ENCODE : PIPE_DECODE;
       this._pipe.feed(direction, buffer);
     }
@@ -121,7 +121,7 @@ export class TcpInbound extends Inbound {
         break;
       case CONNECTED_TO_REMOTE:
         this._socket && this._socket.resume();
-        this._isConnectedToRemote = true;
+        this._isConnected = true;
         break;
       case PRESET_FAILED:
         this.onPresetFailed(action);
