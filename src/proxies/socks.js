@@ -249,11 +249,16 @@ export function createServer({bindAddress, bindPort}) {
   const server = net.createServer();
 
   server.on('connection', (socket) => {
-    const {remoteAddress, remotePort} = socket;
+    const appAddress = `${socket.remoteAddress}:${socket.remotePort}`;
 
     let stage = STAGE_INIT;
 
-    socket.on('data', function onMessage(buffer) {
+    function removeSocksListeners() {
+      socket.removeListener('data', onMessage);
+      socket.removeListener('error', onError);
+    }
+
+    function onMessage(buffer) {
       let request;
 
       if (stage === STAGE_INIT) {
@@ -278,10 +283,10 @@ export function createServer({bindAddress, bindPort}) {
               socket.write(Buffer.from([NOOP, REPLY_GRANTED, NOOP, NOOP, NOOP, NOOP, NOOP, NOOP]));
             }
           });
-          socket.removeListener('data', onMessage);
+          removeSocksListeners();
           return;
         }
-        logger.error(`[socks] [${remoteAddress}:${remotePort}] invalid socks handshake message: ${buffer.slice(0, 60).toString('hex')}`);
+        logger.error(`[socks] [${appAddress}] invalid socks handshake message: ${buffer.slice(0, 60).toString('hex')}`);
         socket.destroy();
       }
       else if (stage === STAGE_SOCKS5_REQUEST_MESSAGE) {
@@ -316,7 +321,7 @@ export function createServer({bindAddress, bindPort}) {
                   ]));
                 }
               });
-              socket.removeListener('data', onMessage);
+              removeSocksListeners();
               break;
             }
             default: {
@@ -329,11 +334,18 @@ export function createServer({bindAddress, bindPort}) {
             }
           }
         } else {
-          logger.error(`[socks] [${remoteAddress}:${remotePort}] invalid socks5 request message: ${buffer.slice(0, 60).toString('hex')}`);
+          logger.error(`[socks] [${appAddress}] invalid socks5 request message: ${buffer.slice(0, 60).toString('hex')}`);
           socket.destroy();
         }
       }
-    });
+    }
+
+    function onError(err) {
+      logger.warn(`[socks] [${appAddress}] ${err.message}`);
+    }
+
+    socket.on('data', onMessage);
+    socket.on('error', onError);
   });
 
   return server;
