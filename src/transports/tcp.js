@@ -38,11 +38,11 @@ export class TcpInbound extends Inbound {
     this._socket.on('timeout', this.onTimeout);
     this._socket.on('end', this.onHalfClose);
     this._socket.on('close', this.destroy);
-    this._socket.setTimeout(__TIMEOUT__);
+    this._socket.setTimeout && this._socket.setTimeout(__TIMEOUT__);
   }
 
   onError(err) {
-    logger.warn(`[tcp:inbound] [${this.remote}] ${err.message}`);
+    logger.warn(`[${this.name}] [${this.remote}] ${err.message}`);
   }
 
   onReceive(buffer) {
@@ -54,11 +54,11 @@ export class TcpInbound extends Inbound {
     // https://github.com/blinksocks/blinksocks/issues/60
     // https://nodejs.org/dist/latest/docs/api/net.html#net_socket_buffersize
     if (this._outbound && this._outbound.bufferSize >= MAX_BUFFERED_SIZE) {
-      logger.debug(`[tcp:inbound] recv paused due to outbound.bufferSize=${this._outbound.bufferSize} > ${MAX_BUFFERED_SIZE}`);
+      logger.debug(`[${this.name}] recv paused due to outbound.bufferSize=${this._outbound.bufferSize} > ${MAX_BUFFERED_SIZE}`);
       this._socket.pause();
       this._outbound.once('drain', () => {
         if (this._socket && !this._socket.destroyed) {
-          logger.debug('[tcp:inbound] resume to recv');
+          logger.debug(`[${this.name}] resume to recv`);
           this._socket.resume();
         }
       });
@@ -67,13 +67,17 @@ export class TcpInbound extends Inbound {
 
   onTimeout() {
     if (this._socket) {
-      logger.warn(`[tcp:inbound] [${this.remote}] timeout: no I/O on the connection for ${__TIMEOUT__ / 1e3}s`);
+      logger.warn(`[${this.name}] [${this.remote}] timeout: no I/O on the connection for ${__TIMEOUT__ / 1e3}s`);
       this.destroy();
     }
   }
 
   onHalfClose() {
     this._socket && this._socket.setTimeout(2e3);
+  }
+
+  get name() {
+    return 'tcp:inbound';
   }
 
   get bufferSize() {
@@ -138,11 +142,11 @@ export class TcpInbound extends Inbound {
 
   async onPresetFailed(action) {
     const {name, message} = action.payload;
-    logger.error(`[tcp:inbound] [${this.remote}] preset "${name}" fail to process: ${message}`);
+    logger.error(`[${this.name}] [${this.remote}] preset "${name}" fail to process: ${message}`);
 
     // close connection directly on client side
     if (__IS_CLIENT__) {
-      logger.warn(`[tcp:inbound] [${this.remote}] connection closed`);
+      logger.warn(`[${this.name}] [${this.remote}] connection closed`);
       this.destroy();
     }
 
@@ -152,7 +156,7 @@ export class TcpInbound extends Inbound {
         const {orgData} = action.payload;
         const [host, port] = __REDIRECT__.split(':');
 
-        logger.warn(`[tcp:inbound] [${this.remote}] connection is redirecting to: ${host}:${port}`);
+        logger.warn(`[${this.name}] [${this.remote}] connection is redirecting to: ${host}:${port}`);
 
         // replace presets to tracker only
         this.updatePresets([{name: 'tracker'}]);
@@ -165,14 +169,14 @@ export class TcpInbound extends Inbound {
       } else {
         this._socket && this._socket.pause();
         const timeout = getRandomInt(10, 40);
-        logger.warn(`[tcp:inbound] [${this.remote}] connection will be closed in ${timeout}s...`);
+        logger.warn(`[${this.name}] [${this.remote}] connection will be closed in ${timeout}s...`);
         setTimeout(this.destroy, timeout * 1e3);
       }
     }
   }
 
   onPresetCloseConnection() {
-    logger.info(`[tcp:inbound] [${this.remote}] preset request to close connection`);
+    logger.info(`[${this.name}] [${this.remote}] preset request to close connection`);
     this.destroy();
   }
 
@@ -200,7 +204,7 @@ export class TcpOutbound extends Outbound {
   }
 
   onError(err) {
-    logger.warn(`[tcp:outbound] [${this.remote}] ${err.message}`);
+    logger.warn(`[${this.name}] [${this.remote}] ${err.message}`);
   }
 
   onReceive(buffer) {
@@ -212,11 +216,11 @@ export class TcpOutbound extends Outbound {
     // https://github.com/blinksocks/blinksocks/issues/60
     // https://nodejs.org/dist/latest/docs/api/net.html#net_socket_buffersize
     if (this._inbound && this._inbound.bufferSize >= MAX_BUFFERED_SIZE) {
-      logger.debug(`[tcp:outbound] recv paused due to inbound.bufferSize=${this._inbound.bufferSize} > ${MAX_BUFFERED_SIZE}`);
+      logger.debug(`[${this.name}] recv paused due to inbound.bufferSize=${this._inbound.bufferSize} > ${MAX_BUFFERED_SIZE}`);
       this._socket.pause();
       this._inbound.once('drain', () => {
         if (this._socket && !this._socket.destroyed) {
-          logger.debug('[tcp:outbound] resume to recv');
+          logger.debug(`[${this.name}] resume to recv`);
           this._socket.resume();
         }
       });
@@ -225,13 +229,17 @@ export class TcpOutbound extends Outbound {
 
   onTimeout() {
     if (this._socket) {
-      logger.warn(`[tcp:outbound] [${this.remote}] timeout: no I/O on the connection for ${__TIMEOUT__ / 1e3}s`);
+      logger.warn(`[${this.name}] [${this.remote}] timeout: no I/O on the connection for ${__TIMEOUT__ / 1e3}s`);
       this.destroy();
     }
   }
 
   onHalfClose() {
     this._socket && this._socket.setTimeout(2e3);
+  }
+
+  get name() {
+    return 'tcp:outbound';
   }
 
   get bufferSize() {
@@ -288,7 +296,7 @@ export class TcpOutbound extends Outbound {
           await this.connect({host, port});
         }
         if (__IS_CLIENT__) {
-          logger.info(`[tcp:outbound] [${this.remote}] request: ${host}:${port}`);
+          logger.info(`[${this.name}] [${this.remote}] request: ${host}:${port}`);
           await this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__});
         }
         this._socket.on('connect', () => {
@@ -298,7 +306,7 @@ export class TcpOutbound extends Outbound {
           this._pipe.broadcast(null, {type: CONNECTED_TO_REMOTE, payload: {host, port}});
         });
       } catch (err) {
-        logger.warn(`[tcp:outbound] [${this.remote}] fail to connect to ${host}:${port} err=${err.message}`);
+        logger.warn(`[${this.name}] [${this.remote}] cannot connect to ${host}:${port},`, err);
         this._inbound.destroy();
       }
     } else {
@@ -331,7 +339,7 @@ export class TcpOutbound extends Outbound {
 
   async _connect({host, port}) {
     const ip = await this._dnsCache.get(host);
-    logger.info(`[tcp:outbound] [${this.remote}] connecting to: ${host}:${port} resolve=${ip}`);
+    logger.info(`[${this.name}] [${this.remote}] connecting to: ${host}:${port} resolve=${ip}`);
     return net.connect({host: ip, port});
   }
 
