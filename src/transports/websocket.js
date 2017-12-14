@@ -3,8 +3,12 @@ import {TcpInbound, TcpOutbound} from './tcp';
 import {logger} from '../utils';
 
 function patchWebsocket(ws) {
-  ws.write = (buffer) => ws.send(buffer);
-  ws.destroy = () => ws.close(1000);
+  ws.write = (buffer) => ws.send(buffer, {
+    compress: false,
+    mask: false,
+    fin: true // send data out immediately
+  });
+  ws.destroy = () => ws.close();
   ws.setTimeout = (/* timeout */) => {
     // TODO: timeout mechanism for websocket.
   };
