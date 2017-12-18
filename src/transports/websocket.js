@@ -7,7 +7,7 @@ function patchWebsocket(ws) {
     compress: false,
     mask: false,
     fin: true // send data out immediately
-  });
+  }, () => this.emit('drain'));
   ws.destroy = () => ws.close();
   ws.setTimeout = (/* timeout */) => {
     // TODO: timeout mechanism for websocket.
@@ -20,8 +20,10 @@ export class WsInbound extends TcpInbound {
 
   constructor(props) {
     super(props);
-    this._socket.on('message', this.onReceive);
-    patchWebsocket(this._socket);
+    const socket = this._socket;
+    socket.on('message', this.onReceive);
+    socket.on('close', () => socket.destroyed = true);
+    patchWebsocket.call(this, socket);
   }
 
   get name() {
@@ -56,7 +58,8 @@ export class WsOutbound extends TcpOutbound {
     logger.info(`[${this.name}] [${this.remote}] connecting to: ws://${host}:${port}`);
     const socket = new WebSocket(`ws://${host}:${port}`, {perMessageDeflate: false});
     socket.on('message', this.onReceive);
-    return patchWebsocket(socket);
+    socket.on('close', () => socket.destroyed = true);
+    return patchWebsocket.call(this, socket);
   }
 
 }
