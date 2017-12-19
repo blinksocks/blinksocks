@@ -240,12 +240,12 @@ module.exports = MyCustomPreset;
 | \_\_LOCAL_HOST\_\_     | \_\_TRANSPORT\_\_    |
 | \_\_LOCAL_PORT\_\_     | \_\_TLS_CERT\_\_     |
 | \_\_LOCAL_PROTOCOL\_\_ | \_\_TLS_KEY\_\_      |
-| \_\_DSTADDR\_\_        | \_\_TIMEOUT\_\_      |
-| \_\_SERVER_HOST\_\_    | \_\_REDIRECT\_\_     |
-| \_\_SERVER_PORT\_\_    | \_\_LOG_PATH\_\_     |
-| \_\_SERVERS\_\_        | \_\_LOG_LEVEL\_\_    |
-| \_\_KEY\_\_            | \_\_LOG_MAX_DAYS\_\_ |
-| \_\_PRESETS\_\_        | \_\_WORKERS\_\_      |
+| \_\_SERVER_HOST\_\_    | \_\_TIMEOUT\_\_      |
+| \_\_SERVER_PORT\_\_    | \_\_REDIRECT\_\_     |
+| \_\_SERVERS\_\_        | \_\_LOG_PATH\_\_     |
+| \_\_KEY\_\_            | \_\_LOG_LEVEL\_\_    |
+| \_\_PRESETS\_\_        | \_\_LOG_MAX_DAYS\_\_ |
+| \_\_WORKERS\_\_        |                      |
 
 ### Helper Functions
 

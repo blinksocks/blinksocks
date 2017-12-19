@@ -10,51 +10,41 @@ $ blinksocks init
 
 |               KEY               |                  DESCRIPTION                  | OPTIONAL |     DEFAULT     |                                REMARKS                                 |
 | :------------------------------ | :-------------------------------------------- | :------- | :-------------- | :--------------------------------------------------------------------- |
-| service                         | local service address                         | *        | -               | PROTOCOL://HOST:PORT, e.g, "socks://127.0.0.1:1080"                    |
-| dstaddr                         | an address to tell server where to relay data | *        | -               | must be set on client side if PROTOCOL is "tcp"                        |
-| dstaddr.host                    | destination host                              | *        | -               | -                                                                      |
-| dstaddr.port                    | destination port                              | *        | -               | -                                                                      |
-| ~~host(deprecated)~~            | local hostname or ip address                  | *        | -               | if not set, make sure "service" is provided                            |
-| ~~port(deprecated)~~            | local port                                    | *        | -               | if not set, make sure "service" is provided                            |
-| ~~transport(deprecated)~~       | the transport layer                           | Yes      | "tcp"           | "tcp", "tls" or "ws"                                                   |
+| service                         | local service address                         | *        | -               | <protocol>://<host>:<port>[?params], e.g, "socks://127.0.0.1:1080"     |
 | servers                         | a list of server                              | Yes      | -               | **CLIENT ONLY**                                                        |
 | servers[i].enabled              | allow to use this server or not               | -        | -               | -                                                                      |
 | servers[i].service              | see service above                             | -        | -               | -                                                                      |
-| ~~servers[i].host(deprecated)~~ | server hostname or ip address                 | -        | -               | -                                                                      |
-| ~~servers[i].port(deprecated)~~ | server port                                   | -        | -               | -                                                                      |
 | servers[i].key                  | server key for encryption                     | -        | -               | -                                                                      |
 | presets                         | preset list in order                          | -        | -               | see [presets]                                                          |
 | presets[i].name                 | preset name                                   | -        | -               | -                                                                      |
 | presets[i].params               | preset params                                 | -        | -               | -                                                                      |
-| tls_key                         | private key for TLS                           | -        | -               | required on server if "transport" or PROTOCOL is "tls"                 |
-| tls_cert                        | server certificate                            | -        | -               | required on both client and server if "transport" or PROTOCOL is "tls" |
+| tls_key                         | private key for TLS                           | -        | -               | required on server if <protocol> is "tls"                              |
+| tls_cert                        | server certificate                            | -        | -               | required on both client and server if <protocol> is "tls"              |
 | timeout                         | timeout for each connection                   | Yes      | 600             | in seconds                                                             |
 | redirect                        | target to redirect when preset fail           | Yes      | ""              | <host>:<port>                                                          |
 | workers                         | the number of sub-process                     | Yes      | 0               | enable cluster mode when workers > 0                                   |
 | dns                             | an ip list of DNS server                      | Yes      | []              | -                                                                      |
 | dns_expire                      | DNS cache expiration time                     | Yes      | 3600            | in seconds                                                             |
-| log_path                        | log file path                                 | Yes      | "bs-[type].log" | a relative or absolute directory or file                               |
+| log_path                        | log file path                                 | Yes      | "bs-[type].log" | a relative/absolute directory or file to put logs in                   |
 | log_level                       | log level                                     | Yes      | "info"          | ['error', 'warn', 'info', 'verbose', 'debug', 'silly']                 |
 | log_max_days                    | the max of days a log file will be saved      | Yes      | 30              | remove this option if you want to keep all log files                   |
 
 ### Service
 
-`service` is a convenient way to specify which service should be created **locally**, made up of `PROTOCOL://HOST:PORT`.
+`service` is a convenient way to specify what kind of service should be created **locally**.
 
-The `PROTOCOL` should be `tcp`, `socks`(aliases: `socks5`, `socks4`, `socks4a`), `http`(aliases: `https`) on client side, and `tcp`, `tls`, `ws` on server side.
+The `<protocol>` should be `tcp`, `socks`(aliases: `socks5`, `socks4`, `socks4a`), `http`(aliases: `https`) on client side, or `tcp`, `tls`, `ws` on server side.
 
-### Dstaddr
+#### Service Params
 
-This option is used for directional proxy which transfers original traffic via server to a **permanent destination**.
+**?forward=<host>:<port>**
+
+You can proxy application data to a **permanent destination** via server by providing **?forward** parameter:
 
 ```
 // blinksocks.client.json
 {
-  "service": "tcp://localhost:1080",
-  "dstaddr": {
-    "host": "localhost",
-    "port": 1082
-  },
+  "service": "tcp://localhost:1080?forward=localhost:1082",
   "servers": [{
     "enabled": true,
     "service": "tcp://localhost:1081",
@@ -74,11 +64,11 @@ applications <----> [blinksocks client] <----> [blinksocks server] <----> localh
 
 In this case, it's useful to use [iperf](https://en.wikipedia.org/wiki/Iperf) to test network performance between client and server through different presets.
 
-Note that local protocol `tcp://` cannot obtain proxy destination by itself, so you MUST provide **dstaddr** as well in client configuration.
+> Note that on client side, `tcp://` cannot obtain proxy destination by itself, so you MUST provide **?forward** in service as well.
 
 ### Servers(Client Side Only)
 
-`servers` is a list of blinksocks/shadowsocks servers. Each server consists at least `enabled`, `host`, `port`, `key` and `presets`.
+`servers` is a list of blinksocks/shadowsocks servers. Each server consists at least `enabled`, `service`, `key` and `presets`.
 
 You can temporary disable a server by setting `enabled: false`.
 

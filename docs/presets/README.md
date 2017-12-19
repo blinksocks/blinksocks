@@ -14,8 +14,6 @@ Presets are chaining and composable, built-in presets are listed here. If you wa
 **basic**
 
 * [base-auth](#base-auth)*
-* ~~[base-with-padding](#base-with-padding)*~~ (deprecated)
-* ~~[base-auth-stream](#base-auth-stream)*~~ (deprecated)
 
 **shadowsocks**
 
@@ -266,56 +264,6 @@ md5, sha1, sha256
 }]
 ```
 
-## ~~[base-with-padding]~~ (deprecated)
-
-An advanced preset based on [ss-base], **SHOULD BE** used with ciphers in **cfb** operation mode.
-It can prevent address from being tampered.
-
-**NOTE**: Using [base-with-padding] with non-cfb ciphers will lose protection. 
-
-| PARAMS |           DESCRIPTION           | DEFAULT |
-| :----- | :------------------------------ | :------ |
-| salt   | a string for generating padding | -       |
-
-```
-"presets": [{
-  "name": "base-with-padding",
-  "params": {
-    "salt": "any string"
-  }
-}, {
-  "name": "ss-stream-cipher",
-  "params": {
-    "method": "aes-256-cfb"
-  }
-}]
-```
-
-## ~~[base-auth-stream]~~ (deprecated)
-
-A preset combines HMAC and stream encryption. HMAC only guarantees integrity for addressing part.
-
-| PARAMS |           DESCRIPTION            | DEFAULT |
-| :----- | :------------------------------- | :------ |
-| method | encryption and decryption method | -       |
-
-`method` can be one of:
-
-aes-128-ctr, aes-192-ctr, aes-256-ctr,
-
-aes-128-cfb, aes-192-cfb, aes-256-cfb,
-
-camellia-128-cfb, camellia-192-cfb, camellia-256-cfb
-
-```
-"presets": [{
-  "name": "base-auth-stream",
-  "params": {
-    "method": "aes-256-cfb"
-  }
-}]
-```
-
 ## [ss-base]
 
 This is a very basic preset which delivers the real destination address from client to server.
@@ -560,8 +508,6 @@ Here is a [list](./RECOMMENDATIONS.md) of recommended conbinations.
 [access-control]: ../../src/presets/access-control.js
 [auto-conf]: ../../src/presets/auto-conf.js
 [base-auth]: ../../src/presets/base-auth.js
-[base-with-padding]: ../../src/presets/base-with-padding.js
-[base-auth-stream]: ../../src/presets/base-auth-stream.js
 [ss-base]: ../../src/presets/ss-base.js
 [ss-stream-cipher]: ../../src/presets/ss-stream-cipher.js
 [ss-aead-cipher]: ../../src/presets/ss-aead-cipher.js
