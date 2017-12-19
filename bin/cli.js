@@ -106,7 +106,7 @@ function main() {
     console.log(presets.join(os.EOL));
     console.log('');
     console.log(chalk.bold.underline('[Deprecated]'));
-    console.log(legacyPresets.map((name) => `${chalk.gray(name)}`).join(os.EOL));
+    console.log(legacyPresets ? legacyPresets.map((name) => `${chalk.gray(name)}`).join(os.EOL) : '-');
     return;
   }
 

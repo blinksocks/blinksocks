@@ -4,6 +4,7 @@ import path from 'path';
 import os from 'os';
 import net from 'net';
 import url from 'url';
+import qs from 'qs';
 import winston from 'winston';
 import isPlainObject from 'lodash.isplainobject';
 import {getPresetClassByName} from '../presets';
@@ -17,35 +18,31 @@ function loadFileSync(file) {
 export class Config {
 
   static init(json) {
-    this._validate(json);
+    const {protocol, hostname, port, query} = url.parse(json.service);
+    global.__LOCAL_PROTOCOL__ = protocol.slice(0, -1);
+    global.__LOCAL_HOST__ = hostname;
+    global.__LOCAL_PORT__ = +port;
 
     if (json.servers !== undefined) {
-      global.__SERVERS__ = json.servers.filter((server) => server.enabled);
+      global.__SERVERS__ = json.servers.filter((server) => !!server.enabled);
       global.__IS_CLIENT__ = true;
       global.__IS_SERVER__ = false;
     } else {
       global.__IS_CLIENT__ = false;
       global.__IS_SERVER__ = true;
-      this.initServer(json);
     }
 
-    if (json.service !== undefined) {
-      const {protocol, hostname: host, port} = url.parse(json.service);
-      global.__LOCAL_PROTOCOL__ = protocol.slice(0, -1);
-      global.__LOCAL_HOST__ = host;
-      global.__LOCAL_PORT__ = +port;
-    } else {
-      global.__LOCAL_PROTOCOL__ = __IS_CLIENT__ ? 'socks5' : __TRANSPORT__;
-      global.__LOCAL_HOST__ = json.host;
-      global.__LOCAL_PORT__ = json.port;
+    Config.initLogger(json);
+
+    if (__IS_SERVER__) {
+      Config.initServer(json);
     }
 
-    if (json.dstaddr !== undefined) {
-      global.__DSTADDR__ = json.dstaddr;
-    }
-
-    if (__IS_CLIENT__ && __LOCAL_PROTOCOL__ === 'tcp' && global.__DSTADDR__ === undefined) {
-      throw Error('"dstaddr" must be set on client side if use "tcp://" protocol');
+    if (__IS_CLIENT__ && __LOCAL_PROTOCOL__ === 'tcp') {
+      const {forward} = qs.parse(query);
+      const {hostname, port} = url.parse('tcp://' + forward);
+      global.__FORWARD_HOST__ = hostname;
+      global.__FORWARD_PORT__ = +port;
     }
 
     global.__TIMEOUT__ = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
@@ -58,53 +55,16 @@ export class Config {
       global.__DNS__ = json.dns;
       dns.setServers(json.dns);
     }
-
-    // log_path & log_level
-    const absolutePath = path.resolve(process.cwd(), json.log_path || '.');
-    let isFile = false;
-    if (fs.existsSync(absolutePath)) {
-      isFile = fs.statSync(absolutePath).isFile();
-    } else if (path.extname(absolutePath) !== '') {
-      isFile = true;
-    }
-
-    // logger stuff
-    global.__LOG_PATH__ = isFile ? absolutePath : path.join(absolutePath, `bs-${__IS_CLIENT__ ? 'client' : 'server'}.log`);
-    global.__LOG_LEVEL__ = (json.log_level !== undefined) ? json.log_level : 'info';
-    global.__LOG_MAX_DAYS__ = (json.log_max_days !== undefined) ? json.log_max_days : 0;
-
-    logger.configure({
-      level: __LOG_LEVEL__,
-      transports: [
-        new (winston.transports.Console)({
-          colorize: true,
-          prettyPrint: true
-        }),
-        new (require('winston-daily-rotate-file'))({
-          json: false,
-          eol: os.EOL,
-          filename: __LOG_PATH__,
-          level: __LOG_LEVEL__,
-          maxDays: __LOG_MAX_DAYS__
-        })
-      ]
-    });
   }
 
   static initServer(server) {
     // service
-    if (server.service !== undefined) {
-      const {protocol, hostname: host, port} = url.parse(server.service);
-      global.__TRANSPORT__ = protocol.slice(0, -1);
-      global.__SERVER_HOST__ = host;
-      global.__SERVER_PORT__ = +port;
-    } else {
-      global.__TRANSPORT__ = server.transport || 'tcp';
-      global.__SERVER_HOST__ = server.host;
-      global.__SERVER_PORT__ = server.port;
-    }
+    const {protocol, hostname, port} = url.parse(server.service);
+    global.__TRANSPORT__ = protocol.slice(0, -1);
+    global.__SERVER_HOST__ = hostname;
+    global.__SERVER_PORT__ = +port;
 
-    // preload tls cert or tls key
+    // preload tls_cert or tls_key
     if (__TRANSPORT__ === 'tls') {
       logger.info(`[config] loading ${server.tls_cert}`);
       global.__TLS_CERT__ = loadFileSync(server.tls_cert);
@@ -127,129 +87,277 @@ export class Config {
     }
   }
 
-  static _validate(json) {
+  static initLogger(json) {
+    // log_path & log_level
+    const absolutePath = path.resolve(process.cwd(), json.log_path || '.');
+    let isFile = false;
+    if (fs.existsSync(absolutePath)) {
+      isFile = fs.statSync(absolutePath).isFile();
+    } else if (path.extname(absolutePath) !== '') {
+      isFile = true;
+    }
+
+    // log_path, log_level, log_max_days
+    global.__LOG_PATH__ = isFile ? absolutePath : path.join(absolutePath, `bs-${__IS_CLIENT__ ? 'client' : 'server'}.log`);
+    global.__LOG_LEVEL__ = (json.log_level !== undefined) ? json.log_level : 'info';
+    global.__LOG_MAX_DAYS__ = (json.log_max_days !== undefined) ? json.log_max_days : 0;
+
+    logger.configure({
+      level: __LOG_LEVEL__,
+      transports: [
+        new (winston.transports.Console)({
+          colorize: true,
+          prettyPrint: true
+        }),
+        new (require('winston-daily-rotate-file'))({
+          json: false,
+          eol: os.EOL,
+          filename: __LOG_PATH__,
+          level: __LOG_LEVEL__,
+          maxDays: __LOG_MAX_DAYS__
+        })
+      ]
+    });
+  }
+
+  static test(json) {
     if (!isPlainObject(json)) {
       throw Error('invalid configuration file');
     }
-
-    // service
-    if (json.service !== undefined) {
-      Config._validateService(json);
+    const is_client = !!json.servers;
+    if (is_client) {
+      Config.testOnClient(json);
     } else {
-      // host
-      if (!isValidHostname(json.host)) {
-        throw Error('\'host\' is invalid');
-      }
-      // port
-      if (!isValidPort(json.port)) {
-        throw Error('\'port\' is invalid');
-      }
+      Config.testOnServer(json);
+    }
+  }
+
+  static testOnClient(json) {
+    // service
+    if (!json.service) {
+      throw Error('"service" must be provided as "<protocol>://<host>:<port>[?params]"');
     }
 
-    // dstaddr
-    if (json.dstaddr !== undefined) {
-      if (!isPlainObject(json.dstaddr)) {
-        throw Error('\'dstaddr\' is invalid');
+    const {protocol: _protocol, hostname, port, query} = url.parse(json.service);
+
+    // service.protocol
+    if (typeof _protocol !== 'string') {
+      throw Error('service.protocol is invalid');
+    }
+
+    const protocol = _protocol.slice(0, -1);
+    const available_client_protocols = [
+      'tcp', 'http', 'https',
+      'socks', 'socks5', 'socks4', 'socks4a'
+    ];
+    if (!available_client_protocols.includes(protocol)) {
+      throw Error(`service.protocol must be: ${available_client_protocols.join(', ')}`);
+    }
+
+    // service.host
+    if (!isValidHostname(hostname)) {
+      throw Error('service.host is invalid');
+    }
+
+    // service.port
+    if (!isValidPort(+port)) {
+      throw Error('service.port is invalid');
+    }
+
+    // service.query
+    if (protocol === 'tcp') {
+      const {forward} = qs.parse(query);
+
+      // ?forward
+      if (!forward) {
+        throw Error('require "?forward=<host>:<port>" parameter in service when using "tcp" on client side');
       }
-      const {host, port} = json.dstaddr;
-      // host
-      if (!isValidHostname(host)) {
-        throw Error('\'dstaddr.host\' is invalid');
+
+      const {hostname, port} = url.parse('tcp://' + forward);
+      if (!isValidHostname(hostname)) {
+        throw Error('service.?forward.host is invalid');
       }
-      // port
-      if (!isValidPort(port)) {
-        throw Error('\'dstaddr.port\' is invalid');
+      if (!isValidPort(+port)) {
+        throw Error('service.?forward.port is invalid');
       }
     }
 
     // servers
-    if (json.servers !== undefined) {
-      if (!Array.isArray(json.servers)) {
-        throw Error('\'servers\' must be provided as an array');
-      }
-      const servers = json.servers.filter((server) => server.enabled === true);
-      if (servers.length < 1) {
-        throw Error('\'servers\' must have at least one enabled item');
-      }
-      servers.forEach(this._validateServer);
-    } else {
-      this._validateServer(json);
+    if (!Array.isArray(json.servers)) {
+      throw Error('"servers" must be provided as an array');
     }
-
-    // timeout
-    if (json.timeout !== undefined) {
-      if (typeof json.timeout !== 'number') {
-        throw Error('\'timeout\' must be a number');
-      }
-      if (json.timeout < 1) {
-        throw Error('\'timeout\' must be greater than 0');
-      }
-      if (json.timeout < 60) {
-        console.warn(`==> [config] 'timeout' is too short, is ${json.timeout}s expected?`);
-      }
+    const servers = json.servers.filter((server) => !!server.enabled);
+    if (servers.length < 1) {
+      throw Error('"servers" must have at least one enabled item');
     }
+    servers.forEach((server) => Config._testServer(server, true));
 
+    // common
+    Config._testCommon(json);
+  }
+
+  static testOnServer(json) {
+    // server
+    Config._testServer(json, false);
+
+    // redirect
     if (json.redirect !== undefined && json.redirect !== '') {
       if (typeof json.redirect !== 'string') {
-        throw Error('\'redirect\' must be a string');
+        throw Error('"redirect" must be a string');
       }
       const parts = json.redirect.split(':');
       if (parts.length !== 2) {
-        throw Error('\'redirect\' must be "<host or ip>:<port>"');
+        throw Error('"redirect" must be "<host or ip>:<port>"');
       }
       const [host, port] = parts;
       if (!isValidHostname(host) && !net.isIP(host)) {
-        throw Error('\'redirect\' host is invalid');
+        throw Error('"redirect" host is invalid');
       }
       if (!isValidPort(+port)) {
-        throw Error('\'redirect\' port is invalid');
+        throw Error('"redirect" port is invalid');
+      }
+    }
+
+    // common
+    Config._testCommon(json);
+  }
+
+  static _testServer(server, from_client) {
+    // service
+    if (!server.service) {
+      throw Error('"service" must be provided as "<protocol>://<host>:<port>[?params]"');
+    }
+
+    const {protocol: _protocol, hostname, port} = url.parse(server.service);
+
+    // service.protocol
+    if (typeof _protocol !== 'string') {
+      throw Error('service.protocol is invalid');
+    }
+
+    const protocol = _protocol.slice(0, -1);
+    const available_server_protocols = [
+      'tcp', 'ws', 'tls'
+    ];
+    if (!available_server_protocols.includes(protocol)) {
+      throw Error(`service.protocol must be: ${available_server_protocols.join(', ')}`);
+    }
+
+    // tls_cert, tls_key
+    if (protocol === 'tls') {
+      if (typeof server.tls_cert !== 'string' || server.tls_cert === '') {
+        throw Error('"tls_cert" must be provided');
+      }
+      if (!from_client) {
+        if (typeof server.tls_key !== 'string' || server.tls_key === '') {
+          throw Error('"tls_key" must be provided');
+        }
+      }
+    }
+
+    // service.host
+    if (!isValidHostname(hostname)) {
+      throw Error('service.host is invalid');
+    }
+
+    // service.port
+    if (!isValidPort(+port)) {
+      throw Error('service.port is invalid');
+    }
+
+    // key
+    if (typeof server.key !== 'string' || server.key === '') {
+      throw Error('"server.key" must be a non-empty string');
+    }
+
+    // presets
+    if (!Array.isArray(server.presets)) {
+      throw Error('"server.presets" must be an array');
+    }
+
+    if (server.presets.length < 1) {
+      throw Error('"server.presets" must contain at least one preset');
+    }
+
+    // presets[].parameters
+    for (const preset of server.presets) {
+      const {name, params} = preset;
+      if (typeof name !== 'string') {
+        throw Error('"server.presets[].name" must be a string');
+      }
+      if (name === '') {
+        throw Error('"server.presets[].name" cannot be empty');
+      }
+      if (params !== undefined) {
+        if (!isPlainObject(params)) {
+          throw Error('"server.presets[].params" must be an plain object');
+        }
+      }
+    }
+  }
+
+  static _testCommon(common) {
+    // timeout
+    if (common.timeout !== undefined) {
+      const {timeout} = common;
+      if (typeof timeout !== 'number') {
+        throw Error('"timeout" must be a number');
+      }
+      if (timeout < 1) {
+        throw Error('"timeout" must be greater than 0');
+      }
+      if (timeout < 60) {
+        console.warn(`[config] "timeout" is too short, is ${timeout}s expected?`);
       }
     }
 
     // log_path
-    if (json.log_path !== undefined) {
-      if (typeof json.log_path !== 'string') {
-        throw Error('\'log_path\' must be a string');
+    if (common.log_path !== undefined) {
+      if (typeof common.log_path !== 'string') {
+        throw Error('"log_path" must be a string');
       }
     }
 
     // log_level
-    if (json.log_level !== undefined) {
+    if (common.log_level !== undefined) {
       const levels = ['error', 'warn', 'info', 'verbose', 'debug', 'silly'];
-      if (!levels.includes(json.log_level)) {
-        throw Error(`'log_level' must be one of [${levels.toString()}]`);
+      if (!levels.includes(common.log_level)) {
+        throw Error(`"log_level" must be one of [${levels}]`);
       }
     }
 
     // log_max_days
-    if (json.log_max_days !== undefined) {
-      if (typeof json.log_max_days !== 'number') {
-        throw Error('\'log_max_days\' must a number');
+    if (common.log_max_days !== undefined) {
+      const {log_max_days} = common;
+      if (typeof log_max_days !== 'number') {
+        throw Error('"log_max_days" must a number');
       }
-      if (json.log_max_days < 1) {
-        throw Error('\'log_max_days\' must be greater than 0');
+      if (log_max_days < 1) {
+        throw Error('"log_max_days" must be greater than 0');
       }
     }
 
     // workers
-    if (json.workers !== undefined) {
-      if (typeof json.workers !== 'number') {
-        throw Error('\'workers\' must be a number');
+    if (common.workers !== undefined) {
+      const {workers} = common;
+      if (typeof workers !== 'number') {
+        throw Error('"workers" must be a number');
       }
-      if (json.workers < 0) {
-        throw Error('\'workers\' must be an integer');
+      if (workers < 0) {
+        throw Error('"workers" must be an integer');
       }
-      if (json.workers > os.cpus().length) {
-        console.warn(`==> [config] 'workers' is greater than the number of cpus, is ${json.workers} workers expected?`);
+      if (workers > os.cpus().length) {
+        console.warn(`[config] "workers" is greater than the number of CPUs, is ${workers} workers expected?`);
       }
     }
 
     // dns
-    if (json.dns !== undefined) {
-      if (!Array.isArray(json.dns)) {
-        throw Error('\'dns\' must be an array');
+    if (common.dns !== undefined) {
+      const {dns} = common;
+      if (!Array.isArray(dns)) {
+        throw Error('"dns" must be an array');
       }
-      for (const ip of json.dns) {
+      for (const ip of dns) {
         if (!net.isIP(ip)) {
           throw Error(`"${ip}" is not an ip address`);
         }
@@ -257,109 +365,17 @@ export class Config {
     }
 
     // dns_expire
-    if (json.dns_expire !== undefined) {
-      if (typeof json.dns_expire !== 'number') {
-        throw Error('\'dns_expire\' must be a number');
+    if (common.dns_expire !== undefined) {
+      const {dns_expire} = common;
+      if (typeof dns_expire !== 'number') {
+        throw Error('"dns_expire" must be a number');
       }
-      if (json.dns_expire < 0) {
-        throw Error('\'dns_expire\' must be greater or equal to 0');
+      if (dns_expire < 0) {
+        throw Error('"dns_expire" must be greater or equal to 0');
       }
-      if (json.dns_expire > 24 * 60 * 60) {
-        console.warn(`==> [config] 'dns_expire' is too long, is ${json.dns_expire}s expected?`);
+      if (dns_expire > 24 * 60 * 60) {
+        console.warn(`[config] "dns_expire" is too long, is ${dns_expire}s expected?`);
       }
-    }
-  }
-
-  static _validateServer(server) {
-    // transport
-    if (server.transport !== undefined) {
-      if (!['tcp', 'tls', 'ws'].includes(server.transport)) {
-        throw Error('\'server.transport\' must be "tcp", "tls" or "ws"');
-      }
-      if (server.transport === 'tls') {
-        if (typeof server.tls_cert !== 'string') {
-          throw Error('\'server.tls_key\' must be a string');
-        }
-        if (server.tls_cert === '') {
-          throw Error('\'server.tls_cert\' cannot be empty');
-        }
-      }
-    }
-
-    // service
-    if (server.service !== undefined) {
-      Config._validateService(server);
-    } else {
-      // host
-      if (!isValidHostname(server.host)) {
-        throw Error('\'server.host\' is invalid');
-      }
-      // port
-      if (!isValidPort(server.port)) {
-        throw Error('\'server.port\' is invalid');
-      }
-    }
-
-    // key
-    if (typeof server.key !== 'string' || server.key === '') {
-      throw Error('\'server.key\' must be a non-empty string');
-    }
-
-    // presets
-    if (!Array.isArray(server.presets)) {
-      throw Error('\'server.presets\' must be an array');
-    }
-
-    if (server.presets.length < 1) {
-      throw Error('\'server.presets\' must contain at least one preset');
-    }
-
-    // presets[].parameters
-    for (const preset of server.presets) {
-      const {name, params} = preset;
-      if (typeof name !== 'string') {
-        throw Error('\'server.presets[].name\' must be a string');
-      }
-      if (name === '') {
-        throw Error('\'server.presets[].name\' cannot be empty');
-      }
-      if (params !== undefined) {
-        if (!isPlainObject(params)) {
-          throw Error('\'server.presets[].params\' must be an plain object');
-        }
-      }
-    }
-  }
-
-  static _validateService(json) {
-    const {protocol, hostname: host, port} = url.parse(json.service);
-    // protocol
-    if (typeof protocol !== 'string') {
-      throw Error('service protocol is invalid');
-    }
-    const AVAILABLE_LOCAL_PROTOCOLS = [
-      'tcp', 'socks', 'socks5', 'socks4', 'socks4a',
-      'http', 'https', 'ws', 'tls'
-    ];
-    const _protocol = protocol.slice(0, -1);
-    if (!AVAILABLE_LOCAL_PROTOCOLS.includes(_protocol)) {
-      throw Error(`service protocol must be: ${AVAILABLE_LOCAL_PROTOCOLS.join(', ')}`);
-    }
-    if (_protocol === 'tls') {
-      if (typeof json.tls_cert !== 'string' || json.tls_cert === '') {
-        throw Error('\'tls_cert\' must be set');
-      }
-      if (json.tls_key !== undefined && typeof json.tls_key !== 'string') {
-        throw Error('\'tls_key\' must be set');
-      }
-    }
-    // host
-    if (!isValidHostname(host)) {
-      throw Error('service host is invalid');
-    }
-    // port
-    if (!isValidPort(+port)) {
-      throw Error('service port is invalid');
     }
   }
 

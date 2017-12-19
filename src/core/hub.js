@@ -25,10 +25,8 @@ export class Hub {
   _udpRelays = null; // LRU cache
 
   constructor(config) {
+    Config.init(config);
     this._onConnection = this._onConnection.bind(this);
-    if (config !== undefined) {
-      Config.init(config);
-    }
     this._udpRelays = LRU({
       max: 500,
       dispose: (key, relay) => relay.destroy(),
@@ -86,7 +84,7 @@ export class Hub {
       let server = null;
       switch (__LOCAL_PROTOCOL__) {
         case 'tcp':
-          server = tcp.createServer();
+          server = tcp.createServer({forwardHost: __FORWARD_HOST__, forwardPort: __FORWARD_PORT__});
           break;
         case 'socks':
         case 'socks5':

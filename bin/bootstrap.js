@@ -19,14 +19,16 @@ function obtainConfig(file) {
 
 module.exports = function bootstrap(configPath, {Hub, Config}) {
   try {
-    Config.init(obtainConfig(configPath));
-    if (cluster.isMaster && __WORKERS__ > 0) {
-      for (let i = 0; i < __WORKERS__; ++i) {
+    const config = obtainConfig(configPath);
+    Config.test(config);
+    const workers = config.workers;
+    if (cluster.isMaster && workers > 0) {
+      for (let i = 0; i < workers; ++i) {
         cluster.fork();
       }
-      console.log(`[bootstrap] started ${__WORKERS__} workers`);
+      console.log(`[bootstrap] started ${workers} workers`);
     } else {
-      const hub = new Hub();
+      const hub = new Hub(config);
       hub.run();
       process.on('SIGINT', () => hub.terminate(() => process.exit(0)));
     }
