@@ -31,10 +31,6 @@ import ObfsTls12TicketPreset from './obfs-tls1.2-ticket';
 // others
 import AeadRandomCipherPreset from './aead-random-cipher';
 
-// legacy presets for backward compatibility
-import BaseWithPaddingPreset from './_base-with-padding';
-import BaseAuthStreamPreset from './_base-auth-stream';
-
 function monkeyPatch(clazz) {
   // patch onInit()
   clazz.onInit = (function (onInit) {
@@ -90,12 +86,7 @@ const mapping = {
   'aead-random-cipher': AeadRandomCipherPreset
 };
 
-const legacy = {
-  'base-with-padding': BaseWithPaddingPreset,
-  'base-auth-stream': BaseAuthStreamPreset
-};
-
-const presetClasses = {...mapping, ...legacy};
+const presetClasses = {...mapping};
 
 Object.keys(presetClasses).forEach((clazzName) => monkeyPatch(presetClasses[clazzName]));
 
@@ -115,5 +106,4 @@ export function getPresetClassByName(name) {
 }
 
 export const presets = Object.keys(mapping);
-export const legacyPresets = Object.keys(legacy);
 export * from './defs';
