@@ -10,7 +10,7 @@ $ blinksocks init
 
 |               KEY               |                  DESCRIPTION                  | OPTIONAL |     DEFAULT     |                                REMARKS                                 |
 | :------------------------------ | :-------------------------------------------- | :------- | :-------------- | :--------------------------------------------------------------------- |
-| service                         | local service address                         | *        | -               | <protocol>://<host>:<port>[?params], e.g, "socks://127.0.0.1:1080"     |
+| service                         | local service address                         | *        | -               | \<protocol\>://<host>:<port>\[?params\], e.g, "socks://127.0.0.1:1080" |
 | servers                         | a list of server                              | Yes      | -               | **CLIENT ONLY**                                                        |
 | servers[i].enabled              | allow to use this server or not               | -        | -               | -                                                                      |
 | servers[i].service              | see service above                             | -        | -               | -                                                                      |
@@ -18,10 +18,10 @@ $ blinksocks init
 | presets                         | preset list in order                          | -        | -               | see [presets]                                                          |
 | presets[i].name                 | preset name                                   | -        | -               | -                                                                      |
 | presets[i].params               | preset params                                 | -        | -               | -                                                                      |
-| tls_key                         | private key for TLS                           | -        | -               | required on server if <protocol> is "tls"                              |
-| tls_cert                        | server certificate                            | -        | -               | required on both client and server if <protocol> is "tls"              |
+| tls_key                         | private key for TLS                           | -        | -               | required on server if \<protocol\> is "tls"                            |
+| tls_cert                        | server certificate                            | -        | -               | required on both client and server if \<protocol\> is "tls"            |
 | timeout                         | timeout for each connection                   | Yes      | 600             | in seconds                                                             |
-| redirect                        | target to redirect when preset fail           | Yes      | ""              | <host>:<port>                                                          |
+| redirect                        | target to redirect when preset fail           | Yes      | ""              | \<host\>:\<port\>                                                      |
 | workers                         | the number of sub-process                     | Yes      | 0               | enable cluster mode when workers > 0                                   |
 | dns                             | an ip list of DNS server                      | Yes      | []              | -                                                                      |
 | dns_expire                      | DNS cache expiration time                     | Yes      | 3600            | in seconds                                                             |
@@ -33,11 +33,11 @@ $ blinksocks init
 
 `service` is a convenient way to specify what kind of service should be created **locally**.
 
-The `<protocol>` should be `tcp`, `socks`(aliases: `socks5`, `socks4`, `socks4a`), `http`(aliases: `https`) on client side, or `tcp`, `tls`, `ws` on server side.
+The `\<protocol\>` should be `tcp`, `socks`(aliases: `socks5`, `socks4`, `socks4a`), `http`(aliases: `https`) on client side, or `tcp`, `tls`, `ws` on server side.
 
 #### Service Params
 
-**?forward=<host>:<port>**
+**?forward=\<host\>:\<port\>**
 
 You can proxy application data to a **permanent destination** via server by providing **?forward** parameter:
 
