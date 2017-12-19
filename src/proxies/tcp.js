@@ -1,13 +1,13 @@
 import net from 'net';
 
-export function createServer() {
+export function createServer({forwardHost, forwardPort}) {
   const server = net.createServer();
 
   server.on('connection', (socket) => {
     socket.pause();
     server.emit('proxyConnection', socket, {
-      host: __DSTADDR__.host,
-      port: __DSTADDR__.port,
+      host: forwardHost,
+      port: forwardPort,
       onConnected: () => {
         socket.resume();
       }
