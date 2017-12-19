@@ -20,12 +20,8 @@ function makeConfs(presets) {
     "log_level": "error"
   };
   const clientConf = {
-    "service": "tcp://127.0.0.1:1081",
+    "service": "tcp://127.0.0.1:1081?forward=127.0.0.1:1083",
     // "tls_cert": "cert.pem"
-    "dstaddr": {
-      "host": "127.0.0.1",
-      "port": 1083
-    },
     "servers": [Object.assign({}, serverConf, {"enabled": true})],
     "log_level": "error"
   };
