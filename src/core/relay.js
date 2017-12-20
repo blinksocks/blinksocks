@@ -14,8 +14,9 @@ import {
   CONNECT_TO_REMOTE,
   CONNECTION_CREATED,
   CHANGE_PRESET_SUITE,
+  MUX_NEW_CONN,
   MUX_DATA_FRAME,
-  MUX_SUB_CLOSE
+  MUX_CLOSE_CONN
 } from '../presets/defs';
 
 /**
@@ -119,10 +120,12 @@ export class Relay extends EventEmitter {
             return;
           }
           break;
+        case MUX_NEW_CONN:
+          return this.emit('muxNewConn', action.payload);
         case MUX_DATA_FRAME:
-          return this.emit('frame', action.payload);
-        case MUX_SUB_CLOSE:
-          return this.emit('subClose', action.payload);
+          return this.emit('muxDataFrame', action.payload);
+        case MUX_CLOSE_CONN:
+          return this.emit('muxCloseConn', action.payload);
         default:
           break;
       }
@@ -208,10 +211,8 @@ export class Relay extends EventEmitter {
     const first = presets[0];
     const last = presets[presets.length - 1];
     // auto add "mux" preset
-    if ((!first || first.name !== 'mux') && __MUX__) {
-      if ((__IS_CLIENT__ && !this._isMux) || (__IS_SERVER__ && this._isMux)) {
-        presets = [{'name': 'mux'}].concat(presets);
-      }
+    if ((!first || first.name !== 'mux') && __MUX__ && this._isMux) {
+      presets = presets.concat([{'name': 'mux'}]);
     }
     // add at least one "tracker" preset to the list
     if (!last || last.name !== 'tracker') {

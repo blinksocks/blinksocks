@@ -2,10 +2,6 @@ import {Relay} from './relay';
 import {getRandomInt, logger, generateMutexId} from '../utils';
 import {CONNECT_TO_REMOTE} from '../presets/defs';
 
-// TODO: remove the following globals
-global.__MUX__ = true;
-global.__MUX_CONCURRENCY__ = 1;
-
 // TODO: give shorter timeout for mux relay
 export class Multiplexer {
 
@@ -45,12 +41,15 @@ export class Multiplexer {
       this._muxRelays.delete(cid);
       logger.debug(`[mux] mux relay ${relay.id} is destroyed`);
     });
-    relay.on('frame', ({cid, data}) => {
+    relay.on('muxDataFrame', ({cid, data}) => {
       const leftRelay = this._relays.get(cid);
       if (!leftRelay) {
         logger.error(`[mux] leftRelay ${cid} is not found`);
         return;
       }
+      // if (!leftRelay.hasListener('decode')) {
+      //   leftRelay.on('decode', muxRelay.onPipeEncoded.bind(muxRelay));
+      // }
       leftRelay.onPipeDecoded(data);
     });
     this._muxRelays.set(cid, relay);
@@ -61,42 +60,14 @@ export class Multiplexer {
   // ------------ on server side ------------
 
   decouple(muxRelay) {
-    muxRelay.on('frame', (...args) => this.onDataFrame(muxRelay, ...args));
-    muxRelay.on('subClose', (cid) => this.onSubConnClose(cid));
+    muxRelay.on('muxNewConn', (args) => this.onNewConnection(muxRelay, args));
+    muxRelay.on('muxDataFrame', (args) => this.onDataFrame(muxRelay, args));
+    muxRelay.on('muxCloseConn', (args) => this.onSubConnClose(args));
     muxRelay.on('close', () => this.onMuxRelayClose(muxRelay));
     this._muxRelays.set(muxRelay.id, muxRelay);
   }
 
-  onDataFrame(muxRelay, {cid, data, host, port}) {
-    let relay = this._relays.get(cid);
-    if (!relay) {
-      relay = this.onNewConnection(muxRelay, {cid, host, port, data});
-    }
-    if (!relay.hasListener('encode')) {
-      // const leftRelay = this.getRandomMuxRelay(); TODO: pick a random mux relay?
-      const leftRelay = muxRelay;
-      relay.on('encode', leftRelay.onPipeEncoded.bind(leftRelay));
-    }
-    relay.onPipeDecoded(data);
-  }
-
-  onSubConnClose(cid) {
-    const relay = this._relays.get(cid);
-    if (relay) {
-      relay.destroy();
-      this._relays.delete(cid);
-    } else {
-      logger.warn(`[mux] fail to close sub connection, no such relay: ${cid}`);
-    }
-  }
-
-  onMuxRelayClose(muxRelay) {
-    logger.debug(`[mux] mux relay ${muxRelay.id} is destroyed`);
-    this._muxRelays.delete(muxRelay.id);
-    // TODO: cleanup associate relays?
-  }
-
-  onNewConnection(muxRelay, {cid, host, port, data}) {
+  onNewConnection(muxRelay, {cid, host, port, onCreated}) {
     const context = muxRelay.getContext();
     const relay = new Relay({transport: __TRANSPORT__, context: context, presets: []});
     relay.id = cid;
@@ -106,12 +77,40 @@ export class Multiplexer {
       payload: {
         host: host,
         port: port,
-        onConnected: () => relay.onPipeDecoded(data)
+        onConnected: onCreated
       }
     });
-    logger.verbose(`[mux] create sub relay ${relay.id}, total: ${this._relays.size + 1}`);
     this._relays.set(cid, relay);
+    logger.verbose(`[mux] create sub relay: ${relay.id}, total: ${this._relays.size}`);
     return relay;
+  }
+
+  onDataFrame(muxRelay, {cid, data}) {
+    const relay = this._relays.get(cid);
+    if (relay) {
+      if (!relay.hasListener('encode')) {
+        relay.on('encode', muxRelay.onPipeEncoded.bind(muxRelay));
+      }
+      relay.onPipeDecoded(data);
+    } else {
+      logger.error(`[mux] fail to route data frame, no such sub relay: cid=${cid}`);
+    }
+  }
+
+  onSubConnClose({cid}) {
+    const relay = this._relays.get(cid);
+    if (relay) {
+      relay.destroy();
+      this._relays.delete(cid);
+    } else {
+      logger.warn(`[mux] fail to close sub connection, no such relay: cid=${cid}`);
+    }
+  }
+
+  onMuxRelayClose(muxRelay) {
+    logger.debug(`[mux] mux relay ${muxRelay.id} is destroyed`);
+    this._muxRelays.delete(muxRelay.id);
+    // TODO: cleanup associate relays?
   }
 
 }

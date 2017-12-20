@@ -92,8 +92,9 @@ export const PRESET_PAUSE_SEND = '@action:preset_pause_send';
 export const PRESET_RESUME_RECV = '@action:preset_resume_recv';
 export const PRESET_RESUME_SEND = '@action:preset_resume_send';
 
+export const MUX_NEW_CONN = '@action:mux_new_conn';
 export const MUX_DATA_FRAME = '@action:mux_data_frame';
-export const MUX_SUB_CLOSE = '@action:mux_sub_close';
+export const MUX_CLOSE_CONN = '@action:mux_close_conn';
 
 /**
  *

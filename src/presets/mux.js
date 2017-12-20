@@ -1,29 +1,48 @@
-import {AdvancedBuffer, getRandomChunks, numberToBuffer as ntb} from '../utils';
-import {CONNECT_TO_REMOTE, CONNECTION_WILL_CLOSE, IPreset, MUX_DATA_FRAME, MUX_SUB_CLOSE} from './defs';
+import {AdvancedBuffer, dumpHex, getRandomChunks, numberToBuffer as ntb} from '../utils';
+import {
+  IPreset,
+  CONNECT_TO_REMOTE,
+  CONNECTION_WILL_CLOSE,
+  MUX_NEW_CONN,
+  MUX_DATA_FRAME,
+  MUX_CLOSE_CONN
+} from './defs';
 import {PIPE_ENCODE} from '../core';
 
-const CMD_DATA_FRAME = 0x00;
-const CMD_SUB_CLOSE = 0x01;
+const CMD_NEW_CONN = 0x00;
+const CMD_DATA_FRAME = 0x01;
+const CMD_CLOSE_CONN = 0x02;
 
 /**
  * @description
- *   Multiplexing protocol.
+ *   TCP multiplexing protocol.
  *
  * @examples
  *   {"name": "mux"}
  *
  * @protocol
  *
- *   # TCP Frames (client <-> server)
+ *   # New Connection (client -> server)
+ *   +-------+-------+------+----------+----------+
+ *   |  CMD  |  CID  | ALEN | DST.ADDR | DST.PORT |
+ *   +-------+-------+------+----------+----------+  +  [data frames]
+ *   |  0x0  |   1   |  1   | Variable |    2     |
+ *   +-------+-------+------+----------+----------+
+ *
+ *   # Close Connection (client <-> server)
+ *   +-------+-------+
+ *   |  CMD  |  CID  |
+ *   +-------+-------+  +  [data frames]
+ *   |  0x2  |   1   |
+ *   +-------+-------+
+ *
+ *   # Data Frames (client <-> server)
  *   +-------+-------+------------+-------------+
  *   |  CMD  |  CID  |  DATA LEN  |    DATA     |
  *   +-------+-------+------------+-------------+
- *   |   1   |   2   |     2      |  Variable   |
+ *   |  0x1  |   1   |     2      |  Variable   |
  *   +-------+-------+------------+-------------+
  *
- *   CMD
- *     0x00: data frame
- *     0x01: close sub connection
  */
 export default class MuxPreset extends IPreset {
 
@@ -33,7 +52,13 @@ export default class MuxPreset extends IPreset {
 
   _port = null;
 
-  _cid = 0;
+  _cid = null;
+
+  _isNewConnSent = false;
+
+  _isCloseConnSent = false;
+
+  // _pending = null;
 
   constructor() {
     super();
@@ -48,8 +73,9 @@ export default class MuxPreset extends IPreset {
       this._port = port;
       this._cid = cid;
     }
-    if (__IS_CLIENT__ && action.type === CONNECTION_WILL_CLOSE) {
-      this.next(PIPE_ENCODE, this.createChunk(CMD_SUB_CLOSE, this._cid, Buffer.alloc(0)));
+    if (action.type === CONNECTION_WILL_CLOSE && !this._isCloseConnSent) {
+      this._isCloseConnSent = true;
+      this.next(PIPE_ENCODE, this.createCloseConn(this._cid)/* TODO: append random data frames */);
     }
   }
 
@@ -58,52 +84,83 @@ export default class MuxPreset extends IPreset {
     this._adBuf = null;
   }
 
-  onReceiving(buffer) {
-    if (buffer.length < 5) {
+  onReceiving(buffer, {fail}) {
+    if (buffer.length < 2) {
       return; // too short, continue to recv
     }
-    const dataLen = buffer.readUInt16BE(3);
-    return 5 + dataLen;
-  }
-
-  onChunkReceived(chunk, {broadcast, fail}) {
-    const cmd = chunk[0];
-    const cid = chunk.readUInt16BE(1);
-    const dataLen = chunk.readUInt16BE(3);
+    const cmd = buffer[0];
     switch (cmd) {
+      case CMD_NEW_CONN:
+        return 5 + buffer[2];
       case CMD_DATA_FRAME:
-        broadcast({
-          type: MUX_DATA_FRAME,
-          payload: {
-            // TODO(refactor): find a way to remove wordy "host" and "port".
-            host: this._host,
-            port: this._port,
-            cid,
-            data: chunk.slice(-dataLen)
-          }
-        });
-        break;
-      case CMD_SUB_CLOSE:
-        broadcast({
-          type: MUX_SUB_CLOSE,
-          payload: cid
-        });
-        break;
+        return 4 + buffer.readUInt16BE(2);
+      case CMD_CLOSE_CONN:
+        return 2;
       default:
-        fail(`unknown command: ${cmd}`);
-        break;
+        fail(`unknown cmd=${cmd} dump=${dumpHex(buffer)}`);
+        return -1;
     }
   }
 
-  createChunk(cmd, cid, buffer) {
-    return Buffer.concat([ntb(cmd, 1), ntb(cid, 2), ntb(buffer.length), buffer]);
+  onChunkReceived(chunk, {broadcast}) {
+    const cmd = chunk[0];
+    const cid = chunk[1];
+    switch (cmd) {
+      case CMD_NEW_CONN: {
+        // TODO: cache rest data to pending buffer
+        const host = chunk.slice(3, -2).toString();
+        const port = chunk.readUInt16BE(3 + chunk[2]);
+        return broadcast({
+          type: MUX_NEW_CONN,
+          payload: {
+            host, port, cid, onCreated: () => {
+              // TODO: continue to resolve pending buffer
+            }
+          }
+        });
+      }
+      case CMD_DATA_FRAME: {
+        const dataLen = buffer.readUInt16BE(2);
+        return broadcast({
+          type: MUX_DATA_FRAME,
+          payload: {cid: cid, data: chunk.slice(-dataLen)}
+        });
+      }
+      case CMD_CLOSE_CONN:
+        return broadcast({
+          type: MUX_CLOSE_CONN, payload: {cid}
+        });
+    }
   }
 
-  beforeOut({buffer}) {
-    const chunks = getRandomChunks(buffer, 0x0800, 0x3fff).map((chunk) =>
-      this.createChunk(CMD_DATA_FRAME, this._cid, chunk)
+  createDataFrames(cid, data) {
+    const chunks = getRandomChunks(data, 0x0800, 0x3fff).map((chunk) =>
+      Buffer.concat([ntb(CMD_DATA_FRAME, 1), ntb(cid, 1), ntb(chunk.length, 1), chunk])
     );
     return Buffer.concat(chunks);
+  }
+
+  createNewConn(host, port, cid) {
+    const _host = Buffer.from(host);
+    const _port = ntb(port);
+    return Buffer.concat([ntb(CMD_NEW_CONN, 1), ntb(cid, 1), ntb(_host.length), _host, _port]);
+  }
+
+  createCloseConn(cid) {
+    return Buffer.concat([ntb(CMD_CLOSE_CONN, 1), ntb(cid, 1)]);
+  }
+
+  clientOut({buffer}) {
+    const dataFrames = this.createDataFrames(this._cid, buffer);
+    if (!this._isNewConnSent) {
+      this._isNewConnSent = true;
+      return Buffer.concat([this.createNewConn(this._host, this._port, this._cid), dataFrames]);
+    }
+    return dataFrames;
+  }
+
+  serverOut({buffer}) {
+    return this.createDataFrames(this._cid, buffer);
   }
 
   beforeIn({buffer, broadcast, fail}) {

@@ -77,6 +77,12 @@ export class Config {
     global.__KEY__ = server.key;
     global.__PRESETS__ = server.presets;
 
+    // mux
+    global.__MUX__ = !!server.mux;
+    if (__IS_CLIENT__) {
+      global.__MUX_CONCURRENCY__ = server.mux_concurrency || 10;
+    }
+
     // pre-init presets
     for (const {name, params = {}} of server.presets) {
       const clazz = getPresetClassByName(name);
@@ -268,6 +274,18 @@ export class Config {
     // key
     if (typeof server.key !== 'string' || server.key === '') {
       throw Error('"server.key" must be a non-empty string');
+    }
+
+    // mux
+    if (server.mux !== undefined) {
+      if (typeof server.mux !== 'boolean') {
+        throw Error('"server.mux" must be true or false');
+      }
+      if (from_client) {
+        if (typeof server.mux_concurrency !== 'number' || server.mux_concurrency < 1) {
+          throw Error('"server.mux_concurrency" must be a number and greater than 0');
+        }
+      }
     }
 
     // presets

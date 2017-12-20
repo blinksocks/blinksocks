@@ -42,7 +42,9 @@ module.exports = function init({isMinimal, isOverwrite}) {
           {'name': 'obfs-random-padding'},
           {'name': 'ss-stream-cipher', 'params': {'method': 'aes-128-ctr'}}
         ],
-        'tls_cert': 'cert.pem'
+        'tls_cert': 'cert.pem',
+        'mux': false,
+        'mux_concurrency': 10
       }
     ],
     'dns': [],
@@ -56,6 +58,8 @@ module.exports = function init({isMinimal, isOverwrite}) {
 
   if (isMinimal) {
     delete clientJson.servers[0].tls_cert;
+    delete clientJson.servers[0].mux;
+    delete clientJson.servers[0].mux_concurrency;
     delete clientJson.dns;
     delete clientJson.dns_expire;
     delete clientJson.timeout;
@@ -75,6 +79,7 @@ module.exports = function init({isMinimal, isOverwrite}) {
     ],
     'tls_key': 'key.pem',
     'tls_cert': 'cert.pem',
+    'mux': false,
     'dns': [],
     'dns_expire': 3600,
     'timeout': timeout,
@@ -88,6 +93,7 @@ module.exports = function init({isMinimal, isOverwrite}) {
   if (isMinimal) {
     delete serverJson.tls_key;
     delete serverJson.tls_cert;
+    delete serverJson.mux;
     delete serverJson.dns;
     delete serverJson.dns_expire;
     delete serverJson.timeout;
