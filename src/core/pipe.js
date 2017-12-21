@@ -106,16 +106,16 @@ export class Pipe extends EventEmitter {
     this._presets = presets;
   }
 
-  feed(direction, buffer) {
+  feed(direction, buffer, extraArgs) {
     try {
       // cache the current buffer for PRESET_FAILED action
       this._cacheBuffer = buffer;
       // pre-feed hook
       const preEventName = `pre_${direction}`;
       if (this.listenerCount(preEventName) > 0) {
-        this.emit(preEventName, buffer, (buf) => this._feed(direction, buf));
+        this.emit(preEventName, buffer, (buf) => this._feed(direction, buf, extraArgs));
       } else {
-        this._feed(direction, buffer);
+        this._feed(direction, buffer, extraArgs);
       }
     } catch (err) {
       logger.error('[pipe] error occurred while piping:', err);
@@ -160,7 +160,7 @@ export class Pipe extends EventEmitter {
     }));
   }
 
-  _feed(direction, buffer) {
+  _feed(direction, buffer, extraArgs) {
     const middlewares = this.getMiddlewares(direction);
     // args to be injected
     const isUdp = this._isPipingUdp;
@@ -170,14 +170,14 @@ export class Pipe extends EventEmitter {
     const first = middlewares[0];
     if (!first.hasListener(event)) {
       const last = middlewares.reduce((prev, next) => {
-        prev.on(event, (buf) => next.write({direction, buffer: buf, direct, isUdp}));
+        prev.on(event, (buf) => next.write({direction, buffer: buf, direct, isUdp}, extraArgs));
         return next;
       });
       // the last middleware send data out via direct(buf, false)
       last.on(event, direct);
     }
     // begin pipe
-    first.write({direction, buffer, direct, isUdp});
+    first.write({direction, buffer, direct, isUdp}, extraArgs);
   }
 
 }
