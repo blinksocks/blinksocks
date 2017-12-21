@@ -40,13 +40,13 @@
     "qs": "^6.5.1",
     "winston": "^2.4.0",
     "winston-daily-rotate-file": "^1.7.2",
-    "ws": "^3.3.2"
+    "ws": "^3.3.3"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",
     "babel-eslint": "^8.0.3",
-    "babel-jest": "^21.2.0",
+    "babel-jest": "^22.0.3",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-env": "^1.6.1",
@@ -57,7 +57,7 @@
     "eslint-plugin-babel": "^4.1.2",
     "eslint-plugin-flowtype": "^2.40.1",
     "husky": "^0.14.3",
-    "jest": "^21.2.1",
+    "jest": "^22.0.3",
     "pkg": "^4.3.0-beta.5",
     "rimraf": "^2.6.2"
   },
