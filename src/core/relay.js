@@ -7,6 +7,7 @@ import {
   TcpInbound, TcpOutbound,
   UdpInbound, UdpOutbound,
   TlsInbound, TlsOutbound,
+  MuxInbound, MuxOutbound,
   WsInbound, WsOutbound
 } from '../transports';
 
@@ -26,10 +27,10 @@ import {
  */
 function getBounds(transport) {
   const mapping = {
-    'mux': [TcpInbound, TcpOutbound],
     'tcp': [TcpInbound, TcpOutbound],
     'udp': [UdpInbound, UdpOutbound],
     'tls': [TlsInbound, TlsOutbound],
+    'mux': [MuxInbound, MuxOutbound],
     'ws': [WsInbound, WsOutbound]
   };
   let Inbound = null;
@@ -42,9 +43,12 @@ function getBounds(transport) {
   return {Inbound, Outbound};
 }
 
+// .on('close')
 // .on('encode')
 // .on('decode')
-// .on('close')
+// .on('muxNewConn')
+// .on('muxDataFrame')
+// .on('muxCloseConn')
 export class Relay extends EventEmitter {
 
   _transport = null;
@@ -63,16 +67,15 @@ export class Relay extends EventEmitter {
 
   _presets = [];
 
-  constructor({transport, presets, isMux, context, cid, proxyRequest = null}) {
+  constructor({transport, context = null, presets = [], isMux = false}) {
     super();
     this.updatePresets = this.updatePresets.bind(this);
     this.onBroadcast = this.onBroadcast.bind(this);
-    this.onPipeEncoded = this.onPipeEncoded.bind(this);
-    this.onPipeDecoded = this.onPipeDecoded.bind(this);
+    this.onEncoded = this.onEncoded.bind(this);
+    this.onDecoded = this.onDecoded.bind(this);
     this._transport = transport;
     this._isMux = isMux;
     this._context = context;
-    this._proxyRequest = proxyRequest;
     // pipe
     this._presets = this.preparePresets(presets);
     this._pipe = this.createPipe(this._presets);
@@ -88,7 +91,14 @@ export class Relay extends EventEmitter {
       this.destroy();
       this.emit('close');
     });
-    // initial action
+  }
+
+  init({proxyRequest, cid} = {}) {
+    this._proxyRequest = proxyRequest;
+
+    const transport = this._transport;
+    const context = this._context;
+
     this._pipe.broadcast('pipe', {
       type: CONNECTION_CREATED,
       payload: {
@@ -97,10 +107,15 @@ export class Relay extends EventEmitter {
         port: context ? context.remotePort : '*'
       }
     });
-    if (__IS_CLIENT__ && (proxyRequest !== null || isMux)) {
+
+    if (proxyRequest) {
+      let payload = proxyRequest;
+      if (cid !== undefined) {
+        payload = {...payload, cid};
+      }
       this._pipe.broadcast(null, {
         type: CONNECT_TO_REMOTE,
-        payload: {...(proxyRequest || {}), cid}
+        payload: payload
       });
     }
   }
@@ -168,7 +183,7 @@ export class Relay extends EventEmitter {
     this._pipe.feed(type, data);
   }
 
-  onPipeEncoded(buffer) {
+  onEncoded(buffer) {
     if (this.hasListener('encode')) {
       this.emit('encode', buffer);
     } else {
@@ -180,7 +195,7 @@ export class Relay extends EventEmitter {
     }
   }
 
-  onPipeDecoded(buffer) {
+  onDecoded(buffer) {
     if (this.hasListener('decode')) {
       this.emit('decode', buffer);
     } else {
@@ -194,12 +209,20 @@ export class Relay extends EventEmitter {
 
   // methods
 
-  getContext() {
-    return this._context;
+  encode(buffer, extraArgs) {
+    this._pipe.feed(PIPE_ENCODE, buffer, extraArgs);
+  }
+
+  decode(buffer, extraArgs) {
+    this._pipe.feed(PIPE_DECODE, buffer, extraArgs);
   }
 
   hasListener(name) {
     return this.listenerCount(name) > 0;
+  }
+
+  isOutboundReady() {
+    return this._outbound && this._outbound.writable;
   }
 
   /**
@@ -208,12 +231,7 @@ export class Relay extends EventEmitter {
    * @returns {[]}
    */
   preparePresets(presets) {
-    const first = presets[0];
     const last = presets[presets.length - 1];
-    // auto add "mux" preset
-    if ((!first || first.name !== 'mux') && __MUX__ && this._isMux) {
-      presets = presets.concat([{'name': 'mux'}]);
-    }
     // add at least one "tracker" preset to the list
     if (!last || last.name !== 'tracker') {
       presets = presets.concat([{'name': 'tracker'}]);
@@ -236,8 +254,8 @@ export class Relay extends EventEmitter {
   createPipe(presets) {
     const pipe = new Pipe({presets, isUdp: this._transport === 'udp'});
     pipe.on('broadcast', this.onBroadcast.bind(this)); // if no action were caught by presets
-    pipe.on(`post_${PIPE_ENCODE}`, this.onPipeEncoded);
-    pipe.on(`post_${PIPE_DECODE}`, this.onPipeDecoded);
+    pipe.on(`post_${PIPE_ENCODE}`, this.onEncoded);
+    pipe.on(`post_${PIPE_DECODE}`, this.onDecoded);
     return pipe;
   }
 

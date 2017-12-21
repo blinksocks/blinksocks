@@ -175,7 +175,8 @@ export class Hub {
         if (relay === undefined) {
           server.remoteAddress = address;
           server.remotePort = port;
-          relay = new Relay({transport: 'udp', presets: __PRESETS__, context: server, proxyRequest});
+          relay = new Relay({transport: 'udp', presets: __PRESETS__, context: server});
+          relay.init({proxyRequest});
           relay.on('close', function onRelayClose() {
             // relays.del(key);
           });
@@ -220,17 +221,18 @@ export class Hub {
       this._switchServer();
     }
     logger.verbose(`[hub] [${context.remoteAddress}:${context.remotePort}] connected`);
-    const cid = uniqueId() | 0;
-    const isMux = __MUX__ && __IS_SERVER__;
-    const transport = isMux ? 'mux' : __TRANSPORT__;
-    const presets = __PRESETS__;
-    const relay = new Relay({transport, presets, context, proxyRequest, isMux, cid});
-    relay.id = cid;
-    relay.on('close', () => this._tcpRelays.delete(cid));
-    this._tcpRelays.set(cid, relay);
+    let relay = null;
+    if (__MUX__ && __IS_SERVER__) {
+      relay = new Relay({context, transport: 'mux', presets: [{'name': 'mux'}], isMux: true});
+    } else {
+      relay = new Relay({context, transport: __TRANSPORT__, presets: __PRESETS__});
+    }
+    relay.init({proxyRequest});
+    relay.id = uniqueId() | 0;
+    relay.on('close', () => this._tcpRelays.delete(relay.id));
+    this._tcpRelays.set(relay.id, relay);
     if (__MUX__ && __IS_CLIENT__) {
-      this._mux.couple(relay);
-      proxyRequest.onConnected();
+      this._mux.couple(relay, proxyRequest);
     }
     if (__MUX__ && __IS_SERVER__) {
       // TODO(fix): monkey-patch context.destroy() to prevent closing mux relay

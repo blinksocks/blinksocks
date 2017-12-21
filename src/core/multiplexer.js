@@ -1,6 +1,5 @@
 import {Relay} from './relay';
 import {getRandomInt, logger, generateMutexId} from '../utils';
-import {CONNECT_TO_REMOTE} from '../presets/defs';
 
 // TODO: give shorter timeout for mux relay
 export class Multiplexer {
@@ -11,89 +10,104 @@ export class Multiplexer {
 
   // ------------ on client side ------------
 
-  couple(relay) {
-    const muxRelay = this.getMuxRelay(relay.getContext());
-    relay.on('encode', muxRelay.onPipeEncoded.bind(muxRelay));
+  couple(relay, proxyRequest) {
+    const muxRelay = this.getMuxRelay() || this.createMuxRelay(proxyRequest);
+    let isNewConnSent = false;
+    relay.on('encode', (buffer) => {
+      if (!isNewConnSent) {
+        isNewConnSent = true;
+        muxRelay.encode(buffer, {...proxyRequest, cid: relay.id});
+      } else {
+        muxRelay.encode(buffer, {cid: relay.id});
+      }
+    });
     relay.on('close', () => this._relays.delete(relay.id));
     this._relays.set(relay.id, relay);
-    logger.debug(`[mux] mix relay ${relay.id} into mux relay ${muxRelay.id}`);
+    logger.debug(`[mux] mix relay cid=${relay.id} into mux relay ${muxRelay.id}`);
   }
 
-  getMuxRelay(context) {
+  getMuxRelay() {
     const relays = this._muxRelays;
     const concurrency = relays.size;
     let relay = null;
-    if (concurrency < __MUX_CONCURRENCY__) {
-      // create mux relay if necessary
-      relay = this.createMuxRelay(context);
-    } else {
-      // or just randomly pick one
+    if (concurrency >= __MUX_CONCURRENCY__) {
+      // randomly pick one
       relay = relays.get([...relays.keys()][getRandomInt(0, concurrency - 1)]);
     }
     return relay;
   }
 
-  createMuxRelay(context) {
-    const cid = generateMutexId([...this._muxRelays.keys()], __MUX_CONCURRENCY__);
-    const relay = new Relay({transport: 'mux', context, presets: [], isMux: true, cid});
-    relay.id = cid;
+  createMuxRelay(proxyRequest) {
+    const relay = new Relay({transport: 'mux', presets: [{'name': 'mux'}], isMux: true});
+    relay.init({proxyRequest});
+    relay.id = generateMutexId([...this._muxRelays.keys()], __MUX_CONCURRENCY__);
     relay.on('close', () => {
-      this._muxRelays.delete(cid);
+      this._muxRelays.delete(relay.id);
       logger.debug(`[mux] mux relay ${relay.id} is destroyed`);
     });
-    relay.on('muxDataFrame', ({cid, data}) => {
-      const leftRelay = this._relays.get(cid);
-      if (!leftRelay) {
-        logger.error(`[mux] leftRelay ${cid} is not found`);
-        return;
-      }
-      // if (!leftRelay.hasListener('decode')) {
-      //   leftRelay.on('decode', muxRelay.onPipeEncoded.bind(muxRelay));
-      // }
-      leftRelay.onPipeDecoded(data);
-    });
-    this._muxRelays.set(cid, relay);
+    relay.on('muxDataFrame', (args) => this.onClientDataFrame(args));
+    this._muxRelays.set(relay.id, relay);
     logger.debug(`[mux] create mux relay ${relay.id}`);
     return relay;
+  }
+
+  onClientDataFrame({cid, data}) {
+    const relay = this._relays.get(cid);
+    if (!relay) {
+      logger.error(`[mux] fail to route data frame, no such sub relay: cid=${cid}`);
+      return;
+    }
+    relay.decode(data);
   }
 
   // ------------ on server side ------------
 
   decouple(muxRelay) {
     muxRelay.on('muxNewConn', (args) => this.onNewConnection(muxRelay, args));
-    muxRelay.on('muxDataFrame', (args) => this.onDataFrame(muxRelay, args));
+    muxRelay.on('muxDataFrame', (args) => this.onServerDataFrame(args));
     muxRelay.on('muxCloseConn', (args) => this.onSubConnClose(args));
     muxRelay.on('close', () => this.onMuxRelayClose(muxRelay));
     this._muxRelays.set(muxRelay.id, muxRelay);
   }
 
-  onNewConnection(muxRelay, {cid, host, port, onCreated}) {
-    const context = muxRelay.getContext();
-    const relay = new Relay({transport: __TRANSPORT__, context: context, presets: []});
+  onNewConnection(muxRelay, {cid, host, port}) {
+    const relay = new Relay({transport: __TRANSPORT__, presets: __PRESETS__});
+    const proxyRequest = {
+      host: host,
+      port: port,
+      onConnected: () => {
+        for (const frame of relay._pendingFrames) {
+          relay.decode(frame);
+        }
+        relay._pendingFrames = null;
+      }
+    };
+    relay.init({proxyRequest});
     relay.id = cid;
     relay.on('close', () => this._relays.delete(cid));
-    relay.onBroadcast({
-      type: CONNECT_TO_REMOTE,
-      payload: {
-        host: host,
-        port: port,
-        onConnected: onCreated
-      }
-    });
+
+    // TODO: choose a random mux relay?
+    relay.on('encode', (buffer) => muxRelay.encode(buffer, {cid}));
+
     this._relays.set(cid, relay);
-    logger.verbose(`[mux] create sub relay: ${relay.id}, total: ${this._relays.size}`);
+    logger.verbose(`[mux] create sub relay cid=${relay.id}, total: ${this._relays.size}`);
     return relay;
   }
 
-  onDataFrame(muxRelay, {cid, data}) {
+  onServerDataFrame({cid, data}) {
     const relay = this._relays.get(cid);
-    if (relay) {
-      if (!relay.hasListener('encode')) {
-        relay.on('encode', muxRelay.onPipeEncoded.bind(muxRelay));
-      }
-      relay.onPipeDecoded(data);
-    } else {
+    if (!relay) {
       logger.error(`[mux] fail to route data frame, no such sub relay: cid=${cid}`);
+      return;
+    }
+    if (relay.isOutboundReady()) {
+      relay.decode(data);
+    } else {
+      // TODO: refactor relay._pendingFrames
+      // cache data frames to the array
+      // before new sub relay established connection to destination
+      relay._pendingFrames = [];
+      relay._pendingFrames.push(data);
     }
   }
 

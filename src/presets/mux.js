@@ -1,13 +1,12 @@
 import {AdvancedBuffer, dumpHex, getRandomChunks, numberToBuffer as ntb} from '../utils';
 import {
   IPreset,
-  CONNECT_TO_REMOTE,
-  CONNECTION_WILL_CLOSE,
+  // CONNECTION_WILL_CLOSE,
   MUX_NEW_CONN,
   MUX_DATA_FRAME,
   MUX_CLOSE_CONN
 } from './defs';
-import {PIPE_ENCODE} from '../core';
+// import {PIPE_ENCODE} from '../core';
 
 const CMD_NEW_CONN = 0x00;
 const CMD_DATA_FRAME = 0x01;
@@ -48,36 +47,18 @@ export default class MuxPreset extends IPreset {
 
   _adBuf = null;
 
-  _host = null;
-
-  _port = null;
-
-  _cid = null;
-
-  _isNewConnSent = false;
-
-  _isCloseConnSent = false;
-
-  // _pending = null;
-
   constructor() {
     super();
     this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});
     this._adBuf.on('data', this.onChunkReceived.bind(this));
   }
 
-  onNotified(action) {
-    if (action.type === CONNECT_TO_REMOTE) {
-      const {host, port, cid} = action.payload;
-      this._host = host;
-      this._port = port;
-      this._cid = cid;
-    }
-    if (action.type === CONNECTION_WILL_CLOSE && !this._isCloseConnSent) {
-      this._isCloseConnSent = true;
-      this.next(PIPE_ENCODE, this.createCloseConn(this._cid)/* TODO: append random data frames */);
-    }
-  }
+  // onNotified(action) {
+  //   if (action.type === CONNECTION_WILL_CLOSE && !this._isCloseConnSent) {
+  //     this._isCloseConnSent = true;
+  //     this.next(PIPE_ENCODE, this.createCloseConn(this._cid)/* TODO: append random data frames */);
+  //   }
+  // }
 
   onDestroy() {
     this._adBuf.clear();
@@ -107,20 +88,17 @@ export default class MuxPreset extends IPreset {
     const cid = chunk[1];
     switch (cmd) {
       case CMD_NEW_CONN: {
-        // TODO: cache rest data to pending buffer
         const host = chunk.slice(3, -2).toString();
         const port = chunk.readUInt16BE(3 + chunk[2]);
         return broadcast({
           type: MUX_NEW_CONN,
           payload: {
-            host, port, cid, onCreated: () => {
-              // TODO: continue to resolve pending buffer
-            }
+            host, port, cid
           }
         });
       }
       case CMD_DATA_FRAME: {
-        const dataLen = buffer.readUInt16BE(2);
+        const dataLen = chunk.readUInt16BE(2);
         return broadcast({
           type: MUX_DATA_FRAME,
           payload: {cid: cid, data: chunk.slice(-dataLen)}
@@ -135,7 +113,7 @@ export default class MuxPreset extends IPreset {
 
   createDataFrames(cid, data) {
     const chunks = getRandomChunks(data, 0x0800, 0x3fff).map((chunk) =>
-      Buffer.concat([ntb(CMD_DATA_FRAME, 1), ntb(cid, 1), ntb(chunk.length, 1), chunk])
+      Buffer.concat([ntb(CMD_DATA_FRAME, 1), ntb(cid, 1), ntb(chunk.length), chunk])
     );
     return Buffer.concat(chunks);
   }
@@ -143,24 +121,25 @@ export default class MuxPreset extends IPreset {
   createNewConn(host, port, cid) {
     const _host = Buffer.from(host);
     const _port = ntb(port);
-    return Buffer.concat([ntb(CMD_NEW_CONN, 1), ntb(cid, 1), ntb(_host.length), _host, _port]);
+    return Buffer.concat([ntb(CMD_NEW_CONN, 1), ntb(cid, 1), ntb(_host.length, 1), _host, _port]);
   }
 
-  createCloseConn(cid) {
-    return Buffer.concat([ntb(CMD_CLOSE_CONN, 1), ntb(cid, 1)]);
-  }
+  // createCloseConn(cid) {
+  //   return Buffer.concat([ntb(CMD_CLOSE_CONN, 1), ntb(cid, 1)]);
+  // }
 
-  clientOut({buffer}) {
-    const dataFrames = this.createDataFrames(this._cid, buffer);
-    if (!this._isNewConnSent) {
-      this._isNewConnSent = true;
-      return Buffer.concat([this.createNewConn(this._host, this._port, this._cid), dataFrames]);
+  clientOut({buffer}, {host, port, cid}) {
+    if (cid !== undefined) {
+      const dataFrames = this.createDataFrames(cid, buffer);
+      if (host && port) {
+        return Buffer.concat([this.createNewConn(host, port, cid), dataFrames]);
+      }
+      return dataFrames;
     }
-    return dataFrames;
   }
 
-  serverOut({buffer}) {
-    return this.createDataFrames(this._cid, buffer);
+  serverOut({buffer}, {cid}) {
+    return this.createDataFrames(cid, buffer);
   }
 
   beforeIn({buffer, broadcast, fail}) {

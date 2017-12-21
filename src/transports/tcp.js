@@ -21,8 +21,6 @@ export class TcpInbound extends Inbound {
 
   _socket = null;
 
-  _isConnected = false;
-
   constructor(props) {
     super(props);
     const {context} = props;
@@ -31,8 +29,8 @@ export class TcpInbound extends Inbound {
     this.onTimeout = this.onTimeout.bind(this);
     this.onHalfClose = this.onHalfClose.bind(this);
     this.destroy = this.destroy.bind(this);
-    this._socket = context;
-    if (__IS_SERVER__ || !this._isMux) {
+    if (context) {
+      this._socket = context;
       this._socket.on('error', this.onError);
       this._socket.on('data', this.onReceive);
       this._socket.on('drain', () => this.emit('drain'));
@@ -48,10 +46,8 @@ export class TcpInbound extends Inbound {
   }
 
   onReceive(buffer) {
-    if ((this._outbound && this._outbound.writable) || !this._isConnected) {
-      const direction = __IS_CLIENT__ ? PIPE_ENCODE : PIPE_DECODE;
-      this._pipe.feed(direction, buffer);
-    }
+    const direction = __IS_CLIENT__ ? PIPE_ENCODE : PIPE_DECODE;
+    this._pipe.feed(direction, buffer);
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
     // https://nodejs.org/dist/latest/docs/api/net.html#net_socket_buffersize
@@ -123,7 +119,6 @@ export class TcpInbound extends Inbound {
         break;
       case CONNECTED_TO_REMOTE:
         this._socket && this._socket.resume();
-        this._isConnected = true;
         break;
       case PRESET_FAILED:
         this.onPresetFailed(action);
@@ -210,10 +205,8 @@ export class TcpOutbound extends Outbound {
   }
 
   onReceive(buffer) {
-    if (this._inbound && this._inbound.writable) {
-      const direction = __IS_CLIENT__ ? PIPE_DECODE : PIPE_ENCODE;
-      this._pipe.feed(direction, buffer);
-    }
+    const direction = __IS_CLIENT__ ? PIPE_DECODE : PIPE_ENCODE;
+    this._pipe.feed(direction, buffer);
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
     // https://nodejs.org/dist/latest/docs/api/net.html#net_socket_buffersize
