@@ -21,7 +21,10 @@ export class Multiplexer {
         muxRelay.encode(buffer, {cid: relay.id});
       }
     });
-    relay.on('close', () => this._relays.delete(relay.id));
+    relay.on('close', () => {
+      muxRelay.encode(Buffer.alloc(0), {cid: relay.id, isClosing: true});
+      this._relays.delete(relay.id);
+    });
     this._relays.set(relay.id, relay);
     logger.debug(`[mux] mix relay cid=${relay.id} into mux relay ${muxRelay.id}`);
   }

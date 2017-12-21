@@ -1,12 +1,5 @@
 import {AdvancedBuffer, dumpHex, getRandomChunks, numberToBuffer as ntb} from '../utils';
-import {
-  IPreset,
-  // CONNECTION_WILL_CLOSE,
-  MUX_NEW_CONN,
-  MUX_DATA_FRAME,
-  MUX_CLOSE_CONN
-} from './defs';
-// import {PIPE_ENCODE} from '../core';
+import {IPreset, MUX_CLOSE_CONN, MUX_DATA_FRAME, MUX_NEW_CONN} from './defs';
 
 const CMD_NEW_CONN = 0x00;
 const CMD_DATA_FRAME = 0x01;
@@ -52,13 +45,6 @@ export default class MuxPreset extends IPreset {
     this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});
     this._adBuf.on('data', this.onChunkReceived.bind(this));
   }
-
-  // onNotified(action) {
-  //   if (action.type === CONNECTION_WILL_CLOSE && !this._isCloseConnSent) {
-  //     this._isCloseConnSent = true;
-  //     this.next(PIPE_ENCODE, this.createCloseConn(this._cid)/* TODO: append random data frames */);
-  //   }
-  // }
 
   onDestroy() {
     this._adBuf.clear();
@@ -124,15 +110,18 @@ export default class MuxPreset extends IPreset {
     return Buffer.concat([ntb(CMD_NEW_CONN, 1), ntb(cid, 1), ntb(_host.length, 1), _host, _port]);
   }
 
-  // createCloseConn(cid) {
-  //   return Buffer.concat([ntb(CMD_CLOSE_CONN, 1), ntb(cid, 1)]);
-  // }
+  createCloseConn(cid) {
+    return Buffer.concat([ntb(CMD_CLOSE_CONN, 1), ntb(cid, 1)]);
+  }
 
-  clientOut({buffer}, {host, port, cid}) {
+  clientOut({buffer}, {host, port, cid, isClosing}) {
     if (cid !== undefined) {
       const dataFrames = this.createDataFrames(cid, buffer);
       if (host && port) {
         return Buffer.concat([this.createNewConn(host, port, cid), dataFrames]);
+      }
+      if (isClosing) {
+        return this.createCloseConn(cid); // TODO: append some random bytes?
       }
       return dataFrames;
     }
