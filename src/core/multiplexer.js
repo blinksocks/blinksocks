@@ -11,7 +11,13 @@ export class Multiplexer {
   // ------------ on client side ------------
 
   couple(relay, proxyRequest) {
-    const muxRelay = this.getMuxRelay() || this.createMuxRelay(proxyRequest);
+    let muxRelay = this.getMuxRelay();
+    if (muxRelay) {
+      proxyRequest.onConnected();
+    } else {
+      muxRelay = this.createMuxRelay();
+      muxRelay.init({proxyRequest});
+    }
     let isNewConnSent = false;
     relay.on('encode', (buffer) => {
       if (!isNewConnSent) {
@@ -40,9 +46,9 @@ export class Multiplexer {
     return relay;
   }
 
-  createMuxRelay(proxyRequest) {
+  createMuxRelay() {
     const relay = new Relay({transport: 'mux', presets: [{'name': 'mux'}], isMux: true});
-    relay.init({proxyRequest});
+    // relay.init();
     relay.id = generateMutexId([...this._muxRelays.keys()], __MUX_CONCURRENCY__);
     relay.on('close', () => {
       this._muxRelays.delete(relay.id);
@@ -93,7 +99,7 @@ export class Multiplexer {
     relay.on('encode', (buffer) => muxRelay.encode(buffer, {cid}));
 
     this._relays.set(cid, relay);
-    logger.verbose(`[mux] create sub relay cid=${relay.id}, total: ${this._relays.size}`);
+    logger.debug(`[mux] create sub relay cid=${relay.id}, total: ${this._relays.size}`);
     return relay;
   }
 
