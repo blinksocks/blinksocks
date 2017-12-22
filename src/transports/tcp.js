@@ -21,6 +21,8 @@ export class TcpInbound extends Inbound {
 
   _socket = null;
 
+  _destroyed = false;
+
   constructor(props) {
     super(props);
     const {context} = props;
@@ -93,21 +95,27 @@ export class TcpInbound extends Inbound {
   }
 
   destroy() {
-    if (this._socket) {
+    if (this._socket || !this._destroyed) {
       const payload = {host: this.remoteHost, port: this.remotePort};
       this.broadcast({type: CONNECTION_WILL_CLOSE, payload});
-      this._socket.destroy();
-      this._socket = null;
+      if (this._socket) {
+        this._socket.destroy();
+        this._socket = null;
+      }
       this.broadcast({type: CONNECTION_CLOSED, payload});
+      this._destroyed = true;
       this.emit('close');
     }
     if (this._outbound && !this._outbound.destroying) {
       this._outbound.destroying = true;
-      if (this._outbound.bufferSize > 0) {
-        this._outbound.once('drain', () => this._outbound.destroy());
-      } else {
+      const destroyOutbound = () => {
         this._outbound.destroy();
         this._outbound = null;
+      };
+      if (this._outbound.bufferSize > 0) {
+        this._outbound.once('drain', destroyOutbound);
+      } else {
+        destroyOutbound();
       }
     }
   }
@@ -258,11 +266,14 @@ export class TcpOutbound extends Outbound {
     }
     if (this._inbound && !this._inbound.destroying) {
       this._inbound.destroying = true;
-      if (this._inbound.bufferSize > 0) {
-        this._inbound.once('drain', () => this._inbound.destroy());
-      } else {
+      const destroyInbound = () => {
         this._inbound.destroy();
         this._inbound = null;
+      };
+      if (this._inbound.bufferSize > 0) {
+        this._inbound.once('drain', destroyInbound);
+      } else {
+        destroyInbound();
       }
     }
   }
