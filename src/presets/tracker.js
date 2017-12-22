@@ -50,10 +50,6 @@ export default class TrackerPreset extends IPreset {
         }
         break;
       }
-      case CONNECTION_CLOSED: {
-        this.dump(this._tracks);
-        break;
-      }
       default:
         break;
     }
