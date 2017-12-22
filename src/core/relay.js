@@ -30,7 +30,6 @@ function getBounds(transport) {
     'tcp': [TcpInbound, TcpOutbound],
     'udp': [UdpInbound, UdpOutbound],
     'tls': [TlsInbound, TlsOutbound],
-    'mux': [MuxInbound, MuxOutbound],
     'ws': [WsInbound, WsOutbound]
   };
   let Inbound = null;

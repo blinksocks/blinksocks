@@ -224,7 +224,7 @@ export class Hub {
     logger.verbose(`[hub] [${context.remoteAddress}:${context.remotePort}] connected`);
     let relay = null;
     if (__MUX__ && __IS_SERVER__) {
-      relay = new Relay({context, transport: 'mux', presets: [{'name': 'mux'}], isMux: true});
+      relay = new Relay({context, transport: __TRANSPORT__, presets: [{'name': 'mux'}], isMux: true});
     } else {
       relay = new Relay({context, transport: __TRANSPORT__, presets: __PRESETS__});
     }

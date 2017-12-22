@@ -39,7 +39,7 @@ export class MuxClient {
   }
 
   createMuxRelay() {
-    const relay = new Relay({transport: 'mux', presets: [{'name': 'mux'}], isMux: true});
+    const relay = new Relay({transport: __TRANSPORT__, presets: [{'name': 'mux'}], isMux: true});
     const id = generateMutexId([...this._muxRelays.keys()], __MUX_CONCURRENCY__);
     relay.id = id;
     relay.on('close', () => this.onMuxConnClose(id));
