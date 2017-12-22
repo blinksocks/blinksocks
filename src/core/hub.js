@@ -8,7 +8,7 @@ import uniqueId from 'lodash.uniqueid';
 import * as MiddlewareManager from './middleware';
 import {Balancer} from './balancer';
 import {Config} from './config';
-import {Multiplexer} from './multiplexer';
+import {MuxClient, MuxServer} from './multiplexer';
 import {Relay} from './relay';
 import {dumpHex, logger} from '../utils';
 import {http, socks, tcp} from '../proxies';
@@ -21,7 +21,7 @@ export class Hub {
 
   _udpServer = null;
 
-  _mux = new Multiplexer();
+  _mux = null;
 
   _tcpRelays = new Map(/* id: <relay> */);
 
@@ -35,6 +35,7 @@ export class Hub {
       dispose: (key, relay) => relay.destroy(),
       maxAge: 1e5
     });
+    this._mux = __IS_CLIENT__ ? new MuxClient() : new MuxServer();
   }
 
   terminate(callback) {
@@ -231,18 +232,8 @@ export class Hub {
     relay.id = uniqueId() | 0;
     relay.on('close', () => this._tcpRelays.delete(relay.id));
     this._tcpRelays.set(relay.id, relay);
-    if (__MUX__ && __IS_CLIENT__) {
-      this._mux.couple(relay, proxyRequest);
-    }
-    if (__MUX__ && __IS_SERVER__) {
-      // TODO(fix): monkey-patch context.destroy() to prevent closing mux relay
-      context.destroy = ((destroy) => (force = false) => {
-        logger.debug('prevent closing mux relay');
-        if (force) {
-          destroy.call(context);
-        }
-      })(context.destroy);
-      this._mux.decouple(relay);
+    if (__MUX__) {
+      __IS_CLIENT__ ? this._mux.couple(relay, proxyRequest) : this._mux.decouple(relay);
     }
   }
 

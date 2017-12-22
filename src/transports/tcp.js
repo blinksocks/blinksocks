@@ -41,6 +41,24 @@ export class TcpInbound extends Inbound {
     }
   }
 
+  get name() {
+    return 'tcp:inbound';
+  }
+
+  get bufferSize() {
+    return this._socket ? this._socket.bufferSize : 0;
+  }
+
+  get writable() {
+    return this._socket && !this._socket.destroyed && this._socket.writable;
+  }
+
+  write(buffer) {
+    if (this.writable) {
+      this._socket.write(buffer);
+    }
+  }
+
   onError(err) {
     logger.warn(`[${this.name}] [${this.remote}] ${err.message}`);
   }
@@ -74,32 +92,14 @@ export class TcpInbound extends Inbound {
     this._socket && this._socket.setTimeout(2e3);
   }
 
-  get name() {
-    return 'tcp:inbound';
-  }
-
-  get bufferSize() {
-    return this._socket ? this._socket.bufferSize : 0;
-  }
-
-  get writable() {
-    return this._socket && !this._socket.destroyed && this._socket.writable;
-  }
-
-  write(buffer) {
-    if (this.writable) {
-      this._socket.write(buffer);
-    }
-  }
-
   destroy() {
     if (this._socket) {
       const payload = {host: this.remoteHost, port: this.remotePort};
       this.broadcast({type: CONNECTION_WILL_CLOSE, payload});
       this._socket.destroy();
       this._socket = null;
-      this.emit('close');
       this.broadcast({type: CONNECTION_CLOSED, payload});
+      this.emit('close');
     }
     if (this._outbound && !this._outbound.destroying) {
       this._outbound.destroying = true;
@@ -200,6 +200,24 @@ export class TcpOutbound extends Outbound {
     this.onHalfClose = this.onHalfClose.bind(this);
   }
 
+  get name() {
+    return 'tcp:outbound';
+  }
+
+  get bufferSize() {
+    return this._socket ? this._socket.bufferSize : 0;
+  }
+
+  get writable() {
+    return this._socket && !this._socket.destroyed && this._socket.writable;
+  }
+
+  write(buffer) {
+    if (this.writable) {
+      this._socket.write(buffer);
+    }
+  }
+
   onError(err) {
     logger.warn(`[${this.name}] [${this.remote}] ${err.message}`);
   }
@@ -231,24 +249,6 @@ export class TcpOutbound extends Outbound {
 
   onHalfClose() {
     this._socket && this._socket.setTimeout(2e3);
-  }
-
-  get name() {
-    return 'tcp:outbound';
-  }
-
-  get bufferSize() {
-    return this._socket ? this._socket.bufferSize : 0;
-  }
-
-  get writable() {
-    return this._socket && !this._socket.destroyed && this._socket.writable;
-  }
-
-  write(buffer) {
-    if (this.writable) {
-      this._socket.write(buffer);
-    }
   }
 
   destroy() {
