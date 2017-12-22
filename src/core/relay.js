@@ -7,7 +7,6 @@ import {
   TcpInbound, TcpOutbound,
   UdpInbound, UdpOutbound,
   TlsInbound, TlsOutbound,
-  MuxInbound, MuxOutbound,
   WsInbound, WsOutbound
 } from '../transports';
 
