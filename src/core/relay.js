@@ -41,6 +41,20 @@ function getBounds(transport) {
   return {Inbound, Outbound};
 }
 
+/**
+ * preprocess preset list
+ * @param presets
+ * @returns {[]}
+ */
+function preparePresets(presets) {
+  const last = presets[presets.length - 1];
+  // add at least one "tracker" preset to the list
+  if (!last || last.name !== 'tracker') {
+    presets = presets.concat([{'name': 'tracker'}]);
+  }
+  return presets;
+}
+
 // .on('close')
 // .on('encode')
 // .on('decode')
@@ -75,7 +89,7 @@ export class Relay extends EventEmitter {
     this._isMux = isMux;
     this._context = context;
     // pipe
-    this._presets = this.preparePresets(presets);
+    this._presets = preparePresets(presets);
     this._pipe = this.createPipe(this._presets);
     // outbound
     const {Inbound, Outbound} = getBounds(transport);
@@ -129,7 +143,6 @@ export class Relay extends EventEmitter {
             return;
           }
           if (__IS_SERVER__ && this._isMux) {
-            action.payload.onConnected();
             return;
           }
           break;
@@ -155,7 +168,7 @@ export class Relay extends EventEmitter {
     const {type, suite, data} = action.payload;
     logger.verbose(`[relay] changing presets suite to: ${JSON.stringify(suite)}`);
     // 1. update preset list
-    this.updatePresets(this.preparePresets([
+    this.updatePresets(preparePresets([
       ...suite.presets,
       {'name': 'auto-conf'}
     ]));
@@ -221,20 +234,6 @@ export class Relay extends EventEmitter {
 
   isOutboundReady() {
     return this._outbound && this._outbound.writable;
-  }
-
-  /**
-   * preprocess preset list
-   * @param presets
-   * @returns {[]}
-   */
-  preparePresets(presets) {
-    const last = presets[presets.length - 1];
-    // add at least one "tracker" preset to the list
-    if (!last || last.name !== 'tracker') {
-      presets = presets.concat([{'name': 'tracker'}]);
-    }
-    return presets;
   }
 
   /**
