@@ -1,13 +1,6 @@
 import {Relay} from './relay';
 import {generateMutexId, getRandomInt, logger} from '../utils';
 
-function getRandomRelay(relays) {
-  const concurrency = relays.size;
-  return relays.get([...relays.keys()][getRandomInt(0, concurrency - 1)])
-}
-
-// TODO: give shorter timeout for mux relay
-
 export class MuxClient {
 
   _relays = new Map(/* <id>: <relay> */);
@@ -22,7 +15,7 @@ export class MuxClient {
   }
 
   couple(relay, proxyRequest) {
-    const muxRelay = getRandomRelay(this._muxRelays) || this.createMuxRelay();
+    const muxRelay = this.getRandomMuxRelay() || this.createMuxRelay();
     if (!muxRelay.isOutboundReady()) {
       muxRelay.init({proxyRequest});
     } else {
@@ -35,7 +28,17 @@ export class MuxClient {
     });
     relay.on('close', () => this.onSubConnClose(muxRelay, cid));
     this._relays.set(cid, relay);
-    logger.debug(`[mux] mix sub connection cid=${cid} into mux connection ${muxRelay.id}`);
+    logger.debug(`[mux] mix sub connection cid=${cid} into mux connection ${muxRelay.id}, total: ${this._muxRelays.size}`);
+  }
+
+  getRandomMuxRelay() {
+    const relays = this._muxRelays;
+    const concurrency = relays.size;
+    if (concurrency >= __MUX_CONCURRENCY__) {
+      return relays.get([...relays.keys()][getRandomInt(0, concurrency - 1)]);
+    } else {
+      return null;
+    }
   }
 
   createMuxRelay() {
@@ -107,7 +110,7 @@ export class MuxServer {
         relay._pendingFrames = null;
       }
     };
-    const muxRelay = getRandomRelay(this._muxRelays);
+    const muxRelay = this.getRandomMuxRelay();
 
     relay.init({proxyRequest});
     relay.id = cid;
@@ -117,6 +120,12 @@ export class MuxServer {
     this._relays.set(cid, relay);
     logger.debug(`[mux] create sub connection cid=${relay.id}, total: ${this._relays.size}`);
     return relay;
+  }
+
+  getRandomMuxRelay() {
+    const relays = this._muxRelays;
+    const concurrency = relays.size;
+    return relays.get([...relays.keys()][getRandomInt(0, concurrency - 1)]);
   }
 
   onSubConnEncode(muxRelay, buffer, cid) {
