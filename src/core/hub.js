@@ -8,7 +8,7 @@ import uniqueId from 'lodash.uniqueid';
 import * as MiddlewareManager from './middleware';
 import {Balancer} from './balancer';
 import {Config} from './config';
-import {MuxClient, MuxServer} from './multiplexer';
+import {Multiplexer} from './multiplexer';
 import {Relay} from './relay';
 import {dumpHex, logger} from '../utils';
 import {http, socks, tcp} from '../proxies';
@@ -35,7 +35,7 @@ export class Hub {
       dispose: (key, relay) => relay.destroy(),
       maxAge: 1e5
     });
-    this._mux = __IS_CLIENT__ ? new MuxClient() : new MuxServer();
+    this._mux = new Multiplexer();
   }
 
   terminate(callback) {

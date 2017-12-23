@@ -1,18 +1,22 @@
 import {Relay} from './relay';
 import {generateMutexId, getRandomInt, logger} from '../utils';
 
-export class MuxClient {
+export class Multiplexer {
 
   _relays = new Map(/* <id>: <relay> */);
 
   _muxRelays = new Map(/* <id>: <relay> */);
 
   constructor() {
+    this.onNewSubConn = this.onNewSubConn.bind(this);
     this.onSubConnEncode = this.onSubConnEncode.bind(this);
-    this.onSubConnClose = this.onSubConnClose.bind(this);
-    this.onMuxConnClose = this.onMuxConnClose.bind(this);
     this.onDataFrame = this.onDataFrame.bind(this);
+    this.onSubConnCloseBySelf = this.onSubConnCloseBySelf.bind(this);
+    this.onSubConnCloseByProtocol = this.onSubConnCloseByProtocol.bind(this);
+    this.onMuxConnClose = this.onMuxConnClose.bind(this);
   }
+
+  // client only
 
   couple(relay, proxyRequest) {
     const muxRelay = this.getRandomMuxRelay() || this.createMuxRelay();
@@ -26,75 +30,37 @@ export class MuxClient {
       muxRelay.encode(buffer, {...proxyRequest, cid});
       relay.on('encode', (buf) => this.onSubConnEncode(muxRelay, buf, cid));
     });
-    relay.on('close', () => this.onSubConnClose(muxRelay, cid));
+    relay.on('close', () => this.onSubConnCloseBySelf(muxRelay, cid));
+
+    // create relations between mux relay and its sub relays,
+    // when mux relay destroyed, all sub relays should be destroyed as well.
+    muxRelay.__associateRelays.set(cid, relay);
+
     this._relays.set(cid, relay);
     logger.debug(`[mux] mix sub connection cid=${cid} into mux connection ${muxRelay.id}, total: ${this._muxRelays.size}`);
-  }
-
-  getRandomMuxRelay() {
-    const relays = this._muxRelays;
-    const concurrency = relays.size;
-    if (concurrency >= __MUX_CONCURRENCY__) {
-      return relays.get([...relays.keys()][getRandomInt(0, concurrency - 1)]);
-    } else {
-      return null;
-    }
   }
 
   createMuxRelay() {
     const relay = new Relay({transport: __TRANSPORT__, presets: [{'name': 'mux'}], isMux: true});
     const id = generateMutexId([...this._muxRelays.keys()], __MUX_CONCURRENCY__);
     relay.id = id;
-    relay.on('close', () => this.onMuxConnClose(id));
+    relay.__associateRelays = new Map();
     relay.on('muxDataFrame', this.onDataFrame);
+    relay.on('muxCloseConn', this.onSubConnCloseByProtocol);
+    relay.on('close', () => this.onMuxConnClose(relay));
     this._muxRelays.set(id, relay);
     logger.debug(`[mux] create mux connection ${id}`);
     return relay;
   }
 
-  onSubConnEncode(muxRelay, buffer, cid) {
-    muxRelay.encode(buffer, {cid});
-  }
-
-  onDataFrame({cid, data}) {
-    const relay = this._relays.get(cid);
-    if (!relay) {
-      logger.error(`[mux] fail to route data frame, no such sub connection: cid=${cid}`);
-      return;
-    }
-    relay.decode(data);
-  }
-
-  onSubConnClose(muxRelay, cid) {
-    muxRelay.encode(Buffer.alloc(0), {cid, isClosing: true});
-    this._relays.delete(cid);
-  }
-
-  onMuxConnClose(id) {
-    this._muxRelays.delete(id);
-    logger.debug(`[mux] mux connection ${id} is destroyed`);
-  }
-
-}
-
-export class MuxServer {
-
-  _relays = new Map(/* <id>: <relay> */);
-
-  _muxRelays = new Map(/* <id>: <relay> */);
-
-  constructor() {
-    this.onNewSubConn = this.onNewSubConn.bind(this);
-    this.onDataFrame = this.onDataFrame.bind(this);
-    this.onSubConnClose = this.onSubConnClose.bind(this);
-    this.onMuxConnClose = this.onMuxConnClose.bind(this);
-  }
+  // server only
 
   decouple(muxRelay) {
+    muxRelay.__associateRelays = new Map();
     muxRelay.on('muxNewConn', this.onNewSubConn);
     muxRelay.on('muxDataFrame', this.onDataFrame);
-    muxRelay.on('muxCloseConn', this.onSubConnClose);
-    muxRelay.on('close', () => this.onMuxConnClose(muxRelay.id));
+    muxRelay.on('muxCloseConn', this.onSubConnCloseByProtocol);
+    muxRelay.on('close', () => this.onMuxConnClose(muxRelay));
     this._muxRelays.set(muxRelay.id, muxRelay);
   }
 
@@ -114,18 +80,28 @@ export class MuxServer {
 
     relay.init({proxyRequest});
     relay.id = cid;
-    // relay.on('close', () => this.onSubConnClose({cid}));
     relay.on('encode', (buffer) => this.onSubConnEncode(muxRelay, buffer, cid));
+    relay.on('close', () => this.onSubConnCloseBySelf(muxRelay, cid));
+
+    // create relations between mux relay and its sub relays,
+    // when mux relay destroyed, all sub relays should be destroyed as well.
+    muxRelay.__associateRelays.set(cid, relay);
 
     this._relays.set(cid, relay);
     logger.debug(`[mux] create sub connection cid=${relay.id}, total: ${this._relays.size}`);
     return relay;
   }
 
+  // common
+
   getRandomMuxRelay() {
     const relays = this._muxRelays;
     const concurrency = relays.size;
-    return relays.get([...relays.keys()][getRandomInt(0, concurrency - 1)]);
+    if ((__IS_CLIENT__ && concurrency >= __MUX_CONCURRENCY__) || __IS_SERVER__) {
+      return relays.get([...relays.keys()][getRandomInt(0, concurrency - 1)]);
+    } else {
+      return null;
+    }
   }
 
   onSubConnEncode(muxRelay, buffer, cid) {
@@ -138,7 +114,7 @@ export class MuxServer {
       logger.error(`[mux] fail to route data frame, no such sub connection: cid=${cid}`);
       return;
     }
-    if (relay.isOutboundReady()) {
+    if (__IS_CLIENT__ || relay.isOutboundReady()) {
       relay.decode(data);
     } else {
       // TODO: refactor relay._pendingFrames
@@ -149,21 +125,33 @@ export class MuxServer {
     }
   }
 
-  onSubConnClose({cid}) {
+  onSubConnCloseBySelf(muxRelay, cid) {
+    muxRelay.encode(Buffer.alloc(0), {cid, isClosing: true});
+    muxRelay.__associateRelays.delete(cid);
+    this._relays.delete(cid);
+  }
+
+  onSubConnCloseByProtocol({cid}) {
     const relay = this._relays.get(cid);
     if (relay) {
       relay.destroy();
       this._relays.delete(cid);
       logger.verbose(`[mux] close sub connection: cid=${cid}`);
-    } else {
-      logger.warn(`[mux] fail to close sub connection, no such connection: cid=${cid}`);
     }
+    // else {
+    //   logger.warn(`[mux] fail to close sub connection, no such sub connection: cid=${cid}`);
+    // }
   }
 
-  onMuxConnClose(id) {
-    logger.debug(`[mux] mux connection ${id} is destroyed`);
-    this._muxRelays.delete(id);
-    // TODO: cleanup associate relays?
+  onMuxConnClose(muxRelay) {
+    const subRelays = muxRelay.__associateRelays;
+    logger.debug(`[mux] mux connection ${muxRelay.id} is destroyed, cleanup ${subRelays.size} sub relays`);
+    // cleanup associate relays
+    for (const [, relay] of subRelays) {
+      relay.destroy();
+    }
+    muxRelay.__associateRelays.clear();
+    this._muxRelays.delete(muxRelay.id);
   }
 
 }

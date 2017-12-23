@@ -127,8 +127,13 @@ export default class MuxPreset extends IPreset {
     }
   }
 
-  serverOut({buffer}, {cid}) {
-    return this.createDataFrames(cid, buffer);
+  serverOut({buffer}, {cid, isClosing}) {
+    if (cid !== undefined) {
+      if (isClosing) {
+        return this.createCloseConn(cid); // TODO: append some random bytes?
+      }
+      return this.createDataFrames(cid, buffer);
+    }
   }
 
   beforeIn({buffer, broadcast, fail}) {
