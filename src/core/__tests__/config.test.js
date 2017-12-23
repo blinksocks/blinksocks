@@ -167,6 +167,11 @@ describe('Config#testOnServer', () => {
     expect(() => Config.testOnServer({...baseConf, redirect: ''})).not.toThrow();
   });
 
+  it('should throw when mux(if provided) is invalid', () => {
+    expect(() => Config.testOnServer({...baseConf, mux: null})).toThrow();
+    expect(() => Config.testOnServer({...baseConf, mux: true})).not.toThrow();
+  });
+
 });
 
 describe('Config#init', () => {
