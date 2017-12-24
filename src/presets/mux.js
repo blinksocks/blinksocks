@@ -24,7 +24,7 @@ const CMD_CLOSE_CONN = 0x02;
  *   # Close Connection (client <-> server)
  *   +-------+-------+
  *   |  CMD  |  CID  |
- *   +-------+-------+  +  [data frames]
+ *   +-------+-------+
  *   |  0x2  |   1   |
  *   +-------+-------+
  *
@@ -121,7 +121,7 @@ export default class MuxPreset extends IPresetAddressing {
         return Buffer.concat([this.createNewConn(host, port, cid), dataFrames]);
       }
       if (isClosing) {
-        return this.createCloseConn(cid); // TODO: append some random bytes?
+        return this.createCloseConn(cid);
       }
       return dataFrames;
     }
@@ -130,7 +130,7 @@ export default class MuxPreset extends IPresetAddressing {
   serverOut({buffer}, {cid, isClosing}) {
     if (cid !== undefined) {
       if (isClosing) {
-        return this.createCloseConn(cid); // TODO: append some random bytes?
+        return this.createCloseConn(cid);
       }
       return this.createDataFrames(cid, buffer);
     }

@@ -1,6 +1,7 @@
 import {Relay} from './relay';
 import {generateMutexId, getRandomInt, logger} from '../utils';
 
+// TODO: consider to adjust MAX_BUFFERED_SIZE dynamic for mux relay?
 export class Multiplexer {
 
   _relays = new Map(/* <id>: <relay> */);
@@ -19,7 +20,7 @@ export class Multiplexer {
   // client only
 
   couple({relay, remoteInfo, proxyRequest}) {
-    const muxRelay = this.getRandomMuxRelay() || this.createMuxRelay(remoteInfo);
+    const muxRelay = this.getMuxRelay() || this.createMuxRelay(remoteInfo);
     if (!muxRelay.isOutboundReady()) {
       muxRelay.init({proxyRequest});
     } else {
@@ -77,7 +78,7 @@ export class Multiplexer {
         relay.__pendingFrames = null;
       }
     };
-    const muxRelay = this.getRandomMuxRelay();
+    const muxRelay = this.getMuxRelay();
     if (muxRelay) {
       relay.init({proxyRequest});
       relay.id = cid;
@@ -98,7 +99,8 @@ export class Multiplexer {
 
   // common
 
-  getRandomMuxRelay() {
+  // TODO: use more intelligent strategy for load balance rather than randomly choose one
+  getMuxRelay() {
     const relays = this._muxRelays;
     const concurrency = relays.size;
     if ((__IS_CLIENT__ && concurrency >= __MUX_CONCURRENCY__) || __IS_SERVER__) {
