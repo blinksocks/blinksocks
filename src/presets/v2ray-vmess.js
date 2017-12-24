@@ -1,7 +1,7 @@
 import net from 'net';
 import crypto from 'crypto';
 import ip from 'ip';
-import {IPreset, CONNECT_TO_REMOTE} from './defs';
+import {IPresetAddressing, CONNECT_TO_REMOTE} from './defs';
 import {
   hmac,
   hash,
@@ -157,7 +157,7 @@ function createChacha20Poly1305Key(key) {
  *    [2] VMess Config
  *        https://www.v2ray.com/chapter_02/protocols/vmess.html
  */
-export default class V2rayVmessPreset extends IPreset {
+export default class V2rayVmessPreset extends IPresetAddressing {
 
   static uuid = null;
 

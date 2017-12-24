@@ -236,6 +236,16 @@ export class IPreset {
 
 }
 
+/**
+ * a class which handle addressing
+ */
+export class IPresetAddressing extends IPreset {
+
+}
+
+/**
+ * a class which only have one instance
+ */
 export class IPresetStatic extends IPreset {
 
   static isInstantiated = false;

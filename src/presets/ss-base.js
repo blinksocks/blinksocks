@@ -1,7 +1,7 @@
 import net from 'net';
 import ip from 'ip';
 import {isValidHostname, numberToBuffer} from '../utils';
-import {IPreset, CONNECT_TO_REMOTE} from './defs';
+import {IPresetAddressing, CONNECT_TO_REMOTE} from './defs';
 
 const ATYP_V4 = 0x01;
 const ATYP_V6 = 0x04;
@@ -55,7 +55,7 @@ function getHostType(host) {
  * @reference
  *    https://shadowsocks.org/en/spec/Protocol.html
  */
-export default class SsBasePreset extends IPreset {
+export default class SsBasePreset extends IPresetAddressing {
 
   _isConnecting = false;
 

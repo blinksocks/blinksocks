@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import {EVP_BytesToKey, numberToBuffer, hmac, hash} from '../utils';
-import {IPreset, CONNECT_TO_REMOTE} from './defs';
+import {IPresetAddressing, CONNECT_TO_REMOTE} from './defs';
 
 // available HMACs and length
 const HMAC_METHODS = {
@@ -54,7 +54,7 @@ const DEFAULT_HASH_METHOD = 'sha1';
  *   3. IV for encryption is md5(user_key + 'base-auth').
  *   4. key for encryption and HMAC are derived from EVP_BytesToKey.
  */
-export default class BaseAuthPreset extends IPreset {
+export default class BaseAuthPreset extends IPresetAddressing {
 
   static hmacMethod = DEFAULT_HASH_METHOD;
 

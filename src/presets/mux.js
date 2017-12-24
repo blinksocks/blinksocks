@@ -1,5 +1,5 @@
 import {AdvancedBuffer, dumpHex, getRandomChunks, numberToBuffer as ntb} from '../utils';
-import {IPreset, MUX_CLOSE_CONN, MUX_DATA_FRAME, MUX_NEW_CONN} from './defs';
+import {IPresetAddressing, MUX_CLOSE_CONN, MUX_DATA_FRAME, MUX_NEW_CONN} from './defs';
 
 const CMD_NEW_CONN = 0x00;
 const CMD_DATA_FRAME = 0x01;
@@ -36,7 +36,7 @@ const CMD_CLOSE_CONN = 0x02;
  *   +-------+-------+------------+-------------+
  *
  */
-export default class MuxPreset extends IPreset {
+export default class MuxPreset extends IPresetAddressing {
 
   _adBuf = null;
 
