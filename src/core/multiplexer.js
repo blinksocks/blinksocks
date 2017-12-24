@@ -41,7 +41,7 @@ export class Multiplexer {
   }
 
   createMuxRelay() {
-    const relay = new Relay({transport: __TRANSPORT__, presets: [{'name': 'mux'}], isMux: true});
+    const relay = new Relay({transport: __TRANSPORT__, presets: __PRESETS__, isMux: true});
     const id = generateMutexId([...this._muxRelays.keys()], __MUX_CONCURRENCY__);
     relay.id = id;
     relay.__associateRelays = new Map();
@@ -65,7 +65,7 @@ export class Multiplexer {
   }
 
   onNewSubConn({cid, host, port}) {
-    const relay = new Relay({transport: __TRANSPORT__, presets: __PRESETS__});
+    const relay = new Relay({transport: __TRANSPORT__, presets: []});
     const proxyRequest = {
       host: host,
       port: port,

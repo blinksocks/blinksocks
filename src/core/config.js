@@ -7,7 +7,7 @@ import url from 'url';
 import qs from 'qs';
 import winston from 'winston';
 import isPlainObject from 'lodash.isplainobject';
-import {getPresetClassByName} from '../presets';
+import {getPresetClassByName, IPresetAddressing} from '../presets';
 import {isValidHostname, isValidPort, logger} from '../utils';
 import {DNS_DEFAULT_EXPIRE} from './dns-cache';
 
@@ -81,6 +81,13 @@ export class Config {
     global.__MUX__ = !!server.mux;
     if (__IS_CLIENT__) {
       global.__MUX_CONCURRENCY__ = server.mux_concurrency || 10;
+    }
+
+    // remove unnecessary presets
+    if (__MUX__) {
+      global.__PRESETS__ = __PRESETS__.filter(
+        ({name}) => !IPresetAddressing.isPrototypeOf(getPresetClassByName(name))
+      );
     }
 
     // pre-init presets
