@@ -208,11 +208,15 @@ export class Relay extends EventEmitter {
   // methods
 
   encode(buffer, extraArgs) {
-    this._pipe.feed(PIPE_ENCODE, buffer, extraArgs);
+    if (this._pipe) {
+      this._pipe.feed(PIPE_ENCODE, buffer, extraArgs);
+    }
   }
 
   decode(buffer, extraArgs) {
-    this._pipe.feed(PIPE_DECODE, buffer, extraArgs);
+    if (this._pipe) {
+      this._pipe.feed(PIPE_DECODE, buffer, extraArgs);
+    }
   }
 
   hasListener(name) {

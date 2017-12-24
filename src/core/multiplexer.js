@@ -66,30 +66,34 @@ export class Multiplexer {
 
   onNewSubConn({cid, host, port, remoteInfo}) {
     const relay = new Relay({transport: __TRANSPORT__, remoteInfo, presets: []});
+    relay.__pendingFrames = [];
     const proxyRequest = {
       host: host,
       port: port,
       onConnected: () => {
-        for (const frame of relay._pendingFrames) {
+        for (const frame of relay.__pendingFrames) {
           relay.decode(frame);
         }
-        relay._pendingFrames = null;
+        relay.__pendingFrames = null;
       }
     };
     const muxRelay = this.getRandomMuxRelay();
+    if (muxRelay) {
+      relay.init({proxyRequest});
+      relay.id = cid;
+      relay.on('encode', (buffer) => this.onSubConnEncode(muxRelay, buffer, cid));
+      relay.on('close', () => this.onSubConnCloseBySelf(muxRelay, cid));
 
-    relay.init({proxyRequest});
-    relay.id = cid;
-    relay.on('encode', (buffer) => this.onSubConnEncode(muxRelay, buffer, cid));
-    relay.on('close', () => this.onSubConnCloseBySelf(muxRelay, cid));
+      // create relations between mux relay and its sub relays,
+      // when mux relay destroyed, all sub relays should be destroyed as well.
+      muxRelay.__associateRelays.set(cid, relay);
 
-    // create relations between mux relay and its sub relays,
-    // when mux relay destroyed, all sub relays should be destroyed as well.
-    muxRelay.__associateRelays.set(cid, relay);
-
-    this._relays.set(cid, relay);
-    logger.debug(`[mux] create sub connection cid=${relay.id}, total: ${this._relays.size}`);
-    return relay;
+      this._relays.set(cid, relay);
+      logger.debug(`[mux] create sub connection cid=${relay.id}, total: ${this._relays.size}`);
+      return relay;
+    } else {
+      logger.warn('cannot create new sub connection due to no mux relay are available');
+    }
   }
 
   // common
@@ -120,8 +124,8 @@ export class Multiplexer {
       // TODO: refactor relay._pendingFrames
       // cache data frames to the array
       // before new sub relay established connection to destination
-      relay._pendingFrames = [];
-      relay._pendingFrames.push(data);
+      relay.__pendingFrames = [];
+      relay.__pendingFrames.push(data);
     }
   }
 
