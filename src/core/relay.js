@@ -65,7 +65,7 @@ export class Relay extends EventEmitter {
 
   _presets = [];
 
-  constructor({transport, context = null, presets = [], isMux = false}) {
+  constructor({transport, remoteInfo, context = null, presets = [], isMux = false}) {
     super();
     this.updatePresets = this.updatePresets.bind(this);
     this.onBroadcast = this.onBroadcast.bind(this);
@@ -79,9 +79,10 @@ export class Relay extends EventEmitter {
     this._pipe = this.createPipe(this._presets);
     // outbound
     const {Inbound, Outbound} = getBounds(transport);
-    this._inbound = new Inbound({context: context, pipe: this._pipe, isMux});
-    this._outbound = new Outbound({inbound: this._inbound, pipe: this._pipe, isMux});
+    this._inbound = new Inbound({context, remoteInfo, pipe: this._pipe});
+    this._outbound = new Outbound({remoteInfo, pipe: this._pipe});
     this._outbound.updatePresets = this.updatePresets;
+    this._outbound.setInbound(this._inbound);
     // inbound
     this._inbound.updatePresets = this.updatePresets;
     this._inbound.setOutbound(this._outbound);

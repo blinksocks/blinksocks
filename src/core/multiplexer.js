@@ -18,8 +18,8 @@ export class Multiplexer {
 
   // client only
 
-  couple(relay, proxyRequest) {
-    const muxRelay = this.getRandomMuxRelay() || this.createMuxRelay();
+  couple({relay, remoteInfo, proxyRequest}) {
+    const muxRelay = this.getRandomMuxRelay() || this.createMuxRelay(remoteInfo);
     if (!muxRelay.isOutboundReady()) {
       muxRelay.init({proxyRequest});
     } else {
@@ -40,8 +40,8 @@ export class Multiplexer {
     logger.debug(`[mux] mix sub connection cid=${cid} into mux connection ${muxRelay.id}, total: ${this._muxRelays.size}`);
   }
 
-  createMuxRelay() {
-    const relay = new Relay({transport: __TRANSPORT__, presets: __PRESETS__, isMux: true});
+  createMuxRelay(remoteInfo) {
+    const relay = new Relay({transport: __TRANSPORT__, remoteInfo, presets: __PRESETS__, isMux: true});
     const id = generateMutexId([...this._muxRelays.keys()], __MUX_CONCURRENCY__);
     relay.id = id;
     relay.__associateRelays = new Map();
@@ -55,17 +55,17 @@ export class Multiplexer {
 
   // server only
 
-  decouple(muxRelay) {
+  decouple({relay: muxRelay, remoteInfo}) {
     muxRelay.__associateRelays = new Map();
-    muxRelay.on('muxNewConn', this.onNewSubConn);
+    muxRelay.on('muxNewConn', (args) => this.onNewSubConn({...args, remoteInfo}));
     muxRelay.on('muxDataFrame', this.onDataFrame);
     muxRelay.on('muxCloseConn', this.onSubConnCloseByProtocol);
     muxRelay.on('close', () => this.onMuxConnClose(muxRelay));
     this._muxRelays.set(muxRelay.id, muxRelay);
   }
 
-  onNewSubConn({cid, host, port}) {
-    const relay = new Relay({transport: __TRANSPORT__, presets: []});
+  onNewSubConn({cid, host, port, remoteInfo}) {
+    const relay = new Relay({transport: __TRANSPORT__, remoteInfo, presets: []});
     const proxyRequest = {
       host: host,
       port: port,

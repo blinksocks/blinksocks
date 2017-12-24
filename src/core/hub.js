@@ -218,26 +218,36 @@ export class Hub {
   }
 
   _onConnection(context, proxyRequest = null) {
+    logger.verbose(`[hub] [${context.remoteAddress}:${context.remotePort}] connected`);
     if (__IS_CLIENT__) {
       this._switchServer();
     }
-    logger.verbose(`[hub] [${context.remoteAddress}:${context.remotePort}] connected`);
-    let relay = null;
-    if (__MUX__) {
-      if (__IS_CLIENT__) {
-        relay = new Relay({context, transport: __TRANSPORT__, presets: []});
-      } else {
-        relay = new Relay({context, transport: __TRANSPORT__, presets: __PRESETS__, isMux: true});
-      }
-    } else {
-      relay = new Relay({context, transport: __TRANSPORT__, presets: __PRESETS__});
-    }
+    const remoteInfo = {host: context.remoteAddress, port: context.remotePort};
+    const relay = this._createRelay(context, remoteInfo);
     relay.init({proxyRequest});
     relay.id = uniqueId() | 0;
     relay.on('close', () => this._tcpRelays.delete(relay.id));
     this._tcpRelays.set(relay.id, relay);
     if (__MUX__) {
-      __IS_CLIENT__ ? this._mux.couple(relay, proxyRequest) : this._mux.decouple(relay);
+      __IS_CLIENT__ ? this._mux.couple({relay, remoteInfo, proxyRequest}) : this._mux.decouple({relay, remoteInfo});
+    }
+  }
+
+  _createRelay(context, remoteInfo) {
+    const props = {
+      context: context,
+      remoteInfo: remoteInfo,
+      transport: __TRANSPORT__,
+      presets: __PRESETS__
+    };
+    if (__MUX__) {
+      if (__IS_CLIENT__) {
+        return new Relay({...props, presets: []});
+      } else {
+        return new Relay({...props, isMux: true});
+      }
+    } else {
+      return new Relay(props);
     }
   }
 
