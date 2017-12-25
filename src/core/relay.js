@@ -53,7 +53,7 @@ export class Relay extends EventEmitter {
 
   _isMux = false;
 
-  _context = null;
+  _remoteInfo = null;
 
   _proxyRequest = null;
 
@@ -73,7 +73,7 @@ export class Relay extends EventEmitter {
     this.onDecoded = this.onDecoded.bind(this);
     this._transport = transport;
     this._isMux = isMux;
-    this._context = context;
+    this._remoteInfo = remoteInfo;
     // pipe
     this._presets = this.preparePresets(presets);
     this._pipe = this.createPipe(this._presets);
@@ -92,29 +92,16 @@ export class Relay extends EventEmitter {
     });
   }
 
-  init({proxyRequest, cid} = {}) {
+  init({proxyRequest}) {
     this._proxyRequest = proxyRequest;
-
-    const transport = this._transport;
-    const context = this._context;
-
     this._pipe.broadcast('pipe', {
       type: CONNECTION_CREATED,
-      payload: {
-        transport: transport,
-        host: context ? context.remoteAddress : '*',
-        port: context ? context.remotePort : '*'
-      }
+      payload: {transport: this._transport, ...this._remoteInfo}
     });
-
-    if (proxyRequest) {
-      let payload = proxyRequest;
-      if (cid !== undefined) {
-        payload = {...payload, cid};
-      }
+    if (__IS_CLIENT__) {
       this._pipe.broadcast(null, {
         type: CONNECT_TO_REMOTE,
-        payload: payload
+        payload: proxyRequest
       });
     }
   }
@@ -161,17 +148,12 @@ export class Relay extends EventEmitter {
     ]));
     // 2. initialize newly created presets
     const transport = this._transport;
-    const context = this._context;
     const proxyRequest = this._proxyRequest;
     this._pipe.broadcast('pipe', {
       type: CONNECTION_CREATED,
-      payload: {
-        transport: transport,
-        host: context.remoteAddress,
-        port: context.remotePort
-      }
+      payload: {transport, ...this._remoteInfo}
     });
-    if (__IS_CLIENT__ && proxyRequest !== null) {
+    if (__IS_CLIENT__) {
       this._pipe.broadcast(null, {
         type: CONNECT_TO_REMOTE,
         payload: {...proxyRequest, keepAlive: true} // keep previous connection alive, don't re-connect
@@ -277,7 +259,7 @@ export class Relay extends EventEmitter {
     this._inbound = null;
     this._outbound = null;
     this._presets = null;
-    this._context = null;
+    this._remoteInfo = null;
     this._proxyRequest = null;
   }
 
