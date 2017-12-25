@@ -21,7 +21,7 @@ export class TcpInbound extends Inbound {
 
   _socket = null;
 
-  _isConnected = false;
+  _destroyed = false;
 
   constructor(props) {
     super(props);
@@ -31,14 +31,34 @@ export class TcpInbound extends Inbound {
     this.onTimeout = this.onTimeout.bind(this);
     this.onHalfClose = this.onHalfClose.bind(this);
     this.destroy = this.destroy.bind(this);
-    this._socket = context;
-    this._socket.on('error', this.onError);
-    this._socket.on('data', this.onReceive);
-    this._socket.on('drain', () => this.emit('drain'));
-    this._socket.on('timeout', this.onTimeout);
-    this._socket.on('end', this.onHalfClose);
-    this._socket.on('close', this.destroy);
-    this._socket.setTimeout && this._socket.setTimeout(__TIMEOUT__);
+    if (context) {
+      this._socket = context;
+      this._socket.on('error', this.onError);
+      this._socket.on('data', this.onReceive);
+      this._socket.on('drain', () => this.emit('drain'));
+      this._socket.on('timeout', this.onTimeout);
+      this._socket.on('end', this.onHalfClose);
+      this._socket.on('close', this.destroy);
+      this._socket.setTimeout && this._socket.setTimeout(__TIMEOUT__);
+    }
+  }
+
+  get name() {
+    return 'tcp:inbound';
+  }
+
+  get bufferSize() {
+    return this._socket ? this._socket.bufferSize : 0;
+  }
+
+  get writable() {
+    return this._socket && !this._socket.destroyed && this._socket.writable;
+  }
+
+  write(buffer) {
+    if (this.writable) {
+      this._socket.write(buffer);
+    }
   }
 
   onError(err) {
@@ -46,10 +66,8 @@ export class TcpInbound extends Inbound {
   }
 
   onReceive(buffer) {
-    if ((this._outbound && this._outbound.writable) || !this._isConnected) {
-      const direction = __IS_CLIENT__ ? PIPE_ENCODE : PIPE_DECODE;
-      this._pipe.feed(direction, buffer);
-    }
+    const direction = __IS_CLIENT__ ? PIPE_ENCODE : PIPE_DECODE;
+    this._pipe.feed(direction, buffer);
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
     // https://nodejs.org/dist/latest/docs/api/net.html#net_socket_buffersize
@@ -76,40 +94,28 @@ export class TcpInbound extends Inbound {
     this._socket && this._socket.setTimeout(2e3);
   }
 
-  get name() {
-    return 'tcp:inbound';
-  }
-
-  get bufferSize() {
-    return this._socket ? this._socket.bufferSize : 0;
-  }
-
-  get writable() {
-    return this._socket && !this._socket.destroyed && this._socket.writable;
-  }
-
-  write(buffer) {
-    if (this.writable) {
-      this._socket.write(buffer);
-    }
-  }
-
   destroy() {
-    if (this._socket) {
+    if (this._socket || !this._destroyed) {
       const payload = {host: this.remoteHost, port: this.remotePort};
       this.broadcast({type: CONNECTION_WILL_CLOSE, payload});
-      this._socket.destroy();
-      this._socket = null;
-      this.emit('close');
+      if (this._socket) {
+        this._socket.destroy();
+        this._socket = null;
+      }
       this.broadcast({type: CONNECTION_CLOSED, payload});
+      this._destroyed = true;
+      this.emit('close');
     }
     if (this._outbound && !this._outbound.destroying) {
       this._outbound.destroying = true;
-      if (this._outbound.bufferSize > 0) {
-        this._outbound.once('drain', () => this._outbound.destroy());
-      } else {
+      const destroyOutbound = () => {
         this._outbound.destroy();
         this._outbound = null;
+      };
+      if (this._outbound.bufferSize > 0) {
+        this._outbound.once('drain', destroyOutbound);
+      } else {
+        destroyOutbound();
       }
     }
   }
@@ -121,7 +127,6 @@ export class TcpInbound extends Inbound {
         break;
       case CONNECTED_TO_REMOTE:
         this._socket && this._socket.resume();
-        this._isConnected = true;
         break;
       case PRESET_FAILED:
         this.onPresetFailed(action);
@@ -203,15 +208,31 @@ export class TcpOutbound extends Outbound {
     this.onHalfClose = this.onHalfClose.bind(this);
   }
 
+  get name() {
+    return 'tcp:outbound';
+  }
+
+  get bufferSize() {
+    return this._socket ? this._socket.bufferSize : 0;
+  }
+
+  get writable() {
+    return this._socket && !this._socket.destroyed && this._socket.writable;
+  }
+
+  write(buffer) {
+    if (this.writable) {
+      this._socket.write(buffer);
+    }
+  }
+
   onError(err) {
     logger.warn(`[${this.name}] [${this.remote}] ${err.message}`);
   }
 
   onReceive(buffer) {
-    if (this._inbound && this._inbound.writable) {
-      const direction = __IS_CLIENT__ ? PIPE_DECODE : PIPE_ENCODE;
-      this._pipe.feed(direction, buffer);
-    }
+    const direction = __IS_CLIENT__ ? PIPE_DECODE : PIPE_ENCODE;
+    this._pipe.feed(direction, buffer);
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
     // https://nodejs.org/dist/latest/docs/api/net.html#net_socket_buffersize
@@ -238,24 +259,6 @@ export class TcpOutbound extends Outbound {
     this._socket && this._socket.setTimeout(2e3);
   }
 
-  get name() {
-    return 'tcp:outbound';
-  }
-
-  get bufferSize() {
-    return this._socket ? this._socket.bufferSize : 0;
-  }
-
-  get writable() {
-    return this._socket && !this._socket.destroyed && this._socket.writable;
-  }
-
-  write(buffer) {
-    if (this.writable) {
-      this._socket.write(buffer);
-    }
-  }
-
   destroy() {
     if (this._socket) {
       this._socket.destroy();
@@ -263,11 +266,14 @@ export class TcpOutbound extends Outbound {
     }
     if (this._inbound && !this._inbound.destroying) {
       this._inbound.destroying = true;
-      if (this._inbound.bufferSize > 0) {
-        this._inbound.once('drain', () => this._inbound.destroy());
-      } else {
+      const destroyInbound = () => {
         this._inbound.destroy();
         this._inbound = null;
+      };
+      if (this._inbound.bufferSize > 0) {
+        this._inbound.once('drain', destroyInbound);
+      } else {
+        destroyInbound();
       }
     }
   }

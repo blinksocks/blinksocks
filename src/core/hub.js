@@ -8,6 +8,7 @@ import uniqueId from 'lodash.uniqueid';
 import * as MiddlewareManager from './middleware';
 import {Balancer} from './balancer';
 import {Config} from './config';
+import {Multiplexer} from './multiplexer';
 import {Relay} from './relay';
 import {dumpHex, logger} from '../utils';
 import {http, socks, tcp} from '../proxies';
@@ -19,6 +20,8 @@ export class Hub {
   _tcpServer = null;
 
   _udpServer = null;
+
+  _mux = null;
 
   _tcpRelays = new Map(/* id: <relay> */);
 
@@ -32,6 +35,7 @@ export class Hub {
       dispose: (key, relay) => relay.destroy(),
       maxAge: 1e5
     });
+    this._mux = new Multiplexer();
   }
 
   terminate(callback) {
@@ -172,7 +176,8 @@ export class Hub {
         if (relay === undefined) {
           server.remoteAddress = address;
           server.remotePort = port;
-          relay = new Relay({transport: 'udp', context: server, proxyRequest});
+          relay = new Relay({transport: 'udp', presets: __PRESETS__, context: server});
+          relay.init({proxyRequest});
           relay.on('close', function onRelayClose() {
             // relays.del(key);
           });
@@ -213,15 +218,37 @@ export class Hub {
   }
 
   _onConnection(context, proxyRequest = null) {
+    logger.verbose(`[hub] [${context.remoteAddress}:${context.remotePort}] connected`);
     if (__IS_CLIENT__) {
       this._switchServer();
     }
-    logger.verbose(`[hub] [${context.remoteAddress}:${context.remotePort}] connected`);
-    const cid = uniqueId() | 0;
-    const relay = new Relay({transport: __TRANSPORT__, context, proxyRequest});
-    relay.id = cid;
-    relay.on('close', () => this._tcpRelays.delete(cid));
-    this._tcpRelays.set(cid, relay);
+    const remoteInfo = {host: context.remoteAddress, port: context.remotePort};
+    const relay = this._createRelay(context, remoteInfo);
+    relay.init({proxyRequest});
+    relay.id = uniqueId() | 0;
+    relay.on('close', () => this._tcpRelays.delete(relay.id));
+    this._tcpRelays.set(relay.id, relay);
+    if (__MUX__) {
+      __IS_CLIENT__ ? this._mux.couple({relay, remoteInfo, proxyRequest}) : this._mux.decouple({relay, remoteInfo});
+    }
+  }
+
+  _createRelay(context, remoteInfo) {
+    const props = {
+      context: context,
+      remoteInfo: remoteInfo,
+      transport: __TRANSPORT__,
+      presets: __PRESETS__
+    };
+    if (__MUX__) {
+      if (__IS_CLIENT__) {
+        return new Relay({...props, presets: []});
+      } else {
+        return new Relay({...props, isMux: true});
+      }
+    } else {
+      return new Relay(props);
+    }
   }
 
   _switchServer() {

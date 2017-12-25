@@ -18,16 +18,15 @@
 
 * Cross-platform: running on Linux, Windows and macOS.
 * Lightweight proxy interface for Socks5/Socks4/Socks4a and HTTP(S).
-* Transmit data over raw TCP/UDP, **real** [TLS] or **real** [WebSocket].
+* Transmit data over TCP/UDP, [TLS] or [WebSocket].
+* [Multiplexing](docs/config#multiplexing) over TCP/TLS/WS.
 * A variety of customizable protocols and functional middlewares: using [presets](docs/presets).
-* External preset import.
+* [External preset import].
 * Easy and powerful Access Control([ACL]) and Traffic Control([TC]).
-* Executable versions available: [download here](https://github.com/blinksocks/blinksocks/releases).
+* Support [shadowsocks], [shadowsocksR], [v2ray vmess] protocols.
 * **Out of the box** distribution and deployment.
-* Support [shadowsocks](docs/presets/RECOMMENDATIONS.md#work-with-shadowsocks) protocols.
-* Support [shadowsocksR](docs/presets/RECOMMENDATIONS.md#work-with-shadowsocksr) protocols.
-* Support [v2ray vmess](docs/presets/RECOMMENDATIONS.md#work-with-v2ray-vmess) protocol.
 * **Experimental**: [dynamic protocol stack](suites).
+* Portable versions are available: [download here](https://github.com/blinksocks/blinksocks/releases).
 
 ## Getting Started
 
@@ -106,3 +105,7 @@ Apache License 2.0
 [WebSocket]: https://github.com/blinksocks/blinksocks/tree/master/docs/config#blinksocks-over-websocket
 [ACL]: https://github.com/blinksocks/blinksocks/tree/master/docs/presets#access-control
 [TC]: https://github.com/blinksocks/blinksocks/tree/master/docs/presets#access-control
+[External preset import]: https://github.com/blinksocks/blinksocks/tree/master/docs/presets#use-external-preset
+[shadowsocks]: docs/presets/RECOMMENDATIONS.md#work-with-shadowsocks
+[shadowsocksR]: docs/presets/RECOMMENDATIONS.md#work-with-shadowsocksr
+[v2ray vmess]: docs/presets/RECOMMENDATIONS.md#work-with-v2ray-vmess

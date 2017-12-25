@@ -92,6 +92,10 @@ export const PRESET_PAUSE_SEND = '@action:preset_pause_send';
 export const PRESET_RESUME_RECV = '@action:preset_resume_recv';
 export const PRESET_RESUME_SEND = '@action:preset_resume_send';
 
+export const MUX_NEW_CONN = '@action:mux_new_conn';
+export const MUX_DATA_FRAME = '@action:mux_data_frame';
+export const MUX_CLOSE_CONN = '@action:mux_close_conn';
+
 /**
  *
  * @lifecycle
@@ -232,6 +236,16 @@ export class IPreset {
 
 }
 
+/**
+ * a class which handle addressing
+ */
+export class IPresetAddressing extends IPreset {
+
+}
+
+/**
+ * a class which only have one instance
+ */
 export class IPresetStatic extends IPreset {
 
   static isInstantiated = false;

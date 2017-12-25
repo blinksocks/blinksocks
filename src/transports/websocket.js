@@ -20,10 +20,12 @@ export class WsInbound extends TcpInbound {
 
   constructor(props) {
     super(props);
-    const socket = this._socket;
-    socket.on('message', this.onReceive);
-    socket.on('close', () => socket.destroyed = true);
-    patchWebsocket.call(this, socket);
+    if (this._socket) {
+      const socket = this._socket;
+      socket.on('message', this.onReceive);
+      socket.on('close', () => socket.destroyed = true);
+      patchWebsocket.call(this, socket);
+    }
   }
 
   get name() {

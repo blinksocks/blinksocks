@@ -160,7 +160,7 @@ export default class SsAeadCipherPreset extends IPreset {
       salt = crypto.randomBytes(saltSize);
       this._cipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, evpKey, info, keySize);
     }
-    const chunks = getRandomChunks(buffer, MIN_CHUNK_SPLIT_LEN, MAX_CHUNK_SPLIT_LEN).map((chunk) => {
+    const chunks = getRandomChunks(buffer, MIN_CHUNK_SPLIT_LEN, MAX_CHUNK_SPLIT_LEN - 1).map((chunk) => {
       const dataLen = numberToBuffer(chunk.length);
       const [encLen, lenTag] = this.encrypt(dataLen);
       const [encData, dataTag] = this.encrypt(chunk);

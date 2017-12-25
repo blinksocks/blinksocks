@@ -7,7 +7,7 @@ import url from 'url';
 import qs from 'qs';
 import winston from 'winston';
 import isPlainObject from 'lodash.isplainobject';
-import {getPresetClassByName} from '../presets';
+import {getPresetClassByName, IPresetAddressing} from '../presets';
 import {isValidHostname, isValidPort, logger} from '../utils';
 import {DNS_DEFAULT_EXPIRE} from './dns-cache';
 
@@ -76,6 +76,19 @@ export class Config {
 
     global.__KEY__ = server.key;
     global.__PRESETS__ = server.presets;
+
+    // mux
+    global.__MUX__ = !!server.mux;
+    if (__IS_CLIENT__) {
+      global.__MUX_CONCURRENCY__ = server.mux_concurrency || 10;
+    }
+
+    // remove unnecessary presets
+    if (__MUX__) {
+      global.__PRESETS__ = __PRESETS__.filter(
+        ({name}) => !IPresetAddressing.isPrototypeOf(getPresetClassByName(name))
+      );
+    }
 
     // pre-init presets
     for (const {name, params = {}} of server.presets) {
@@ -268,6 +281,18 @@ export class Config {
     // key
     if (typeof server.key !== 'string' || server.key === '') {
       throw Error('"server.key" must be a non-empty string');
+    }
+
+    // mux
+    if (server.mux !== undefined) {
+      if (typeof server.mux !== 'boolean') {
+        throw Error('"server.mux" must be true or false');
+      }
+      if (from_client && server.mux_concurrency !== undefined) {
+        if (typeof server.mux_concurrency !== 'number' || server.mux_concurrency < 1) {
+          throw Error('"server.mux_concurrency" must be a number and greater than 0');
+        }
+      }
     }
 
     // presets

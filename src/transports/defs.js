@@ -4,6 +4,25 @@ import {DNSCache} from '../core';
 
 class Bound extends EventEmitter {
 
+  _remoteInfo = null;
+
+  constructor({remoteInfo}) {
+    super();
+    this._remoteInfo = remoteInfo;
+  }
+
+  get remoteHost() {
+    return this._remoteInfo.host;
+  }
+
+  get remotePort() {
+    return this._remoteInfo.port;
+  }
+
+  get remote() {
+    return `${this.remoteHost}:${this.remotePort}`;
+  }
+
   get bufferSize() {
     return 0;
   }
@@ -36,23 +55,9 @@ export class Inbound extends Bound {
 
   _pipe = null;
 
-  constructor({context, pipe}) {
-    super();
-    this._pipe = pipe;
-    this._remoteHost = context.remoteAddress;
-    this._remotePort = context.remotePort;
-  }
-
-  get remote() {
-    return `${this._remoteHost}:${this._remotePort}`;
-  }
-
-  get remoteHost() {
-    return this._remoteHost;
-  }
-
-  get remotePort() {
-    return this._remotePort;
+  constructor(props) {
+    super(props);
+    this._pipe = props.pipe;
   }
 
   setOutbound(outbound) {
@@ -67,21 +72,20 @@ export class Inbound extends Bound {
 
 export class Outbound extends Bound {
 
-  _inbound = null;
+  _inbound = null; // set by relay
 
   _pipe = null;
 
   _dnsCache = null;
 
-  constructor({inbound, pipe}) {
-    super();
-    this._inbound = inbound;
-    this._pipe = pipe;
+  constructor(props) {
+    super(props);
+    this._pipe = props.pipe;
     this._dnsCache = new DNSCache({expire: __DNS_EXPIRE__});
   }
 
-  get remote() {
-    return this._inbound.remote;
+  setInbound(inbound) {
+    this._inbound = inbound;
   }
 
   broadcast(action) {
