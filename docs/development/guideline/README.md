@@ -4,7 +4,7 @@
 
 ```
   +----------------+   HTTP/SOCKS    +---------------------+ 
-  |  applications  |---------------->|  blniksocks client  |
+  |  applications  |---------------->|  blinksocks client  |
   +----------------+                 +---------------------+ 
 ```
 
@@ -20,13 +20,13 @@ To take over data send and receive of applications, blinksocks implemented socks
 ## Hub
 
 ```
-  +----------+                           +-----------+
-  |  Conn_1  |<---+                 +--->|  Relay_1  |
-  +----------+    |    +-------+    |    +-----------+
-  |   ...    |<---+--->|  Hub  |<---+--->|    ...    |
-  +----------+    |    +-------+    |    +-----------+
-  |  Conn_N  |<---+                 +--->|  Relay_N  |
-  +----------+                           +-----------+
+  +----------+                           +-----------+     +-------------+
+  |  Conn_1  |<---+                 +--->|  Relay_1  |     |             |
+  +----------+    |    +-------+    |    +-----------+     | Multiplexer |
+  |   ...    |<---+--->|  Hub  |<---+--->|    ...    |<--->|             |
+  +----------+    |    +-------+    |    +-----------+     |  (optional) |
+  |  Conn_N  |<---+                 +--->|  Relay_N  |     |             |
+  +----------+                           +-----------+     +-------------+
 ```
 
 `Hub` gathers connections from apps or clients, for each connection, it also creates an associate relay.
@@ -57,9 +57,9 @@ Inbound and Outbound are abstractions of transport layer, defined in [src/transp
 For example, when configure **blinksocks over websocket**, we create the following transport layer from client to server:
 
 ```
-         +------------+  (websocket)  +------------+
-... ---->| WsOutbound |----> ... ---->|  WsInbound |----> ...
-         +------------+               +------------+
+         +------------+  (websocket)  +-------------+
+... ---->| WsOutbound |----> ... ---->|  WsInbound  |----> ...
+         +------------+               +-------------+
 ```
 
 ## Pipe

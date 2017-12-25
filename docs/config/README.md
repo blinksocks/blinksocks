@@ -8,26 +8,28 @@ You can use the following command to generate `blinksocks.client.json` and `blin
 $ blinksocks init
 ```
 
-|        KEY         |               DESCRIPTION                | OPTIONAL |     DEFAULT     |                                  REMARKS                                   |
-| :----------------- | :--------------------------------------- | :------- | :-------------- | :------------------------------------------------------------------------- |
-| service            | local service address                    | *        | -               | \<protocol\>://\<host\>:\<port\>\[?params\], e.g, "socks://127.0.0.1:1080" |
-| servers            | a list of server                         | Yes      | -               | **CLIENT ONLY**                                                            |
-| servers[i].enabled | allow to use this server or not          | -        | -               | -                                                                          |
-| servers[i].service | see service above                        | -        | -               | -                                                                          |
-| servers[i].key     | server key for encryption                | -        | -               | -                                                                          |
-| presets            | preset list in order                     | -        | -               | see [presets]                                                              |
-| presets[i].name    | preset name                              | -        | -               | -                                                                          |
-| presets[i].params  | preset params                            | -        | -               | -                                                                          |
-| tls_key            | private key for TLS                      | -        | -               | required on server if \<protocol\> is "tls"                                |
-| tls_cert           | server certificate                       | -        | -               | required on both client and server if \<protocol\> is "tls"                |
-| timeout            | timeout for each connection              | Yes      | 600             | in seconds                                                                 |
-| redirect           | target to redirect when preset fail      | Yes      | ""              | \<host\>:\<port\>                                                          |
-| workers            | the number of sub-process                | Yes      | 0               | enable cluster mode when workers > 0                                       |
-| dns                | an ip list of DNS server                 | Yes      | []              | -                                                                          |
-| dns_expire         | DNS cache expiration time                | Yes      | 3600            | in seconds                                                                 |
-| log_path           | log file path                            | Yes      | "bs-[type].log" | a relative/absolute directory or file to put logs in                       |
-| log_level          | log level                                | Yes      | "info"          | ['error', 'warn', 'info', 'verbose', 'debug', 'silly']                     |
-| log_max_days       | the max of days a log file will be saved | Yes      | 30              | remove this option if you want to keep all log files                       |
+|        KEY         |                         DESCRIPTION                          | OPTIONAL |     DEFAULT     |                                  REMARKS                                   |
+| :----------------- | :----------------------------------------------------------- | :------- | :-------------- | :------------------------------------------------------------------------- |
+| service            | local service address                                        | *        | -               | \<protocol\>://\<host\>:\<port\>\[?params\], e.g, "socks://127.0.0.1:1080" |
+| servers            | a list of server                                             | Yes      | -               | **CLIENT ONLY**                                                            |
+| servers[i].enabled | allow to use this server or not                              | -        | -               | -                                                                          |
+| servers[i].service | see service above                                            | -        | -               | -                                                                          |
+| servers[i].key     | server key for encryption                                    | -        | -               | -                                                                          |
+| presets            | preset list in order                                         | -        | -               | see [presets]                                                              |
+| presets[i].name    | preset name                                                  | -        | -               | -                                                                          |
+| presets[i].params  | preset params                                                | -        | -               | -                                                                          |
+| tls_key            | private key for TLS                                          | -        | -               | required on server if \<protocol\> is "tls"                                |
+| tls_cert           | server certificate                                           | -        | -               | required on both client and server if \<protocol\> is "tls"                |
+| timeout            | timeout for each connection                                  | Yes      | 600             | in seconds                                                                 |
+| mux                | enable multiplexing over TCP/TLS/WS                          | Yes      | false           | -                                                                          |
+| mux_concurrency    | the max mux connection established between client and server | Yes      | 10              | **CLIENT ONLY**                                                            |
+| redirect           | target to redirect when preset fail                          | Yes      | ""              | \<host\>:\<port\>                                                          |
+| workers            | the number of sub-process                                    | Yes      | 0               | enable cluster mode when workers > 0                                       |
+| dns                | an ip list of DNS server                                     | Yes      | []              | -                                                                          |
+| dns_expire         | DNS cache expiration time                                    | Yes      | 3600            | in seconds                                                                 |
+| log_path           | log file path                                                | Yes      | "bs-[type].log" | a relative/absolute directory or file to put logs in                       |
+| log_level          | log level                                                    | Yes      | "info"          | ['error', 'warn', 'info', 'verbose', 'debug', 'silly']                     |
+| log_max_days       | the max of days a log file will be saved                     | Yes      | 30              | remove this option if you want to keep all log files                       |
 
 ### Service
 
@@ -170,6 +172,34 @@ Like blinksocks over TLS, it's much easier to setup a websocket tunnel:
 3. How about presets?
 
 Although data sent from client is masked(according to [RFC-6455]), you should add cipher presets to ensure confidentiality because websocket server will transfer your data in plain text by default.
+
+### Multiplexing
+
+Since blinksocks v2.9.0, we support multiplexing over TCP/TLS/WS. You can enable this feature easily by setting `mux: true` on both client and server.
+
+1. Server config
+
+```
+{
+  "mux": true,
+  "mux_concurrency": 10
+  ...
+}
+```
+
+2. Client config
+
+```
+{
+  ...
+  "servers": [{
+    ...
+    "mux": true,
+    ...
+  }],
+  ...
+}
+```
 
 ### Log Path
 

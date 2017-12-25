@@ -288,7 +288,7 @@ export class Config {
       if (typeof server.mux !== 'boolean') {
         throw Error('"server.mux" must be true or false');
       }
-      if (from_client) {
+      if (from_client && server.mux_concurrency !== undefined) {
         if (typeof server.mux_concurrency !== 'number' || server.mux_concurrency < 1) {
           throw Error('"server.mux_concurrency" must be a number and greater than 0');
         }
