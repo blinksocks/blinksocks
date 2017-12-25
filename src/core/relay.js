@@ -98,7 +98,7 @@ export class Relay extends EventEmitter {
       type: CONNECTION_CREATED,
       payload: {transport: this._transport, ...this._remoteInfo}
     });
-    if (__IS_CLIENT__) {
+    if (proxyRequest) {
       this._pipe.broadcast(null, {
         type: CONNECT_TO_REMOTE,
         payload: proxyRequest
