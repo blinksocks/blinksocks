@@ -182,7 +182,6 @@ Since blinksocks v2.9.0, we support multiplexing over TCP/TLS/WS. You can enable
 ```
 {
   "mux": true,
-  "mux_concurrency": 10
   ...
 }
 ```
@@ -195,7 +194,8 @@ Since blinksocks v2.9.0, we support multiplexing over TCP/TLS/WS. You can enable
   "servers": [{
     ...
     "mux": true,
-    ...
+    "mux_concurrency": 10
+   ...
   }],
   ...
 }
