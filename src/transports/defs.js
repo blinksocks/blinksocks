@@ -39,7 +39,7 @@ class Bound extends EventEmitter {
 
   }
 
-  destroy() {
+  close() {
 
   }
 

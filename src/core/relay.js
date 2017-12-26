@@ -13,6 +13,8 @@ import {
 import {
   CONNECT_TO_REMOTE,
   CONNECTION_CREATED,
+  CONNECTION_CLOSED,
+  CONNECTION_WILL_CLOSE,
   CHANGE_PRESET_SUITE,
   MUX_NEW_CONN,
   MUX_DATA_FRAME,
@@ -65,6 +67,8 @@ export class Relay extends EventEmitter {
 
   _presets = [];
 
+  _destroyed = false;
+
   constructor({transport, remoteInfo, context = null, presets = [], isMux = false}) {
     super();
     this.updatePresets = this.updatePresets.bind(this);
@@ -83,13 +87,11 @@ export class Relay extends EventEmitter {
     this._outbound = new Outbound({remoteInfo, pipe: this._pipe});
     this._outbound.updatePresets = this.updatePresets;
     this._outbound.setInbound(this._inbound);
+    this._outbound.on('close', () => this.onBoundClose(this._outbound, this._inbound));
     // inbound
     this._inbound.updatePresets = this.updatePresets;
     this._inbound.setOutbound(this._outbound);
-    this._inbound.on('close', () => {
-      this.destroy();
-      this.emit('close');
-    });
+    this._inbound.on('close', () => this.onBoundClose(this._inbound, this._outbound));
   }
 
   init({proxyRequest}) {
@@ -103,6 +105,21 @@ export class Relay extends EventEmitter {
         type: CONNECT_TO_REMOTE,
         payload: proxyRequest
       });
+    }
+  }
+
+  onBoundClose(thisBound, anotherBound) {
+    if (anotherBound.__closed) {
+      if (!this._pipe.destroyed) {
+        this._pipe.broadcast('pipe', {type: CONNECTION_CLOSED, payload: this._remoteInfo});
+      }
+      this.destroy();
+      this.emit('close');
+    } else {
+      if (!this._pipe.destroyed) {
+        this._pipe.broadcast('pipe', {type: CONNECTION_WILL_CLOSE, payload: this._remoteInfo});
+      }
+      thisBound.__closed = true;
     }
   }
 
@@ -252,15 +269,18 @@ export class Relay extends EventEmitter {
    * destroy pipe, inbound and outbound
    */
   destroy() {
-    this._pipe && this._pipe.destroy();
-    this._inbound && this._inbound.destroy();
-    this._outbound && this._outbound.destroy();
-    this._pipe = null;
-    this._inbound = null;
-    this._outbound = null;
-    this._presets = null;
-    this._remoteInfo = null;
-    this._proxyRequest = null;
+    if (!this._destroyed) {
+      this._pipe && this._pipe.destroy();
+      this._inbound && this._inbound.close();
+      this._outbound && this._outbound.close();
+      this._pipe = null;
+      this._inbound = null;
+      this._outbound = null;
+      this._presets = null;
+      this._remoteInfo = null;
+      this._proxyRequest = null;
+      this._destroyed = true;
+    }
   }
 
 }

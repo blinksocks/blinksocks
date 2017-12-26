@@ -3,8 +3,6 @@ import {Inbound, Outbound} from './defs';
 import {PIPE_ENCODE, PIPE_DECODE} from '../core';
 import {logger, getRandomInt} from '../utils';
 import {
-  CONNECTION_CLOSED,
-  CONNECTION_WILL_CLOSE,
   CONNECT_TO_REMOTE,
   CONNECTED_TO_REMOTE,
   PRESET_FAILED,
@@ -30,7 +28,7 @@ export class TcpInbound extends Inbound {
     this.onReceive = this.onReceive.bind(this);
     this.onTimeout = this.onTimeout.bind(this);
     this.onHalfClose = this.onHalfClose.bind(this);
-    this.destroy = this.destroy.bind(this);
+    this.onClose = this.onClose.bind(this);
     if (context) {
       this._socket = context;
       this._socket.on('error', this.onError);
@@ -38,7 +36,7 @@ export class TcpInbound extends Inbound {
       this._socket.on('drain', () => this.emit('drain'));
       this._socket.on('timeout', this.onTimeout);
       this._socket.on('end', this.onHalfClose);
-      this._socket.on('close', this.destroy);
+      this._socket.on('close', this.onClose);
       this._socket.setTimeout && this._socket.setTimeout(__TIMEOUT__);
     }
   }
@@ -84,39 +82,41 @@ export class TcpInbound extends Inbound {
   }
 
   onTimeout() {
-    if (this._socket) {
-      logger.warn(`[${this.name}] [${this.remote}] timeout: no I/O on the connection for ${__TIMEOUT__ / 1e3}s`);
-      this.destroy();
-    }
+    logger.warn(`[${this.name}] [${this.remote}] timeout: no I/O on the connection for ${__TIMEOUT__ / 1e3}s`);
+    this.onClose();
   }
 
   onHalfClose() {
-    this._socket && this._socket.setTimeout(2e3);
+    this._outbound && this._outbound.end();
   }
 
-  destroy() {
-    if (this._socket || !this._destroyed) {
-      const payload = {host: this.remoteHost, port: this.remotePort};
-      this.broadcast({type: CONNECTION_WILL_CLOSE, payload});
+  onClose() {
+    this.close();
+    if (this._outbound) {
+      this._outbound.close();
+      this._outbound = null;
+    }
+  }
+
+  end() {
+    this._socket && this._socket.end();
+  }
+
+  close() {
+    const doClose = () => {
       if (this._socket) {
         this._socket.destroy();
         this._socket = null;
       }
-      this.broadcast({type: CONNECTION_CLOSED, payload});
-      this._destroyed = true;
-      this.emit('close');
-    }
-    if (this._outbound && !this._outbound.destroying) {
-      this._outbound.destroying = true;
-      const destroyOutbound = () => {
-        this._outbound.destroy();
-        this._outbound = null;
-      };
-      if (this._outbound.bufferSize > 0) {
-        this._outbound.once('drain', destroyOutbound);
-      } else {
-        destroyOutbound();
+      if (!this._destroyed) {
+        this._destroyed = true;
+        this.emit('close');
       }
+    };
+    if (this.bufferSize > 0) {
+      this.once('drain', doClose);
+    } else {
+      doClose();
     }
   }
 
@@ -152,7 +152,7 @@ export class TcpInbound extends Inbound {
     // close connection directly on client side
     if (__IS_CLIENT__) {
       logger.warn(`[${this.name}] [${this.remote}] connection closed`);
-      this.destroy();
+      this.onClose();
     }
 
     // for server side, redirect traffic if "redirect" is set, otherwise, close connection after a random timeout
@@ -175,14 +175,14 @@ export class TcpInbound extends Inbound {
         this._socket && this._socket.pause();
         const timeout = getRandomInt(10, 40);
         logger.warn(`[${this.name}] [${this.remote}] connection will be closed in ${timeout}s...`);
-        setTimeout(this.destroy, timeout * 1e3);
+        setTimeout(this.onClose, timeout * 1e3);
       }
     }
   }
 
   onPresetCloseConnection() {
     logger.info(`[${this.name}] [${this.remote}] preset request to close connection`);
-    this.destroy();
+    this.close();
   }
 
   onPresetPauseRecv() {
@@ -199,13 +199,15 @@ export class TcpOutbound extends Outbound {
 
   _socket = null;
 
+  _destroyed = false;
+
   constructor(props) {
     super(props);
-    this.destroy = this.destroy.bind(this);
     this.onError = this.onError.bind(this);
     this.onReceive = this.onReceive.bind(this);
     this.onTimeout = this.onTimeout.bind(this);
     this.onHalfClose = this.onHalfClose.bind(this);
+    this.onClose = this.onClose.bind(this);
   }
 
   get name() {
@@ -249,32 +251,41 @@ export class TcpOutbound extends Outbound {
   }
 
   onTimeout() {
-    if (this._socket) {
-      logger.warn(`[${this.name}] [${this.remote}] timeout: no I/O on the connection for ${__TIMEOUT__ / 1e3}s`);
-      this.destroy();
-    }
+    logger.warn(`[${this.name}] [${this.remote}] timeout: no I/O on the connection for ${__TIMEOUT__ / 1e3}s`);
+    this.onClose();
   }
 
   onHalfClose() {
-    this._socket && this._socket.setTimeout(2e3);
+    this._inbound && this._inbound.end();
   }
 
-  destroy() {
-    if (this._socket) {
-      this._socket.destroy();
-      this._socket = null;
+  onClose() {
+    this.close();
+    if (this._inbound) {
+      this._inbound.close();
+      this._inbound = null;
     }
-    if (this._inbound && !this._inbound.destroying) {
-      this._inbound.destroying = true;
-      const destroyInbound = () => {
-        this._inbound.destroy();
-        this._inbound = null;
-      };
-      if (this._inbound.bufferSize > 0) {
-        this._inbound.once('drain', destroyInbound);
-      } else {
-        destroyInbound();
+  }
+
+  end() {
+    this._socket && this._socket.end();
+  }
+
+  close() {
+    const doClose = () => {
+      if (this._socket) {
+        this._socket.destroy();
+        this._socket = null;
       }
+      if (!this._destroyed) {
+        this._destroyed = true;
+        this.emit('close');
+      }
+    };
+    if (this.bufferSize > 0) {
+      this.once('drain', doClose);
+    } else {
+      doClose();
     }
   }
 
@@ -313,7 +324,7 @@ export class TcpOutbound extends Outbound {
         });
       } catch (err) {
         logger.warn(`[${this.name}] [${this.remote}] cannot connect to ${host}:${port},`, err);
-        this._inbound.destroy();
+        this.onClose();
       }
     } else {
       this._pipe.broadcast(null, {type: CONNECTED_TO_REMOTE, payload: {host, port}});
@@ -336,7 +347,7 @@ export class TcpOutbound extends Outbound {
     this._socket = await this._connect({host, port});
     this._socket.on('error', this.onError);
     this._socket.on('end', this.onHalfClose);
-    this._socket.on('close', this.destroy);
+    this._socket.on('close', this.onClose);
     this._socket.on('timeout', this.onTimeout);
     this._socket.on('data', this.onReceive);
     this._socket.on('drain', () => this.emit('drain'));

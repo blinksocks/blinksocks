@@ -16,7 +16,6 @@ export class UdpInbound extends Inbound {
     this.onReceive = this.onReceive.bind(this);
     this.onPresetFailed = this.onPresetFailed.bind(this);
     this._socket = context;
-    // this._socket.on('packet', this.onReceive);
   }
 
   onReceive(buffer, rinfo) {
@@ -39,10 +38,10 @@ export class UdpInbound extends Inbound {
     const {name, message} = action.payload;
     logger.error(`[udp:inbound] [${this.remote}] preset "${name}" fail to process: ${message}`);
     if (this._outbound) {
-      this._outbound.destroy();
+      this._outbound.close();
       this._outbound = null;
     }
-    this.destroy();
+    this.close();
     this.broadcast({type: CONNECTION_CLOSED, payload: {host: this.remoteHost, port: this.remotePort}});
   }
 
@@ -61,7 +60,7 @@ export class UdpInbound extends Inbound {
     }
   }
 
-  destroy() {
+  close() {
     if (this._socket !== null && this._socket._handle !== null) {
       this._socket.close();
       this._socket = null;
@@ -137,10 +136,11 @@ export class UdpOutbound extends Outbound {
     logger.info(`[udp:outbound] [${this.remote}] request: ${host}:${port}`);
   }
 
-  destroy() {
+  close() {
     if (this._socket !== null && this._socket._handle !== null) {
       this._socket.close();
       this._socket = null;
+      this.emit('close');
     }
   }
 
