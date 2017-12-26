@@ -58,8 +58,14 @@ export default class MuxPreset extends IPresetAddressing {
     const cmd = buffer[0];
     switch (cmd) {
       case CMD_NEW_CONN:
+        if (buffer.length < 5 + buffer[2]) {
+          return;
+        }
         return 5 + buffer[2];
       case CMD_DATA_FRAME:
+        if (buffer.length < 4) {
+          return;
+        }
         return 4 + buffer.readUInt16BE(2);
       case CMD_CLOSE_CONN:
         return 2;
