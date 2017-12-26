@@ -1,5 +1,6 @@
 import {Relay} from './relay';
-import {generateMutexId, getRandomInt, logger} from '../utils';
+import {getRandomInt, logger} from '../utils';
+import uniqueId from 'lodash.uniqueid';
 
 // TODO: consider to adjust MAX_BUFFERED_SIZE dynamic for mux relay?
 export class Multiplexer {
@@ -38,19 +39,19 @@ export class Multiplexer {
     muxRelay.__associateRelays.set(cid, relay);
 
     this._relays.set(cid, relay);
-    logger.debug(`[mux] mix sub connection cid=${cid} into mux connection ${muxRelay.id}, total: ${this._muxRelays.size}`);
+    logger.debug(`[mux] mix sub connection(cid=${cid}) into mux connection(id=${muxRelay.id}), total: ${this._muxRelays.size}`);
   }
 
   createMuxRelay(remoteInfo) {
     const relay = new Relay({transport: __TRANSPORT__, remoteInfo, presets: __PRESETS__, isMux: true});
-    const id = generateMutexId([...this._muxRelays.keys()], __MUX_CONCURRENCY__);
+    const id = uniqueId() | 0;
     relay.id = id;
     relay.__associateRelays = new Map();
     relay.on('muxDataFrame', this.onDataFrame);
     relay.on('muxCloseConn', this.onSubConnCloseByProtocol);
     relay.on('close', () => this.onMuxConnClose(relay));
     this._muxRelays.set(id, relay);
-    logger.debug(`[mux] create mux connection ${id}`);
+    logger.debug(`[mux] create mux connection(id=${id}), total: ${this._muxRelays.size}`);
     return relay;
   }
 
@@ -90,7 +91,7 @@ export class Multiplexer {
       muxRelay.__associateRelays.set(cid, relay);
 
       this._relays.set(cid, relay);
-      logger.debug(`[mux] create sub connection cid=${relay.id}, total: ${this._relays.size}`);
+      logger.debug(`[mux] create sub connection(cid=${relay.id}), total: ${this._relays.size}`);
       return relay;
     } else {
       logger.warn('cannot create new sub connection due to no mux relay are available');
@@ -117,7 +118,7 @@ export class Multiplexer {
   onDataFrame({cid, data}) {
     const relay = this._relays.get(cid);
     if (!relay) {
-      logger.error(`[mux] fail to route data frame, no such sub connection: cid=${cid}`);
+      logger.error(`[mux] fail to route data frame(size=${data.length}), no such sub connection(cid=${cid})`);
       return;
     }
     if (__IS_CLIENT__ || relay.isOutboundReady()) {
@@ -135,6 +136,7 @@ export class Multiplexer {
     muxRelay.encode(Buffer.alloc(0), {cid, isClosing: true});
     muxRelay.__associateRelays.delete(cid);
     this._relays.delete(cid);
+    logger.debug(`[mux] sub connection(cid=${cid}) closed by self`);
   }
 
   onSubConnCloseByProtocol({cid}) {
@@ -142,7 +144,7 @@ export class Multiplexer {
     if (relay) {
       relay.destroy();
       this._relays.delete(cid);
-      logger.verbose(`[mux] close sub connection: cid=${cid}`);
+      logger.debug(`[mux] sub connection(cid=${cid}) closed by protocol`);
     }
     // else {
     //   logger.warn(`[mux] fail to close sub connection, no such sub connection: cid=${cid}`);
@@ -151,7 +153,7 @@ export class Multiplexer {
 
   onMuxConnClose(muxRelay) {
     const subRelays = muxRelay.__associateRelays;
-    logger.debug(`[mux] mux connection ${muxRelay.id} is destroyed, cleanup ${subRelays.size} sub relays`);
+    logger.debug(`[mux] mux connection(id=${muxRelay.id}) is destroyed, cleanup ${subRelays.size} sub connections`);
     // cleanup associate relays
     for (const [, relay] of subRelays) {
       relay.destroy();
