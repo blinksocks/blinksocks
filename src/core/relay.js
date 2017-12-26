@@ -110,7 +110,7 @@ export class Relay extends EventEmitter {
 
   onBroadcast(action) {
     const type = action.type;
-    if (__MUX__) {
+    if (__MUX__ && this._transport !== 'udp') {
       switch (type) {
         case CONNECT_TO_REMOTE:
           if (__IS_CLIENT__ && !this._isMux) {

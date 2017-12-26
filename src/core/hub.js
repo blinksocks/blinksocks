@@ -174,9 +174,8 @@ export class Hub {
         const key = `${address}:${port}`;
         let relay = relays.get(key);
         if (relay === undefined) {
-          server.remoteAddress = address;
-          server.remotePort = port;
-          relay = new Relay({transport: 'udp', presets: __PRESETS__, context: server});
+          const remoteInfo = {host: address, port: port};
+          relay = new Relay({transport: 'udp', presets: __UDP_PRESETS__, context: server, remoteInfo});
           relay.init({proxyRequest});
           relay.on('close', function onRelayClose() {
             // relays.del(key);

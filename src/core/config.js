@@ -76,6 +76,7 @@ export class Config {
 
     global.__KEY__ = server.key;
     global.__PRESETS__ = server.presets;
+    global.__UDP_PRESETS__ = server.presets;
 
     // mux
     global.__MUX__ = !!server.mux;
