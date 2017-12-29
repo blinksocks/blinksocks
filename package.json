@@ -30,7 +30,7 @@
     "chalk": "^2.3.0",
     "ip": "^1.1.5",
     "js-sha3": "^0.7.0",
-    "libsodium-wrappers": "^0.7.2",
+    "libsodium-wrappers": "^0.7.3",
     "lodash.isplainobject": "^4.0.6",
     "lodash.uniqueid": "^4.0.1",
     "long": "^3.2.0",
@@ -45,7 +45,7 @@
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",
-    "babel-eslint": "^8.1.1",
+    "babel-eslint": "^8.1.2",
     "babel-jest": "^22.0.4",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
