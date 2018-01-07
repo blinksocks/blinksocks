@@ -60,8 +60,8 @@ function convertTransferToKBytes(transfer) {
 }
 
 function printTestEnv() {
-  console.log(chalk.bold.underline('blinksocks version:'));
-  console.log(child_process.execSync(`node ${BLINKSOCKS_PATH} -v`, {encoding: 'utf-8'}).trim());
+  console.log(chalk.bold.underline('blinksocks:'));
+  console.log('%s %s', 'version'.padEnd(15), child_process.execSync(`node ${BLINKSOCKS_PATH} -v`, {encoding: 'utf-8'}).trim());
   console.log('');
   console.log(chalk.bold.underline('Operating System:'));
   const osParams = [
