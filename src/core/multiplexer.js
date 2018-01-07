@@ -73,6 +73,7 @@ export class Multiplexer {
       host: host,
       port: port,
       onConnected: () => {
+        logger.debug(`[mux] flush ${relay.__pendingFrames.length} pending frames`);
         for (const frame of relay.__pendingFrames) {
           relay.decode(frame);
         }
@@ -124,9 +125,9 @@ export class Multiplexer {
     if (__IS_CLIENT__ || relay.isOutboundReady()) {
       relay.decode(data);
     } else {
-      // TODO: refactor relay._pendingFrames
+      // TODO: find a way to avoid using relay._pendingFrames
       // cache data frames to the array
-      // before new sub relay established connection to destination
+      // before sub relay(newly created) established connection to destination
       relay.__pendingFrames = [];
       relay.__pendingFrames.push(data);
     }
