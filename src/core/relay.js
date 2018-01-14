@@ -85,13 +85,13 @@ export class Relay extends EventEmitter {
     const {Inbound, Outbound} = getBounds(transport);
     this._inbound = new Inbound({context, remoteInfo, pipe: this._pipe});
     this._outbound = new Outbound({remoteInfo, pipe: this._pipe});
-    this._outbound.updatePresets = this.updatePresets;
     this._outbound.setInbound(this._inbound);
     this._outbound.on('close', () => this.onBoundClose(this._outbound, this._inbound));
     // inbound
-    this._inbound.updatePresets = this.updatePresets;
     this._inbound.setOutbound(this._outbound);
     this._inbound.on('close', () => this.onBoundClose(this._inbound, this._outbound));
+    // inject methods
+    this.injectMethodsToBounds({updatePresets: this.updatePresets});
   }
 
   init({proxyRequest}) {
@@ -234,6 +234,18 @@ export class Relay extends EventEmitter {
 
   isOutboundReady() {
     return this._outbound && this._outbound.writable;
+  }
+
+  injectMethodsToBounds(obj) {
+    const methodNames = Object.keys(obj);
+    for (const name of methodNames) {
+      const func = obj[name];
+      if (typeof func === 'function') {
+        [this._inbound, this._outbound].forEach((bound) => {
+          Object.defineProperty(bound, name, {value: func});
+        });
+      }
+    }
   }
 
   /**
