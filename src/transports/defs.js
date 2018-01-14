@@ -64,6 +64,10 @@ export class Inbound extends Bound {
     this._outbound = outbound;
   }
 
+  getOutbound() {
+    return this._outbound;
+  }
+
   broadcast(action) {
     !this._pipe.destroyed && this._pipe.broadcast('pipe', action);
   }
@@ -86,6 +90,10 @@ export class Outbound extends Bound {
 
   setInbound(inbound) {
     this._inbound = inbound;
+  }
+
+  getInbound() {
+    return this._inbound;
   }
 
   broadcast(action) {
