@@ -123,6 +123,16 @@ export class Relay extends EventEmitter {
     }
   }
 
+  // getters
+
+  getOutbound() {
+    return this._outbound;
+  }
+
+  getInbound() {
+    return this._inbound;
+  }
+
   // hooks of pipe
 
   onBroadcast(action) {
