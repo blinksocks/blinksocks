@@ -69,10 +69,11 @@ export class TcpInbound extends Inbound {
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
     // https://nodejs.org/dist/latest/docs/api/net.html#net_socket_buffersize
-    if (this._outbound && this._outbound.bufferSize >= MAX_BUFFERED_SIZE) {
-      logger.debug(`[${this.name}] recv paused due to outbound.bufferSize=${this._outbound.bufferSize} > ${MAX_BUFFERED_SIZE}`);
+    const outbound = this.getOutbound();
+    if (outbound && outbound.bufferSize >= MAX_BUFFERED_SIZE) {
+      logger.debug(`[${this.name}] recv paused due to outbound.bufferSize=${outbound.bufferSize} > ${MAX_BUFFERED_SIZE}`);
       this._socket.pause();
-      this._outbound.once('drain', () => {
+      outbound.once('drain', () => {
         if (this._socket && !this._socket.destroyed) {
           logger.debug(`[${this.name}] resume to recv`);
           this._socket.resume();
@@ -238,10 +239,11 @@ export class TcpOutbound extends Outbound {
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
     // https://nodejs.org/dist/latest/docs/api/net.html#net_socket_buffersize
-    if (this._inbound && this._inbound.bufferSize >= MAX_BUFFERED_SIZE) {
-      logger.debug(`[${this.name}] recv paused due to inbound.bufferSize=${this._inbound.bufferSize} > ${MAX_BUFFERED_SIZE}`);
+    const inbound = this.getInbound();
+    if (inbound && inbound.bufferSize >= MAX_BUFFERED_SIZE) {
+      logger.debug(`[${this.name}] recv paused due to inbound.bufferSize=${inbound.bufferSize} > ${MAX_BUFFERED_SIZE}`);
       this._socket.pause();
-      this._inbound.once('drain', () => {
+      inbound.once('drain', () => {
         if (this._socket && !this._socket.destroyed) {
           logger.debug(`[${this.name}] resume to recv`);
           this._socket.resume();
