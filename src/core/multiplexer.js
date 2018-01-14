@@ -28,8 +28,15 @@ export class Multiplexer {
       proxyRequest.onConnected();
     }
     const cid = relay.id;
+    relay.injectMethodsToBounds({
+      getOutbound() {
+        return muxRelay.getOutbound();
+      }
+    });
+    // tell mux preset target host and port(proxyRequest) at the first frame
     relay.once('encode', (buffer) => {
       muxRelay.encode(buffer, {...proxyRequest, cid});
+      // then, just encode data stream through mux relay
       relay.on('encode', (buf) => this.onSubConnEncode(muxRelay, buf, cid));
     });
     relay.on('close', () => this.onSubConnCloseBySelf(muxRelay, cid));
@@ -84,6 +91,11 @@ export class Multiplexer {
     if (muxRelay) {
       relay.init({proxyRequest});
       relay.id = cid;
+      relay.injectMethodsToBounds({
+        getInbound() {
+          return muxRelay.getInbound();
+        }
+      });
       relay.on('encode', (buffer) => this.onSubConnEncode(muxRelay, buffer, cid));
       relay.on('close', () => this.onSubConnCloseBySelf(muxRelay, cid));
 
