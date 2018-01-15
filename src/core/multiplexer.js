@@ -58,7 +58,7 @@ export class Multiplexer {
     relay.on('muxCloseConn', this.onSubConnCloseByProtocol);
     relay.on('close', () => this.onMuxConnClose(relay));
     this._muxRelays.set(id, relay);
-    logger.debug(`[mux] create mux connection(id=${id}), total: ${this._muxRelays.size}`);
+    logger.info(`[mux] create mux connection(id=${id}), total: ${this._muxRelays.size}`);
     return relay;
   }
 
@@ -117,11 +117,15 @@ export class Multiplexer {
   getMuxRelay() {
     const relays = this._muxRelays;
     const concurrency = relays.size;
-    if ((__IS_CLIENT__ && concurrency >= __MUX_CONCURRENCY__) || __IS_SERVER__) {
-      return relays.get([...relays.keys()][getRandomInt(0, concurrency - 1)]);
-    } else {
-      return null;
+    if (__IS_CLIENT__) {
+      if (concurrency < 1) {
+        return null;
+      }
+      if (concurrency < __MUX_CONCURRENCY__ && getRandomInt(0, 1) === 0) {
+        return null;
+      }
     }
+    return relays.get([...relays.keys()][getRandomInt(0, concurrency - 1)]);
   }
 
   onSubConnEncode(muxRelay, buffer, cid) {
