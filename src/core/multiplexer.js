@@ -131,7 +131,7 @@ export class Multiplexer {
   onDataFrame({cid, data}) {
     const relay = this._relays.get(cid);
     if (!relay) {
-      logger.error(`[mux] fail to route data frame(size=${data.length}), no such sub connection(cid=${cid})`);
+      logger.error(`[mux] fail to dispatch data frame(size=${data.length}), no such sub connection(cid=${cid})`);
       return;
     }
     if (__IS_CLIENT__ || relay.isOutboundReady()) {

@@ -141,6 +141,9 @@ export class Relay extends EventEmitter {
       switch (type) {
         case CONNECT_TO_REMOTE:
           if (__IS_CLIENT__ && !this._isMux) {
+            const remote = `${this._remoteInfo.host}:${this._remoteInfo.port}`;
+            const target = `${action.payload.host}:${action.payload.port}`;
+            logger.info(`[relay] [${remote}] request(over mux): ${target}`);
             return;
           }
           if (__IS_SERVER__ && this._isMux) {
