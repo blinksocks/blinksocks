@@ -4,7 +4,6 @@ import {
   getRandomChunks,
   getChunks,
   BYTE_ORDER_LE,
-  generateMutexId
 } from '../common';
 
 describe('numberToBuffer', () => {
