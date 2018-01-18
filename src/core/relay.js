@@ -133,6 +133,14 @@ export class Relay extends EventEmitter {
     return this._inbound;
   }
 
+  getLoad(type = PIPE_ENCODE) {
+    if (type === PIPE_ENCODE) {
+      return this._outbound.bufferSize;
+    } else {
+      return this._inbound.bufferSize;
+    }
+  }
+
   // hooks of pipe
 
   onBroadcast(action) {

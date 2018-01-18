@@ -1,6 +1,8 @@
+import uniqueId from 'lodash.uniqueid';
+import minBy from 'lodash.minby';
 import {Relay} from './relay';
 import {getRandomInt, logger} from '../utils';
-import uniqueId from 'lodash.uniqueid';
+import {MAX_BUFFERED_SIZE, PIPE_DECODE, PIPE_ENCODE} from '../constants';
 
 // TODO: consider to adjust MAX_BUFFERED_SIZE dynamic for mux relay?
 export class Multiplexer {
@@ -21,7 +23,8 @@ export class Multiplexer {
   // client only
 
   couple({relay, remoteInfo, proxyRequest}) {
-    const muxRelay = this.getMuxRelay() || this.createMuxRelay(remoteInfo);
+    // get or create a mux relay first
+    const muxRelay = this.getMuxRelay(PIPE_ENCODE) || this.createMuxRelay(remoteInfo);
     if (!muxRelay.isOutboundReady()) {
       muxRelay.init({proxyRequest});
     } else {
@@ -87,7 +90,8 @@ export class Multiplexer {
         relay.__pendingFrames = null;
       }
     };
-    const muxRelay = this.getMuxRelay();
+    // choose a mux relay to transfer encoded data back to client
+    const muxRelay = this.getMuxRelay(PIPE_DECODE);
     if (muxRelay) {
       relay.init({proxyRequest});
       relay.id = cid;
@@ -113,19 +117,25 @@ export class Multiplexer {
 
   // common
 
-  // TODO: use more intelligent strategy for load balance rather than randomly choose one
-  getMuxRelay() {
+  getMuxRelay(type) {
     const relays = this._muxRelays;
     const concurrency = relays.size;
-    if (__IS_CLIENT__) {
-      if (concurrency < 1) {
-        return null;
-      }
-      if (concurrency < __MUX_CONCURRENCY__ && getRandomInt(0, 1) === 0) {
-        return null;
-      }
+    if (concurrency < 1) {
+      return null;
     }
-    return relays.get([...relays.keys()][getRandomInt(0, concurrency - 1)]);
+    if (__IS_CLIENT__ && concurrency < __MUX_CONCURRENCY__ && getRandomInt(0, 1) === 0) {
+      return null;
+    }
+    // return a mux relay which has minimal score
+    const getScore = (relay) => (
+      relay.getLoad(type) / MAX_BUFFERED_SIZE +
+      relay.__associateRelays.size
+    );
+    const relay = minBy([...relays.values()], getScore);
+    if (!relay) {
+      return null;
+    }
+    return relay;
   }
 
   onSubConnEncode(muxRelay, buffer, cid) {
