@@ -1,4 +1,4 @@
-import {AdvancedBuffer, dumpHex, getRandomChunks, numberToBuffer as ntb} from '../utils';
+import {AdvancedBuffer, dumpHex, getRandomChunks, isValidHostname, isValidPort, numberToBuffer as ntb} from '../utils';
 import {IPresetAddressing, MUX_CLOSE_CONN, MUX_DATA_FRAME, MUX_NEW_CONN} from './defs';
 
 const CMD_NEW_CONN = 0x00;
@@ -75,13 +75,16 @@ export default class MuxPreset extends IPresetAddressing {
     }
   }
 
-  onChunkReceived(chunk, {broadcast}) {
+  onChunkReceived(chunk, {broadcast, fail}) {
     const cmd = chunk[0];
     const cid = chunk[1];
     switch (cmd) {
       case CMD_NEW_CONN: {
         const host = chunk.slice(3, -2).toString();
         const port = chunk.readUInt16BE(3 + chunk[2]);
+        if (!isValidHostname(host) || !isValidPort(port)) {
+          return fail(`invalid host or port, host=${host} port=${port}`);
+        }
         return broadcast({
           type: MUX_NEW_CONN,
           payload: {
