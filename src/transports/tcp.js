@@ -24,6 +24,7 @@ export class TcpInbound extends Inbound {
     const {context} = props;
     this.onError = this.onError.bind(this);
     this.onReceive = this.onReceive.bind(this);
+    this.onDrain = this.onDrain.bind(this);
     this.onTimeout = this.onTimeout.bind(this);
     this.onHalfClose = this.onHalfClose.bind(this);
     this.onClose = this.onClose.bind(this);
@@ -31,7 +32,7 @@ export class TcpInbound extends Inbound {
       this._socket = context;
       this._socket.on('error', this.onError);
       this._socket.on('data', this.onReceive);
-      this._socket.on('drain', () => this.emit('drain'));
+      this._socket.on('drain', this.onDrain);
       this._socket.on('timeout', this.onTimeout);
       this._socket.on('end', this.onHalfClose);
       this._socket.on('close', this.onClose);
@@ -69,15 +70,19 @@ export class TcpInbound extends Inbound {
     // https://nodejs.org/dist/latest/docs/api/net.html#net_socket_buffersize
     const outbound = this.getOutbound();
     if (outbound && outbound.bufferSize >= MAX_BUFFERED_SIZE) {
-      logger.debug(`[${this.name}] recv paused due to outbound.bufferSize=${outbound.bufferSize} > ${MAX_BUFFERED_SIZE}`);
+      logger.debug(`[${this.name}] [${this.remote}] recv paused due to outbound.bufferSize=${outbound.bufferSize} >= ${MAX_BUFFERED_SIZE}`);
       this._socket.pause();
       outbound.once('drain', () => {
         if (this._socket && !this._socket.destroyed) {
-          logger.debug(`[${this.name}] resume to recv`);
+          logger.debug(`[${this.name}] [${this.remote}] resume to recv`);
           this._socket.resume();
         }
       });
     }
+  }
+
+  onDrain() {
+    this.emit('drain');
   }
 
   onTimeout() {
@@ -204,6 +209,7 @@ export class TcpOutbound extends Outbound {
     super(props);
     this.onError = this.onError.bind(this);
     this.onReceive = this.onReceive.bind(this);
+    this.onDrain = this.onDrain.bind(this);
     this.onTimeout = this.onTimeout.bind(this);
     this.onHalfClose = this.onHalfClose.bind(this);
     this.onClose = this.onClose.bind(this);
@@ -239,15 +245,19 @@ export class TcpOutbound extends Outbound {
     // https://nodejs.org/dist/latest/docs/api/net.html#net_socket_buffersize
     const inbound = this.getInbound();
     if (inbound && inbound.bufferSize >= MAX_BUFFERED_SIZE) {
-      logger.debug(`[${this.name}] recv paused due to inbound.bufferSize=${inbound.bufferSize} > ${MAX_BUFFERED_SIZE}`);
+      logger.debug(`[${this.name}] [${this.remote}] recv paused due to inbound.bufferSize=${inbound.bufferSize} >= ${MAX_BUFFERED_SIZE}`);
       this._socket.pause();
       inbound.once('drain', () => {
         if (this._socket && !this._socket.destroyed) {
-          logger.debug(`[${this.name}] resume to recv`);
+          logger.debug(`[${this.name}] [${this.remote}]  resume to recv`);
           this._socket.resume();
         }
       });
     }
+  }
+
+  onDrain() {
+    this.emit('drain');
   }
 
   onTimeout() {
@@ -350,7 +360,7 @@ export class TcpOutbound extends Outbound {
     this._socket.on('close', this.onClose);
     this._socket.on('timeout', this.onTimeout);
     this._socket.on('data', this.onReceive);
-    this._socket.on('drain', () => this.emit('drain'));
+    this._socket.on('drain', this.onDrain);
     this._socket.setTimeout(__TIMEOUT__);
   }
 
