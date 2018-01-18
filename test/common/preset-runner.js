@@ -1,10 +1,7 @@
 import EventEmitter from 'events';
 import {getPresetClassByName} from '../../src/presets';
-import {
-  Middleware,
-  PIPE_ENCODE,
-  PIPE_DECODE
-} from '../../src/core/middleware';
+import {PIPE_ENCODE, PIPE_DECODE} from '../../src/constants';
+import {Middleware} from '../../src/core/middleware';
 
 export function setGlobals(obj) {
   Object.assign(global, obj);
