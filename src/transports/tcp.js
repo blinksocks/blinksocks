@@ -1,6 +1,6 @@
 import net from 'net';
 import {Inbound, Outbound} from './defs';
-import {PIPE_ENCODE, PIPE_DECODE} from '../core';
+import {MAX_BUFFERED_SIZE, PIPE_ENCODE, PIPE_DECODE} from '../constants';
 import {logger, getRandomInt} from '../utils';
 import {
   CONNECT_TO_REMOTE,
@@ -12,8 +12,6 @@ import {
   PRESET_RESUME_RECV,
   PRESET_RESUME_SEND
 } from '../presets/defs';
-
-const MAX_BUFFERED_SIZE = 512 * 1024; // 512KB
 
 export class TcpInbound extends Inbound {
 

@@ -1,6 +1,6 @@
 import EventEmitter from 'events';
 import {Pipe} from './pipe';
-import {PIPE_ENCODE, PIPE_DECODE} from './middleware';
+import {PIPE_ENCODE, PIPE_DECODE} from '../constants';
 import {logger} from '../utils';
 
 import {

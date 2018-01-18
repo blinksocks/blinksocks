@@ -1,6 +1,6 @@
 import dgram from 'dgram';
 import {Inbound, Outbound} from './defs';
-import {PIPE_ENCODE, PIPE_DECODE} from '../core';
+import {PIPE_ENCODE, PIPE_DECODE} from '../constants';
 import {CONNECT_TO_REMOTE, CONNECTION_CLOSED, PRESET_FAILED} from '../presets';
 import {logger} from '../utils';
 
