@@ -43,6 +43,18 @@ function getBounds(transport) {
   return {Inbound, Outbound};
 }
 
+/**
+ * set properties to target object
+ * @param target
+ * @param props
+ */
+function setProperties(target, props = {}) {
+  const propNames = Object.keys(props);
+  for (const name of propNames) {
+    Object.defineProperty(target, name, {value: props[name]});
+  }
+}
+
 // .on('close')
 // .on('encode')
 // .on('decode')
@@ -247,16 +259,12 @@ export class Relay extends EventEmitter {
     return this._outbound && this._outbound.writable;
   }
 
-  injectMethodsToBounds(obj) {
-    const methodNames = Object.keys(obj);
-    for (const name of methodNames) {
-      const func = obj[name];
-      if (typeof func === 'function') {
-        [this._inbound, this._outbound].forEach((bound) => {
-          Object.defineProperty(bound, name, {value: func});
-        });
-      }
-    }
+  setPropsForInbound(props) {
+    setProperties(this._inbound, props);
+  }
+
+  setPropsForOutbound(props) {
+    setProperties(this._outbound, props);
   }
 
   /**

@@ -31,7 +31,7 @@ export class Multiplexer {
       proxyRequest.onConnected();
     }
     const cid = relay.id;
-    relay.injectMethodsToBounds({
+    relay.setPropsForInbound({
       getOutbound() {
         return muxRelay.getOutbound();
       }
@@ -95,7 +95,7 @@ export class Multiplexer {
     if (muxRelay) {
       relay.init({proxyRequest});
       relay.id = cid;
-      relay.injectMethodsToBounds({
+      relay.setPropsForOutbound({
         getInbound() {
           return muxRelay.getInbound();
         }
