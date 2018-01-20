@@ -1,5 +1,6 @@
 import EventEmitter from 'events';
 import {Pipe} from './pipe';
+import {DNSCache} from './dns-cache';
 import {PIPE_ENCODE, PIPE_DECODE} from '../constants';
 import {logger} from '../utils';
 
@@ -96,7 +97,7 @@ export class Relay extends EventEmitter {
     // outbound
     const {Inbound, Outbound} = getBounds(transport);
     this._inbound = new Inbound({context, remoteInfo, pipe: this._pipe});
-    this._outbound = new Outbound({remoteInfo, pipe: this._pipe});
+    this._outbound = new Outbound({remoteInfo, pipe: this._pipe, dnsCache: new DNSCache({expire: __DNS_EXPIRE__})});
     this._outbound.setInbound(this._inbound);
     this._outbound.on('close', () => this.onBoundClose(this._outbound, this._inbound));
     // inbound

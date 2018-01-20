@@ -1,6 +1,5 @@
 /* eslint-disable no-unused-vars */
 import EventEmitter from 'events';
-import {DNSCache} from '../core';
 
 class Bound extends EventEmitter {
 
@@ -85,7 +84,7 @@ export class Outbound extends Bound {
   constructor(props) {
     super(props);
     this._pipe = props.pipe;
-    this._dnsCache = new DNSCache({expire: __DNS_EXPIRE__});
+    this._dnsCache = props.dnsCache;
   }
 
   setInbound(inbound) {
