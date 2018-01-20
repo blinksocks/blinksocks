@@ -100,11 +100,11 @@ export class Relay extends EventEmitter {
     this._outbound = new Outbound({remoteInfo, pipe: this._pipe, dnsCache: new DNSCache({expire: __DNS_EXPIRE__})});
     this._outbound.setInbound(this._inbound);
     this._outbound.on('close', () => this.onBoundClose(this._outbound, this._inbound));
+    this._outbound.on('updatePresets', this.updatePresets);
     // inbound
     this._inbound.setOutbound(this._outbound);
     this._inbound.on('close', () => this.onBoundClose(this._inbound, this._outbound));
-    // inject methods
-    this.injectMethodsToBounds({updatePresets: this.updatePresets});
+    this._inbound.on('updatePresets', this.updatePresets);
   }
 
   init({proxyRequest}) {

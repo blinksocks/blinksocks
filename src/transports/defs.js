@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 import EventEmitter from 'events';
 
+// .on('updatePresets')
 class Bound extends EventEmitter {
 
   _remoteInfo = null;
@@ -43,7 +44,7 @@ class Bound extends EventEmitter {
   }
 
   updatePresets(value) {
-
+    this.emit('updatePresets', value);
   }
 
 }
