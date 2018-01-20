@@ -36,7 +36,7 @@ export class Multiplexer {
         return muxRelay.getOutbound();
       }
     });
-    // tell mux preset target host and port(proxyRequest) at the first frame
+    // tell mux preset target host and port(proxyRequest) in the first frame
     relay.once('encode', (buffer) => {
       muxRelay.encode(buffer, {...proxyRequest, cid});
       // then, just encode data stream through mux relay
@@ -58,7 +58,7 @@ export class Multiplexer {
     relay.id = id;
     relay.__associateRelays = new Map();
     relay.on('muxDataFrame', this.onDataFrame);
-    relay.on('muxCloseConn', this.onSubConnCloseByProtocol);
+    relay.on('muxCloseConn', ({cid}) => this.onSubConnCloseByProtocol(relay, cid));
     relay.on('close', () => this.onMuxConnClose(relay));
     this._muxRelays.set(id, relay);
     logger.info(`[mux] create mux connection(id=${id}), total: ${this._muxRelays.size}`);
@@ -71,13 +71,13 @@ export class Multiplexer {
     muxRelay.__associateRelays = new Map();
     muxRelay.on('muxNewConn', (args) => this.onNewSubConn({...args, remoteInfo}));
     muxRelay.on('muxDataFrame', this.onDataFrame);
-    muxRelay.on('muxCloseConn', this.onSubConnCloseByProtocol);
+    muxRelay.on('muxCloseConn', ({cid}) => this.onSubConnCloseByProtocol(muxRelay, cid));
     muxRelay.on('close', () => this.onMuxConnClose(muxRelay));
     this._muxRelays.set(muxRelay.id, muxRelay);
   }
 
   onNewSubConn({cid, host, port, remoteInfo}) {
-    const relay = new Relay({transport: __TRANSPORT__, remoteInfo, presets: []});
+    const relay = new Relay({transport: __TRANSPORT__, remoteInfo});
     relay.__pendingFrames = [];
     const proxyRequest = {
       host: host,
@@ -163,15 +163,20 @@ export class Multiplexer {
     muxRelay.encode(Buffer.alloc(0), {cid, isClosing: true});
     muxRelay.__associateRelays.delete(cid);
     this._relays.delete(cid);
-    logger.debug(`[mux] sub connection(cid=${cid}) closed by self`);
+    logger.debug(
+      `[mux] sub connection(cid=${cid}) closed by self, ` +
+      `remains ${muxRelay.__associateRelays.size} sub connections in mux connection(id=${muxRelay.id})`
+    );
   }
 
-  onSubConnCloseByProtocol({cid}) {
+  onSubConnCloseByProtocol(muxRelay, cid) {
     const relay = this._relays.get(cid);
     if (relay) {
       relay.destroy();
       this._relays.delete(cid);
-      logger.debug(`[mux] sub connection(cid=${cid}) closed by protocol`);
+      logger.debug(`[mux] sub connection(cid=${cid}) closed by protocol, ` +
+        `remains ${muxRelay.__associateRelays.size} sub connections in mux connection(id=${muxRelay.id})`
+      );
     }
     // else {
     //   logger.warn(`[mux] fail to close sub connection, no such sub connection: cid=${cid}`);
