@@ -108,8 +108,11 @@ export class Hub {
         port: __LOCAL_PORT__
       };
       server.on('proxyConnection', this._onConnection);
-      server.listen(address, () => resolve(server));
-      logger.info(`[hub-${this._wkId}] blinksocks client is running at ${__LOCAL_PROTOCOL__}://${__LOCAL_HOST__}:${__LOCAL_PORT__}`);
+      server.listen(address, () => {
+        const service = `${__LOCAL_PROTOCOL__}://${__LOCAL_HOST__}:${__LOCAL_PORT__}`;
+        logger.info(`[hub-${this._wkId}] blinksocks client is running at ${service}`);
+        resolve(server);
+      });
     });
   }
 
@@ -119,11 +122,16 @@ export class Hub {
         host: __LOCAL_HOST__,
         port: __LOCAL_PORT__
       };
+      const onListening = (server) => {
+        const service = `${__LOCAL_PROTOCOL__}://${__LOCAL_HOST__}:${__LOCAL_PORT__}`;
+        logger.info(`[hub-${this._wkId}] blinksocks server is running at ${service}`);
+        resolve(server);
+      };
       switch (__LOCAL_PROTOCOL__) {
         case 'tcp': {
           const server = net.createServer();
           server.on('connection', this._onConnection);
-          server.listen(address, () => resolve(server));
+          server.listen(address, () => onListening(server));
           break;
         }
         case 'ws': {
@@ -136,19 +144,18 @@ export class Hub {
             ws.remotePort = req.connection.remotePort;
             this._onConnection(ws);
           });
-          server.on('listening', () => resolve(server));
+          server.on('listening', () => onListening(server));
           break;
         }
         case 'tls': {
           const server = tls.createServer({key: [__TLS_KEY__], cert: [__TLS_CERT__]});
           server.on('secureConnection', this._onConnection);
-          server.listen(address, () => resolve(server));
+          server.listen(address, () => onListening(server));
           break;
         }
         default:
           return reject(Error(`unsupported protocol: "${__LOCAL_PROTOCOL__}"`));
       }
-      logger.info(`[hub-${this._wkId}] blinksocks server is running at ${__LOCAL_PROTOCOL__}://${__LOCAL_HOST__}:${__LOCAL_PORT__}`);
     });
   }
 
@@ -210,9 +217,11 @@ export class Hub {
         })(server.send);
       }
 
-      server.bind({address: __LOCAL_HOST__, port: __LOCAL_PORT__}, () => resolve(server));
-
-      logger.info(`[hub-${this._wkId}] blinksocks udp server is running at udp://${__LOCAL_HOST__}:${__LOCAL_PORT__}`);
+      server.bind({address: __LOCAL_HOST__, port: __LOCAL_PORT__}, () => {
+        const service = `udp://${__LOCAL_HOST__}:${__LOCAL_PORT__}`;
+        logger.info(`[hub-${this._wkId}] blinksocks udp server is running at ${service}`);
+        resolve(server);
+      });
     });
   }
 
