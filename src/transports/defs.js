@@ -4,19 +4,23 @@ import EventEmitter from 'events';
 // .on('updatePresets')
 class Bound extends EventEmitter {
 
-  _remoteInfo = null;
+  _ctx = null;
 
-  constructor({remoteInfo}) {
+  constructor({context}) {
     super();
-    this._remoteInfo = remoteInfo;
+    this._ctx = context;
+  }
+
+  get ctx() {
+    return this._ctx;
   }
 
   get remoteHost() {
-    return this._remoteInfo.host;
+    return this.ctx.remoteInfo.host;
   }
 
   get remotePort() {
-    return this._remoteInfo.port;
+    return this.ctx.remoteInfo.port;
   }
 
   get remote() {
@@ -39,6 +43,10 @@ class Bound extends EventEmitter {
 
   }
 
+  end() {
+
+  }
+
   close() {
 
   }
@@ -47,18 +55,15 @@ class Bound extends EventEmitter {
     this.emit('updatePresets', value);
   }
 
+  broadcast(action) {
+    !this.ctx.pipe.destroyed && this.ctx.pipe.broadcast('pipe', action);
+  }
+
 }
 
 export class Inbound extends Bound {
 
   _outbound = null; // set by relay
-
-  _pipe = null;
-
-  constructor(props) {
-    super(props);
-    this._pipe = props.pipe;
-  }
 
   setOutbound(outbound) {
     this._outbound = outbound;
@@ -68,25 +73,11 @@ export class Inbound extends Bound {
     return this._outbound;
   }
 
-  broadcast(action) {
-    !this._pipe.destroyed && this._pipe.broadcast('pipe', action);
-  }
-
 }
 
 export class Outbound extends Bound {
 
   _inbound = null; // set by relay
-
-  _pipe = null;
-
-  _dnsCache = null;
-
-  constructor(props) {
-    super(props);
-    this._pipe = props.pipe;
-    this._dnsCache = props.dnsCache;
-  }
 
   setInbound(inbound) {
     this._inbound = inbound;
@@ -94,10 +85,6 @@ export class Outbound extends Bound {
 
   getInbound() {
     return this._inbound;
-  }
-
-  broadcast(action) {
-    !this._pipe.destroyed && this._pipe.broadcast('pipe', action);
   }
 
 }

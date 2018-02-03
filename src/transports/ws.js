@@ -57,7 +57,7 @@ export class WsOutbound extends TcpOutbound {
   }
 
   async _connect({host, port}) {
-    logger.info(`[${this.name}] [${this.remote}] connecting to: ws://${host}:${port}`);
+    logger.info(`[${this.name}] [${this.remote}] connecting to ws://${host}:${port}`);
     const socket = new WebSocket(`ws://${host}:${port}`, {perMessageDeflate: false});
     socket.on('message', this.onReceive);
     socket.on('close', () => socket.destroyed = true);
