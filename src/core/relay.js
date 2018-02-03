@@ -127,7 +127,7 @@ export class Relay extends EventEmitter {
 
   onBoundClose(thisBound, anotherBound) {
     if (anotherBound.__closed) {
-      if (!this._pipe.destroyed) {
+      if (this._pipe && !this._pipe.destroyed) {
         this._pipe.broadcast('pipe', {type: CONNECTION_CLOSED, payload: this._remoteInfo});
       }
       this.destroy();

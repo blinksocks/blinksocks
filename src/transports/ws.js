@@ -8,6 +8,7 @@ function patchWebsocket(ws) {
     mask: false,
     fin: true // send data out immediately
   }, () => this.emit('drain'));
+  ws.end = () => ws.close();
   ws.destroy = () => ws.close();
   ws.setTimeout = (/* timeout */) => {
     // TODO: timeout mechanism for websocket.
