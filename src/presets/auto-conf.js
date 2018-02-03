@@ -13,7 +13,7 @@ import {
   getCurrentTimestampInt,
   EVP_BytesToKey
 } from '../utils';
-import {PIPE_DECODE, PIPE_ENCODE} from '../core/middleware';
+import {PIPE_DECODE, PIPE_ENCODE} from '../constants';
 
 const readFile = promisify(fs.readFile);
 const MAX_TIME_DIFF = 30; // seconds

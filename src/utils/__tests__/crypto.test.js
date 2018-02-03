@@ -1,5 +1,13 @@
 import * as __module__ from '../crypto';
 
+test('randomBytes', () => {
+  const randomBytes = __module__.randomBytes;
+  expect(randomBytes(1).length).toBe(1);
+  expect(randomBytes(1023).length).toBe(1023);
+  expect(randomBytes(1024).length).toBe(1024);
+  expect(randomBytes(1025).length).toBe(1025);
+});
+
 const tests = [{
   func: 'hash',
   args: ['md5', Buffer.from([1, 2, 3, 4])],

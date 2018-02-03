@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import * as crypto from './crypto';
 
 export const BYTE_ORDER_BE = 0;
 export const BYTE_ORDER_LE = 1;

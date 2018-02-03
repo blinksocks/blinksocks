@@ -4,13 +4,11 @@ import net from 'net';
 import tls from 'tls';
 import ws from 'ws';
 import LRU from 'lru-cache';
-import uniqueId from 'lodash.uniqueid';
-import * as MiddlewareManager from './middleware';
 import {Balancer} from './balancer';
 import {Config} from './config';
-import {Multiplexer} from './multiplexer';
 import {Relay} from './relay';
-import {dumpHex, logger} from '../utils';
+import {MuxRelay} from './mux-relay';
+import {dumpHex, getRandomInt, logger} from '../utils';
 import {http, socks, tcp} from '../proxies';
 
 export class Hub {
@@ -21,9 +19,9 @@ export class Hub {
 
   _udpServer = null;
 
-  _mux = null;
+  _tcpRelays = new Map(/* id: <Relay> */);
 
-  _tcpRelays = new Map(/* id: <relay> */);
+  _muxRelays = new Map(/* id: <MuxRelay> */);
 
   _udpRelays = null; // LRU cache
 
@@ -35,15 +33,17 @@ export class Hub {
       dispose: (key, relay) => relay.destroy(),
       maxAge: 1e5
     });
-    this._mux = new Multiplexer();
   }
 
   terminate(callback) {
     // relays
     this._udpRelays.reset();
+    if (__MUX__) {
+      this._muxRelays.forEach((relay) => relay.destroy());
+      this._muxRelays.clear();
+    }
     this._tcpRelays.forEach((relay) => relay.destroy());
     this._tcpRelays.clear();
-    MiddlewareManager.cleanup();
     // balancer
     if (__IS_CLIENT__) {
       Balancer.destroy();
@@ -108,8 +108,11 @@ export class Hub {
         port: __LOCAL_PORT__
       };
       server.on('proxyConnection', this._onConnection);
-      server.listen(address, () => resolve(server));
-      logger.info(`[hub-${this._wkId}] blinksocks client is running at ${__LOCAL_PROTOCOL__}://${__LOCAL_HOST__}:${__LOCAL_PORT__}`);
+      server.listen(address, () => {
+        const service = `${__LOCAL_PROTOCOL__}://${__LOCAL_HOST__}:${__LOCAL_PORT__}`;
+        logger.info(`[hub-${this._wkId}] blinksocks client is running at ${service}`);
+        resolve(server);
+      });
     });
   }
 
@@ -119,11 +122,16 @@ export class Hub {
         host: __LOCAL_HOST__,
         port: __LOCAL_PORT__
       };
+      const onListening = (server) => {
+        const service = `${__LOCAL_PROTOCOL__}://${__LOCAL_HOST__}:${__LOCAL_PORT__}`;
+        logger.info(`[hub-${this._wkId}] blinksocks server is running at ${service}`);
+        resolve(server);
+      };
       switch (__LOCAL_PROTOCOL__) {
         case 'tcp': {
           const server = net.createServer();
           server.on('connection', this._onConnection);
-          server.listen(address, () => resolve(server));
+          server.listen(address, () => onListening(server));
           break;
         }
         case 'ws': {
@@ -136,19 +144,18 @@ export class Hub {
             ws.remotePort = req.connection.remotePort;
             this._onConnection(ws);
           });
-          server.on('listening', () => resolve(server));
+          server.on('listening', () => onListening(server));
           break;
         }
         case 'tls': {
           const server = tls.createServer({key: [__TLS_KEY__], cert: [__TLS_CERT__]});
           server.on('secureConnection', this._onConnection);
-          server.listen(address, () => resolve(server));
+          server.listen(address, () => onListening(server));
           break;
         }
         default:
           return reject(Error(`unsupported protocol: "${__LOCAL_PROTOCOL__}"`));
       }
-      logger.info(`[hub-${this._wkId}] blinksocks server is running at ${__LOCAL_PROTOCOL__}://${__LOCAL_HOST__}:${__LOCAL_PORT__}`);
     });
   }
 
@@ -174,8 +181,11 @@ export class Hub {
         const key = `${address}:${port}`;
         let relay = relays.get(key);
         if (relay === undefined) {
-          const remoteInfo = {host: address, port: port};
-          relay = new Relay({transport: 'udp', presets: __UDP_PRESETS__, context: server, remoteInfo});
+          const context = {
+            socket: server,
+            remoteInfo: {host: address, port: port}
+          };
+          relay = this._createUdpRelay(context);
           relay.init({proxyRequest});
           relay.on('close', function onRelayClose() {
             // relays.del(key);
@@ -210,44 +220,114 @@ export class Hub {
         })(server.send);
       }
 
-      server.bind({address: __LOCAL_HOST__, port: __LOCAL_PORT__}, () => resolve(server));
-
-      logger.info(`[hub-${this._wkId}] blinksocks udp server is running at udp://${__LOCAL_HOST__}:${__LOCAL_PORT__}`);
+      server.bind({address: __LOCAL_HOST__, port: __LOCAL_PORT__}, () => {
+        const service = `udp://${__LOCAL_HOST__}:${__LOCAL_PORT__}`;
+        logger.info(`[hub-${this._wkId}] blinksocks udp server is running at ${service}`);
+        resolve(server);
+      });
     });
   }
 
-  _onConnection(context, proxyRequest = null) {
-    logger.verbose(`[hub] [${context.remoteAddress}:${context.remotePort}] connected`);
+  _onConnection(socket, proxyRequest = null) {
+    logger.verbose(`[hub] [${socket.remoteAddress}:${socket.remotePort}] connected`);
     if (__IS_CLIENT__) {
       this._switchServer();
     }
-    const remoteInfo = {host: context.remoteAddress, port: context.remotePort};
-    const relay = this._createRelay(context, remoteInfo);
-    relay.init({proxyRequest});
-    relay.id = uniqueId() | 0;
-    relay.on('close', () => this._tcpRelays.delete(relay.id));
-    this._tcpRelays.set(relay.id, relay);
+    const context = {
+      socket,
+      proxyRequest,
+      remoteInfo: {
+        host: socket.remoteAddress,
+        port: socket.remotePort
+      }
+    };
+
+    let muxRelay = null;
     if (__MUX__) {
-      __IS_CLIENT__ ? this._mux.couple({relay, remoteInfo, proxyRequest}) : this._mux.decouple({relay, remoteInfo});
+      if (__IS_CLIENT__) {
+        // get or create a mux relay
+        muxRelay = this.getMuxRelay() || this._createMuxRelay(context);
+        if (!muxRelay.isOutboundReady()) {
+          muxRelay.init({proxyRequest});
+        } else {
+          proxyRequest.onConnected();
+        }
+        // add mux relay instance to context
+        Object.assign(context, {muxRelay});
+      } else {
+        Object.assign(context, {getMuxRelay: this.getMuxRelay.bind(this)});
+      }
     }
+
+    const relay = this._createRelay(context);
+    relay.init({proxyRequest});
+    relay.on('close', () => this.onRelayClose(relay));
+
+    if (__MUX__) {
+      if (__IS_CLIENT__) {
+        muxRelay.addSubRelay(relay);
+      } else {
+        this._muxRelays.set(relay.id, relay);
+      }
+    }
+
+    this._tcpRelays.set(relay.id, relay);
   }
 
-  _createRelay(context, remoteInfo) {
+  _createRelay(context) {
     const props = {
       context: context,
-      remoteInfo: remoteInfo,
       transport: __TRANSPORT__,
       presets: __PRESETS__
     };
     if (__MUX__) {
       if (__IS_CLIENT__) {
-        return new Relay({...props, presets: []});
+        return new Relay({...props, transport: 'mux', presets: []});
       } else {
-        return new Relay({...props, isMux: true});
+        return new MuxRelay(props);
       }
     } else {
       return new Relay(props);
     }
+  }
+
+  _createUdpRelay(context) {
+    return new Relay({transport: 'udp', context, presets: __UDP_PRESETS__});
+  }
+
+  // client only
+  _createMuxRelay(context) {
+    const relay = new MuxRelay({transport: __TRANSPORT__, context, presets: __PRESETS__});
+    relay.on('close', () => this.onRelayClose(relay));
+    this._muxRelays.set(relay.id, relay);
+    logger.info(`[mux-${relay.id}] create mux connection, total: ${this._muxRelays.size}`);
+    return relay;
+  }
+
+  getMuxRelay() {
+    const relays = this._muxRelays;
+    const concurrency = relays.size;
+    if (concurrency < 1) {
+      return null;
+    }
+    if (__IS_CLIENT__ && concurrency < __MUX_CONCURRENCY__ && getRandomInt(0, 1) === 0) {
+      return null;
+    }
+    return relays.get([...relays.keys()][getRandomInt(0, concurrency - 1)]);
+  }
+
+  onRelayClose(relay) {
+    if (relay instanceof MuxRelay) {
+      relay.destroy();
+    }
+    if (__MUX__ && __IS_CLIENT__) {
+      const ctx = relay.getContext();
+      if (ctx && ctx.muxRelay) {
+        ctx.muxRelay.destroySubRelay(relay.id);
+      }
+    }
+    this._tcpRelays.delete(relay.id);
+    this._muxRelays.delete(relay.id);
   }
 
   _switchServer() {

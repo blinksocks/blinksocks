@@ -1,6 +1,6 @@
 import dgram from 'dgram';
 import {Inbound, Outbound} from './defs';
-import {PIPE_ENCODE, PIPE_DECODE} from '../core';
+import {PIPE_ENCODE, PIPE_DECODE} from '../constants';
 import {CONNECT_TO_REMOTE, CONNECTION_CLOSED, PRESET_FAILED} from '../presets';
 import {logger} from '../utils';
 
@@ -12,16 +12,15 @@ export class UdpInbound extends Inbound {
 
   constructor(props) {
     super(props);
-    const {context} = props;
     this.onReceive = this.onReceive.bind(this);
     this.onPresetFailed = this.onPresetFailed.bind(this);
-    this._socket = context;
+    this._socket = this.ctx.socket;
   }
 
   onReceive(buffer, rinfo) {
     const type = __IS_CLIENT__ ? PIPE_ENCODE : PIPE_DECODE;
     this._rinfo = rinfo;
-    this._pipe.feed(type, buffer);
+    this.ctx.pipe.feed(type, buffer);
   }
 
   onBroadcast(action) {
@@ -53,7 +52,7 @@ export class UdpInbound extends Inbound {
       }
     };
     if (__IS_CLIENT__) {
-      const isSs = this._pipe.presets.some(({name}) => ['ss-base'].includes(name));
+      const isSs = this.ctx.pipe.presets.some(({name}) => ['ss-base'].includes(name));
       this._socket.send(buffer, port, address, isSs, onSendError);
     } else {
       this._socket.send(buffer, port, address, onSendError);
@@ -87,7 +86,7 @@ export class UdpOutbound extends Outbound {
 
   onReceive(buffer) {
     const type = __IS_CLIENT__ ? PIPE_DECODE : PIPE_ENCODE;
-    this._pipe.feed(type, buffer);
+    this.ctx.pipe.feed(type, buffer);
   }
 
   onBroadcast(action) {

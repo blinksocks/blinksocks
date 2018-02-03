@@ -1,6 +1,39 @@
 import crypto from 'crypto';
 import sha3 from 'js-sha3';
 
+const RANDOM_BYTES_POOL_SIZE = 1024;
+const randomBytesPool = crypto.randomBytes(RANDOM_BYTES_POOL_SIZE);
+
+let randptr = 0;
+
+function _refillRandomBytesPool() {
+  randomBytesPool.fill(crypto.randomBytes(RANDOM_BYTES_POOL_SIZE));
+  randptr = 0;
+}
+
+/**
+ * fast random bytes generator
+ * @param len
+ * @returns {Buffer}
+ */
+export function randomBytes(len) {
+  const start = randptr;
+  const end = randptr + len;
+  let bytes = null;
+  if (end < RANDOM_BYTES_POOL_SIZE) {
+    bytes = randomBytesPool.slice(start, end);
+    randptr += len;
+  } else if (end > RANDOM_BYTES_POOL_SIZE) {
+    const extra = crypto.randomBytes(end - RANDOM_BYTES_POOL_SIZE);
+    bytes = Buffer.concat([randomBytesPool.slice(start), extra]);
+    _refillRandomBytesPool();
+  } else {
+    bytes = randomBytesPool.slice(start);
+    _refillRandomBytesPool();
+  }
+  return bytes;
+}
+
 /**
  * message digest
  * @param algorithm

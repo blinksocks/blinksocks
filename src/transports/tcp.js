@@ -1,6 +1,6 @@
 import net from 'net';
 import {Inbound, Outbound} from './defs';
-import {PIPE_ENCODE, PIPE_DECODE} from '../core';
+import {MAX_BUFFERED_SIZE, PIPE_ENCODE, PIPE_DECODE} from '../constants';
 import {logger, getRandomInt} from '../utils';
 import {
   CONNECT_TO_REMOTE,
@@ -10,10 +10,8 @@ import {
   PRESET_PAUSE_RECV,
   PRESET_PAUSE_SEND,
   PRESET_RESUME_RECV,
-  PRESET_RESUME_SEND
+  PRESET_RESUME_SEND,
 } from '../presets/defs';
-
-const MAX_BUFFERED_SIZE = 512 * 1024; // 512KB
 
 export class TcpInbound extends Inbound {
 
@@ -23,17 +21,17 @@ export class TcpInbound extends Inbound {
 
   constructor(props) {
     super(props);
-    const {context} = props;
     this.onError = this.onError.bind(this);
     this.onReceive = this.onReceive.bind(this);
+    this.onDrain = this.onDrain.bind(this);
     this.onTimeout = this.onTimeout.bind(this);
     this.onHalfClose = this.onHalfClose.bind(this);
     this.onClose = this.onClose.bind(this);
-    if (context) {
-      this._socket = context;
+    if (this.ctx.socket) {
+      this._socket = this.ctx.socket;
       this._socket.on('error', this.onError);
       this._socket.on('data', this.onReceive);
-      this._socket.on('drain', () => this.emit('drain'));
+      this._socket.on('drain', this.onDrain);
       this._socket.on('timeout', this.onTimeout);
       this._socket.on('end', this.onHalfClose);
       this._socket.on('close', this.onClose);
@@ -65,20 +63,25 @@ export class TcpInbound extends Inbound {
 
   onReceive(buffer) {
     const direction = __IS_CLIENT__ ? PIPE_ENCODE : PIPE_DECODE;
-    this._pipe.feed(direction, buffer);
+    this.ctx.pipe.feed(direction, buffer);
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
     // https://nodejs.org/dist/latest/docs/api/net.html#net_socket_buffersize
-    if (this._outbound && this._outbound.bufferSize >= MAX_BUFFERED_SIZE) {
-      logger.debug(`[${this.name}] recv paused due to outbound.bufferSize=${this._outbound.bufferSize} > ${MAX_BUFFERED_SIZE}`);
+    const outbound = this.getOutbound();
+    if (outbound && outbound.bufferSize >= MAX_BUFFERED_SIZE) {
+      logger.debug(`[${this.name}] [${this.remote}] recv paused due to outbound.bufferSize=${outbound.bufferSize} >= ${MAX_BUFFERED_SIZE}`);
       this._socket.pause();
-      this._outbound.once('drain', () => {
+      outbound.once('drain', () => {
         if (this._socket && !this._socket.destroyed) {
-          logger.debug(`[${this.name}] resume to recv`);
+          logger.debug(`[${this.name}] [${this.remote}] resume to recv`);
           this._socket.resume();
         }
       });
     }
+  }
+
+  onDrain() {
+    this.emit('drain');
   }
 
   onTimeout() {
@@ -205,6 +208,7 @@ export class TcpOutbound extends Outbound {
     super(props);
     this.onError = this.onError.bind(this);
     this.onReceive = this.onReceive.bind(this);
+    this.onDrain = this.onDrain.bind(this);
     this.onTimeout = this.onTimeout.bind(this);
     this.onHalfClose = this.onHalfClose.bind(this);
     this.onClose = this.onClose.bind(this);
@@ -234,20 +238,25 @@ export class TcpOutbound extends Outbound {
 
   onReceive(buffer) {
     const direction = __IS_CLIENT__ ? PIPE_DECODE : PIPE_ENCODE;
-    this._pipe.feed(direction, buffer);
+    this.ctx.pipe.feed(direction, buffer);
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
     // https://nodejs.org/dist/latest/docs/api/net.html#net_socket_buffersize
-    if (this._inbound && this._inbound.bufferSize >= MAX_BUFFERED_SIZE) {
-      logger.debug(`[${this.name}] recv paused due to inbound.bufferSize=${this._inbound.bufferSize} > ${MAX_BUFFERED_SIZE}`);
+    const inbound = this.getInbound();
+    if (inbound && inbound.bufferSize >= MAX_BUFFERED_SIZE) {
+      logger.debug(`[${this.name}] [${this.remote}] recv paused due to inbound.bufferSize=${inbound.bufferSize} >= ${MAX_BUFFERED_SIZE}`);
       this._socket.pause();
-      this._inbound.once('drain', () => {
+      inbound.once('drain', () => {
         if (this._socket && !this._socket.destroyed) {
-          logger.debug(`[${this.name}] resume to recv`);
+          logger.debug(`[${this.name}] [${this.remote}]  resume to recv`);
           this._socket.resume();
         }
       });
     }
+  }
+
+  onDrain() {
+    this.emit('drain');
   }
 
   onTimeout() {
@@ -320,14 +329,14 @@ export class TcpOutbound extends Outbound {
           if (typeof onConnected === 'function') {
             onConnected(this._inbound.onReceive);
           }
-          this._pipe.broadcast(null, {type: CONNECTED_TO_REMOTE, payload: {host, port}});
+          this.ctx.pipe.broadcast(null, {type: CONNECTED_TO_REMOTE, payload: {host, port}});
         });
       } catch (err) {
         logger.warn(`[${this.name}] [${this.remote}] cannot connect to ${host}:${port},`, err);
         this.onClose();
       }
     } else {
-      this._pipe.broadcast(null, {type: CONNECTED_TO_REMOTE, payload: {host, port}});
+      this.ctx.pipe.broadcast(null, {type: CONNECTED_TO_REMOTE, payload: {host, port}});
     }
   }
 
@@ -350,13 +359,13 @@ export class TcpOutbound extends Outbound {
     this._socket.on('close', this.onClose);
     this._socket.on('timeout', this.onTimeout);
     this._socket.on('data', this.onReceive);
-    this._socket.on('drain', () => this.emit('drain'));
+    this._socket.on('drain', this.onDrain);
     this._socket.setTimeout(__TIMEOUT__);
   }
 
   async _connect({host, port}) {
-    const ip = await this._dnsCache.get(host);
-    logger.info(`[${this.name}] [${this.remote}] connecting to: ${host}:${port} resolve=${ip}`);
+    const ip = await this.ctx.dnsCache.get(host);
+    logger.info(`[${this.name}] [${this.remote}] connecting to tcp://${host}:${port} resolve=${ip}`);
     return net.connect({host: ip, port});
   }
 

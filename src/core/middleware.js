@@ -1,5 +1,6 @@
 import EventEmitter from 'events';
 import {getPresetClassByName, IPresetStatic} from '../presets';
+import {PIPE_ENCODE} from '../constants';
 import {kebabCase} from '../utils';
 
 const staticPresetCache = new Map(/* 'ClassName': <preset> */);
@@ -24,9 +25,6 @@ function createPreset(name, params = {}) {
   }
   return preset;
 }
-
-export const PIPE_ENCODE = 1;
-export const PIPE_DECODE = -1;
 
 /**
  * abstraction of middleware
@@ -122,13 +120,4 @@ export class Middleware extends EventEmitter {
     }
   }
 
-}
-
-/**
- * destroy cached presets when program exit()
- */
-export function cleanup() {
-  for (const preset of staticPresetCache.values()) {
-    preset.onDestroy();
-  }
 }

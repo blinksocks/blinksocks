@@ -177,7 +177,7 @@ export default class SsrAuthAes128Preset extends IPreset {
 
   createChunks(buffer) {
     const userKey = this._userKey;
-    return getRandomChunks(buffer, 0x1fff - 0xff - 8 - 1, 0x2000 - 0xff - 8 - 1).map((payload) => {
+    return getRandomChunks(buffer, 0x1fff - 0xff - 8 - 3, 0x2000 - 0xff - 8 - 3).map((payload) => {
       const [first, len] = crypto.randomBytes(2);
       let random_bytes = null;
       if (first < 128) {
