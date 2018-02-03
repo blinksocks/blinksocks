@@ -20,13 +20,13 @@ To take over data send and receive of applications, blinksocks implemented socks
 ## Hub
 
 ```
-  +----------+                           +-----------+     +-------------+
-  |  Conn_1  |<---+                 +--->|  Relay_1  |     |             |
-  +----------+    |    +-------+    |    +-----------+     | Multiplexer |
-  |   ...    |<---+--->|  Hub  |<---+--->|    ...    |<--->|             |
-  +----------+    |    +-------+    |    +-----------+     |  (optional) |
-  |  Conn_N  |<---+                 +--->|  Relay_N  |     |             |
-  +----------+                           +-----------+     +-------------+
+  +----------+                           +-----------+
+  |  Conn_1  |<---+                 +--->|  Relay_1  |
+  +----------+    |    +-------+    |    +-----------+
+  |   ...    |<---+--->|  Hub  |<---+--->|    ...    |
+  +----------+    |    +-------+    |    +-----------+
+  |  Conn_N  |<---+                 +--->|  Relay_N  |
+  +----------+                           +-----------+
 ```
 
 `Hub` gathers connections from apps or clients, for each connection, it also creates an associate relay.

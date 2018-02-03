@@ -1,4 +1,6 @@
-# Suites (Dynamic Protocol Stack)
+# Dynamic Protocol Stack
+
+> Please note that this feature is incompatible with [multiplexing].
 
 Like TLS cipher suite negotiation, blinksocks uses [auto-conf] to dynamic switch protocol stack once connection established.
 
@@ -35,6 +37,7 @@ High-performance protocols for [TLS] transport.
 
 Please pay attention to the updates of suites you use. Any changes to the json file requires **synchronization** and **restart** on both client and server.
 
+[multiplexing]: ../docs/config#multiplexing
 [auto-conf]: ../docs/presets#auto-conf
 [TLS]: ../docs/config#blinksocks-over-tls
 [suites-0.json]: ./suites-0.json

@@ -175,7 +175,7 @@ Although data sent from client is masked(according to [RFC-6455]), you should ad
 
 ### Multiplexing
 
-Since blinksocks v2.9.0, we support multiplexing over TCP/TLS/WS. You can enable this feature easily by setting `mux: true` on both client and server.
+Since blinksocks v2.9.0, blinksocks supports TCP/TLS/WS multiplexing. You can enable this feature easily by setting `mux: true` on both client and server, and specify the max concurrency in `mux_concurrency: <number>` on client.
 
 1. Server config
 
