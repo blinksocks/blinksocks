@@ -1,5 +1,38 @@
 #  Change Log
 
+## 2.9.0 (2018-02-03)
+
+> TCP/TLS/WS [multiplexing](docs/config#multiplexing) is introduced in this version. :sparkles:
+
+### :boom: Breaking Changes:
+
+- presets: remove base-auth-stream and base-with-padding.
+- config: remove "dstaddr", use uri querystring "?forward" instead.
+
+### :rocket: Features & Improvements
+
+- core: add mux-relay.
+- benchmark: archive reports of 2017.
+- package: upgrade pkg to v4.3.0.
+- package: compile before running benchmark.
+- presets: add mux preset.
+- transports: refactor and optimize websocket transport.
+- transports: add this.ctx.
+- transports: add mux transport.
+- utils: add a faster version of crypto.randomBytes().
+
+### :bug: Bug Fixes:
+
+- proxies: fix crash when client reset the socks connection later.
+- utils: fix getRandomInt().
+- utils: remove generateMutexId().
+
+### Upgrade from 2.8.5 to 2.9.0
+
+```
+$ npm install -g blinksocks@2.9.0
+```
+
 ## 2.8.5 (2017-12-13)
 
 ### :rocket: Features & Improvements
