@@ -15,15 +15,17 @@ function makeConfs(presets) {
     "service": "tcp://localhost:1082",
     "key": "JJ9,$!.!sRG==v7$",
     "presets": presets,
-    // "tls_key": "key.pem",
-    // "tls_cert": "cert.pem"
-    "log_level": "error"
+    "tls_key": "key.pem",
+    "tls_cert": "cert.pem",
+    "log_level": "error",
+    "mux": false,
+    "mux_concurrency": 10,
   };
   const clientConf = {
     "service": "tcp://127.0.0.1:1081?forward=127.0.0.1:1083",
-    // "tls_cert": "cert.pem"
+    "tls_cert": "cert.pem",
     "servers": [Object.assign({}, serverConf, {"enabled": true})],
-    "log_level": "error"
+    "log_level": "error",
   };
   return [clientConf, serverConf];
 }
