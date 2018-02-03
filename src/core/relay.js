@@ -1,4 +1,5 @@
 import EventEmitter from 'events';
+import uniqueId from 'lodash.uniqueid';
 import {Pipe} from './pipe';
 import {DNSCache} from './dns-cache';
 import {PIPE_ENCODE, PIPE_DECODE} from '../constants';
@@ -8,7 +9,8 @@ import {
   TcpInbound, TcpOutbound,
   UdpInbound, UdpOutbound,
   TlsInbound, TlsOutbound,
-  WsInbound, WsOutbound
+  WsInbound, WsOutbound,
+  MuxInbound, MuxOutbound,
 } from '../transports';
 
 import {
@@ -17,56 +19,26 @@ import {
   CONNECTION_CLOSED,
   CONNECTION_WILL_CLOSE,
   CHANGE_PRESET_SUITE,
-  MUX_NEW_CONN,
-  MUX_DATA_FRAME,
-  MUX_CLOSE_CONN
 } from '../presets/defs';
 
 /**
- * get Inbound and Outbound classes by transport
- * @param transport
- * @returns {{Inbound: *, Outbound: *}}
+ * [client side]
+ * app <==> (TcpInbound) relay (MuxOutbound)
+ *     <==> (MuxInbound) muxRelay (TcpOutbound, ...) <--->
+ *
+ * [server side]
+ *     <---> (TcpInbound, ...) muxRelay (MuxOutbound) <==>
+ *           (MuxInbound) relay (TcpOutbound) <==> app
  */
-function getBounds(transport) {
-  const mapping = {
-    'tcp': [TcpInbound, TcpOutbound],
-    'udp': [UdpInbound, UdpOutbound],
-    'tls': [TlsInbound, TlsOutbound],
-    'ws': [WsInbound, WsOutbound]
-  };
-  let Inbound = null;
-  let Outbound = null;
-  if (transport === 'udp') {
-    [Inbound, Outbound] = [UdpInbound, UdpOutbound];
-  } else {
-    [Inbound, Outbound] = __IS_CLIENT__ ? [TcpInbound, mapping[transport][1]] : [mapping[transport][0], TcpOutbound];
-  }
-  return {Inbound, Outbound};
-}
-
-/**
- * set properties to target object
- * @param target
- * @param props
- */
-function setProperties(target, props = {}) {
-  const propNames = Object.keys(props);
-  for (const name of propNames) {
-    Object.defineProperty(target, name, {value: props[name]});
-  }
-}
 
 // .on('close')
-// .on('encode')
-// .on('decode')
-// .on('muxNewConn')
-// .on('muxDataFrame')
-// .on('muxCloseConn')
 export class Relay extends EventEmitter {
 
-  _transport = null;
+  id = null;
 
-  _isMux = false;
+  _ctx = null;
+
+  _transport = null;
 
   _remoteInfo = null;
 
@@ -82,28 +54,38 @@ export class Relay extends EventEmitter {
 
   _destroyed = false;
 
-  constructor({transport, remoteInfo, context = null, presets = [], isMux = false}) {
+  constructor({transport, context, presets = []}) {
     super();
     this.updatePresets = this.updatePresets.bind(this);
     this.onBroadcast = this.onBroadcast.bind(this);
     this.onEncoded = this.onEncoded.bind(this);
     this.onDecoded = this.onDecoded.bind(this);
+    this.id = uniqueId() | 0;
     this._transport = transport;
-    this._isMux = isMux;
-    this._remoteInfo = remoteInfo;
+    this._remoteInfo = context.remoteInfo;
     // pipe
     this._presets = this.preparePresets(presets);
     this._pipe = this.createPipe(this._presets);
+    this._ctx = {
+      cid: this.id,
+      pipe: this._pipe,
+      dnsCache: new DNSCache({expire: __DNS_EXPIRE__}),
+      thisRelay: this,
+      ...context,
+    };
+    // bounds
+    const {Inbound, Outbound} = this.getBounds(transport);
+    const inbound = new Inbound({context: this._ctx});
+    const outbound = new Outbound({context: this._ctx});
+    this._inbound = inbound;
+    this._outbound = outbound;
     // outbound
-    const {Inbound, Outbound} = getBounds(transport);
-    this._inbound = new Inbound({context, remoteInfo, pipe: this._pipe});
-    this._outbound = new Outbound({remoteInfo, pipe: this._pipe, dnsCache: new DNSCache({expire: __DNS_EXPIRE__})});
     this._outbound.setInbound(this._inbound);
-    this._outbound.on('close', () => this.onBoundClose(this._outbound, this._inbound));
+    this._outbound.on('close', () => this.onBoundClose(outbound, inbound));
     this._outbound.on('updatePresets', this.updatePresets);
     // inbound
     this._inbound.setOutbound(this._outbound);
-    this._inbound.on('close', () => this.onBoundClose(this._inbound, this._outbound));
+    this._inbound.on('close', () => this.onBoundClose(inbound, outbound));
     this._inbound.on('updatePresets', this.updatePresets);
   }
 
@@ -119,6 +101,28 @@ export class Relay extends EventEmitter {
         payload: proxyRequest
       });
     }
+  }
+
+  /**
+   * get Inbound and Outbound classes by transport
+   * @param transport
+   * @returns {{Inbound: *, Outbound: *}}
+   */
+  getBounds(transport) {
+    const mapping = {
+      'tcp': [TcpInbound, TcpOutbound],
+      'udp': [UdpInbound, UdpOutbound],
+      'tls': [TlsInbound, TlsOutbound],
+      'ws': [WsInbound, WsOutbound],
+      'mux': [MuxInbound, MuxOutbound],
+    };
+    let Inbound = null, Outbound = null;
+    if (transport === 'udp') {
+      [Inbound, Outbound] = [UdpInbound, UdpOutbound];
+    } else {
+      [Inbound, Outbound] = __IS_CLIENT__ ? [TcpInbound, mapping[transport][1]] : [mapping[transport][0], TcpOutbound];
+    }
+    return {Inbound, Outbound};
   }
 
   onBoundClose(thisBound, anotherBound) {
@@ -146,12 +150,8 @@ export class Relay extends EventEmitter {
     return this._inbound;
   }
 
-  getLoad(type = PIPE_ENCODE) {
-    if (type === PIPE_ENCODE) {
-      return this._outbound.bufferSize;
-    } else {
-      return this._inbound.bufferSize;
-    }
+  getContext() {
+    return this._ctx;
   }
 
   // hooks of pipe
@@ -159,26 +159,11 @@ export class Relay extends EventEmitter {
   onBroadcast(action) {
     const type = action.type;
     if (__MUX__ && this._transport !== 'udp') {
-      switch (type) {
-        case CONNECT_TO_REMOTE:
-          if (__IS_CLIENT__ && !this._isMux) {
-            const remote = `${this._remoteInfo.host}:${this._remoteInfo.port}`;
-            const target = `${action.payload.host}:${action.payload.port}`;
-            logger.info(`[relay] [${remote}] request(over mux): ${target}`);
-            return;
-          }
-          if (__IS_SERVER__ && this._isMux) {
-            return;
-          }
-          break;
-        case MUX_NEW_CONN:
-          return this.emit('muxNewConn', action.payload);
-        case MUX_DATA_FRAME:
-          return this.emit('muxDataFrame', action.payload);
-        case MUX_CLOSE_CONN:
-          return this.emit('muxCloseConn', action.payload);
-        default:
-          break;
+      if (__IS_CLIENT__ && type === CONNECT_TO_REMOTE) {
+        const remote = `${this._remoteInfo.host}:${this._remoteInfo.port}`;
+        const target = `${action.payload.host}:${action.payload.port}`;
+        logger.info(`[relay] [${remote}] request over mux(id=${this._ctx.muxRelay.id}): ${target}`);
+        return;
       }
     }
     if (type === CHANGE_PRESET_SUITE) {
@@ -215,26 +200,18 @@ export class Relay extends EventEmitter {
   }
 
   onEncoded(buffer) {
-    if (this.hasListener('encode')) {
-      this.emit('encode', buffer);
+    if (__IS_CLIENT__) {
+      this._outbound.write(buffer);
     } else {
-      if (__IS_CLIENT__) {
-        this._outbound.write(buffer);
-      } else {
-        this._inbound.write(buffer);
-      }
+      this._inbound.write(buffer);
     }
   }
 
   onDecoded(buffer) {
-    if (this.hasListener('decode')) {
-      this.emit('decode', buffer);
+    if (__IS_CLIENT__) {
+      this._inbound.write(buffer);
     } else {
-      if (__IS_CLIENT__) {
-        this._inbound.write(buffer);
-      } else {
-        this._outbound.write(buffer);
-      }
+      this._outbound.write(buffer);
     }
   }
 
@@ -260,28 +237,15 @@ export class Relay extends EventEmitter {
     return this._outbound && this._outbound.writable;
   }
 
-  setPropsForInbound(props) {
-    setProperties(this._inbound, props);
-  }
-
-  setPropsForOutbound(props) {
-    setProperties(this._outbound, props);
-  }
-
   /**
    * preprocess preset list
    * @param presets
    * @returns {[]}
    */
   preparePresets(presets) {
-    const first = presets[0];
     const last = presets[presets.length - 1];
-    // add mux preset to the top if it's a mux relay
-    if (this._isMux && (!first || first.name !== 'mux')) {
-      presets = [{'name': 'mux'}].concat(presets);
-    }
     // add at least one "tracker" preset to the list
-    if (!this._isMux && (!last || last.name !== 'tracker')) {
+    if (!last || last.name !== 'tracker') {
       presets = presets.concat([{'name': 'tracker'}]);
     }
     return presets;
@@ -315,6 +279,7 @@ export class Relay extends EventEmitter {
       this._pipe && this._pipe.destroy();
       this._inbound && this._inbound.close();
       this._outbound && this._outbound.close();
+      this._ctx = null;
       this._pipe = null;
       this._inbound = null;
       this._outbound = null;

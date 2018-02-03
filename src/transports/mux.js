@@ -16,7 +16,7 @@ export class MuxInbound extends Inbound {
 
   get bufferSize() {
     if (__IS_CLIENT__) {
-      let totalBufferSize = 0;
+      const totalBufferSize = 0;
       // const subRelays = this.ctx.thisRelay.getSubRelays();
       // if (subRelays) {
       //   for (const relay of subRelays.values()) {
@@ -115,7 +115,7 @@ export class MuxOutbound extends Outbound {
         return 0;
       }
     } else {
-      let totalBufferSize = 0;
+      const totalBufferSize = 0;
       // const subRelays = this.ctx.thisRelay.getSubRelays();
       // if (subRelays) {
       //   for (const relay of subRelays.values()) {

@@ -121,12 +121,3 @@ export class Middleware extends EventEmitter {
   }
 
 }
-
-/**
- * destroy cached presets when program exit()
- */
-export function cleanup() {
-  for (const preset of staticPresetCache.values()) {
-    preset.onDestroy();
-  }
-}

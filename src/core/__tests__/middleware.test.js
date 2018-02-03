@@ -1,4 +1,4 @@
-import {Middleware, cleanup} from '../middleware';
+import {Middleware} from '../middleware';
 
 test('Middleware#constructor', () => {
   expect(() => new Middleware({'name': 'unknown-preset'})).toThrow();
@@ -20,8 +20,4 @@ test('Middleware#onPresetNext', () => {
 test('Middleware#getImplement', () => {
   const middleware = new Middleware({'name': 'ss-base'});
   expect(middleware.getImplement()).toBeDefined();
-});
-
-test('cleanup', () => {
-  expect(() => cleanup()).not.toThrow();
 });
