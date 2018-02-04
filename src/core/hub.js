@@ -242,15 +242,21 @@ export class Hub {
       }
     };
 
-    let muxRelay = null;
+    let muxRelay = null, cid = null;
     if (__MUX__) {
       if (__IS_CLIENT__) {
         // get or create a mux relay
         muxRelay = this.getMuxRelay() || this._createMuxRelay(context);
-        if (!muxRelay.isOutboundReady()) {
-          muxRelay.init({proxyRequest});
+        if (muxRelay.isOutboundReady()) {
+          proxyRequest.onConnected((buffer) => {
+            // this callback is used for "http" proxy method on client side
+            if (buffer) {
+              muxRelay.encode(buffer, {...proxyRequest, cid});
+            }
+          });
         } else {
-          proxyRequest.onConnected();
+          proxyRequest.cid = cid;
+          muxRelay.init({proxyRequest});
         }
         // add mux relay instance to context
         Object.assign(context, {muxRelay});
