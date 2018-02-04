@@ -159,7 +159,7 @@ export class TcpInbound extends Inbound {
     }
 
     // for server side, redirect traffic if "redirect" is set, otherwise, close connection after a random timeout
-    if (__IS_SERVER__) {
+    if (__IS_SERVER__ && !__MUX__) {
       if (__REDIRECT__) {
         const {orgData} = action.payload;
         const [host, port] = __REDIRECT__.split(':');
