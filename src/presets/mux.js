@@ -1,5 +1,18 @@
-import {AdvancedBuffer, dumpHex, getRandomChunks, isValidHostname, isValidPort, numberToBuffer as ntb} from '../utils';
-import {IPresetAddressing, MUX_CLOSE_CONN, MUX_DATA_FRAME, MUX_NEW_CONN} from './defs';
+import {
+  AdvancedBuffer,
+  dumpHex,
+  getRandomChunks,
+  isValidHostname,
+  isValidPort,
+  numberToBuffer as ntb,
+} from '../utils';
+
+import {
+  IPresetAddressing,
+  MUX_CLOSE_CONN,
+  MUX_DATA_FRAME,
+  MUX_NEW_CONN,
+} from './defs';
 
 const CMD_NEW_CONN = 0x00;
 const CMD_DATA_FRAME = 0x01;
@@ -7,7 +20,7 @@ const CMD_CLOSE_CONN = 0x02;
 
 /**
  * @description
- *   TCP multiplexing protocol.
+ *   Multiplexing protocol.
  *
  * @examples
  *   {"name": "mux"}
@@ -17,23 +30,23 @@ const CMD_CLOSE_CONN = 0x02;
  *   # New Connection (client -> server)
  *   +-------+-------+------+----------+----------+
  *   |  CMD  |  CID  | ALEN | DST.ADDR | DST.PORT |
- *   +-------+-------+------+----------+----------+  +  [data frames]
- *   |  0x0  |   1   |  1   | Variable |    2     |
+ *   +-------+-------+------+----------+----------+  +  [Data Frames]
+ *   |  0x0  |   4   |  1   | Variable |    2     |
  *   +-------+-------+------+----------+----------+
- *
- *   # Close Connection (client <-> server)
- *   +-------+-------+
- *   |  CMD  |  CID  |
- *   +-------+-------+
- *   |  0x2  |   1   |
- *   +-------+-------+
  *
  *   # Data Frames (client <-> server)
  *   +-------+-------+------------+-------------+
  *   |  CMD  |  CID  |  DATA LEN  |    DATA     |
  *   +-------+-------+------------+-------------+
- *   |  0x1  |   1   |     2      |  Variable   |
+ *   |  0x1  |   4   |     2      |  Variable   |
  *   +-------+-------+------------+-------------+
+ *
+ *   # Close Connection (client <-> server)
+ *   +-------+-------+
+ *   |  CMD  |  CID  |
+ *   +-------+-------+
+ *   |  0x2  |   4   |
+ *   +-------+-------+
  *
  */
 export default class MuxPreset extends IPresetAddressing {
@@ -52,23 +65,23 @@ export default class MuxPreset extends IPresetAddressing {
   }
 
   onReceiving(buffer, {fail}) {
-    if (buffer.length < 2) {
+    if (buffer.length < 5) {
       return; // too short, continue to recv
     }
     const cmd = buffer[0];
     switch (cmd) {
       case CMD_NEW_CONN:
-        if (buffer.length < 5 + buffer[2]) {
+        if (buffer.length < 8 + buffer[5]) {
           return;
         }
-        return 5 + buffer[2];
+        return 8 + buffer[5];
       case CMD_DATA_FRAME:
-        if (buffer.length < 4) {
+        if (buffer.length < 7) {
           return;
         }
-        return 4 + buffer.readUInt16BE(2);
+        return 7 + buffer.readUInt16BE(5);
       case CMD_CLOSE_CONN:
-        return 2;
+        return 5;
       default:
         fail(`unknown cmd=${cmd} dump=${dumpHex(buffer)}`);
         return -1;
@@ -77,38 +90,37 @@ export default class MuxPreset extends IPresetAddressing {
 
   onChunkReceived(chunk, {broadcast, fail}) {
     const cmd = chunk[0];
-    const cid = chunk[1];
+    const cid = chunk.slice(1, 5).toString('hex');
     switch (cmd) {
       case CMD_NEW_CONN: {
-        const host = chunk.slice(3, -2).toString();
-        const port = chunk.readUInt16BE(3 + chunk[2]);
+        const host = chunk.slice(6, -2).toString();
+        const port = chunk.readUInt16BE(6 + chunk[5]);
         if (!isValidHostname(host) || !isValidPort(port)) {
           return fail(`invalid host or port, host=${host} port=${port}`);
         }
         return broadcast({
           type: MUX_NEW_CONN,
-          payload: {
-            host, port, cid
-          }
+          payload: {cid, host, port},
         });
       }
       case CMD_DATA_FRAME: {
-        const dataLen = chunk.readUInt16BE(2);
+        const dataLen = chunk.readUInt16BE(5);
         return broadcast({
           type: MUX_DATA_FRAME,
-          payload: {cid: cid, data: chunk.slice(-dataLen)}
+          payload: {cid, data: chunk.slice(-dataLen)},
         });
       }
       case CMD_CLOSE_CONN:
         return broadcast({
-          type: MUX_CLOSE_CONN, payload: {cid}
+          type: MUX_CLOSE_CONN,
+          payload: {cid},
         });
     }
   }
 
   createDataFrames(cid, data) {
     const chunks = getRandomChunks(data, 0x0800, 0x3fff).map((chunk) =>
-      Buffer.concat([ntb(CMD_DATA_FRAME, 1), ntb(cid, 1), ntb(chunk.length), chunk])
+      Buffer.concat([ntb(CMD_DATA_FRAME, 1), cid, ntb(chunk.length), chunk])
     );
     return Buffer.concat(chunks);
   }
@@ -116,32 +128,38 @@ export default class MuxPreset extends IPresetAddressing {
   createNewConn(host, port, cid) {
     const _host = Buffer.from(host);
     const _port = ntb(port);
-    return Buffer.concat([ntb(CMD_NEW_CONN, 1), ntb(cid, 1), ntb(_host.length, 1), _host, _port]);
+    return Buffer.concat([ntb(CMD_NEW_CONN, 1), cid, ntb(_host.length, 1), _host, _port]);
   }
 
   createCloseConn(cid) {
-    return Buffer.concat([ntb(CMD_CLOSE_CONN, 1), ntb(cid, 1)]);
+    return Buffer.concat([ntb(CMD_CLOSE_CONN, 1), cid]);
   }
 
-  clientOut({buffer}, {host, port, cid, isClosing}) {
+  clientOut({buffer, fail}, {host, port, cid, isClosing}) {
     if (cid !== undefined) {
-      const dataFrames = this.createDataFrames(cid, buffer);
+      const _cid = Buffer.from(cid, 'hex');
+      const dataFrames = this.createDataFrames(_cid, buffer);
       if (host && port) {
-        return Buffer.concat([this.createNewConn(host, port, cid), dataFrames]);
+        return Buffer.concat([this.createNewConn(host, port, _cid), dataFrames]);
       }
       if (isClosing) {
-        return this.createCloseConn(cid);
+        return this.createCloseConn(_cid);
       }
       return dataFrames;
+    } else {
+      fail(`cid is not provided, drop buffer=${dumpHex(buffer)}`);
     }
   }
 
-  serverOut({buffer}, {cid, isClosing}) {
+  serverOut({buffer, fail}, {cid, isClosing}) {
     if (cid !== undefined) {
+      const _cid = Buffer.from(cid, 'hex');
       if (isClosing) {
-        return this.createCloseConn(cid);
+        return this.createCloseConn(_cid);
       }
-      return this.createDataFrames(cid, buffer);
+      return this.createDataFrames(_cid, buffer);
+    } else {
+      fail(`cid is not provided, drop buffer=${dumpHex(buffer)}`);
     }
   }
 
