@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const chalk = require('chalk');
+const formatSize = require('filesize');
 const testCases = require('./cases');
 
 const BLINKSOCKS_PATH = path.resolve(__dirname, '../bin/start.js');
@@ -12,20 +13,20 @@ const SEC_PER_CASE = 3;
 
 function makeConfs(presets) {
   const serverConf = {
-    "service": "tcp://localhost:1082",
-    "key": "JJ9,$!.!sRG==v7$",
-    "presets": presets,
-    "tls_key": "key.pem",
-    "tls_cert": "cert.pem",
-    "log_level": "error",
-    "mux": false,
-    "mux_concurrency": 10,
+    'service': 'tcp://localhost:1082',
+    'key': 'JJ9,$!.!sRG==v7$',
+    'presets': presets,
+    'tls_key': 'key.pem',
+    'tls_cert': 'cert.pem',
+    'log_level': 'error',
+    'mux': false,
+    'mux_concurrency': 10,
   };
   const clientConf = {
-    "service": "tcp://127.0.0.1:1081?forward=127.0.0.1:1083",
-    "tls_cert": "cert.pem",
-    "servers": [Object.assign({}, serverConf, {"enabled": true})],
-    "log_level": "error",
+    'service': 'tcp://127.0.0.1:1081?forward=127.0.0.1:1083',
+    'tls_cert': 'cert.pem',
+    'servers': [Object.assign({}, serverConf, {'enabled': true})],
+    'log_level': 'error',
   };
   return [clientConf, serverConf];
 }
@@ -40,28 +41,24 @@ function writeConfs(caseId, presets) {
 }
 
 function parseStdout(stdout) {
-  const matches = stdout.match(/\[SUM].*sec/g);
-  if (matches === null) {
-    console.error(stdout);
-    return null;
+  try {
+    const report = JSON.parse(stdout);
+    return [report.end.sum_sent, report.end.sum_received];
+  } catch (err) {
+    console.log(err);
   }
-  return matches.slice(-2).map((line) => {
-    const [interval, transfer, bitrate] = line.match(/\d+[.\d\-\s]+\w+[\/\w]+/g);
-    return {interval, transfer, bitrate};
-  });
+  return null;
 }
 
-function convertTransferToKBytes(transfer) {
-  const [num, unit] = transfer.split(' ');
-  const factor = {
-    'Gbits/sec': 1024 * 1024,
-    'Mbits/sec': 1024,
-    'Kbits/sec': 1
-  }[unit];
-  return num * factor;
+function formatResult({start, end, bytes, bits_per_second}) {
+  return {
+    interval: start.toFixed(2) + '-' + end.toFixed(2) + ' sec',
+    transfer: formatSize(bytes) + 'ytes',
+    bitrate: formatSize(bits_per_second / 8, {bits: true}) + 'its/sec',
+  };
 }
 
-function printTestEnv() {
+function printEnv() {
   console.log(chalk.bold.underline('blinksocks:'));
   console.log('%s %s', 'version'.padEnd(15), child_process.execSync(`node ${BLINKSOCKS_PATH} -v`, {encoding: 'utf-8'}).trim());
   console.log('');
@@ -97,9 +94,11 @@ function run(cases) {
       );
       const parsed = parseStdout(stdout);
       if (parsed === null) {
+        console.log(`Test Case ${i} ${chalk.red('failed')}`);
+        console.log('');
         continue;
       }
-      const [a, b] = parsed;
+      const [a, b] = parsed.map(formatResult);
       console.log(`------------ ${chalk.green(`Test Case ${i}`)} ----------------`);
       console.log(JSON.stringify(presets));
       console.log('Interval         Transfer     Bitrate');
@@ -107,12 +106,11 @@ function run(cases) {
       console.log(`${b.interval}  ${b.transfer}  ${b.bitrate}  receiver`);
       console.log('-----------------------------------------');
       console.log('');
-      const conv = convertTransferToKBytes;
       results.push({
         id: i,
         bitrates: [a.bitrate, b.bitrate],
-        recvBitrate: conv(b.bitrate),
-        conf: JSON.stringify(presets)
+        config: JSON.stringify(presets),
+        _sortBy: parsed[1].bits_per_second,
       });
     } catch (err) {
       console.error(err);
@@ -121,21 +119,23 @@ function run(cases) {
   return results;
 }
 
-function summary(results) {
-  const sorted = [].concat(results).sort((a, b) => b.recvBitrate - a.recvBitrate);
+function printRanking(results) {
+  const sorted = [].concat(results).sort((a, b) => b._sortBy - a._sortBy);
   console.log('(ranking):');
   console.log('');
   for (let i = 0; i < sorted.length; ++i) {
-    const {id, bitrates, conf} = sorted[i];
+    const {id, bitrates, config} = sorted[i];
     console.log(`${(i + 1).toString().padStart(2)}: Test Case ${id}, Bitrate = ${bitrates.join(', ')}`);
-    console.log(`    ${conf}`);
+    console.log(`    ${config}`);
   }
   console.log('');
 }
 
-printTestEnv();
+printEnv();
 
 console.log(`running ${testCases.length} tests...`);
 console.log('');
 
-summary(run(testCases));
+const results = run(testCases);
+
+printRanking(results);

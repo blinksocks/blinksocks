@@ -27,7 +27,7 @@ iperf_pid=$!
 
 sleep 1
 
-iperf3 -c 127.0.0.1 -p 1081 -t ${seconds} -P 20
+iperf3 -c 127.0.0.1 -p 1081 -t ${seconds} -P 20 -J
 
 # Wait for iperf server to receive all data.
 # One second should be enough in most cases.
@@ -39,4 +39,3 @@ kill ${iperf_pid}
 
 # Wait for system gc
 sleep 5
-echo "Test Finished"
