@@ -4,12 +4,22 @@ import net from 'net';
 import tls from 'tls';
 import ws from 'ws';
 import LRU from 'lru-cache';
+import uniqueId from 'lodash.uniqueid';
 import {Balancer} from './balancer';
 import {Config} from './config';
 import {Relay} from './relay';
 import {MuxRelay} from './mux-relay';
-import {dumpHex, getRandomInt, logger} from '../utils';
+import {dumpHex, getRandomInt, hash, logger} from '../utils';
 import {http, socks, tcp} from '../proxies';
+import {APP_ID} from '../constants';
+
+/**
+ * create an connection id, this id is unique across applications
+ * @returns {string}
+ */
+function makeConnID() {
+  return hash('sha256', uniqueId(APP_ID)).slice(-4).toString('hex');
+}
 
 export class Hub {
 
@@ -242,11 +252,21 @@ export class Hub {
       }
     };
 
+    // TODO: refactor the procedure
     let muxRelay = null, cid = null;
     if (__MUX__) {
       if (__IS_CLIENT__) {
-        // get or create a mux relay
-        muxRelay = this.getMuxRelay() || this._createMuxRelay(context);
+        // get a mux relay
+        muxRelay = this.getMuxRelay();
+        // create a mux relay if needed
+        if (muxRelay === null) {
+          muxRelay = this._createRelay(context, true);
+          muxRelay.on('close', () => this.onRelayClose(muxRelay));
+          this._muxRelays.set(muxRelay.id, muxRelay);
+          logger.info(`[mux-${muxRelay.id}] create mux connection, total: ${this._muxRelays.size}`);
+        }
+        // determine how to initialize the muxRelay
+        cid = makeConnID();
         if (muxRelay.isOutboundReady()) {
           proxyRequest.onConnected((buffer) => {
             // this callback is used for "http" proxy method on client side
@@ -258,19 +278,29 @@ export class Hub {
           proxyRequest.cid = cid;
           muxRelay.init({proxyRequest});
         }
-        // add mux relay instance to context
-        Object.assign(context, {muxRelay});
+        // add mux relay instance to context on client side
+        context.muxRelay = muxRelay;
       } else {
-        Object.assign(context, {getMuxRelay: this.getMuxRelay.bind(this)});
+        // add mux relay selector to context on server side
+        context.getMuxRelay = (remoteInfo) => {
+          const relays = [...this._muxRelays.values()].filter((relay) =>
+            relay._ctx.remoteInfo.host === remoteInfo.host &&
+            relay._ctx.remoteInfo.port === remoteInfo.port
+          );
+          return relays[getRandomInt(0, relays.length - 1)];
+        };
       }
     }
 
+    // create a relay for the current connection
     const relay = this._createRelay(context);
     relay.init({proxyRequest});
     relay.on('close', () => this.onRelayClose(relay));
 
+    // setup association between relay and muxRelay
     if (__MUX__) {
       if (__IS_CLIENT__) {
+        relay.id = cid; // NOTE: this cid will be used in mux preset
         muxRelay.addSubRelay(relay);
       } else {
         this._muxRelays.set(relay.id, relay);
@@ -280,12 +310,15 @@ export class Hub {
     this._tcpRelays.set(relay.id, relay);
   }
 
-  _createRelay(context) {
+  _createRelay(context, isMux = false) {
     const props = {
       context: context,
       transport: __TRANSPORT__,
       presets: __PRESETS__
     };
+    if (isMux) {
+      return new MuxRelay(props);
+    }
     if (__MUX__) {
       if (__IS_CLIENT__) {
         return new Relay({...props, transport: 'mux', presets: []});
@@ -302,21 +335,13 @@ export class Hub {
   }
 
   // client only
-  _createMuxRelay(context) {
-    const relay = new MuxRelay({transport: __TRANSPORT__, context, presets: __PRESETS__});
-    relay.on('close', () => this.onRelayClose(relay));
-    this._muxRelays.set(relay.id, relay);
-    logger.info(`[mux-${relay.id}] create mux connection, total: ${this._muxRelays.size}`);
-    return relay;
-  }
-
   getMuxRelay() {
     const relays = this._muxRelays;
     const concurrency = relays.size;
     if (concurrency < 1) {
       return null;
     }
-    if (__IS_CLIENT__ && concurrency < __MUX_CONCURRENCY__ && getRandomInt(0, 1) === 0) {
+    if (concurrency < __MUX_CONCURRENCY__ && getRandomInt(0, 1) === 0) {
       return null;
     }
     return relays.get([...relays.keys()][getRandomInt(0, concurrency - 1)]);

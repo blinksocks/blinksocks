@@ -47,7 +47,7 @@ export class MuxRelay extends Relay {
 
   preparePresets(presets) {
     const first = presets[0];
-    // add "mux" preset to the top if it's a mux relay
+    // add "mux" preset to the top
     if (!first || first.name !== 'mux') {
       presets = [{'name': 'mux'}].concat(presets);
     }
@@ -72,15 +72,20 @@ export class MuxRelay extends Relay {
 
   onNewSubConn({cid, host, port}) {
     // const muxRelay = this;
-    const muxRelay = this._ctx.getMuxRelay();
+
+    // instead use "this" mux relay, we can even randomly choose one
+    // to transfer data back to client.
+    const muxRelay = this._ctx.getMuxRelay(this._ctx.remoteInfo);
     if (muxRelay) {
-      const context = {
-        socket: this._ctx.socket,
-        remoteInfo: this._ctx.remoteInfo,
-        cid,
-        muxRelay, // NOTE: associate the mux relay here
-      };
-      const relay = new Relay({transport: 'mux', context});
+      const relay = new Relay({
+        transport: 'mux',
+        context: {
+          socket: this._ctx.socket,
+          remoteInfo: this._ctx.remoteInfo,
+          cid,
+          muxRelay, // NOTE: associate the mux relay here
+        }
+      });
       const proxyRequest = {
         host: host,
         port: port,

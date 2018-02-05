@@ -1,5 +1,4 @@
 import EventEmitter from 'events';
-import uniqueId from 'lodash.uniqueid';
 import {Pipe} from './pipe';
 import {DNSCache} from './dns-cache';
 import {PIPE_ENCODE, PIPE_DECODE} from '../constants';
@@ -34,7 +33,9 @@ import {
 // .on('close')
 export class Relay extends EventEmitter {
 
-  id = null;
+  static idcounter = 0;
+
+  _id = null;
 
   _ctx = null;
 
@@ -54,20 +55,28 @@ export class Relay extends EventEmitter {
 
   _destroyed = false;
 
+  get id() {
+    return this._id;
+  }
+
+  set id(id) {
+    this._id = id;
+    this._ctx.cid = id;
+  }
+
   constructor({transport, context, presets = []}) {
     super();
     this.updatePresets = this.updatePresets.bind(this);
     this.onBroadcast = this.onBroadcast.bind(this);
     this.onEncoded = this.onEncoded.bind(this);
     this.onDecoded = this.onDecoded.bind(this);
-    this.id = uniqueId() | 0;
+    this._id = Relay.idcounter++;
     this._transport = transport;
     this._remoteInfo = context.remoteInfo;
     // pipe
     this._presets = this.preparePresets(presets);
     this._pipe = this.createPipe(this._presets);
     this._ctx = {
-      cid: this.id,
       pipe: this._pipe,
       dnsCache: new DNSCache({expire: __DNS_EXPIRE__}),
       thisRelay: this,
