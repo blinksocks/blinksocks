@@ -1,6 +1,5 @@
 import EventEmitter from 'events';
 import {Pipe} from './pipe';
-import {DNSCache} from './dns-cache';
 import {PIPE_ENCODE, PIPE_DECODE} from '../constants';
 import {logger} from '../utils';
 
@@ -78,7 +77,6 @@ export class Relay extends EventEmitter {
     this._pipe = this.createPipe(this._presets);
     this._ctx = {
       pipe: this._pipe,
-      dnsCache: new DNSCache({expire: __DNS_EXPIRE__}),
       thisRelay: this,
       ...context,
     };

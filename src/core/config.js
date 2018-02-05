@@ -8,8 +8,7 @@ import qs from 'qs';
 import winston from 'winston';
 import isPlainObject from 'lodash.isplainobject';
 import {getPresetClassByName, IPresetAddressing} from '../presets';
-import {isValidHostname, isValidPort, logger} from '../utils';
-import {DNS_DEFAULT_EXPIRE} from './dns-cache';
+import {DNSCache, isValidHostname, isValidPort, logger, DNS_DEFAULT_EXPIRE} from '../utils';
 
 function loadFileSync(file) {
   return fs.readFileSync(path.resolve(process.cwd(), file));
@@ -55,6 +54,9 @@ export class Config {
       global.__DNS__ = json.dns;
       dns.setServers(json.dns);
     }
+
+    // dns-cache
+    DNSCache.init(__DNS_EXPIRE__);
   }
 
   static initServer(server) {

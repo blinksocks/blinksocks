@@ -1,6 +1,7 @@
 export * from './common';
 export * from './crypto';
 export * from './date';
+export * from './dns-cache';
 export * from './string';
 export * from './validator';
 export * from './advanced-buffer';

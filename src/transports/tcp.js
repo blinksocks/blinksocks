@@ -1,7 +1,7 @@
 import net from 'net';
 import {Inbound, Outbound} from './defs';
 import {MAX_BUFFERED_SIZE, PIPE_ENCODE, PIPE_DECODE} from '../constants';
-import {logger, getRandomInt} from '../utils';
+import {DNSCache, logger, getRandomInt} from '../utils';
 import {
   CONNECT_TO_REMOTE,
   CONNECTED_TO_REMOTE,
@@ -369,7 +369,7 @@ export class TcpOutbound extends Outbound {
   }
 
   async _connect({host, port}) {
-    const ip = await this.ctx.dnsCache.get(host);
+    const ip = await DNSCache.get(host);
     logger.info(`[${this.name}] [${this.remote}] connecting to tcp://${host}:${port} resolve=${ip}`);
     return net.connect({host: ip, port});
   }
