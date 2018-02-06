@@ -98,23 +98,11 @@ export class MuxRelay extends Relay {
         }
       };
 
-      function onClose() {
-        const relay = muxRelay._getSubRelay(cid);
-        if (relay) {
-          muxRelay.destroySubRelay(cid);
-          logger.debug(`[mux-${muxRelay.id}] sub connection(cid=${cid}) closed by self, remains: ${muxRelay.getSubRelays().size}`);
-        }
-        // else {
-        //   logger.warn(`[mux-${muxRelay.id}] fail to close sub connection by self, no such sub connection(cid=${cid})`);
-        // }
-      }
-
       relay.__pendingFrames = [];
       relay.init({proxyRequest});
 
       // NOTE: here we should replace relay.id to cid
       relay.id = cid;
-      relay.on('close', onClose);
 
       // create relations between mux relay and its sub relays,
       // when mux relay destroyed, all sub relays should be destroyed as well.
@@ -156,9 +144,21 @@ export class MuxRelay extends Relay {
     // }
   }
 
+  onSubConnCloseBySelf({cid}) {
+    const relay = this._getSubRelay(cid);
+    if (relay) {
+      this.destroySubRelay(cid);
+      logger.debug(`[mux-${this.id}] sub connection(cid=${cid}) closed by self, remains: ${this.getSubRelays().size}`);
+    }
+    // else {
+    //   logger.warn(`[mux-${muxRelay.id}] fail to close sub connection by self, no such sub connection(cid=${cid})`);
+    // }
+  }
+
   // methods
 
   addSubRelay(relay) {
+    relay.on('close', this.onSubConnCloseBySelf.bind(this, {cid: relay.id}));
     this._subRelays.set(relay.id, relay);
     MuxRelay.allSubRelays.set(relay.id, relay);
   }

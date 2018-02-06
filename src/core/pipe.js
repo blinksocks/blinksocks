@@ -72,9 +72,9 @@ export class Pipe extends EventEmitter {
 
   getMiddlewares(direction = PIPE_ENCODE) {
     if (direction === PIPE_ENCODE) {
-      return this._upstream_middlewares;
+      return this._upstream_middlewares || [];
     } else {
-      return this._downstream_middlewares;
+      return this._downstream_middlewares || [];
     }
   }
 

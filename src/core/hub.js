@@ -49,12 +49,6 @@ export class Hub {
     if (relay instanceof MuxRelay) {
       relay.destroy();
     }
-    if (__MUX__ && __IS_CLIENT__) {
-      const ctx = relay.getContext();
-      if (ctx && ctx.muxRelay) {
-        ctx.muxRelay.destroySubRelay(relay.id);
-      }
-    }
     this._tcpRelays.delete(relay.id);
     this._muxRelays.delete(relay.id);
   }
