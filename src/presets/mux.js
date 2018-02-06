@@ -93,10 +93,11 @@ export default class MuxPreset extends IPresetAddressing {
     const cid = chunk.slice(1, 5).toString('hex');
     switch (cmd) {
       case CMD_NEW_CONN: {
-        const host = chunk.slice(6, -2).toString();
+        const hostBuf = chunk.slice(6, -2);
+        const host = hostBuf.toString();
         const port = chunk.readUInt16BE(6 + chunk[5]);
         if (!isValidHostname(host) || !isValidPort(port)) {
-          return fail(`invalid host or port, host=${host} port=${port}`);
+          return fail(`invalid host or port, host=${dumpHex(hostBuf)} port=${port}`);
         }
         return broadcast({
           type: MUX_NEW_CONN,
