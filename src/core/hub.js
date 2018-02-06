@@ -45,14 +45,6 @@ export class Hub {
     });
   }
 
-  onRelayClose(relay) {
-    if (relay instanceof MuxRelay) {
-      relay.destroy();
-    }
-    this._tcpRelays.delete(relay.id);
-    this._muxRelays.delete(relay.id);
-  }
-
   terminate(callback) {
     // relays
     this._udpRelays.reset();
@@ -273,8 +265,6 @@ export class Hub {
 
     // create a relay for the current connection
     const relay = this._createRelay(context);
-    relay.init({proxyRequest});
-    relay.on('close', () => this.onRelayClose(relay));
 
     // setup association between relay and muxRelay
     if (__MUX__) {
@@ -282,9 +272,13 @@ export class Hub {
         relay.id = cid; // NOTE: this cid will be used in mux preset
         muxRelay.addSubRelay(relay);
       } else {
+        // on server side, this relay is a muxRelay
         this._muxRelays.set(relay.id, relay);
       }
     }
+
+    relay.init({proxyRequest});
+    relay.on('close', () => this._tcpRelays.delete(relay.id));
 
     this._tcpRelays.set(relay.id, relay);
   }
@@ -296,7 +290,7 @@ export class Hub {
     // create a mux relay if needed
     if (muxRelay === null) {
       muxRelay = this._createRelay(context, true);
-      muxRelay.on('close', () => this.onRelayClose(muxRelay));
+      muxRelay.on('close', () => this._muxRelays.delete(muxRelay.id));
       this._muxRelays.set(muxRelay.id, muxRelay);
       logger.info(`[mux-${muxRelay.id}] create mux connection, total: ${this._muxRelays.size}`);
     }

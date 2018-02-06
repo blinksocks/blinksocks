@@ -157,10 +157,6 @@ export class Relay extends EventEmitter {
     return this._inbound;
   }
 
-  getContext() {
-    return this._ctx;
-  }
-
   // hooks of pipe
 
   onBroadcast(action) {
@@ -169,7 +165,7 @@ export class Relay extends EventEmitter {
       const remote = `${this._remoteInfo.host}:${this._remoteInfo.port}`;
       const target = `${action.payload.host}:${action.payload.port}`;
       if (__MUX__ && __IS_CLIENT__ && this._transport !== 'udp') {
-        logger.info(`[relay] [${remote}] request over mux-${this._ctx.muxRelay.id}: ${target}`);
+        logger.info(`[relay-${this.id}] [${remote}] request over mux-${this._ctx.muxRelay.id}: ${target}`);
         return;
       }
       logger.info(`[relay] [${remote}] request: ${target}`);
