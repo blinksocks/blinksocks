@@ -45,6 +45,20 @@ export class Hub {
     });
   }
 
+  onRelayClose(relay) {
+    if (relay instanceof MuxRelay) {
+      relay.destroy();
+    }
+    if (__MUX__ && __IS_CLIENT__) {
+      const ctx = relay.getContext();
+      if (ctx && ctx.muxRelay) {
+        ctx.muxRelay.destroySubRelay(relay.id);
+      }
+    }
+    this._tcpRelays.delete(relay.id);
+    this._muxRelays.delete(relay.id);
+  }
+
   terminate(callback) {
     // relays
     this._udpRelays.reset();
@@ -252,43 +266,14 @@ export class Hub {
       }
     };
 
-    // TODO: refactor the procedure
     let muxRelay = null, cid = null;
     if (__MUX__) {
       if (__IS_CLIENT__) {
-        // get a mux relay
-        muxRelay = this.getMuxRelay();
-        // create a mux relay if needed
-        if (muxRelay === null) {
-          muxRelay = this._createRelay(context, true);
-          muxRelay.on('close', () => this.onRelayClose(muxRelay));
-          this._muxRelays.set(muxRelay.id, muxRelay);
-          logger.info(`[mux-${muxRelay.id}] create mux connection, total: ${this._muxRelays.size}`);
-        }
-        // determine how to initialize the muxRelay
         cid = makeConnID();
-        if (muxRelay.isOutboundReady()) {
-          proxyRequest.onConnected((buffer) => {
-            // this callback is used for "http" proxy method on client side
-            if (buffer) {
-              muxRelay.encode(buffer, {...proxyRequest, cid});
-            }
-          });
-        } else {
-          proxyRequest.cid = cid;
-          muxRelay.init({proxyRequest});
-        }
-        // add mux relay instance to context on client side
+        muxRelay = this._getMuxRelayOnClient(context, cid);
         context.muxRelay = muxRelay;
       } else {
-        // add mux relay selector to context on server side
-        context.getMuxRelay = (remoteInfo) => {
-          const relays = [...this._muxRelays.values()].filter((relay) =>
-            relay._ctx.remoteInfo.host === remoteInfo.host &&
-            relay._ctx.remoteInfo.port === remoteInfo.port
-          );
-          return relays[getRandomInt(0, relays.length - 1)];
-        };
+        context.muxRelays = this._muxRelays;
       }
     }
 
@@ -308,6 +293,34 @@ export class Hub {
     }
 
     this._tcpRelays.set(relay.id, relay);
+  }
+
+  _getMuxRelayOnClient(context, cid) {
+    // get a mux relay
+    let muxRelay = this._selectMuxRelay();
+
+    // create a mux relay if needed
+    if (muxRelay === null) {
+      muxRelay = this._createRelay(context, true);
+      muxRelay.on('close', () => this.onRelayClose(muxRelay));
+      this._muxRelays.set(muxRelay.id, muxRelay);
+      logger.info(`[mux-${muxRelay.id}] create mux connection, total: ${this._muxRelays.size}`);
+    }
+
+    // determine how to initialize the muxRelay
+    const {proxyRequest} = context;
+    if (muxRelay.isOutboundReady()) {
+      proxyRequest.onConnected((buffer) => {
+        // this callback is used for "http" proxy method on client side
+        if (buffer) {
+          muxRelay.encode(buffer, {...proxyRequest, cid});
+        }
+      });
+    } else {
+      proxyRequest.cid = cid;
+      muxRelay.init({proxyRequest});
+    }
+    return muxRelay;
   }
 
   _createRelay(context, isMux = false) {
@@ -334,8 +347,7 @@ export class Hub {
     return new Relay({transport: 'udp', context, presets: __UDP_PRESETS__});
   }
 
-  // client only
-  getMuxRelay() {
+  _selectMuxRelay() {
     const relays = this._muxRelays;
     const concurrency = relays.size;
     if (concurrency < 1) {
@@ -345,20 +357,6 @@ export class Hub {
       return null;
     }
     return relays.get([...relays.keys()][getRandomInt(0, concurrency - 1)]);
-  }
-
-  onRelayClose(relay) {
-    if (relay instanceof MuxRelay) {
-      relay.destroy();
-    }
-    if (__MUX__ && __IS_CLIENT__) {
-      const ctx = relay.getContext();
-      if (ctx && ctx.muxRelay) {
-        ctx.muxRelay.destroySubRelay(relay.id);
-      }
-    }
-    this._tcpRelays.delete(relay.id);
-    this._muxRelays.delete(relay.id);
   }
 
   _switchServer() {

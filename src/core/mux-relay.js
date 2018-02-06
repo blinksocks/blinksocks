@@ -1,5 +1,5 @@
 import {Relay} from './relay';
-import {logger} from '../utils';
+import {getRandomInt, logger} from '../utils';
 
 import {
   TcpInbound, TcpOutbound,
@@ -75,7 +75,7 @@ export class MuxRelay extends Relay {
 
     // instead use "this" mux relay, we can even randomly choose one
     // to transfer data back to client.
-    const muxRelay = this._ctx.getMuxRelay(this._ctx.remoteInfo);
+    const muxRelay = this._getRandomMuxRelay();
     if (muxRelay) {
       const relay = new Relay({
         transport: 'mux',
@@ -188,6 +188,15 @@ export class MuxRelay extends Relay {
     if (this._subRelays) {
       return this._subRelays.get(cid);
     }
+  }
+
+  _getRandomMuxRelay() {
+    const {muxRelays, remoteInfo} = this._ctx;
+    const relays = [...muxRelays.values()].filter((relay) =>
+      relay._ctx.remoteInfo.host === remoteInfo.host &&
+      relay._ctx.remoteInfo.port === remoteInfo.port
+    );
+    return relays[getRandomInt(0, relays.length - 1)];
   }
 
 }
