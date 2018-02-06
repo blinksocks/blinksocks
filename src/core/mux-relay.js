@@ -120,7 +120,7 @@ export class MuxRelay extends Relay {
       // when mux relay destroyed, all sub relays should be destroyed as well.
       muxRelay.addSubRelay(relay);
 
-      logger.debug(`[mux-${muxRelay.id}] create sub connection(cid=${relay.id}), total: ${muxRelay.getSubRelays().size}`);
+      logger.info(`[mux-${muxRelay.id}] create sub connection(cid=${relay.id}), total: ${muxRelay.getSubRelays().size}`);
       return relay;
     } else {
       logger.warn(`[mux-${muxRelay.id}] cannot create new sub connection due to no mux connection are available`);

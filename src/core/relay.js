@@ -165,13 +165,14 @@ export class Relay extends EventEmitter {
 
   onBroadcast(action) {
     const type = action.type;
-    if (__MUX__ && this._transport !== 'udp') {
-      if (__IS_CLIENT__ && type === CONNECT_TO_REMOTE) {
-        const remote = `${this._remoteInfo.host}:${this._remoteInfo.port}`;
-        const target = `${action.payload.host}:${action.payload.port}`;
-        logger.info(`[relay] [${remote}] request over mux(id=${this._ctx.muxRelay.id}): ${target}`);
+    if (type === CONNECT_TO_REMOTE) {
+      const remote = `${this._remoteInfo.host}:${this._remoteInfo.port}`;
+      const target = `${action.payload.host}:${action.payload.port}`;
+      if (__MUX__ && __IS_CLIENT__ && this._transport !== 'udp') {
+        logger.info(`[relay] [${remote}] request over mux-${this._ctx.muxRelay.id}: ${target}`);
         return;
       }
+      logger.info(`[relay] [${remote}] request: ${target}`);
     }
     if (type === CHANGE_PRESET_SUITE) {
       this.onChangePresetSuite(action);
