@@ -193,6 +193,7 @@ export class MuxRelay extends Relay {
   _getRandomMuxRelay() {
     const {muxRelays, remoteInfo} = this._ctx;
     const relays = [...muxRelays.values()].filter((relay) =>
+      relay._ctx &&
       relay._ctx.remoteInfo.host === remoteInfo.host &&
       relay._ctx.remoteInfo.port === remoteInfo.port
     );
