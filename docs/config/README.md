@@ -8,6 +8,79 @@ You can use the following command to generate `blinksocks.client.json` and `blin
 $ blinksocks init
 ```
 
+**blinksocks.client.json**
+
+```
+{
+  "service": "socks5://127.0.0.1:1080",
+  "servers": [
+    {
+      "enabled": true,
+      "service": "tcp://127.0.0.1:19997",
+      "key": "<=p(^tr;DpEfVe<m",
+      "presets": [
+        {
+          "name": "ss-base"
+        },
+        {
+          "name": "obfs-random-padding"
+        },
+        {
+          "name": "ss-stream-cipher",
+          "params": {
+            "method": "aes-128-ctr"
+          }
+        }
+      ],
+      "tls_cert": "cert.pem",
+      "mux": false,
+      "mux_concurrency": 10
+    }
+  ],
+  "dns": [],
+  "dns_expire": 3600,
+  "timeout": 221,
+  "workers": 0,
+  "log_path": "bs-client.log",
+  "log_level": "info",
+  "log_max_days": 30
+}
+```
+
+**blinksocks.server.json**
+
+```
+{
+  "service": "tcp://0.0.0.0:19997",
+  "key": "<=p(^tr;DpEfVe<m",
+  "presets": [
+    {
+      "name": "ss-base"
+    },
+    {
+      "name": "obfs-random-padding"
+    },
+    {
+      "name": "ss-stream-cipher",
+      "params": {
+        "method": "aes-128-ctr"
+      }
+    }
+  ],
+  "tls_key": "key.pem",
+  "tls_cert": "cert.pem",
+  "mux": false,
+  "dns": [],
+  "dns_expire": 3600,
+  "timeout": 221,
+  "redirect": "",
+  "workers": 0,
+  "log_path": "bs-server.log",
+  "log_level": "info",
+  "log_max_days": 30
+}
+```
+
 |        KEY         |                         DESCRIPTION                          | OPTIONAL |     DEFAULT     |                                  REMARKS                                   |
 | :----------------- | :----------------------------------------------------------- | :------- | :-------------- | :------------------------------------------------------------------------- |
 | service            | local service address                                        | *        | -               | \<protocol\>://\<host\>:\<port\>\[?params\], e.g, "socks://127.0.0.1:1080" |
@@ -23,7 +96,7 @@ $ blinksocks init
 | timeout            | timeout for each connection                                  | Yes      | 600             | in seconds                                                                 |
 | mux                | enable multiplexing over TCP/TLS/WS                          | Yes      | false           | -                                                                          |
 | mux_concurrency    | the max mux connection established between client and server | Yes      | 10              | **CLIENT ONLY**                                                            |
-| redirect           | target to redirect when preset fail                          | Yes      | ""              | \<host\>:\<port\>                                                          |
+| redirect           | target to redirect when preset fail                          | Yes      | ""              | **SERVER ONLY** \<host\>:\<port\>                                          |
 | workers            | the number of sub-process                                    | Yes      | 0               | enable cluster mode when workers > 0                                       |
 | dns                | an ip list of DNS server                                     | Yes      | []              | -                                                                          |
 | dns_expire         | DNS cache expiration time                                    | Yes      | 3600            | in seconds                                                                 |
