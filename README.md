@@ -47,19 +47,16 @@ You can get the latest blinksocks via package manager **yarn** or **npm**.
 $ npm install -g blinksocks
 ```
 
-**development version**
+**nightly releases**
 
-```
-$ npm install -g git+https://github.com/blinksocks/blinksocks.git
-$ npm install -g git+https://github.com/blinksocks/blinksocks.git#v2.5.5
-```
+Please check out [blinksocks-nightly-releases](https://github.com/blinksocks/blinksocks-nightly-releases).
 
 ## Run blinksocks
 
 **npm version(require Node.js)**
 
 ```
-$ blinksocks -c blinksocks.client.json
+$ blinksocks --help
 ```
 
 **executable version(~~Node.js~~, not GUI)**
