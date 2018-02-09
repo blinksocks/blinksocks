@@ -8,9 +8,9 @@ before_deploy:
   - export DIST_PATH=build
   - export PUBLISH_REPO=blinksocks/blinksocks-nightly-releases
   - git clone https://github.com/${PUBLISH_REPO}.git ${DIST_PATH}
-  - yarn version --new-version ${NEXT_VERSION}
+  - yarn version --new-version ${NEXT_VERSION} --no-git-tag-version
   - yarn compile
-  - yarn pack --filename "${DIST_PATH}/v${NEXT_VERSION}-$(date +'%Y%m%d')-$(git log --format=%h -1).tgz"
+  - yarn pack --filename "${DIST_PATH}/v${NEXT_VERSION}-$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1).tgz"
 
 deploy:
   provider: pages
