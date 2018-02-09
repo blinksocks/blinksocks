@@ -5,6 +5,7 @@ const path = require('path');
 const os = require('os');
 const chalk = require('chalk');
 const formatSize = require('filesize');
+const mkdirp = require('mkdirp');
 const testCases = require('./cases');
 
 const BLINKSOCKS_PATH = path.resolve(__dirname, '../bin/start.js');
@@ -33,6 +34,7 @@ function makeConfs(presets) {
 
 function writeConfs(caseId, presets) {
   const [clientConf, serverConf] = makeConfs(presets);
+  mkdirp.sync(path.join(__dirname, `jsons`));
   const clientJson = path.join(__dirname, `jsons/case-${caseId}-client.json`);
   const serverJson = path.join(__dirname, `jsons/case-${caseId}-server.json`);
   fs.writeFileSync(clientJson, JSON.stringify(clientConf, null, '  '));

@@ -1,8 +1,10 @@
 import path from 'path';
+import mkdirp from 'mkdirp';
 import {PRESET_FAILED, CONNECTION_CREATED, CONNECTION_CLOSED} from '../../src/presets';
 import {PresetRunner, sleep} from '../common';
 
 test('running on both client and server', async () => {
+  mkdirp.sync(path.resolve(__dirname, '../tmp'));
   const runner = new PresetRunner({
     name: 'stats',
     params: {

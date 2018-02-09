@@ -14,6 +14,7 @@ yarn-error.log
 
 # test
 coverage/
+test/tmp/
 
 # tar
 *.tgz
@@ -24,3 +25,10 @@ coverage/
 *.map
 *.pem
 /acl.txt
+
+# benchmark
+benchmark/jsons/
+
+# pkg
+pkg/blinksocks-*.gz
+pkg/sha256sum.txt
