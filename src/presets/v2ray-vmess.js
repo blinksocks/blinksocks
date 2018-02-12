@@ -192,6 +192,8 @@ export default class V2rayVmessPreset extends IPresetAddressing {
   _cipherNonce = 0;
   _decipherNonce = 0;
 
+  _ctx = null;
+
   static checkParams({id, security = 'aes-128-gcm'}) {
     if (Buffer.from(id.split('-').join(''), 'hex').length !== 16) {
       throw Error('id is not a valid uuid');
@@ -202,9 +204,9 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     }
   }
 
-  static onInit({id, security = 'aes-128-gcm'}) {
+  static onInit({id, security = 'aes-128-gcm'}, {IS_CLIENT}) {
     V2rayVmessPreset.uuid = Buffer.from(id.split('-').join(''), 'hex');
-    if (__IS_CLIENT__) {
+    if (IS_CLIENT) {
       V2rayVmessPreset.security = securityTypes[security];
     }
     setInterval(() => V2rayVmessPreset.updateAuthCache(), 1e3);
@@ -231,8 +233,9 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     this.userHashCache = newItems;
   }
 
-  constructor() {
+  constructor(_, ctx) {
     super();
+    this._ctx = ctx;
     this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});
     this._adBuf.on('data', this.onChunkReceived.bind(this));
   }
@@ -254,7 +257,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
   }
 
   onNotified(action) {
-    if (__IS_CLIENT__ && action.type === CONNECT_TO_REMOTE) {
+    if (this._ctx.IS_CLIENT && action.type === CONNECT_TO_REMOTE) {
       const {host, port} = action.payload;
       const type = getAddrType(host);
       this._atyp = type;
@@ -269,7 +272,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
   beforeOut({buffer}) {
     if (!this._isHeaderSent) {
       this._isHeaderSent = true;
-      const header = __IS_CLIENT__ ? this.createRequestHeader() : this.createResponseHeader();
+      const header = this._ctx.IS_CLIENT ? this.createRequestHeader() : this.createResponseHeader();
       const chunks = this.getBufferChunks(buffer);
       return Buffer.concat([header, ...chunks]);
     } else {

@@ -35,7 +35,7 @@ export class TcpInbound extends Inbound {
       this._socket.on('timeout', this.onTimeout);
       this._socket.on('end', this.onHalfClose);
       this._socket.on('close', this.onClose);
-      this._socket.setTimeout && this._socket.setTimeout(__TIMEOUT__);
+      this._socket.setTimeout && this._socket.setTimeout(this._globalCtx.TIMEOUT);
     }
   }
 
@@ -62,7 +62,7 @@ export class TcpInbound extends Inbound {
   }
 
   onReceive(buffer) {
-    const direction = __IS_CLIENT__ ? PIPE_ENCODE : PIPE_DECODE;
+    const direction = this._globalCtx.IS_CLIENT ? PIPE_ENCODE : PIPE_DECODE;
     this.ctx.pipe.feed(direction, buffer);
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
@@ -85,7 +85,7 @@ export class TcpInbound extends Inbound {
   }
 
   onTimeout() {
-    logger.warn(`[${this.name}] [${this.remote}] timeout: no I/O on the connection for ${__TIMEOUT__ / 1e3}s`);
+    logger.warn(`[${this.name}] [${this.remote}] timeout: no I/O on the connection for ${this._globalCtx.TIMEOUT / 1e3}s`);
     this.onClose();
   }
 
@@ -153,16 +153,16 @@ export class TcpInbound extends Inbound {
     logger.error(`[${this.name}] [${this.remote}] preset "${name}" fail to process: ${message}`);
 
     // close connection directly on client side
-    if (__IS_CLIENT__) {
+    if (this._globalCtx.IS_CLIENT) {
       logger.warn(`[${this.name}] [${this.remote}] connection closed`);
       this.onClose();
     }
 
     // for server side, redirect traffic if "redirect" is set, otherwise, close connection after a random timeout
-    if (__IS_SERVER__ && !__MUX__) {
-      if (__REDIRECT__) {
+    if (this._globalCtx.IS_SERVER && !this._globalCtx.MUX) {
+      if (this._globalCtx.REDIRECT) {
         const {orgData} = action.payload;
-        const [host, port] = __REDIRECT__.split(':');
+        const [host, port] = this._globalCtx.REDIRECT.split(':');
 
         logger.warn(`[${this.name}] [${this.remote}] connection is redirecting to: ${host}:${port}`);
 
@@ -189,11 +189,11 @@ export class TcpInbound extends Inbound {
   }
 
   onPresetPauseRecv() {
-    __IS_SERVER__ && (this._socket && this._socket.pause())
+    this._globalCtx.IS_SERVER && (this._socket && this._socket.pause())
   }
 
   onPresetResumeRecv() {
-    __IS_SERVER__ && (this._socket && this._socket.resume());
+    this._globalCtx.IS_SERVER && (this._socket && this._socket.resume());
   }
 
 }
@@ -237,7 +237,7 @@ export class TcpOutbound extends Outbound {
   }
 
   onReceive(buffer) {
-    const direction = __IS_CLIENT__ ? PIPE_DECODE : PIPE_ENCODE;
+    const direction = this._globalCtx.IS_CLIENT ? PIPE_DECODE : PIPE_ENCODE;
     this.ctx.pipe.feed(direction, buffer);
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
@@ -260,7 +260,7 @@ export class TcpOutbound extends Outbound {
   }
 
   onTimeout() {
-    logger.warn(`[${this.name}] [${this.remote}] timeout: no I/O on the connection for ${__TIMEOUT__ / 1e3}s`);
+    logger.warn(`[${this.name}] [${this.remote}] timeout: no I/O on the connection for ${this._globalCtx.TIMEOUT / 1e3}s`);
     this.onClose();
   }
 
@@ -318,17 +318,17 @@ export class TcpOutbound extends Outbound {
     const {host, port, keepAlive, onConnected} = action.payload;
     if (!keepAlive || !this._socket) {
       try {
-        if (__IS_SERVER__) {
+        if (this._globalCtx.IS_SERVER) {
           await this.connect({host, port});
         }
-        if (__IS_CLIENT__) {
-          await this.connect({host: __SERVER_HOST__, port: __SERVER_PORT__});
+        if (this._globalCtx.IS_CLIENT) {
+          await this.connect({host: this._globalCtx.SERVER_HOST, port: this._globalCtx.SERVER_PORT});
         }
         this._socket.on('connect', () => {
           if (typeof onConnected === 'function') {
             onConnected((buffer) => {
               if (buffer) {
-                const type = __IS_CLIENT__ ? PIPE_ENCODE : PIPE_DECODE;
+                const type = this._globalCtx.IS_CLIENT ? PIPE_ENCODE : PIPE_DECODE;
                 this.ctx.pipe.feed(type, buffer, {cid: this.ctx.proxyRequest.cid, host, port});
               }
             });
@@ -345,11 +345,11 @@ export class TcpOutbound extends Outbound {
   }
 
   onPresetPauseSend() {
-    __IS_SERVER__ && (this._socket && this._socket.pause());
+    this._globalCtx.IS_SERVER && (this._socket && this._socket.pause());
   }
 
   onPresetResumeSend() {
-    __IS_SERVER__ && (this._socket && this._socket.resume());
+    this._globalCtx.IS_SERVER && (this._socket && this._socket.resume());
   }
 
   async connect({host, port}) {
@@ -364,7 +364,7 @@ export class TcpOutbound extends Outbound {
     this._socket.on('timeout', this.onTimeout);
     this._socket.on('data', this.onReceive);
     this._socket.on('drain', this.onDrain);
-    this._socket.setTimeout(__TIMEOUT__);
+    this._socket.setTimeout(this._globalCtx.TIMEOUT);
   }
 
   async _connect({host, port}) {

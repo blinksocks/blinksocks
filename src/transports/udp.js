@@ -18,7 +18,7 @@ export class UdpInbound extends Inbound {
   }
 
   onReceive(buffer, rinfo) {
-    const type = __IS_CLIENT__ ? PIPE_ENCODE : PIPE_DECODE;
+    const type = this._globalCtx.IS_CLIENT ? PIPE_ENCODE : PIPE_DECODE;
     this._rinfo = rinfo;
     this.ctx.pipe.feed(type, buffer);
   }
@@ -51,7 +51,7 @@ export class UdpInbound extends Inbound {
         logger.warn(`[udp:inbound] [${this.remote}]:`, err);
       }
     };
-    if (__IS_CLIENT__) {
+    if (this._globalCtx.IS_CLIENT) {
       const isSs = this.ctx.pipe.presets.some(({name}) => ['ss-base'].includes(name));
       this._socket.send(buffer, port, address, isSs, onSendError);
     } else {
@@ -85,7 +85,7 @@ export class UdpOutbound extends Outbound {
   }
 
   onReceive(buffer) {
-    const type = __IS_CLIENT__ ? PIPE_DECODE : PIPE_ENCODE;
+    const type = this._globalCtx.IS_CLIENT ? PIPE_DECODE : PIPE_ENCODE;
     this.ctx.pipe.feed(type, buffer);
   }
 
@@ -121,11 +121,11 @@ export class UdpOutbound extends Outbound {
 
   onConnectToRemote(action) {
     const {host, port, onConnected} = action.payload;
-    if (__IS_CLIENT__) {
-      this._targetHost = __SERVER_HOST__;
-      this._targetPort = __SERVER_PORT__;
+    if (this._globalCtx.IS_CLIENT) {
+      this._targetHost = this._globalCtx.SERVER_HOST;
+      this._targetPort = this._globalCtx.SERVER_PORT;
     }
-    if (__IS_SERVER__) {
+    if (this._globalCtx.IS_SERVER) {
       this._targetHost = host;
       this._targetPort = port;
       if (typeof onConnected === 'function') {

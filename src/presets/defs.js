@@ -120,7 +120,7 @@ export class IPreset {
    * check params passed to the preset, if any errors, should throw directly
    * @param params
    */
-  static checkParams(params) {
+  static checkParams(params, ctx) {
 
   }
 
@@ -128,7 +128,7 @@ export class IPreset {
    * you can make some cache in this function
    * @param params
    */
-  static onInit(params) {
+  static onInit(params, ctx) {
 
   }
 

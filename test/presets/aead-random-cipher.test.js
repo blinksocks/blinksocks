@@ -7,9 +7,9 @@ test('running on client and server', async () => {
       method: 'aes-128-gcm'
     }
   }, {
-    __KEY__: 'secret',
-    __IS_CLIENT__: true,
-    __IS_SERVER__: false
+    KEY: 'secret',
+    IS_CLIENT: true,
+    IS_SERVER: false
   });
 
   const packet_1 = await runner.forward('12');

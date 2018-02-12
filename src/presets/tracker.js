@@ -29,6 +29,13 @@ export default class TrackerPreset extends IPreset {
   _targetHost;
   _targetPort;
 
+  _ctx = null;
+
+  constructor(_, ctx) {
+    super();
+    this._ctx = ctx;
+  }
+
   onNotified({type, payload}) {
     switch (type) {
       case CONNECTION_CREATED: {
@@ -95,7 +102,7 @@ export default class TrackerPreset extends IPreset {
     if (strs.length > TRACK_MAX_SIZE) {
       strs = strs.slice(0, perSize).concat([' ... ']).concat(strs.slice(-perSize));
     }
-    const summary = __IS_CLIENT__ ? `out/in = ${up}/${dp}, ${ub}b/${db}b` : `in/out = ${dp}/${up}, ${db}b/${ub}b`;
+    const summary = this._ctx.IS_CLIENT ? `out/in = ${up}/${dp}, ${ub}b/${db}b` : `in/out = ${dp}/${up}, ${db}b/${ub}b`;
     logger.info(`[tracker:${this._transport}] summary(${summary}) abstract(${strs.join(' ')})`);
   }
 

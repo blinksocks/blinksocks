@@ -73,6 +73,8 @@ export default class SsBasePreset extends IPresetAddressing {
 
   _headSize = 0;
 
+  _ctx = null;
+
   get headSize() {
     return this._headSize;
   }
@@ -83,8 +85,13 @@ export default class SsBasePreset extends IPresetAddressing {
     this._port = null;
   }
 
+  constructor(_, ctx) {
+    super();
+    this._ctx = ctx;
+  }
+
   onNotified(action) {
-    if (__IS_CLIENT__ && action.type === CONNECT_TO_REMOTE) {
+    if (this._ctx.IS_CLIENT && action.type === CONNECT_TO_REMOTE) {
       const {host, port} = action.payload;
       const type = getHostType(host);
       this._atyp = type;

@@ -28,7 +28,7 @@ export class MuxRelay extends Relay {
       'tls': [TlsInbound, TlsOutbound],
       'ws': [WsInbound, WsOutbound],
     };
-    const [Inbound, Outbound] = __IS_CLIENT__ ? [MuxInbound, mapping[transport][1]] : [mapping[transport][0], MuxOutbound];
+    const [Inbound, Outbound] = this._globalCtx.IS_CLIENT ? [MuxInbound, mapping[transport][1]] : [mapping[transport][0], MuxOutbound];
     return {Inbound, Outbound};
   }
 
@@ -121,7 +121,7 @@ export class MuxRelay extends Relay {
       logger.error(`[mux-${this.id}] fail to dispatch data frame(size=${data.length}), no such sub connection(cid=${cid})`);
       return;
     }
-    if (__IS_CLIENT__ || relay.isOutboundReady()) {
+    if (this._globalCtx.IS_CLIENT || relay.isOutboundReady()) {
       relay.decode(data);
     } else {
       // TODO: find a way to avoid using relay._pendingFrames
