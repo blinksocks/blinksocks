@@ -38,7 +38,7 @@ export class Hub {
   _ctx = null;
 
   constructor(config) {
-    this._ctx = Config.init(config);
+    this._ctx = new Config(config);
     this._onConnection = this._onConnection.bind(this);
     this._udpRelays = LRU({
       max: 500,

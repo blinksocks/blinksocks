@@ -195,7 +195,7 @@ describe('Config#init', () => {
   };
 
   it('should ctx set correctly', () => {
-    const ctx = Config.init(clientConf);
+    const ctx = new Config(clientConf);
     expect(ctx.LOCAL_PROTOCOL).toBe('tcp');
     expect(ctx.LOCAL_HOST).toBe('localhost');
     expect(ctx.LOCAL_PORT).toBe(1080);
@@ -223,8 +223,8 @@ describe('Config#initServer', () => {
     tls_key: 'mock_key.pem'
   };
 
-  it('should globals set correctly', () => {
-    const ctx = Config.init(serverConf);
+  it('should ctx set correctly', () => {
+    const ctx = new Config(serverConf);
     expect(ctx.TRANSPORT).toBe('tls');
     expect(ctx.TLS_CERT).toBeDefined();
     expect(ctx.TLS_KEY).toBeDefined();
