@@ -194,19 +194,19 @@ describe('Config#init', () => {
     log_max_days: 30
   };
 
-  it('should globals set correctly', () => {
-    Config.init(clientConf);
-    expect(__LOCAL_PROTOCOL__).toBe('tcp');
-    expect(__LOCAL_HOST__).toBe('localhost');
-    expect(__LOCAL_PORT__).toBe(1080);
-    expect(__IS_CLIENT__).toBe(true);
-    expect(__IS_SERVER__).toBe(false);
-    expect(__SERVERS__.length).toBe(1);
-    expect(__TIMEOUT__).toBe(600 * 1e3);
-    expect(__WORKERS__).toBe(0);
-    expect(__LOG_LEVEL__).toBe('warn');
-    expect(__LOG_PATH__.endsWith('blinksocks.log')).toBe(true);
-    expect(__LOG_MAX_DAYS__).toBe(30);
+  it('should ctx set correctly', () => {
+    const ctx = Config.init(clientConf);
+    expect(ctx.LOCAL_PROTOCOL).toBe('tcp');
+    expect(ctx.LOCAL_HOST).toBe('localhost');
+    expect(ctx.LOCAL_PORT).toBe(1080);
+    expect(ctx.IS_CLIENT).toBe(true);
+    expect(ctx.IS_SERVER).toBe(false);
+    expect(ctx.SERVERS.length).toBe(1);
+    expect(ctx.TIMEOUT).toBe(600 * 1e3);
+    expect(ctx.WORKERS).toBe(0);
+    expect(ctx.LOG_LEVEL).toBe('warn');
+    expect(ctx.LOG_PATH.endsWith('blinksocks.log')).toBe(true);
+    expect(ctx.LOG_MAX_DAYS).toBe(30);
   });
 
 });
@@ -224,10 +224,10 @@ describe('Config#initServer', () => {
   };
 
   it('should globals set correctly', () => {
-    Config.init(serverConf);
-    expect(__TRANSPORT__).toBe('tls');
-    expect(__TLS_CERT__).toBeDefined();
-    expect(__TLS_KEY__).toBeDefined();
+    const ctx = Config.init(serverConf);
+    expect(ctx.TRANSPORT).toBe('tls');
+    expect(ctx.TLS_CERT).toBeDefined();
+    expect(ctx.TLS_KEY).toBeDefined();
   });
 
 });

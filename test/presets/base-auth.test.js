@@ -5,9 +5,9 @@ test('tcp relay on client and server', async () => {
   let runner = new PresetRunner({
     name: 'base-auth'
   }, {
-    __KEY__: 'secret',
-    __IS_CLIENT__: true,
-    __IS_SERVER__: false
+    KEY: 'secret',
+    IS_CLIENT: true,
+    IS_SERVER: false
   });
 
   // client
@@ -36,9 +36,9 @@ test('tcp relay on client and server', async () => {
   runner = new PresetRunner({
     name: 'base-auth'
   }, {
-    __KEY__: 'secret',
-    __IS_CLIENT__: false,
-    __IS_SERVER__: true
+    KEY: 'secret',
+    IS_CLIENT: false,
+    IS_SERVER: true
   });
 
   runner.on('broadcast', (action) => {
@@ -61,9 +61,9 @@ test('udp relay on client and server', async () => {
   let runner = new PresetRunner({
     name: 'base-auth'
   }, {
-    __KEY__: 'secret',
-    __IS_CLIENT__: true,
-    __IS_SERVER__: false
+    KEY: 'secret',
+    IS_CLIENT: true,
+    IS_SERVER: false
   });
 
   // client
@@ -86,9 +86,9 @@ test('udp relay on client and server', async () => {
   runner = new PresetRunner({
     name: 'base-auth'
   }, {
-    __KEY__: 'secret',
-    __IS_CLIENT__: false,
-    __IS_SERVER__: true
+    KEY: 'secret',
+    IS_CLIENT: false,
+    IS_SERVER: true
   });
 
   runner.on('broadcast', (action) => {

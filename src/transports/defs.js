@@ -5,10 +5,12 @@ import EventEmitter from 'events';
 class Bound extends EventEmitter {
 
   _ctx = null;
+  _globalCtx = null;
 
-  constructor({context}) {
+  constructor({context, globalContext}) {
     super();
     this._ctx = context;
+    this._globalCtx = globalContext;
   }
 
   get ctx() {

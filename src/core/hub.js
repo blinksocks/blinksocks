@@ -35,8 +35,10 @@ export class Hub {
 
   _udpRelays = null; // LRU cache
 
+  _ctx = null;
+
   constructor(config) {
-    Config.init(config);
+    this._ctx = Config.init(config);
     this._onConnection = this._onConnection.bind(this);
     this._udpRelays = LRU({
       max: 500,
@@ -48,14 +50,14 @@ export class Hub {
   terminate(callback) {
     // relays
     this._udpRelays.reset();
-    if (__MUX__) {
+    if (this._ctx.MUX) {
       this._muxRelays.forEach((relay) => relay.destroy());
       this._muxRelays.clear();
     }
     this._tcpRelays.forEach((relay) => relay.destroy());
     this._tcpRelays.clear();
     // balancer
-    if (__IS_CLIENT__) {
+    if (this._ctx.IS_CLIENT) {
       Balancer.destroy();
       logger.info(`[balancer-${this._wkId}] stopped`);
     }
@@ -71,8 +73,8 @@ export class Hub {
     if (this._tcpServer !== null) {
       this.terminate();
     }
-    if (__IS_CLIENT__) {
-      Balancer.start(__SERVERS__);
+    if (this._ctx.IS_CLIENT) {
+      Balancer.start(this._ctx.SERVERS);
       logger.info(`[balancer-${this._wkId}] started`);
       this._switchServer();
     }
@@ -85,7 +87,7 @@ export class Hub {
   }
 
   async _createServer() {
-    if (__IS_CLIENT__) {
+    if (this._ctx.IS_CLIENT) {
       this._tcpServer = await this._createServerOnClient();
     } else {
       this._tcpServer = await this._createServerOnServer();
@@ -96,30 +98,30 @@ export class Hub {
   async _createServerOnClient() {
     return new Promise((resolve, reject) => {
       let server = null;
-      switch (__LOCAL_PROTOCOL__) {
+      switch (this._ctx.LOCAL_PROTOCOL) {
         case 'tcp':
-          server = tcp.createServer({forwardHost: __FORWARD_HOST__, forwardPort: __FORWARD_PORT__});
+          server = tcp.createServer({forwardHost: this._ctx.FORWARD_HOST, forwardPort: this._ctx.FORWARD_PORT});
           break;
         case 'socks':
         case 'socks5':
         case 'socks4':
         case 'socks4a':
-          server = socks.createServer({bindAddress: __LOCAL_HOST__, bindPort: __LOCAL_PORT__});
+          server = socks.createServer({bindAddress: this._ctx.LOCAL_HOST, bindPort: this._ctx.LOCAL_PORT});
           break;
         case 'http':
         case 'https':
           server = http.createServer();
           break;
         default:
-          return reject(Error(`unsupported protocol: "${__LOCAL_PROTOCOL__}"`));
+          return reject(Error(`unsupported protocol: "${this._ctx.LOCAL_PROTOCOL}"`));
       }
       const address = {
-        host: __LOCAL_HOST__,
-        port: __LOCAL_PORT__
+        host: this._ctx.LOCAL_HOST,
+        port: this._ctx.LOCAL_PORT
       };
       server.on('proxyConnection', this._onConnection);
       server.listen(address, () => {
-        const service = `${__LOCAL_PROTOCOL__}://${__LOCAL_HOST__}:${__LOCAL_PORT__}`;
+        const service = `${this._ctx.LOCAL_PROTOCOL}://${this._ctx.LOCAL_HOST}:${this._ctx.LOCAL_PORT}`;
         logger.info(`[hub-${this._wkId}] blinksocks client is running at ${service}`);
         resolve(server);
       });
@@ -129,15 +131,15 @@ export class Hub {
   async _createServerOnServer() {
     return new Promise((resolve, reject) => {
       const address = {
-        host: __LOCAL_HOST__,
-        port: __LOCAL_PORT__
+        host: this._ctx.LOCAL_HOST,
+        port: this._ctx.LOCAL_PORT
       };
       const onListening = (server) => {
-        const service = `${__LOCAL_PROTOCOL__}://${__LOCAL_HOST__}:${__LOCAL_PORT__}`;
+        const service = `${this._ctx.LOCAL_PROTOCOL}://${this._ctx.LOCAL_HOST}:${this._ctx.LOCAL_PORT}`;
         logger.info(`[hub-${this._wkId}] blinksocks server is running at ${service}`);
         resolve(server);
       };
-      switch (__LOCAL_PROTOCOL__) {
+      switch (this._ctx.LOCAL_PROTOCOL) {
         case 'tcp': {
           const server = net.createServer();
           server.on('connection', this._onConnection);
@@ -158,13 +160,13 @@ export class Hub {
           break;
         }
         case 'tls': {
-          const server = tls.createServer({key: [__TLS_KEY__], cert: [__TLS_CERT__]});
+          const server = tls.createServer({key: [this._ctx.TLS_KEY], cert: [this._ctx.TLS_CERT]});
           server.on('secureConnection', this._onConnection);
           server.listen(address, () => onListening(server));
           break;
         }
         default:
-          return reject(Error(`unsupported protocol: "${__LOCAL_PROTOCOL__}"`));
+          return reject(Error(`unsupported protocol: "${this._ctx.LOCAL_PROTOCOL}"`));
       }
     });
   }
@@ -178,7 +180,7 @@ export class Hub {
         const {address, port} = rinfo;
         let proxyRequest = null;
         let packet = msg;
-        if (__IS_CLIENT__) {
+        if (this._ctx.IS_CLIENT) {
           const parsed = socks.parseSocks5UdpRequest(msg);
           if (parsed === null) {
             logger.warn(`[hub] [${address}:${port}] drop invalid udp packet: ${dumpHex(msg)}`);
@@ -217,7 +219,7 @@ export class Hub {
       })(server.close);
 
       // monkey patch for Socket.send() to meet Socks5 protocol
-      if (__IS_CLIENT__) {
+      if (this._ctx.IS_CLIENT) {
         server.send = ((send) => (data, port, host, isSs, ...args) => {
           let packet = null;
           if (isSs) {
@@ -230,8 +232,8 @@ export class Hub {
         })(server.send);
       }
 
-      server.bind({address: __LOCAL_HOST__, port: __LOCAL_PORT__}, () => {
-        const service = `udp://${__LOCAL_HOST__}:${__LOCAL_PORT__}`;
+      server.bind({address: this._ctx.LOCAL_HOST, port: this._ctx.LOCAL_PORT}, () => {
+        const service = `udp://${this._ctx.LOCAL_HOST}:${this._ctx.LOCAL_PORT}`;
         logger.info(`[hub-${this._wkId}] blinksocks udp server is running at ${service}`);
         resolve(server);
       });
@@ -240,7 +242,7 @@ export class Hub {
 
   _onConnection(socket, proxyRequest = null) {
     logger.verbose(`[hub] [${socket.remoteAddress}:${socket.remotePort}] connected`);
-    if (__IS_CLIENT__) {
+    if (this._ctx.IS_CLIENT) {
       this._switchServer();
     }
     const context = {
@@ -253,8 +255,8 @@ export class Hub {
     };
 
     let muxRelay = null, cid = null;
-    if (__MUX__) {
-      if (__IS_CLIENT__) {
+    if (this._ctx.MUX) {
+      if (this._ctx.IS_CLIENT) {
         cid = makeConnID();
         muxRelay = this._getMuxRelayOnClient(context, cid);
         context.muxRelay = muxRelay;
@@ -267,8 +269,8 @@ export class Hub {
     const relay = this._createRelay(context);
 
     // setup association between relay and muxRelay
-    if (__MUX__) {
-      if (__IS_CLIENT__) {
+    if (this._ctx.MUX) {
+      if (this._ctx.IS_CLIENT) {
         relay.id = cid; // NOTE: this cid will be used in mux preset
         muxRelay.addSubRelay(relay);
       } else {
@@ -314,25 +316,25 @@ export class Hub {
   _createRelay(context, isMux = false) {
     const props = {
       context: context,
-      transport: __TRANSPORT__,
-      presets: __PRESETS__
+      transport: this._ctx.TRANSPORT,
+      presets: this._ctx.PRESETS
     };
     if (isMux) {
-      return new MuxRelay(props);
+      return new MuxRelay(props, this._ctx);
     }
-    if (__MUX__) {
-      if (__IS_CLIENT__) {
-        return new Relay({...props, transport: 'mux', presets: []});
+    if (this._ctx.MUX) {
+      if (this._ctx.IS_CLIENT) {
+        return new Relay({...props, transport: 'mux', presets: []}, this._ctx);
       } else {
-        return new MuxRelay(props);
+        return new MuxRelay(props, this._ctx);
       }
     } else {
-      return new Relay(props);
+      return new Relay(props, this._ctx);
     }
   }
 
   _createUdpRelay(context) {
-    return new Relay({transport: 'udp', context, presets: __UDP_PRESETS__});
+    return new Relay({transport: 'udp', context, presets: this._ctx.UDP_PRESETS}, this._ctx);
   }
 
   _selectMuxRelay() {
@@ -341,7 +343,7 @@ export class Hub {
     if (concurrency < 1) {
       return null;
     }
-    if (concurrency < __MUX_CONCURRENCY__ && getRandomInt(0, 1) === 0) {
+    if (concurrency < this._ctx.MUX_CONCURRENCY && getRandomInt(0, 1) === 0) {
       return null;
     }
     return relays.get([...relays.keys()][getRandomInt(0, concurrency - 1)]);
@@ -351,7 +353,7 @@ export class Hub {
     const server = Balancer.getFastest();
     if (server) {
       Config.initServer(server);
-      logger.info(`[balancer-${this._wkId}] use server: ${__SERVER_HOST__}:${__SERVER_PORT__}`);
+      logger.info(`[balancer-${this._wkId}] use server: ${this._ctx.SERVER_HOST}:${this._ctx.SERVER_PORT}`);
     }
   }
 

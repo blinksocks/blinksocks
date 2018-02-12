@@ -17,78 +17,80 @@ function loadFileSync(file) {
 export class Config {
 
   static init(json) {
+    const ctx = {};
     const {protocol, hostname, port, query} = url.parse(json.service);
-    global.__LOCAL_PROTOCOL__ = protocol.slice(0, -1);
-    global.__LOCAL_HOST__ = hostname;
-    global.__LOCAL_PORT__ = +port;
+    ctx.LOCAL_PROTOCOL = protocol.slice(0, -1);
+    ctx.LOCAL_HOST = hostname;
+    ctx.LOCAL_PORT = +port;
 
     if (json.servers !== undefined) {
-      global.__SERVERS__ = json.servers.filter((server) => !!server.enabled);
-      global.__IS_CLIENT__ = true;
-      global.__IS_SERVER__ = false;
+      ctx.SERVERS = json.servers.filter((server) => !!server.enabled);
+      ctx.IS_CLIENT = true;
+      ctx.IS_SERVER = false;
     } else {
-      global.__IS_CLIENT__ = false;
-      global.__IS_SERVER__ = true;
+      ctx.IS_CLIENT = false;
+      ctx.IS_SERVER = true;
     }
 
-    Config.initLogger(json);
+    Config.initLogger(ctx, json);
 
-    if (__IS_SERVER__) {
-      Config.initServer(json);
+    if (ctx.IS_SERVER) {
+      Config.initServer(ctx, json);
     }
 
-    if (__IS_CLIENT__ && __LOCAL_PROTOCOL__ === 'tcp') {
+    if (ctx.IS_CLIENT && ctx.LOCAL_PROTOCOL === 'tcp') {
       const {forward} = qs.parse(query);
       const {hostname, port} = url.parse('tcp://' + forward);
-      global.__FORWARD_HOST__ = hostname;
-      global.__FORWARD_PORT__ = +port;
+      ctx.FORWARD_HOST = hostname;
+      ctx.FORWARD_PORT = +port;
     }
 
-    global.__TIMEOUT__ = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
-    global.__REDIRECT__ = (json.redirect !== '') ? json.redirect : null;
-    global.__WORKERS__ = (json.workers !== undefined) ? json.workers : 0;
-    global.__DNS_EXPIRE__ = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
+    ctx.TIMEOUT = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
+    ctx.REDIRECT = (json.redirect !== '') ? json.redirect : null;
+    ctx.WORKERS = (json.workers !== undefined) ? json.workers : 0;
+    ctx.DNS_EXPIRE = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
 
     // dns
     if (json.dns !== undefined && json.dns.length > 0) {
-      global.__DNS__ = json.dns;
+      ctx.DNS = json.dns;
       dns.setServers(json.dns);
     }
 
     // dns-cache
-    DNSCache.init(__DNS_EXPIRE__);
+    DNSCache.init(ctx.DNS_EXPIRE);
+    return ctx;
   }
 
-  static initServer(server) {
+  static initServer(ctx, server) {
     // service
     const {protocol, hostname, port} = url.parse(server.service);
-    global.__TRANSPORT__ = protocol.slice(0, -1);
-    global.__SERVER_HOST__ = hostname;
-    global.__SERVER_PORT__ = +port;
+    ctx.TRANSPORT = protocol.slice(0, -1);
+    ctx.SERVER_HOST = hostname;
+    ctx.SERVER_PORT = +port;
 
     // preload tls_cert or tls_key
-    if (__TRANSPORT__ === 'tls') {
+    if (ctx.TRANSPORT === 'tls') {
       logger.info(`[config] loading ${server.tls_cert}`);
-      global.__TLS_CERT__ = loadFileSync(server.tls_cert);
-      if (__IS_SERVER__) {
+      ctx.TLS_CERT = loadFileSync(server.tls_cert);
+      if (ctx.IS_SERVER) {
         logger.info(`[config] loading ${server.tls_key}`);
-        global.__TLS_KEY__ = loadFileSync(server.tls_key);
+        ctx.TLS_KEY = loadFileSync(server.tls_key);
       }
     }
 
-    global.__KEY__ = server.key;
-    global.__PRESETS__ = server.presets;
-    global.__UDP_PRESETS__ = server.presets;
+    ctx.KEY = server.key;
+    ctx.PRESETS = server.presets;
+    ctx.UDP_PRESETS = server.presets;
 
     // mux
-    global.__MUX__ = !!server.mux;
-    if (__IS_CLIENT__) {
-      global.__MUX_CONCURRENCY__ = server.mux_concurrency || 10;
+    ctx.MUX = !!server.mux;
+    if (ctx.IS_CLIENT) {
+      ctx.MUX_CONCURRENCY = server.mux_concurrency || 10;
     }
 
     // remove unnecessary presets
-    if (__MUX__) {
-      global.__PRESETS__ = __PRESETS__.filter(
+    if (ctx.MUX) {
+      ctx.PRESETS = ctx.PRESETS.filter(
         ({name}) => !IPresetAddressing.isPrototypeOf(getPresetClassByName(name))
       );
     }
@@ -103,7 +105,7 @@ export class Config {
     }
   }
 
-  static initLogger(json) {
+  static initLogger(ctx, json) {
     // log_path & log_level
     const absolutePath = path.resolve(process.cwd(), json.log_path || '.');
     let isFile = false;
@@ -114,12 +116,12 @@ export class Config {
     }
 
     // log_path, log_level, log_max_days
-    global.__LOG_PATH__ = isFile ? absolutePath : path.join(absolutePath, `bs-${__IS_CLIENT__ ? 'client' : 'server'}.log`);
-    global.__LOG_LEVEL__ = (json.log_level !== undefined) ? json.log_level : 'info';
-    global.__LOG_MAX_DAYS__ = (json.log_max_days !== undefined) ? json.log_max_days : 0;
+    ctx.LOG_PATH = isFile ? absolutePath : path.join(absolutePath, `bs-${ctx.IS_CLIENT ? 'client' : 'server'}.log`);
+    ctx.LOG_LEVEL = (json.log_level !== undefined) ? json.log_level : 'info';
+    ctx.LOG_MAX_DAYS = (json.log_max_days !== undefined) ? json.log_max_days : 0;
 
     logger.configure({
-      level: __LOG_LEVEL__,
+      level: ctx.LOG_LEVEL,
       transports: [
         new (winston.transports.Console)({
           colorize: true,
@@ -128,9 +130,9 @@ export class Config {
         new (require('winston-daily-rotate-file'))({
           json: false,
           eol: os.EOL,
-          filename: __LOG_PATH__,
-          level: __LOG_LEVEL__,
-          maxDays: __LOG_MAX_DAYS__
+          filename: ctx.LOG_PATH,
+          level: ctx.LOG_LEVEL,
+          maxDays: ctx.LOG_MAX_DAYS
         })
       ]
     });
