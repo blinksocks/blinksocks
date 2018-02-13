@@ -15,81 +15,114 @@ function loadFileSync(file) {
 }
 
 export class Config {
+  LOCAL_PROTOCOL = null;
+  LOCAL_HOST = null;
+  LOCAL_PORT = null;
+
+  SERVERS = null;
+  IS_CLIENT = null;
+  IS_SERVER = null;
+
+  FORWARD_HOST = null;
+  FORWARD_PORT = null;
+
+  TIMEOUT = null;
+  REDIRECT = null;
+  WORKERS = null;
+
+  DNS_EXPIRE = null;
+  DNS_DEFAULT_EXPIRE = null;
+  DNS = null;
+
+  TRANSPORT = null;
+  SERVER_HOST = null;
+  SERVER_PORT = null;
+  TLS_CERT = null;
+  KEY = null;
+
+  PRESETS = null;
+  UDP_PRESETS = null;
+
+  MUX = null;
+  MUX_CONCURRENCY = null;
+  
+  LOG_PATH = null;
+  LOG_LEVEL = null;
+  LOG_MAX_DAYS = null;
+
   constructor(json){
-    const ctx = {};
     const {protocol, hostname, port, query} = url.parse(json.service);
-    ctx.LOCAL_PROTOCOL = protocol.slice(0, -1);
-    ctx.LOCAL_HOST = hostname;
-    ctx.LOCAL_PORT = +port;
+    this.LOCAL_PROTOCOL = protocol.slice(0, -1);
+    this.LOCAL_HOST = hostname;
+    this.LOCAL_PORT = +port;
 
     if (json.servers !== undefined) {
-      ctx.SERVERS = json.servers.filter((server) => !!server.enabled);
-      ctx.IS_CLIENT = true;
-      ctx.IS_SERVER = false;
+      this.SERVERS = json.servers.filter((server) => !!server.enabled);
+      this.IS_CLIENT = true;
+      this.IS_SERVER = false;
     } else {
-      ctx.IS_CLIENT = false;
-      ctx.IS_SERVER = true;
+      this.IS_CLIENT = false;
+      this.IS_SERVER = true;
     }
 
-    Config.initLogger(ctx, json);
+    this._initLogger(json);
 
-    if (ctx.IS_SERVER) {
-      Config.initServer(ctx, json);
+    if (this.IS_SERVER) {
+      this._initServer(json);
     }
 
-    if (ctx.IS_CLIENT && ctx.LOCAL_PROTOCOL === 'tcp') {
+    if (this.IS_CLIENT && this.LOCAL_PROTOCOL === 'tcp') {
       const {forward} = qs.parse(query);
       const {hostname, port} = url.parse('tcp://' + forward);
-      ctx.FORWARD_HOST = hostname;
-      ctx.FORWARD_PORT = +port;
+      this.FORWARD_HOST = hostname;
+      this.FORWARD_PORT = +port;
     }
 
-    ctx.TIMEOUT = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
-    ctx.REDIRECT = (json.redirect !== '') ? json.redirect : null;
-    ctx.WORKERS = (json.workers !== undefined) ? json.workers : 0;
-    ctx.DNS_EXPIRE = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
+    this.TIMEOUT = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
+    this.REDIRECT = (json.redirect !== '') ? json.redirect : null;
+    this.WORKERS = (json.workers !== undefined) ? json.workers : 0;
+    this.DNS_EXPIRE = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
 
     // dns
     if (json.dns !== undefined && json.dns.length > 0) {
-      ctx.DNS = json.dns;
+      this.DNS = json.dns;
       dns.setServers(json.dns);
     }
 
     // dns-cache
-    DNSCache.init(ctx.DNS_EXPIRE);
-    return ctx;
+    DNSCache.init(this.DNS_EXPIRE);
   }
 
-  static initServer(ctx, server) {
+  _initServer(server) {
     // service
     const {protocol, hostname, port} = url.parse(server.service);
-    ctx.TRANSPORT = protocol.slice(0, -1);
-    ctx.SERVER_HOST = hostname;
-    ctx.SERVER_PORT = +port;
+    this.TRANSPORT = protocol.slice(0, -1);
+    this.SERVER_HOST = hostname;
+    this.SERVER_PORT = +port;
 
     // preload tls_cert or tls_key
-    if (ctx.TRANSPORT === 'tls') {
+    if (this.TRANSPORT === 'tls') {
       logger.info(`[config] loading ${server.tls_cert}`);
-      ctx.TLS_CERT = loadFileSync(server.tls_cert);
-      if (ctx.IS_SERVER) {
+      this.TLS_CERT = loadFileSync(server.tls_cert);
+      if (this.IS_SERVER) {
         logger.info(`[config] loading ${server.tls_key}`);
-        ctx.TLS_KEY = loadFileSync(server.tls_key);
+        this.TLS_KEY = loadFileSync(server.tls_key);
       }
     }
 
-    ctx.KEY = server.key;
-    ctx.PRESETS = server.presets;
-    ctx.UDP_PRESETS = server.presets;
+    this.KEY = server.key;
+    this.PRESETS = server.presets;
+    this.UDP_PRESETS = server.presets;
 
     // mux
-    ctx.MUX = !!server.mux;
-    if (ctx.IS_CLIENT) {
-      ctx.MUX_CONCURRENCY = server.mux_concurrency || 10;
+    this.MUX = !!server.mux;
+    if (this.IS_CLIENT) {
+      this.MUX_CONCURRENCY = server.mux_concurrency || 10;
     }
 
     // remove unnecessary presets
-    if (ctx.MUX) {
-      ctx.PRESETS = ctx.PRESETS.filter(
+    if (this.MUX) {
+      this.PRESETS = this.PRESETS.filter(
         ({name}) => !IPresetAddressing.isPrototypeOf(getPresetClassByName(name))
       );
     }
@@ -104,7 +137,7 @@ export class Config {
     }
   }
 
-  static initLogger(ctx, json) {
+  _initLogger(json) {
     // log_path & log_level
     const absolutePath = path.resolve(process.cwd(), json.log_path || '.');
     let isFile = false;
@@ -115,12 +148,12 @@ export class Config {
     }
 
     // log_path, log_level, log_max_days
-    ctx.LOG_PATH = isFile ? absolutePath : path.join(absolutePath, `bs-${ctx.IS_CLIENT ? 'client' : 'server'}.log`);
-    ctx.LOG_LEVEL = (json.log_level !== undefined) ? json.log_level : 'info';
-    ctx.LOG_MAX_DAYS = (json.log_max_days !== undefined) ? json.log_max_days : 0;
+    this.LOG_PATH = isFile ? absolutePath : path.join(absolutePath, `bs-${this.IS_CLIENT ? 'client' : 'server'}.log`);
+    this.LOG_LEVEL = (json.log_level !== undefined) ? json.log_level : 'info';
+    this.LOG_MAX_DAYS = (json.log_max_days !== undefined) ? json.log_max_days : 0;
 
     logger.configure({
-      level: ctx.LOG_LEVEL,
+      level: this.LOG_LEVEL,
       transports: [
         new (winston.transports.Console)({
           colorize: true,
@@ -129,9 +162,9 @@ export class Config {
         new (require('winston-daily-rotate-file'))({
           json: false,
           eol: os.EOL,
-          filename: ctx.LOG_PATH,
-          level: ctx.LOG_LEVEL,
-          maxDays: ctx.LOG_MAX_DAYS
+          filename: this.LOG_PATH,
+          level: this.LOG_LEVEL,
+          maxDays: this.LOG_MAX_DAYS
         })
       ]
     });
