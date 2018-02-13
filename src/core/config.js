@@ -16,7 +16,6 @@ function loadFileSync(file) {
 
 export class Config {
   constructor(json){
-  // static init(json) {
     const ctx = {};
     const {protocol, hostname, port, query} = url.parse(json.service);
     ctx.LOCAL_PROTOCOL = protocol.slice(0, -1);
