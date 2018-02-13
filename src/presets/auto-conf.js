@@ -76,19 +76,12 @@ export default class AutoConfPreset extends IPreset {
 
   _header = null;
 
-  _ctx = null;
-
   static suites = [];
 
   static checkParams({suites}) {
     if (typeof suites !== 'string' || suites.length < 1) {
       throw Error('\'suites\' is invalid');
     }
-  }
-
-  constructor(_, ctx) {
-    super();
-    this._ctx = ctx;
   }
 
   static async onInit({suites: uri}) {
@@ -118,7 +111,7 @@ export default class AutoConfPreset extends IPreset {
   createRequestHeader(suites) {
     const sid = crypto.randomBytes(2);
     const utc = ntb(getCurrentTimestampInt(), 4, BYTE_ORDER_LE);
-    const key = EVP_BytesToKey(Buffer.from(this._ctx.KEY).toString('base64') + hash('md5', sid).toString('base64'), 16, 16);
+    const key = EVP_BytesToKey(Buffer.from(AutoConfPreset.config.key).toString('base64') + hash('md5', sid).toString('base64'), 16, 16);
     const cipher = crypto.createCipheriv('rc4', key, NOOP);
     const enc_utc = cipher.update(utc);
     const request_hmac = hmac('md5', key, Buffer.concat([sid, enc_utc]));
@@ -156,7 +149,7 @@ export default class AutoConfPreset extends IPreset {
     }
     const sid = buffer.slice(0, 2);
     const request_hmac = buffer.slice(6, 22);
-    const key = EVP_BytesToKey(Buffer.from(this._ctx.KEY).toString('base64') + hash('md5', sid).toString('base64'), 16, 16);
+    const key = EVP_BytesToKey(Buffer.from(AutoConfPreset.config.KEY).toString('base64') + hash('md5', sid).toString('base64'), 16, 16);
     const hmac_calc = hmac('md5', key, buffer.slice(0, 6));
     if (!hmac_calc.equals(request_hmac)) {
       return fail(`unexpected hmac of client request, dump=${dumpHex(buffer)}`);

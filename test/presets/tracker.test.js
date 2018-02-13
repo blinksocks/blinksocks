@@ -5,8 +5,8 @@ test('tcp relay on client and server', async () => {
   const runner = new PresetRunner({
     name: 'tracker'
   }, {
-    IS_CLIENT: true,
-    IS_SERVER: false
+    is_client: true,
+    is_server: false
   });
 
   const actionPayload = {
@@ -33,8 +33,8 @@ test('udp relay on client and server', async () => {
   const runner = new PresetRunner({
     name: 'tracker'
   }, {
-    IS_CLIENT: true,
-    IS_SERVER: false
+    is_client: true,
+    is_server: false
   });
 
   expect(await runner.forwardUdp('12')).toMatchSnapshot();

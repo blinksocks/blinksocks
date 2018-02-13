@@ -194,19 +194,19 @@ describe('Config#init', () => {
     log_max_days: 30
   };
 
-  it('should ctx set correctly', () => {
-    const ctx = new Config(clientConf);
-    expect(ctx.LOCAL_PROTOCOL).toBe('tcp');
-    expect(ctx.LOCAL_HOST).toBe('localhost');
-    expect(ctx.LOCAL_PORT).toBe(1080);
-    expect(ctx.IS_CLIENT).toBe(true);
-    expect(ctx.IS_SERVER).toBe(false);
-    expect(ctx.SERVERS.length).toBe(1);
-    expect(ctx.TIMEOUT).toBe(600 * 1e3);
-    expect(ctx.WORKERS).toBe(0);
-    expect(ctx.LOG_LEVEL).toBe('warn');
-    expect(ctx.LOG_PATH.endsWith('blinksocks.log')).toBe(true);
-    expect(ctx.LOG_MAX_DAYS).toBe(30);
+  it('should config set correctly', () => {
+    const config = new Config(clientConf);
+    expect(config.local_protocol).toBe('tcp');
+    expect(config.local_host).toBe('localhost');
+    expect(config.local_port).toBe(1080);
+    expect(config.is_client).toBe(true);
+    expect(config.is_server).toBe(false);
+    expect(config.servers.length).toBe(1);
+    expect(config.timeout).toBe(600 * 1e3);
+    expect(config.workers).toBe(0);
+    expect(config.log_level).toBe('warn');
+    expect(config.log_path.endsWith('blinksocks.log')).toBe(true);
+    expect(config.log_max_days).toBe(30);
   });
 
 });
@@ -223,11 +223,11 @@ describe('Config#initServer', () => {
     tls_key: 'mock_key.pem'
   };
 
-  it('should ctx set correctly', () => {
-    const ctx = new Config(serverConf);
-    expect(ctx.TRANSPORT).toBe('tls');
-    expect(ctx.TLS_CERT).toBeDefined();
-    expect(ctx.TLS_KEY).toBeDefined();
+  it('should config set correctly', () => {
+    const config = new Config(serverConf);
+    expect(config.transport).toBe('tls');
+    expect(config.tls_cert).toBeDefined();
+    expect(config.tls_key).toBeDefined();
   });
 
 });

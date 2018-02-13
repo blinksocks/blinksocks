@@ -102,8 +102,8 @@ export default class SsrAuthAes128Preset extends IPreset {
 
   _adBuf = null;
 
-  static onInit({KEY}) {
-    SsrAuthAes128Preset.userKey = EVP_BytesToKey(KEY, 16, 16);
+  static onInit() {
+    SsrAuthAes128Preset.userKey = EVP_BytesToKey(SsrAuthAes128Preset.config.key, 16, 16);
     SsrAuthAes128Preset.clientId = crypto.randomBytes(4);
     SsrAuthAes128Preset.connectionId = getRandomInt(0, 0x00ffffff);
   }

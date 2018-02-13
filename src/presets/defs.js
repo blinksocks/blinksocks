@@ -110,6 +110,13 @@ export class IPreset {
    */
   static checked = false;
 
+
+  /**
+   * server config 
+   * @type {Config}
+   */
+  static config = null;
+
   /**
    * will become true after onInit()
    * @type {boolean}
@@ -120,7 +127,7 @@ export class IPreset {
    * check params passed to the preset, if any errors, should throw directly
    * @param params
    */
-  static checkParams(params, ctx) {
+  static checkParams(params) {
 
   }
 
@@ -128,7 +135,7 @@ export class IPreset {
    * you can make some cache in this function
    * @param params
    */
-  static onInit(params, ctx) {
+  static onInit(params) {
 
   }
 
