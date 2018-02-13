@@ -13,8 +13,8 @@ test('running on both client and server', async () => {
       save_interval: 1
     }
   }, {
-    IS_CLIENT: true,
-    IS_SERVER: false
+    is_client: true,
+    is_server: false
   });
 
   runner.notify({type: CONNECTION_CREATED});

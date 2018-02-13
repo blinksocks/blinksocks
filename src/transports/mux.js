@@ -7,7 +7,7 @@ export class MuxInbound extends Inbound {
   constructor(props) {
     super(props);
     this.onDrain = this.onDrain.bind(this);
-    if (this._globalCtx.IS_SERVER) {
+    if (this._config.is_server) {
       const inbound = this.ctx.muxRelay.getInbound();
       inbound.on('drain', this.onDrain);
     } else {
@@ -20,7 +20,7 @@ export class MuxInbound extends Inbound {
   }
 
   get bufferSize() {
-    if (this._globalCtx.IS_CLIENT) {
+    if (this._config.is_client) {
       const totalBufferSize = 0;
       // const subRelays = this.ctx.thisRelay.getSubRelays();
       // if (subRelays) {
@@ -70,7 +70,7 @@ export class MuxInbound extends Inbound {
   }
 
   write(buffer) {
-    if (this._globalCtx.IS_SERVER) {
+    if (this._config.is_server) {
       const {muxRelay, cid} = this.ctx;
       muxRelay.encode(buffer, {cid});
     }
@@ -83,7 +83,7 @@ export class MuxInbound extends Inbound {
 
   close() {
     const doClose = () => {
-      if (this._globalCtx.IS_SERVER) {
+      if (this._config.is_server) {
         const {muxRelay, cid} = this.ctx;
         const inbound = muxRelay.getInbound();
         if (inbound) {
@@ -112,7 +112,7 @@ export class MuxOutbound extends Outbound {
   constructor(props) {
     super(props);
     this.onDrain = this.onDrain.bind(this);
-    if (this._globalCtx.IS_CLIENT) {
+    if (this._config.is_client) {
       const outbound = this.ctx.muxRelay.getOutbound();
       outbound.on('drain', this.onDrain);
     } else {
@@ -121,7 +121,7 @@ export class MuxOutbound extends Outbound {
   }
 
   get bufferSize() {
-    if (this._globalCtx.IS_CLIENT) {
+    if (this._config.is_client) {
       const outbound = this.ctx.muxRelay.getOutbound();
       if (outbound) {
         return outbound.bufferSize;
@@ -148,7 +148,7 @@ export class MuxOutbound extends Outbound {
   }
 
   write(buffer) {
-    if (this._globalCtx.IS_CLIENT) {
+    if (this._config.is_client) {
       const {muxRelay, proxyRequest, cid} = this.ctx;
       if (this._isFirstFrame) {
         this._isFirstFrame = false;
@@ -166,7 +166,7 @@ export class MuxOutbound extends Outbound {
 
   close() {
     const doClose = () => {
-      if (this._globalCtx.IS_CLIENT) {
+      if (this._config.is_client) {
         const {muxRelay, cid} = this.ctx;
         const outbound = muxRelay.getOutbound();
         if (outbound) {

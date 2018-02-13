@@ -7,128 +7,128 @@ import url from 'url';
 import qs from 'qs';
 import winston from 'winston';
 import isPlainObject from 'lodash.isplainobject';
-import {getPresetClassByName, IPresetAddressing} from '../presets';
-import {DNSCache, isValidHostname, isValidPort, logger, DNS_DEFAULT_EXPIRE} from '../utils';
+import { getPresetClassByName, IPresetAddressing } from '../presets';
+import { DNSCache, isValidHostname, isValidPort, logger, DNS_DEFAULT_EXPIRE } from '../utils';
 
 function loadFileSync(file) {
   return fs.readFileSync(path.resolve(process.cwd(), file));
 }
 
 export class Config {
-  LOCAL_PROTOCOL = null;
-  LOCAL_HOST = null;
-  LOCAL_PORT = null;
+  local_protocol = null;
+  local_host = null;
+  local_port = null;
 
-  SERVERS = null;
-  IS_CLIENT = null;
-  IS_SERVER = null;
+  servers = null;
+  is_client = null;
+  is_server = null;
 
-  FORWARD_HOST = null;
-  FORWARD_PORT = null;
+  forward_host = null;
+  forward_port = null;
 
-  TIMEOUT = null;
-  REDIRECT = null;
-  WORKERS = null;
+  timeout = null;
+  redirect = null;
+  workers = null;
 
-  DNS_EXPIRE = null;
-  DNS_DEFAULT_EXPIRE = null;
-  DNS = null;
+  dns_expire = null;
+  dns = null;
 
-  TRANSPORT = null;
-  SERVER_HOST = null;
-  SERVER_PORT = null;
-  TLS_CERT = null;
-  KEY = null;
+  transport = null;
+  server_host = null;
+  server_port = null;
+  tls_cert = null;
+  tls_key = null;
+  key = null;
 
-  PRESETS = null;
-  UDP_PRESETS = null;
+  presets = null;
+  udp_presets = null;
 
-  MUX = null;
-  MUX_CONCURRENCY = null;
-  
-  LOG_PATH = null;
-  LOG_LEVEL = null;
-  LOG_MAX_DAYS = null;
+  mux = null;
+  mux_concurrency = null;
 
-  constructor(json){
-    const {protocol, hostname, port, query} = url.parse(json.service);
-    this.LOCAL_PROTOCOL = protocol.slice(0, -1);
-    this.LOCAL_HOST = hostname;
-    this.LOCAL_PORT = +port;
+  log_path = null;
+  log_level = null;
+  log_max_days = null;
+
+  constructor(json) {
+    const { protocol, hostname, port, query } = url.parse(json.service);
+    this.local_protocol = protocol.slice(0, -1);
+    this.local_host = hostname;
+    this.local_port = +port;
 
     if (json.servers !== undefined) {
-      this.SERVERS = json.servers.filter((server) => !!server.enabled);
-      this.IS_CLIENT = true;
-      this.IS_SERVER = false;
+      this.servers = json.servers.filter((server) => !!server.enabled);
+      this.is_client = true;
+      this.is_server = false;
     } else {
-      this.IS_CLIENT = false;
-      this.IS_SERVER = true;
+      this.is_client = false;
+      this.is_server = true;
     }
 
     this._initLogger(json);
 
-    if (this.IS_SERVER) {
-      this._initServer(json);
+    if (this.is_server) {
+      this.initServer(json);
     }
 
-    if (this.IS_CLIENT && this.LOCAL_PROTOCOL === 'tcp') {
-      const {forward} = qs.parse(query);
-      const {hostname, port} = url.parse('tcp://' + forward);
-      this.FORWARD_HOST = hostname;
-      this.FORWARD_PORT = +port;
+    if (this.is_client && this.local_protocol === 'tcp') {
+      const { forward } = qs.parse(query);
+      const { hostname, port } = url.parse('tcp://' + forward);
+      this.forward_host = hostname;
+      this.forward_port = +port;
     }
 
-    this.TIMEOUT = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
-    this.REDIRECT = (json.redirect !== '') ? json.redirect : null;
-    this.WORKERS = (json.workers !== undefined) ? json.workers : 0;
-    this.DNS_EXPIRE = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
+    this.timeout = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
+    this.redirect = (json.redirect !== '') ? json.redirect : null;
+    this.workers = (json.workers !== undefined) ? json.workers : 0;
+    this.dns_expire = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
 
     // dns
     if (json.dns !== undefined && json.dns.length > 0) {
-      this.DNS = json.dns;
+      this.dns = json.dns;
       dns.setServers(json.dns);
     }
 
     // dns-cache
-    DNSCache.init(this.DNS_EXPIRE);
+    DNSCache.init(this.dns_expire);
   }
 
-  _initServer(server) {
+  initServer(server) {
     // service
-    const {protocol, hostname, port} = url.parse(server.service);
-    this.TRANSPORT = protocol.slice(0, -1);
-    this.SERVER_HOST = hostname;
-    this.SERVER_PORT = +port;
+    const { protocol, hostname, port } = url.parse(server.service);
+    this.transport = protocol.slice(0, -1);
+    this.server_host = hostname;
+    this.server_port = +port;
 
     // preload tls_cert or tls_key
-    if (this.TRANSPORT === 'tls') {
+    if (this.transport === 'tls') {
       logger.info(`[config] loading ${server.tls_cert}`);
-      this.TLS_CERT = loadFileSync(server.tls_cert);
-      if (this.IS_SERVER) {
+      this.tls_cert = loadFileSync(server.tls_cert);
+      if (this.is_server) {
         logger.info(`[config] loading ${server.tls_key}`);
-        this.TLS_KEY = loadFileSync(server.tls_key);
+        this.tls_key = loadFileSync(server.tls_key);
       }
     }
 
-    this.KEY = server.key;
-    this.PRESETS = server.presets;
-    this.UDP_PRESETS = server.presets;
+    this.key = server.key;
+    this.presets = server.presets;
+    this.udp_presets = server.presets;
 
     // mux
-    this.MUX = !!server.mux;
-    if (this.IS_CLIENT) {
-      this.MUX_CONCURRENCY = server.mux_concurrency || 10;
+    this.mux = !!server.mux;
+    if (this.is_client) {
+      this.mux_concurrency = server.mux_concurrency || 10;
     }
 
     // remove unnecessary presets
-    if (this.MUX) {
-      this.PRESETS = this.PRESETS.filter(
-        ({name}) => !IPresetAddressing.isPrototypeOf(getPresetClassByName(name))
+    if (this.mux) {
+      this.presets = this.presets.filter(
+        ({ name }) => !IPresetAddressing.isPrototypeOf(getPresetClassByName(name))
       );
     }
 
     // pre-init presets
-    for (const {name, params = {}} of server.presets) {
+    for (const { name, params = {} } of server.presets) {
       const clazz = getPresetClassByName(name);
       clazz.checked = false;
       clazz.checkParams(params);
@@ -148,12 +148,12 @@ export class Config {
     }
 
     // log_path, log_level, log_max_days
-    this.LOG_PATH = isFile ? absolutePath : path.join(absolutePath, `bs-${this.IS_CLIENT ? 'client' : 'server'}.log`);
-    this.LOG_LEVEL = (json.log_level !== undefined) ? json.log_level : 'info';
-    this.LOG_MAX_DAYS = (json.log_max_days !== undefined) ? json.log_max_days : 0;
+    this.log_path = isFile ? absolutePath : path.join(absolutePath, `bs-${this.is_client ? 'client' : 'server'}.log`);
+    this.log_level = (json.log_level !== undefined) ? json.log_level : 'info';
+    this.log_max_days = (json.log_max_days !== undefined) ? json.log_max_days : 0;
 
     logger.configure({
-      level: this.LOG_LEVEL,
+      level: this.log_level,
       transports: [
         new (winston.transports.Console)({
           colorize: true,
@@ -162,9 +162,9 @@ export class Config {
         new (require('winston-daily-rotate-file'))({
           json: false,
           eol: os.EOL,
-          filename: this.LOG_PATH,
-          level: this.LOG_LEVEL,
-          maxDays: this.LOG_MAX_DAYS
+          filename: this.log_path,
+          level: this.log_level,
+          maxDays: this.log_max_days
         })
       ]
     });
@@ -188,7 +188,7 @@ export class Config {
       throw Error('"service" must be provided as "<protocol>://<host>:<port>[?params]"');
     }
 
-    const {protocol: _protocol, hostname, port, query} = url.parse(json.service);
+    const { protocol: _protocol, hostname, port, query } = url.parse(json.service);
 
     // service.protocol
     if (typeof _protocol !== 'string') {
@@ -216,14 +216,14 @@ export class Config {
 
     // service.query
     if (protocol === 'tcp') {
-      const {forward} = qs.parse(query);
+      const { forward } = qs.parse(query);
 
       // ?forward
       if (!forward) {
         throw Error('require "?forward=<host>:<port>" parameter in service when using "tcp" on client side');
       }
 
-      const {hostname, port} = url.parse('tcp://' + forward);
+      const { hostname, port } = url.parse('tcp://' + forward);
       if (!isValidHostname(hostname)) {
         throw Error('service.?forward.host is invalid');
       }
@@ -278,7 +278,7 @@ export class Config {
       throw Error('"service" must be provided as "<protocol>://<host>:<port>[?params]"');
     }
 
-    const {protocol: _protocol, hostname, port} = url.parse(server.service);
+    const { protocol: _protocol, hostname, port } = url.parse(server.service);
 
     // service.protocol
     if (typeof _protocol !== 'string') {
@@ -343,7 +343,7 @@ export class Config {
 
     // presets[].parameters
     for (const preset of server.presets) {
-      const {name, params} = preset;
+      const { name, params } = preset;
       if (typeof name !== 'string') {
         throw Error('"server.presets[].name" must be a string');
       }
@@ -361,7 +361,7 @@ export class Config {
   static _testCommon(common) {
     // timeout
     if (common.timeout !== undefined) {
-      const {timeout} = common;
+      const { timeout } = common;
       if (typeof timeout !== 'number') {
         throw Error('"timeout" must be a number');
       }
@@ -390,7 +390,7 @@ export class Config {
 
     // log_max_days
     if (common.log_max_days !== undefined) {
-      const {log_max_days} = common;
+      const { log_max_days } = common;
       if (typeof log_max_days !== 'number') {
         throw Error('"log_max_days" must a number');
       }
@@ -401,7 +401,7 @@ export class Config {
 
     // workers
     if (common.workers !== undefined) {
-      const {workers} = common;
+      const { workers } = common;
       if (typeof workers !== 'number') {
         throw Error('"workers" must be a number');
       }
@@ -415,7 +415,7 @@ export class Config {
 
     // dns
     if (common.dns !== undefined) {
-      const {dns} = common;
+      const { dns } = common;
       if (!Array.isArray(dns)) {
         throw Error('"dns" must be an array');
       }
@@ -428,7 +428,7 @@ export class Config {
 
     // dns_expire
     if (common.dns_expire !== undefined) {
-      const {dns_expire} = common;
+      const { dns_expire } = common;
       if (typeof dns_expire !== 'number') {
         throw Error('"dns_expire" must be a number');
       }

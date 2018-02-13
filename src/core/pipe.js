@@ -21,7 +21,7 @@ export class Pipe extends EventEmitter {
 
   _presets = null;
   
-  _ctx = null;
+  _config = null;
 
   get destroyed() {
     return this._destroyed;
@@ -31,9 +31,9 @@ export class Pipe extends EventEmitter {
     return this._presets;
   }
 
-  constructor({presets, isUdp = false}, ctx) {
+  constructor({presets, isUdp = false}, config) {
     super();
-    this._ctx = ctx;
+    this._config = config;
     this.broadcast = this.broadcast.bind(this);
     this.onReadProperty = this.onReadProperty.bind(this);
     this.createMiddlewares(presets);
@@ -143,7 +143,7 @@ export class Pipe extends EventEmitter {
   }
 
   _createMiddleware(preset) {
-    const middleware = new Middleware(preset, this._ctx);
+    const middleware = new Middleware(preset, this._config);
     this._attachEvents(middleware);
     // set readProperty()
     const impl = middleware.getImplement();

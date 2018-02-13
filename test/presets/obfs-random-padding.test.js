@@ -4,8 +4,8 @@ test('running on both client and server', async () => {
   const runner = new PresetRunner({
     name: 'obfs-random-padding'
   }, {
-    IS_CLIENT: true,
-    IS_SERVER: false
+    is_client: true,
+    is_server: false
   });
 
   const chunk = await runner.forward('12');

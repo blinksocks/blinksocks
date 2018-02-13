@@ -7,9 +7,9 @@ test('tcp relay on client and server', async () => {
       method: 'aes-128-ctr'
     }
   }, {
-    KEY: 'secret',
-    IS_CLIENT: true,
-    IS_SERVER: false
+    key: 'secret',
+    is_client: true,
+    is_server: false
   });
 
   // should add 16 more bytes at the beginning
@@ -35,9 +35,9 @@ test('udp relay on client and server', async () => {
       method: 'rc4-md5-6'
     }
   }, {
-    KEY: 'secret',
-    IS_CLIENT: true,
-    IS_SERVER: false
+    key: 'secret',
+    is_client: true,
+    is_server: false
   });
 
   expect(await runner.forwardUdp('1')).toHaveLength(6 + 1);

@@ -14,8 +14,8 @@ test('running on both client and server', async () => {
       acl: path.join(__dirname, 'acl.txt')
     }
   }, {
-    IS_CLIENT: true,
-    IS_SERVER: false
+    is_client: true,
+    is_server: false
   });
 
   await sleep(20);

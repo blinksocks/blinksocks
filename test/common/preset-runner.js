@@ -5,13 +5,15 @@ import {Middleware} from '../../src/core/middleware';
 
 
 export class PresetRunner extends EventEmitter {
-  _ctx = null;
+  _config = null;
 
-  constructor({name, params = {}}, context = {}) {
+  constructor({name, params = {}}, config = {}) {
     super();
-    this._ctx = context;
-    getPresetClassByName(name).checkParams(params);
-    this.middleware = new Middleware({name, params}, context);
+    this._config = config;
+    const clazz = getPresetClassByName(name);
+    clazz.config = config;
+    clazz.checkParams(params);
+    this.middleware = new Middleware({name, params}, config);
   }
 
   notify(action) {
@@ -32,7 +34,7 @@ export class PresetRunner extends EventEmitter {
       this.middleware.on('fail', reject);
       this.middleware.on('broadcast', (name, action) => this.emit('broadcast', action));
       this.middleware.write({
-        direction: this._ctx.IS_CLIENT ? PIPE_ENCODE : PIPE_DECODE,
+        direction: this._config.is_client ? PIPE_ENCODE : PIPE_DECODE,
         buffer: data,
         direct: resolve,
         isUdp
@@ -50,7 +52,7 @@ export class PresetRunner extends EventEmitter {
       this.middleware.on('fail', reject);
       this.middleware.on('broadcast', (name, action) => this.emit('broadcast', action));
       this.middleware.write({
-        direction: this._ctx.IS_CLIENT ? PIPE_DECODE : PIPE_ENCODE,
+        direction: this._config.is_client ? PIPE_DECODE : PIPE_ENCODE,
         buffer: data,
         direct: resolve,
         isUdp
