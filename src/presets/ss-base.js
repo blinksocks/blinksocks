@@ -84,7 +84,7 @@ export default class SsBasePreset extends IPresetAddressing {
   }
 
   onNotified(action) {
-    if (__IS_CLIENT__ && action.type === CONNECT_TO_REMOTE) {
+    if (SsBasePreset.config.is_client && action.type === CONNECT_TO_REMOTE) {
       const {host, port} = action.payload;
       const type = getHostType(host);
       this._atyp = type;

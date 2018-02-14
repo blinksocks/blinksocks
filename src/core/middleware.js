@@ -5,9 +5,10 @@ import {kebabCase} from '../utils';
 
 const staticPresetCache = new Map(/* 'ClassName': <preset> */);
 
-function createPreset(name, params = {}) {
+function createPreset(name, params = {}, config) {
   const ImplClass = getPresetClassByName(name);
   const createOne = () => {
+    ImplClass.config = config;
     ImplClass.checkParams(params);
     ImplClass.onInit(params);
     return new ImplClass(params);
@@ -32,13 +33,15 @@ function createPreset(name, params = {}) {
 export class Middleware extends EventEmitter {
 
   _impl = null;
+  _config = null;
 
-  constructor(preset) {
+  constructor(preset, config) {
     super();
+    this._config = config;
     this.onPresetNext = this.onPresetNext.bind(this);
     this.onPresetBroadcast = this.onPresetBroadcast.bind(this);
     this.onPresetFail = this.onPresetFail.bind(this);
-    this._impl = createPreset(preset.name, preset.params || {});
+    this._impl = createPreset(preset.name, preset.params || {}, this._config);
     this._impl.next = this.onPresetNext;
     this._impl.broadcast = this.onPresetBroadcast;
     this._impl.fail = this.onPresetFail;
@@ -105,7 +108,7 @@ export class Middleware extends EventEmitter {
     // clientXXX, serverXXX
     const nextLifeCycleHook = (buf/* , isReverse = false */) => {
       const args = {buffer: buf, next, broadcast, direct, fail};
-      const ret = __IS_CLIENT__ ? this._impl[`client${type}`](args, extraArgs) : this._impl[`server${type}`](args, extraArgs);
+      const ret = this._config.is_client ? this._impl[`client${type}`](args, extraArgs) : this._impl[`server${type}`](args, extraArgs);
       if (ret instanceof Buffer) {
         next(ret);
       }

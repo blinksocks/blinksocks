@@ -9,8 +9,8 @@ test('running on client', async () => {
       security: 'aes-128-gcm'
     }
   }, {
-    __IS_CLIENT__: true,
-    __IS_SERVER__: false
+    is_client: true,
+    is_server: false
   });
 
   runner.notify({
@@ -40,8 +40,8 @@ test('running on server', async () => {
       id: 'a3482e88-686a-4a58-8126-99c9df64b7bf'
     }
   }, {
-    __IS_CLIENT__: false,
-    __IS_SERVER__: true
+    is_client: false,
+    is_server: true
   });
 
   // fail on wrong data

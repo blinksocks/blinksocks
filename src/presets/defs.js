@@ -110,6 +110,13 @@ export class IPreset {
    */
   static checked = false;
 
+
+  /**
+   * server config 
+   * @type {Config}
+   */
+  static config = null;
+
   /**
    * will become true after onInit()
    * @type {boolean}

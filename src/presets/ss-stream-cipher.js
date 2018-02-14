@@ -104,7 +104,7 @@ export default class SsStreamCipherPreset extends IPreset {
     this._algorithm = ['rc4-md5', 'rc4-md5-6'].includes(method) ? 'rc4' : method;
     this._keySize = keySize;
     this._ivSize = ivSize;
-    this._key = EVP_BytesToKey(__KEY__, keySize, ivSize);
+    this._key = EVP_BytesToKey(SsStreamCipherPreset.config.key, keySize, ivSize);
     this._iv = method === 'rc4-md5-6' ? iv.slice(0, 6) : iv;
   }
 

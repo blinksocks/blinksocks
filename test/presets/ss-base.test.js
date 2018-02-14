@@ -5,8 +5,8 @@ test('running on client', async () => {
   const runner = new PresetRunner({
     name: 'ss-base'
   }, {
-    __IS_CLIENT__: true,
-    __IS_SERVER__: false
+    is_client: true,
+    is_server: false
   });
 
   runner.notify({
@@ -40,8 +40,8 @@ test('running on server', async () => {
     const runner = new PresetRunner({
       name: 'ss-base'
     }, {
-      __IS_CLIENT__: false,
-      __IS_SERVER__: true
+      is_client: false,
+      is_server: true
     });
 
     runner.on('broadcast', (action) => {

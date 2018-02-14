@@ -3,17 +3,17 @@ import {getPresetClassByName} from '../../src/presets';
 import {PIPE_ENCODE, PIPE_DECODE} from '../../src/constants';
 import {Middleware} from '../../src/core/middleware';
 
-export function setGlobals(obj) {
-  Object.assign(global, obj);
-}
 
 export class PresetRunner extends EventEmitter {
+  _config = null;
 
-  constructor({name, params = {}}, globals = {}) {
+  constructor({name, params = {}}, config = {}) {
     super();
-    setGlobals(globals);
-    getPresetClassByName(name).checkParams(params);
-    this.middleware = new Middleware({name, params});
+    this._config = config;
+    const clazz = getPresetClassByName(name);
+    clazz.config = config;
+    clazz.checkParams(params);
+    this.middleware = new Middleware({name, params}, config);
   }
 
   notify(action) {
@@ -34,7 +34,7 @@ export class PresetRunner extends EventEmitter {
       this.middleware.on('fail', reject);
       this.middleware.on('broadcast', (name, action) => this.emit('broadcast', action));
       this.middleware.write({
-        direction: __IS_CLIENT__ ? PIPE_ENCODE : PIPE_DECODE,
+        direction: this._config.is_client ? PIPE_ENCODE : PIPE_DECODE,
         buffer: data,
         direct: resolve,
         isUdp
@@ -52,7 +52,7 @@ export class PresetRunner extends EventEmitter {
       this.middleware.on('fail', reject);
       this.middleware.on('broadcast', (name, action) => this.emit('broadcast', action));
       this.middleware.write({
-        direction: __IS_CLIENT__ ? PIPE_DECODE : PIPE_ENCODE,
+        direction: this._config.is_client ? PIPE_DECODE : PIPE_ENCODE,
         buffer: data,
         direct: resolve,
         isUdp

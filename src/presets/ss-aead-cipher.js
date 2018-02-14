@@ -132,7 +132,7 @@ export default class SsAeadCipherPreset extends IPreset {
     SsAeadCipherPreset.keySize = keySize;
     SsAeadCipherPreset.saltSize = saltSize;
     SsAeadCipherPreset.nonceSize = nonceSize;
-    SsAeadCipherPreset.evpKey = EVP_BytesToKey(__KEY__, keySize, 16);
+    SsAeadCipherPreset.evpKey = EVP_BytesToKey(SsAeadCipherPreset.config.key, keySize, 16);
     SsAeadCipherPreset.isUseLibSodium = Object.keys(libsodium_functions).includes(method);
   }
 

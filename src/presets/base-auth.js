@@ -88,14 +88,14 @@ export default class BaseAuthPreset extends IPresetAddressing {
   static onInit({method = DEFAULT_HASH_METHOD}) {
     BaseAuthPreset.hmacMethod = method;
     BaseAuthPreset.hmacLen = HMAC_METHODS[method];
-    BaseAuthPreset.hmacKey = EVP_BytesToKey(__KEY__, 16, 16);
+    BaseAuthPreset.hmacKey = EVP_BytesToKey(BaseAuthPreset.config.key, 16, 16);
   }
 
   constructor() {
     super();
     const {hmacKey: key} = BaseAuthPreset;
-    const iv = hash('md5', Buffer.from(__KEY__ + 'base-auth'));
-    if (__IS_CLIENT__) {
+    const iv = hash('md5', Buffer.from(BaseAuthPreset.config.key + 'base-auth'));
+    if (BaseAuthPreset.config.is_client) {
       this._cipher = crypto.createCipheriv('aes-128-cfb', key, iv);
     } else {
       this._decipher = crypto.createDecipheriv('aes-128-cfb', key, iv);
@@ -111,7 +111,7 @@ export default class BaseAuthPreset extends IPresetAddressing {
   }
 
   onNotified(action) {
-    if (__IS_CLIENT__ && action.type === CONNECT_TO_REMOTE) {
+    if (BaseAuthPreset.config.is_client && action.type === CONNECT_TO_REMOTE) {
       const {host, port} = action.payload;
       this._host = Buffer.from(host);
       this._port = numberToBuffer(port);
