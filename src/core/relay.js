@@ -65,14 +65,14 @@ export class Relay extends EventEmitter {
     this._ctx.cid = id;
   }
 
-  constructor({transport, context, presets = []}, config) {
+  constructor({config, transport, context, presets = []}) {
     super();
-    this._config = config;
     this.updatePresets = this.updatePresets.bind(this);
     this.onBroadcast = this.onBroadcast.bind(this);
     this.onEncoded = this.onEncoded.bind(this);
     this.onDecoded = this.onDecoded.bind(this);
     this._id = Relay.idcounter++;
+    this._config = config;
     this._transport = transport;
     this._remoteInfo = context.remoteInfo;
     // pipe
@@ -85,8 +85,9 @@ export class Relay extends EventEmitter {
     };
     // bounds
     const {Inbound, Outbound} = this.getBounds(transport);
-    const inbound = new Inbound({context: this._ctx, globalContext: this._config});
-    const outbound = new Outbound({context: this._ctx, globalContext: this._config});
+    const props = {config, context: this._ctx};
+    const inbound = new Inbound(props);
+    const outbound = new Outbound(props);
     this._inbound = inbound;
     this._outbound = outbound;
     // outbound

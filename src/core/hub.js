@@ -315,26 +315,27 @@ export class Hub {
 
   _createRelay(context, isMux = false) {
     const props = {
+      config: this._config,
       context: context,
       transport: this._config.transport,
       presets: this._config.presets
     };
     if (isMux) {
-      return new MuxRelay(props, this._config);
+      return new MuxRelay(props);
     }
     if (this._config.mux) {
       if (this._config.is_client) {
-        return new Relay({...props, transport: 'mux', presets: []}, this._config);
+        return new Relay({...props, transport: 'mux', presets: []});
       } else {
-        return new MuxRelay(props, this._config);
+        return new MuxRelay(props);
       }
     } else {
-      return new Relay(props, this._config);
+      return new Relay(props);
     }
   }
 
   _createUdpRelay(context) {
-    return new Relay({transport: 'udp', context, presets: this._config.udp_presets}, this._config);
+    return new Relay({config: this._config, transport: 'udp', context, presets: this._config.udp_presets});
   }
 
   _selectMuxRelay() {

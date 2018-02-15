@@ -78,7 +78,7 @@ export default class ObfsTls12TicketPreset extends IPreset {
 
   _adBuf = null;
 
-  static checkParams({sni}) {
+  static onCheckParams({sni}) {
     if (typeof sni === 'undefined') {
       throw Error('\'sni\' must be set');
     }
@@ -90,13 +90,10 @@ export default class ObfsTls12TicketPreset extends IPreset {
     }
   }
 
-  constructor({sni}) {
-    super();
-    this.onReceiving = this.onReceiving.bind(this);
-    this.onChunkReceived = this.onChunkReceived.bind(this);
+  onInit({sni}) {
     this._sni = Array.isArray(sni) ? sni : [sni];
-    this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving});
-    this._adBuf.on('data', this.onChunkReceived);
+    this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});
+    this._adBuf.on('data', this.onChunkReceived.bind(this));
   }
 
   onDestroy() {

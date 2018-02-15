@@ -76,15 +76,13 @@ export default class AutoConfPreset extends IPreset {
 
   _header = null;
 
-  static suites = [];
-
-  static checkParams({suites}) {
+  static onCheckParams({suites}) {
     if (typeof suites !== 'string' || suites.length < 1) {
       throw Error('\'suites\' is invalid');
     }
   }
 
-  static async onInit({suites: uri}) {
+  static async onCache({suites: uri}) {
     logger.info(`[auto-conf] loading suites from: ${uri}`);
     let suites = [];
     if (uri.startsWith('http')) {
@@ -101,7 +99,7 @@ export default class AutoConfPreset extends IPreset {
       throw Error(`you must provide at least one suite in ${uri}`);
     }
     logger.info(`[auto-conf] ${suites.length} suites loaded`);
-    AutoConfPreset.suites = suites;
+    return {suites};
   }
 
   onDestroy() {
@@ -111,7 +109,7 @@ export default class AutoConfPreset extends IPreset {
   createRequestHeader(suites) {
     const sid = crypto.randomBytes(2);
     const utc = ntb(getCurrentTimestampInt(), 4, BYTE_ORDER_LE);
-    const key = EVP_BytesToKey(Buffer.from(AutoConfPreset.config.key).toString('base64') + hash('md5', sid).toString('base64'), 16, 16);
+    const key = EVP_BytesToKey(Buffer.from(this._config.key).toString('base64') + hash('md5', sid).toString('base64'), 16, 16);
     const cipher = crypto.createCipheriv('rc4', key, NOOP);
     const enc_utc = cipher.update(utc);
     const request_hmac = hmac('md5', key, Buffer.concat([sid, enc_utc]));
@@ -122,7 +120,7 @@ export default class AutoConfPreset extends IPreset {
   }
 
   encodeChangeSuite({buffer, broadcast, fail}) {
-    const {suites} = AutoConfPreset;
+    const {suites} = this.getStore();
     if (suites.length < 1) {
       return fail('suites are not initialized properly');
     }
@@ -140,7 +138,7 @@ export default class AutoConfPreset extends IPreset {
   }
 
   decodeChangeSuite({buffer, broadcast, fail}) {
-    const {suites} = AutoConfPreset;
+    const {suites} = this.getStore();
     if (suites.length < 1) {
       return fail('suites are not initialized properly');
     }
@@ -149,7 +147,7 @@ export default class AutoConfPreset extends IPreset {
     }
     const sid = buffer.slice(0, 2);
     const request_hmac = buffer.slice(6, 22);
-    const key = EVP_BytesToKey(Buffer.from(AutoConfPreset.config.KEY).toString('base64') + hash('md5', sid).toString('base64'), 16, 16);
+    const key = EVP_BytesToKey(Buffer.from(this._config.key).toString('base64') + hash('md5', sid).toString('base64'), 16, 16);
     const hmac_calc = hmac('md5', key, buffer.slice(0, 6));
     if (!hmac_calc.equals(request_hmac)) {
       return fail(`unexpected hmac of client request, dump=${dumpHex(buffer)}`);

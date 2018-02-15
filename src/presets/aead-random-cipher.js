@@ -74,15 +74,15 @@ const HKDF_HASH_ALGORITHM = 'sha1';
  */
 export default class AeadRandomCipherPreset extends IPreset {
 
-  static cipherName = '';
+  _cipherName = '';
 
-  static info = null;
+  _info = null;
 
-  static factor = DEFAULT_FACTOR;
+  _factor = DEFAULT_FACTOR;
 
-  static rawKey = null;
+  _rawKey = null;
 
-  static keySaltSize = 0; // key and salt size
+  _keySaltSize = 0; // key and salt size
 
   _cipherKey = null;
 
@@ -99,7 +99,7 @@ export default class AeadRandomCipherPreset extends IPreset {
 
   _adBuf = null;
 
-  static checkParams({method, info = DEFAULT_INFO, factor = DEFAULT_FACTOR}) {
+  static onCheckParams({method, info = DEFAULT_INFO, factor = DEFAULT_FACTOR}) {
     if (method === undefined || method === '') {
       throw Error('\'method\' must be set');
     }
@@ -118,16 +118,12 @@ export default class AeadRandomCipherPreset extends IPreset {
     }
   }
 
-  static onInit({method, info = DEFAULT_INFO, factor = DEFAULT_FACTOR}) {
-    AeadRandomCipherPreset.cipherName = method;
-    AeadRandomCipherPreset.info = Buffer.from(info);
-    AeadRandomCipherPreset.factor = factor;
-    AeadRandomCipherPreset.rawKey = Buffer.from(AeadRandomCipherPreset.config.key);
-    AeadRandomCipherPreset.keySaltSize = ciphers[method];
-  }
-
-  constructor() {
-    super();
+  onInit({method, info = DEFAULT_INFO, factor = DEFAULT_FACTOR}) {
+    this._cipherName = method;
+    this._info = Buffer.from(info);
+    this._factor = factor;
+    this._rawKey = Buffer.from(this._config.key);
+    this._keySaltSize = ciphers[method];
     this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});
     this._adBuf.on('data', this.onChunkReceived.bind(this));
   }
@@ -145,9 +141,9 @@ export default class AeadRandomCipherPreset extends IPreset {
   beforeOut({buffer}) {
     let salt = null;
     if (this._cipherKey === null) {
-      const size = AeadRandomCipherPreset.keySaltSize;
+      const size = this._keySaltSize;
       salt = crypto.randomBytes(size);
-      this._cipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, AeadRandomCipherPreset.rawKey, AeadRandomCipherPreset.info, size);
+      this._cipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, this._rawKey, this._info, size);
     }
     const chunks = getRandomChunks(buffer, MIN_CHUNK_SPLIT_LEN, MAX_CHUNK_SPLIT_LEN).map((chunk) => {
       // random padding
@@ -174,12 +170,12 @@ export default class AeadRandomCipherPreset extends IPreset {
   onReceiving(buffer, {fail}) {
     // 1. init this._decipherKey
     if (this._decipherKey === null) {
-      const size = AeadRandomCipherPreset.keySaltSize;
+      const size = this._keySaltSize;
       if (buffer.length < size) {
         return; // too short to get salt
       }
       const salt = buffer.slice(0, size);
-      this._decipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, AeadRandomCipherPreset.rawKey, AeadRandomCipherPreset.info, size);
+      this._decipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, this._rawKey, this._info, size);
       return buffer.slice(size); // drop salt
     }
 
@@ -225,15 +221,15 @@ export default class AeadRandomCipherPreset extends IPreset {
 
   getPaddingLength(key, nonce) {
     const nonceBuffer = numberToBuffer(nonce, NONCE_LEN, BYTE_ORDER_LE);
-    const cipher = crypto.createCipheriv(AeadRandomCipherPreset.cipherName, key, nonceBuffer);
+    const cipher = crypto.createCipheriv(this._cipherName, key, nonceBuffer);
     cipher.update(nonceBuffer);
     cipher.final();
-    return cipher.getAuthTag()[0] * AeadRandomCipherPreset.factor;
+    return cipher.getAuthTag()[0] * this._factor;
   }
 
   encrypt(message) {
     const cipher = crypto.createCipheriv(
-      AeadRandomCipherPreset.cipherName,
+      this._cipherName,
       this._cipherKey,
       numberToBuffer(this._cipherNonce, NONCE_LEN, BYTE_ORDER_LE)
     );
@@ -245,7 +241,7 @@ export default class AeadRandomCipherPreset extends IPreset {
 
   decrypt(ciphertext, tag) {
     const decipher = crypto.createDecipheriv(
-      AeadRandomCipherPreset.cipherName,
+      this._cipherName,
       this._decipherKey,
       numberToBuffer(this._decipherNonce, NONCE_LEN, BYTE_ORDER_LE)
     );

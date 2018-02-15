@@ -16,8 +16,8 @@ import SsrAuthAes128Preset from './ssr-auth-aes128';
  */
 export default class SsrAuthAes128Sha1Preset extends SsrAuthAes128Preset {
 
-  constructor(params) {
-    super(params);
+  constructor(props) {
+    super(props);
     this._hashFunc = 'sha1';
     this._salt = 'auth_aes128_sha1';
   }

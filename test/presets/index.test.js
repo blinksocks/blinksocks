@@ -1,4 +1,4 @@
-import {getPresetClassByName} from '../index';
+import {getPresetClassByName} from '../../src/presets';
 
 test('should return a preset class', () => {
   expect(getPresetClassByName('ss-base')).toBeDefined();
