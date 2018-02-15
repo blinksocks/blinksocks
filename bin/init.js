@@ -50,7 +50,6 @@ module.exports = function init({isMinimal, isOverwrite}) {
     'dns': [],
     'dns_expire': 3600,
     'timeout': timeout,
-    'workers': 0,
     'log_path': 'bs-client.log',
     'log_level': 'info',
     'log_max_days': 30
@@ -63,7 +62,6 @@ module.exports = function init({isMinimal, isOverwrite}) {
     delete clientJson.dns;
     delete clientJson.dns_expire;
     delete clientJson.timeout;
-    delete clientJson.workers;
     delete clientJson.log_path;
     delete clientJson.log_level;
     delete clientJson.log_max_days;
@@ -84,7 +82,6 @@ module.exports = function init({isMinimal, isOverwrite}) {
     'dns_expire': 3600,
     'timeout': timeout,
     'redirect': '',
-    'workers': 0,
     'log_path': 'bs-server.log',
     'log_level': 'info',
     'log_max_days': 30
@@ -98,7 +95,6 @@ module.exports = function init({isMinimal, isOverwrite}) {
     delete serverJson.dns_expire;
     delete serverJson.timeout;
     delete serverJson.redirect;
-    delete serverJson.workers;
     delete serverJson.log_path;
     delete serverJson.log_level;
     delete serverJson.log_max_days;

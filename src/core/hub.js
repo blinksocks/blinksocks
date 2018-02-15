@@ -1,4 +1,3 @@
-import cluster from 'cluster';
 import dgram from 'dgram';
 import net from 'net';
 import tls from 'tls';
@@ -21,8 +20,6 @@ function makeConnID() {
 }
 
 export class Hub {
-
-  _wkId = cluster.worker ? cluster.worker.id : 0;
 
   _tcpServer = null;
 
@@ -57,7 +54,7 @@ export class Hub {
     this._tcpRelays.clear();
     // server
     this._tcpServer.close();
-    logger.info(`[hub-${this._wkId}] shutdown`);
+    logger.info(`[hub] shutdown`);
     // udp server
     this._udpServer.close();
     typeof callback === 'function' && callback();
@@ -111,7 +108,7 @@ export class Hub {
       server.on('proxyConnection', this._onConnection);
       server.listen(address, () => {
         const service = `${this._config.local_protocol}://${this._config.local_host}:${this._config.local_port}`;
-        logger.info(`[hub-${this._wkId}] blinksocks client is running at ${service}`);
+        logger.info(`[hub] blinksocks client is running at ${service}`);
         resolve(server);
       });
     });
@@ -125,7 +122,7 @@ export class Hub {
       };
       const onListening = (server) => {
         const service = `${this._config.local_protocol}://${this._config.local_host}:${this._config.local_port}`;
-        logger.info(`[hub-${this._wkId}] blinksocks server is running at ${service}`);
+        logger.info(`[hub] blinksocks server is running at ${service}`);
         resolve(server);
       };
       switch (this._config.local_protocol) {
@@ -223,7 +220,7 @@ export class Hub {
 
       server.bind({address: this._config.local_host, port: this._config.local_port}, () => {
         const service = `udp://${this._config.local_host}:${this._config.local_port}`;
-        logger.info(`[hub-${this._wkId}] blinksocks udp server is running at ${service}`);
+        logger.info(`[hub] blinksocks udp server is running at ${service}`);
         resolve(server);
       });
     });
