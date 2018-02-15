@@ -5,7 +5,6 @@ import tls from 'tls';
 import ws from 'ws';
 import LRU from 'lru-cache';
 import uniqueId from 'lodash.uniqueid';
-import {Balancer} from './balancer';
 import {Config} from './config';
 import {Relay} from './relay';
 import {MuxRelay} from './mux-relay';
@@ -56,11 +55,6 @@ export class Hub {
     }
     this._tcpRelays.forEach((relay) => relay.destroy());
     this._tcpRelays.clear();
-    // balancer
-    if (this._config.is_client) {
-      Balancer.destroy();
-      logger.info(`[balancer-${this._wkId}] stopped`);
-    }
     // server
     this._tcpServer.close();
     logger.info(`[hub-${this._wkId}] shutdown`);
@@ -72,11 +66,6 @@ export class Hub {
   async run() {
     if (this._tcpServer !== null) {
       this.terminate();
-    }
-    if (this._config.is_client) {
-      Balancer.start(this._config.servers);
-      logger.info(`[balancer-${this._wkId}] started`);
-      this._switchServer();
     }
     try {
       await this._createServer();
@@ -242,9 +231,7 @@ export class Hub {
 
   _onConnection(socket, proxyRequest = null) {
     logger.verbose(`[hub] [${socket.remoteAddress}:${socket.remotePort}] connected`);
-    if (this._config.is_client) {
-      this._switchServer();
-    }
+
     const context = {
       socket,
       proxyRequest,
@@ -348,14 +335,6 @@ export class Hub {
       return null;
     }
     return relays.get([...relays.keys()][getRandomInt(0, concurrency - 1)]);
-  }
-
-  _switchServer() {
-    const server = Balancer.getFastest();
-    if (server) {
-      this._config.initServer(server);
-      logger.info(`[balancer-${this._wkId}] use server: ${this._config.server_host}:${this._config.server_port}`);
-    }
   }
 
 }
