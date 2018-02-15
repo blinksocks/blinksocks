@@ -272,7 +272,7 @@ export class Relay extends EventEmitter {
    * create pipes for both data forward and backward
    */
   createPipe(presets) {
-    const pipe = new Pipe({presets, isUdp: this._transport === 'udp'}, this._config);
+    const pipe = new Pipe({config: this._config, presets, isUdp: this._transport === 'udp'});
     pipe.on('broadcast', this.onBroadcast.bind(this)); // if no action were caught by presets
     pipe.on(`post_${PIPE_ENCODE}`, this.onEncoded);
     pipe.on(`post_${PIPE_DECODE}`, this.onDecoded);

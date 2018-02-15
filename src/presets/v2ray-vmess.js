@@ -197,12 +197,13 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     }
   }
 
-  static onCache(_, store) {
-    setInterval(() => V2rayVmessPreset.updateAuthCache(store), 1e3);
-    V2rayVmessPreset.updateAuthCache(store);
+  static onCache({id}, store) {
+    const uuid = Buffer.from(id.split('-').join(''), 'hex');
+    setInterval(() => V2rayVmessPreset.updateAuthCache(uuid, store), 1e3);
+    V2rayVmessPreset.updateAuthCache(uuid, store);
   }
 
-  static updateAuthCache(store) {
+  static updateAuthCache(uuid, store) {
     const items = store.userHashCache || [
       // {timestamp, authInfo},
       // ...
@@ -218,7 +219,6 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     }
     for (let ts = from; ts <= to; ++ts) {
       // account auth info, 16 bytes
-      const uuid = this._uuid;
       const authInfo = hmac('md5', uuid, ntb(ts, 8));
       newItems.push({timestamp: ts, authInfo: authInfo});
     }

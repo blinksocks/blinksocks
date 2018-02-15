@@ -31,13 +31,13 @@ export class Pipe extends EventEmitter {
     return this._presets;
   }
 
-  constructor({presets, isUdp = false}, config) {
+  constructor({config, presets, isUdp = false}) {
     super();
-    this._config = config;
     this.broadcast = this.broadcast.bind(this);
     this.onReadProperty = this.onReadProperty.bind(this);
-    this.createMiddlewares(presets);
+    this._config = config;
     this._isPipingUdp = isUdp;
+    this.createMiddlewares(presets);
   }
 
   broadcast(name, action) {
