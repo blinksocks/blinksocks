@@ -1,5 +1,5 @@
 import net from 'net';
-import {DNSCache} from '../dns-cache';
+import {DNSCache} from '../../src/utils/dns-cache';
 
 async function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));

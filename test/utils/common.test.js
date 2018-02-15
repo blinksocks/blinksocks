@@ -4,7 +4,7 @@ import {
   getRandomChunks,
   getChunks,
   BYTE_ORDER_LE,
-} from '../common';
+} from '../../src/utils/common';
 
 describe('numberToBuffer', () => {
 

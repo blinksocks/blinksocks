@@ -1,4 +1,4 @@
-import {kebabCase, dumpHex} from '../string';
+import {kebabCase, dumpHex} from '../../src/utils/string';
 
 it('should return kebab-cased string', () => {
   expect(kebabCase('AbcDef')).toBe('abc-def');

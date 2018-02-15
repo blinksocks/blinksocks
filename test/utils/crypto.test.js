@@ -1,4 +1,4 @@
-import * as __module__ from '../crypto';
+import * as __module__ from '../../src/utils/crypto';
 
 test('randomBytes', () => {
   const randomBytes = __module__.randomBytes;

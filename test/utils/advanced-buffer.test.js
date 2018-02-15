@@ -1,4 +1,4 @@
-import {AdvancedBuffer} from '../advanced-buffer';
+import {AdvancedBuffer} from '../../src/utils/advanced-buffer';
 
 describe('AdvancedBuffer#constructor', function () {
 

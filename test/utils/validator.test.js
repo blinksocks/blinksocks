@@ -1,4 +1,4 @@
-import {isValidHostname, isValidPort} from '../validator';
+import {isValidHostname, isValidPort} from '../../src/utils/validator';
 
 describe('isValidHostname', () => {
 
