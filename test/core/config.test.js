@@ -1,6 +1,6 @@
 jest.mock('fs');
 
-import {Config} from '../config';
+import {Config} from '../../src/core/config';
 
 describe('Config#test', () => {
 

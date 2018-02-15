@@ -1,4 +1,4 @@
-import {Middleware} from '../middleware';
+import {Middleware} from '../../src/core/middleware';
 
 test('Middleware#constructor', () => {
   expect(() => new Middleware({preset: {'name': 'unknown-preset'}})).toThrow();
