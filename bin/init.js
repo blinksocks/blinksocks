@@ -32,21 +32,18 @@ module.exports = function init({isMinimal, isOverwrite}) {
 
   const clientJson = {
     'service': 'socks5://127.0.0.1:1080',
-    'servers': [
-      {
-        'enabled': true,
-        'service': `tcp://127.0.0.1:${port}`,
-        'key': key,
-        'presets': [
-          {'name': 'ss-base'},
-          {'name': 'obfs-random-padding'},
-          {'name': 'ss-stream-cipher', 'params': {'method': 'aes-128-ctr'}}
-        ],
-        'tls_cert': 'cert.pem',
-        'mux': false,
-        'mux_concurrency': 10
-      }
-    ],
+    'server': {
+      'service': `tcp://127.0.0.1:${port}`,
+      'key': key,
+      'presets': [
+        {'name': 'ss-base'},
+        {'name': 'obfs-random-padding'},
+        {'name': 'ss-stream-cipher', 'params': {'method': 'aes-128-ctr'}}
+      ],
+      'tls_cert': 'cert.pem',
+      'mux': false,
+      'mux_concurrency': 10
+    },
     'dns': [],
     'dns_expire': 3600,
     'timeout': timeout,
@@ -56,9 +53,9 @@ module.exports = function init({isMinimal, isOverwrite}) {
   };
 
   if (isMinimal) {
-    delete clientJson.servers[0].tls_cert;
-    delete clientJson.servers[0].mux;
-    delete clientJson.servers[0].mux_concurrency;
+    delete clientJson.server.tls_cert;
+    delete clientJson.server.mux;
+    delete clientJson.server.mux_concurrency;
     delete clientJson.dns;
     delete clientJson.dns_expire;
     delete clientJson.timeout;

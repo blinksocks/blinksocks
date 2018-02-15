@@ -5,6 +5,7 @@ import os from 'os';
 import net from 'net';
 import url from 'url';
 import qs from 'qs';
+import chalk from 'chalk';
 import winston from 'winston';
 import isPlainObject from 'lodash.isplainobject';
 import {getPresetClassByName, IPresetAddressing} from '../presets';
@@ -23,7 +24,7 @@ export class Config {
   forward_host = null;
   forward_port = null;
 
-  servers = null;
+  server = null;
   is_client = null;
   is_server = null;
 
@@ -61,8 +62,21 @@ export class Config {
     this.local_host = hostname;
     this.local_port = +port;
 
+    let server;
+    // TODO(remove in next version): make backwards compatibility to "json.servers"
     if (json.servers !== undefined) {
-      this.servers = json.servers.filter((server) => !!server.enabled);
+      server = json.servers.find((server) => !!server.enabled);
+      console.log(
+        chalk.bgYellowBright('WARN'),
+        '"servers" will be deprecated in the next version,' +
+        ' please configure only one server in "server: {...}",' +
+        ' for migration guide please refer to CHANGELOG.md.'
+      );
+    } else {
+      server = json.server;
+    }
+
+    if (server) {
       this.is_client = true;
       this.is_server = false;
     } else {
@@ -74,6 +88,8 @@ export class Config {
 
     if (this.is_server) {
       this.initServer(json);
+    } else {
+      this.initServer(server);
     }
 
     if (this.is_client && this.local_protocol === 'tcp') {
@@ -183,7 +199,8 @@ export class Config {
     if (!isPlainObject(json)) {
       throw Error('invalid configuration file');
     }
-    const is_client = !!json.servers;
+    // TODO(remove in next version): json.servers
+    const is_client = !!json.servers || !!json.server;
     if (is_client) {
       Config.testOnClient(json);
     } else {
@@ -241,15 +258,21 @@ export class Config {
       }
     }
 
-    // servers
-    if (!Array.isArray(json.servers)) {
-      throw Error('"servers" must be provided as an array');
+    // server
+    let server;
+    // TODO(remove in next version): make backwards compatibility to "json.servers"
+    if (json.servers) {
+      if (!Array.isArray(json.servers)) {
+        throw Error('"servers" must be provided as an array');
+      }
+      server = json.servers.find((server) => !!server.enabled);
+      if (!server) {
+        throw Error('"servers" must have at least one enabled item');
+      }
+    } else {
+      server = json.server;
     }
-    const servers = json.servers.filter((server) => !!server.enabled);
-    if (servers.length < 1) {
-      throw Error('"servers" must have at least one enabled item');
-    }
-    servers.forEach((server) => Config._testServer(server, true));
+    Config._testServer(server, true);
 
     // common
     Config._testCommon(json);
