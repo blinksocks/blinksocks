@@ -137,11 +137,11 @@ export class Config {
     for (let i = 0; i < server.presets.length; i++) {
       const {name, params = {}} = server.presets[i];
       const clazz = getPresetClassByName(name);
-      const data = clazz.onCache(params);
+      const data = clazz.onCache(params, this.stores[i]);
       if (data instanceof Promise) {
         data.then((d) => this.stores[i] = d);
-      } else {
-        this.stores[i] = clazz.onCache(params);
+      } else if (typeof data !== 'undefined') {
+        this.stores[i] = data;
       }
     }
   }
