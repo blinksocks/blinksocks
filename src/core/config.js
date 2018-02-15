@@ -7,24 +7,25 @@ import url from 'url';
 import qs from 'qs';
 import winston from 'winston';
 import isPlainObject from 'lodash.isplainobject';
-import { getPresetClassByName, IPresetAddressing } from '../presets';
-import { DNSCache, isValidHostname, isValidPort, logger, DNS_DEFAULT_EXPIRE } from '../utils';
+import {getPresetClassByName, IPresetAddressing} from '../presets';
+import {DNSCache, isValidHostname, isValidPort, logger, DNS_DEFAULT_EXPIRE} from '../utils';
 
 function loadFileSync(file) {
   return fs.readFileSync(path.resolve(process.cwd(), file));
 }
 
 export class Config {
+
   local_protocol = null;
   local_host = null;
   local_port = null;
 
+  forward_host = null;
+  forward_port = null;
+
   servers = null;
   is_client = null;
   is_server = null;
-
-  forward_host = null;
-  forward_port = null;
 
   timeout = null;
   redirect = null;
@@ -50,8 +51,12 @@ export class Config {
   log_level = null;
   log_max_days = null;
 
+  // an isolate space where presets can store something in.
+  // store[i] is for presets[i]
+  stores = [];
+
   constructor(json) {
-    const { protocol, hostname, port, query } = url.parse(json.service);
+    const {protocol, hostname, port, query} = url.parse(json.service);
     this.local_protocol = protocol.slice(0, -1);
     this.local_host = hostname;
     this.local_port = +port;
@@ -72,8 +77,8 @@ export class Config {
     }
 
     if (this.is_client && this.local_protocol === 'tcp') {
-      const { forward } = qs.parse(query);
-      const { hostname, port } = url.parse('tcp://' + forward);
+      const {forward} = qs.parse(query);
+      const {hostname, port} = url.parse('tcp://' + forward);
       this.forward_host = hostname;
       this.forward_port = +port;
     }
@@ -95,7 +100,7 @@ export class Config {
 
   initServer(server) {
     // service
-    const { protocol, hostname, port } = url.parse(server.service);
+    const {protocol, hostname, port} = url.parse(server.service);
     this.transport = protocol.slice(0, -1);
     this.server_host = hostname;
     this.server_port = +port;
@@ -123,17 +128,21 @@ export class Config {
     // remove unnecessary presets
     if (this.mux) {
       this.presets = this.presets.filter(
-        ({ name }) => !IPresetAddressing.isPrototypeOf(getPresetClassByName(name))
+        ({name}) => !IPresetAddressing.isPrototypeOf(getPresetClassByName(name))
       );
     }
 
-    // pre-init presets
-    for (const { name, params = {} } of server.presets) {
+    // pre-cache presets
+    this.stores = (new Array(this.presets.length)).fill({});
+    for (let i = 0; i < server.presets.length; i++) {
+      const {name, params = {}} = server.presets[i];
       const clazz = getPresetClassByName(name);
-      clazz.checked = false;
-      clazz.checkParams(params);
-      clazz.initialized = false;
-      clazz.onInit(params);
+      const data = clazz.onCache(params);
+      if (data instanceof Promise) {
+        data.then((d) => this.stores[i] = d);
+      } else {
+        this.stores[i] = clazz.onCache(params);
+      }
     }
   }
 
@@ -188,7 +197,7 @@ export class Config {
       throw Error('"service" must be provided as "<protocol>://<host>:<port>[?params]"');
     }
 
-    const { protocol: _protocol, hostname, port, query } = url.parse(json.service);
+    const {protocol: _protocol, hostname, port, query} = url.parse(json.service);
 
     // service.protocol
     if (typeof _protocol !== 'string') {
@@ -216,14 +225,14 @@ export class Config {
 
     // service.query
     if (protocol === 'tcp') {
-      const { forward } = qs.parse(query);
+      const {forward} = qs.parse(query);
 
       // ?forward
       if (!forward) {
         throw Error('require "?forward=<host>:<port>" parameter in service when using "tcp" on client side');
       }
 
-      const { hostname, port } = url.parse('tcp://' + forward);
+      const {hostname, port} = url.parse('tcp://' + forward);
       if (!isValidHostname(hostname)) {
         throw Error('service.?forward.host is invalid');
       }
@@ -278,7 +287,7 @@ export class Config {
       throw Error('"service" must be provided as "<protocol>://<host>:<port>[?params]"');
     }
 
-    const { protocol: _protocol, hostname, port } = url.parse(server.service);
+    const {protocol: _protocol, hostname, port} = url.parse(server.service);
 
     // service.protocol
     if (typeof _protocol !== 'string') {
@@ -343,7 +352,7 @@ export class Config {
 
     // presets[].parameters
     for (const preset of server.presets) {
-      const { name, params } = preset;
+      const {name, params} = preset;
       if (typeof name !== 'string') {
         throw Error('"server.presets[].name" must be a string');
       }
@@ -354,6 +363,8 @@ export class Config {
         if (!isPlainObject(params)) {
           throw Error('"server.presets[].params" must be an plain object');
         }
+        const clazz = getPresetClassByName(name);
+        clazz.onCheckParams(params);
       }
     }
   }
@@ -361,7 +372,7 @@ export class Config {
   static _testCommon(common) {
     // timeout
     if (common.timeout !== undefined) {
-      const { timeout } = common;
+      const {timeout} = common;
       if (typeof timeout !== 'number') {
         throw Error('"timeout" must be a number');
       }
@@ -390,7 +401,7 @@ export class Config {
 
     // log_max_days
     if (common.log_max_days !== undefined) {
-      const { log_max_days } = common;
+      const {log_max_days} = common;
       if (typeof log_max_days !== 'number') {
         throw Error('"log_max_days" must a number');
       }
@@ -401,7 +412,7 @@ export class Config {
 
     // workers
     if (common.workers !== undefined) {
-      const { workers } = common;
+      const {workers} = common;
       if (typeof workers !== 'number') {
         throw Error('"workers" must be a number');
       }
@@ -415,7 +426,7 @@ export class Config {
 
     // dns
     if (common.dns !== undefined) {
-      const { dns } = common;
+      const {dns} = common;
       if (!Array.isArray(dns)) {
         throw Error('"dns" must be an array');
       }
@@ -428,7 +439,7 @@ export class Config {
 
     // dns_expire
     if (common.dns_expire !== undefined) {
-      const { dns_expire } = common;
+      const {dns_expire} = common;
       if (typeof dns_expire !== 'number') {
         throw Error('"dns_expire" must be a number');
       }

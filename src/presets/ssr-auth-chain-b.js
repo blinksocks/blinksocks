@@ -41,8 +41,8 @@ export default class SsrAuthChainBPreset extends SsrAuthChainPreset {
 
   _data_size_list2 = [];
 
-  constructor(params) {
-    super(params);
+  constructor(props) {
+    super(props);
     this._salt = 'auth_chain_b';
   }
 

@@ -20,7 +20,7 @@ export class Pipe extends EventEmitter {
   _destroyed = false;
 
   _presets = null;
-  
+
   _config = null;
 
   get destroyed() {
@@ -67,7 +67,7 @@ export class Pipe extends EventEmitter {
   }
 
   createMiddlewares(presets) {
-    const middlewares = presets.map((preset) => this._createMiddleware(preset));
+    const middlewares = presets.map((preset, i) => this._createMiddleware(preset, i));
     this._upstream_middlewares = middlewares;
     this._downstream_middlewares = [].concat(middlewares).reverse();
     this._presets = presets;
@@ -89,7 +89,8 @@ export class Pipe extends EventEmitter {
     }
     // create non-exist middleware and reuse exist one
     const middlewares = [];
-    for (const preset of presets) {
+    for (let i = 0; i < presets.length; i++) {
+      const preset = presets[i];
       let md = mdIndex[preset.name];
       if (md) {
         // remove all listeners for later re-chain later in _feed()
@@ -98,7 +99,7 @@ export class Pipe extends EventEmitter {
         this._attachEvents(md);
         delete mdIndex[preset.name];
       } else {
-        md = this._createMiddleware(preset);
+        md = this._createMiddleware(preset, i);
       }
       middlewares.push(md);
     }
@@ -142,12 +143,13 @@ export class Pipe extends EventEmitter {
     this.removeAllListeners();
   }
 
-  _createMiddleware(preset) {
-    const middleware = new Middleware(preset, this._config);
+  _createMiddleware(preset, index) {
+    const middleware = new Middleware({config: this._config, preset});
     this._attachEvents(middleware);
-    // set readProperty()
+    // set readProperty() and getStore()
     const impl = middleware.getImplement();
     impl.readProperty = (...args) => this.onReadProperty(middleware.name, ...args);
+    impl.getStore = () => this._config.stores[index];
     return middleware;
   }
 

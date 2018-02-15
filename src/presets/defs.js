@@ -97,55 +97,60 @@ export const MUX_DATA_FRAME = '@action:mux_data_frame';
 export const MUX_CLOSE_CONN = '@action:mux_close_conn';
 
 /**
- *
  * @lifecycle
- *   static checkParams() -> static onInit() -> constructor() -> ... -> onDestroy()
- *                          Only called once
+ *   static onCheckParams()
+ *   static onCache()
+ *   constructor()
+ *   onInit()
+ *   ...
+ *   onDestroy()
+ *
+ * @note
+ *   static onCheckParams() and static onCache() are called only once since new Hub().
  */
 export class IPreset {
 
   /**
-   * will become true after checkParams()
-   * @type {boolean}
-   */
-  static checked = false;
-
-
-  /**
-   * server config 
+   * config
    * @type {Config}
    */
-  static config = null;
-
-  /**
-   * will become true after onInit()
-   * @type {boolean}
-   */
-  static initialized = false;
+  _config = null;
 
   /**
    * check params passed to the preset, if any errors, should throw directly
    * @param params
    */
-  static checkParams(params) {
+  static onCheckParams(params) {
 
   }
 
   /**
-   * you can make some cache in this function
+   * you can make some cache in store or just return something
+   * you want to put in store, then access store later in other
+   * hook functions via this.getStore()
+   * @param params
+   * @param store
+   */
+  static onCache(params, store) {
+    // or return something
+  }
+
+  /**
+   * constructor
+   * @param config
    * @param params
    */
-  static onInit(params) {
-
+  constructor({config, params} = {}) {
+    if (config) {
+      this._config = config;
+    }
   }
 
-  // properties
-
   /**
-   * return the preset name
-   * @returns {string}
+   * constructor alternative to do initialization
+   * @param params
    */
-  getName() {
+  onInit(params) {
 
   }
 
@@ -218,7 +223,7 @@ export class IPreset {
     return buffer;
   }
 
-  // auto-generated methods for convenience, DO NOT implement them!
+  // auto-generated methods, DO NOT implement them!
 
   next(direction, buffer) {
 
@@ -241,29 +246,19 @@ export class IPreset {
 
   }
 
+  /**
+   * return store passed to onCache()
+   */
+  getStore() {
+
+  }
+
 }
 
 /**
  * a class which handle addressing
  */
 export class IPresetAddressing extends IPreset {
-
-}
-
-/**
- * a class which only have one instance
- */
-export class IPresetStatic extends IPreset {
-
-  static isInstantiated = false;
-
-  constructor() {
-    super();
-    if (IPresetStatic.isInstantiated) {
-      throw Error(`${this.constructor.name} is singleton and can only be instantiated once`);
-    }
-    IPresetStatic.isInstantiated = true;
-  }
 
 }
 
@@ -278,14 +273,14 @@ export function checkPresetClass(clazz) {
   }
   // check require hooks
   const requiredMethods = [
-    'getName', 'onNotified', 'onDestroy',
+    'onNotified', 'onDestroy', 'onInit',
     'beforeOut', 'beforeIn', 'clientOut', 'serverIn', 'serverOut', 'clientIn',
     'beforeOutUdp', 'beforeInUdp', 'clientOutUdp', 'serverInUdp', 'serverOutUdp', 'clientInUdp'
   ];
   if (requiredMethods.some((method) => typeof clazz.prototype[method] !== 'function')) {
     return false;
   }
-  const requiredStaticMethods = ['checkParams', 'onInit'];
+  const requiredStaticMethods = ['onCheckParams', 'onCache'];
   if (requiredStaticMethods.some((method) => typeof clazz[method] !== 'function')) {
     return false;
   }

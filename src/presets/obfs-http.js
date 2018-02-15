@@ -63,22 +63,22 @@ function parseFile(file) {
  */
 export default class ObfsHttpPreset extends IPreset {
 
-  static pairs = null;
-
   _isHeaderSent = false;
 
   _isHeaderRecv = false;
 
   _response = null;
 
-  static checkParams({file}) {
+  static onCheckParams({file}) {
     if (typeof file !== 'string' || file === '') {
       throw Error('\'file\' must be a non-empty string');
     }
   }
 
-  static onInit({file}) {
-    ObfsHttpPreset.pairs = parseFile(file);
+  static onCache({file}) {
+    return {
+      pairs: parseFile(file),
+    };
   }
 
   onDestroy() {
@@ -87,7 +87,7 @@ export default class ObfsHttpPreset extends IPreset {
 
   clientOut({buffer}) {
     if (!this._isHeaderSent) {
-      const {pairs} = ObfsHttpPreset;
+      const {pairs} = this.getStore();
       this._isHeaderSent = true;
       const index = crypto.randomBytes(1)[0] % pairs.length;
       const {request} = pairs[index];
@@ -99,7 +99,7 @@ export default class ObfsHttpPreset extends IPreset {
 
   serverIn({buffer, fail}) {
     if (!this._isHeaderRecv) {
-      const found = ObfsHttpPreset.pairs.find(({request}) => buffer.indexOf(request) === 0);
+      const found = this.getStore().pairs.find(({request}) => buffer.indexOf(request) === 0);
       if (found !== undefined) {
         this._isHeaderRecv = true;
         this._response = found.response;
@@ -123,7 +123,7 @@ export default class ObfsHttpPreset extends IPreset {
 
   clientIn({buffer, fail}) {
     if (!this._isHeaderRecv) {
-      const found = ObfsHttpPreset.pairs.find(({response}) => buffer.indexOf(response) === 0);
+      const found = this._config.store.pairs.find(({response}) => buffer.indexOf(response) === 0);
       if (found !== undefined) {
         this._isHeaderRecv = true;
         return buffer.slice(found.response.length);

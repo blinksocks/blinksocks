@@ -16,8 +16,8 @@ import SsrAuthAes128Preset from './ssr-auth-aes128';
  */
 export default class SsrAuthAes128Md5Preset extends SsrAuthAes128Preset {
 
-  constructor(params) {
-    super(params);
+  constructor(props) {
+    super(props);
     this._hashFunc = 'md5';
     this._salt = 'auth_aes128_md5';
   }

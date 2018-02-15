@@ -1,54 +1,37 @@
 import EventEmitter from 'events';
-import {getPresetClassByName, IPresetStatic} from '../presets';
+import {getPresetClassByName} from '../presets';
 import {PIPE_ENCODE} from '../constants';
 import {kebabCase} from '../utils';
 
-const staticPresetCache = new Map(/* 'ClassName': <preset> */);
-
-function createPreset(name, params = {}, config) {
+function createPreset({config, preset}) {
+  const name = preset.name;
+  const params = preset.params || {};
   const ImplClass = getPresetClassByName(name);
-  const createOne = () => {
-    ImplClass.config = config;
-    ImplClass.checkParams(params);
-    ImplClass.onInit(params);
-    return new ImplClass(params);
-  };
-  let preset = null;
-  if (IPresetStatic.isPrototypeOf(ImplClass)) {
-    // only create one instance for IPresetStatic
-    preset = staticPresetCache.get(ImplClass.name);
-    if (preset === undefined) {
-      preset = createOne();
-      staticPresetCache.set(ImplClass.name, preset);
-    }
-  } else {
-    preset = createOne();
-  }
-  return preset;
+  const instance = new ImplClass({config, params});
+  instance.onInit(params);
+  return instance;
 }
 
-/**
- * abstraction of middleware
- */
 export class Middleware extends EventEmitter {
 
-  _impl = null;
   _config = null;
 
-  constructor(preset, config) {
+  _impl = null;
+
+  constructor({config, preset}) {
     super();
-    this._config = config;
     this.onPresetNext = this.onPresetNext.bind(this);
     this.onPresetBroadcast = this.onPresetBroadcast.bind(this);
     this.onPresetFail = this.onPresetFail.bind(this);
-    this._impl = createPreset(preset.name, preset.params || {}, this._config);
+    this._config = config;
+    this._impl = createPreset({config, preset});
     this._impl.next = this.onPresetNext;
     this._impl.broadcast = this.onPresetBroadcast;
     this._impl.fail = this.onPresetFail;
   }
 
   get name() {
-    return this._impl.getName() || kebabCase(this._impl.constructor.name).replace(/(.*)-preset/i, '$1');
+    return kebabCase(this._impl.constructor.name).replace(/(.*)-preset/i, '$1');
   }
 
   getImplement() {
@@ -76,21 +59,10 @@ export class Middleware extends EventEmitter {
   }
 
   onDestroy() {
-    // prevent destroy on static preset
-    if (!(this._impl instanceof IPresetStatic)) {
-      this._impl.onDestroy();
-    }
+    this._impl.onDestroy();
     this.removeAllListeners();
   }
 
-  /**
-   * call hook functions of implement in order
-   * @param direction
-   * @param buffer
-   * @param direct
-   * @param isUdp
-   * @param extraArgs
-   */
   write({direction, buffer, direct, isUdp}, extraArgs) {
     const type = (direction === PIPE_ENCODE ? 'Out' : 'In') + (isUdp ? 'Udp' : '');
 

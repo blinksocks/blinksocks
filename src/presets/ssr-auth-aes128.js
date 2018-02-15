@@ -82,9 +82,9 @@ const MAX_TIME_DIFF = 30; // seconds
  */
 export default class SsrAuthAes128Preset extends IPreset {
 
-  static clientId = null;
+  _clientId = null;
 
-  static connectionId = null;
+  _connectionId = null;
 
   _userKey = null;
 
@@ -102,14 +102,9 @@ export default class SsrAuthAes128Preset extends IPreset {
 
   _adBuf = null;
 
-  static onInit() {
-    SsrAuthAes128Preset.userKey = EVP_BytesToKey(SsrAuthAes128Preset.config.key, 16, 16);
-    SsrAuthAes128Preset.clientId = crypto.randomBytes(4);
-    SsrAuthAes128Preset.connectionId = getRandomInt(0, 0x00ffffff);
-  }
-
-  constructor() {
-    super();
+  onInit() {
+    this._clientId = crypto.randomBytes(4);
+    this._connectionId = getRandomInt(0, 0x00ffffff);
     this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});
     this._adBuf.on('data', this.onChunkReceived.bind(this));
   }
@@ -125,7 +120,8 @@ export default class SsrAuthAes128Preset extends IPreset {
   }
 
   createRequest(buffer) {
-    const {clientId, connectionId} = SsrAuthAes128Preset;
+    const clientId = this._clientId;
+    const connectionId = this._connectionId;
 
     const userKey = this._userKey = this.readProperty('ss-stream-cipher', 'key');
     const iv = this.readProperty('ss-stream-cipher', 'iv');
@@ -148,9 +144,9 @@ export default class SsrAuthAes128Preset extends IPreset {
     if (connectionId > 0xff000000) {
       connection_id = getRandomInt(0, 0x00ffffff);
       client_id = crypto.randomBytes(4);
-      SsrAuthAes128Preset.connectionId = connection_id;
+      this._connectionId = connection_id;
     } else {
-      connection_id = ++SsrAuthAes128Preset.connectionId;
+      connection_id = ++this._connectionId;
     }
 
     const random_bytes_len = getRandomInt(0, buffer.length > 400 ? 512 : 1024);
