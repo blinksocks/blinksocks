@@ -79,7 +79,15 @@ export default class SsStreamCipherPreset extends IPreset {
   _cipher = null;
   _decipher = null;
 
-  static checkParams({method}) {
+  get key() {
+    return this._key;
+  }
+
+  get iv() {
+    return this._iv;
+  }
+
+  static onCheckParams({method}) {
     if (typeof method !== 'string' || method === '') {
       throw Error('\'method\' must be set');
     }
@@ -89,22 +97,13 @@ export default class SsStreamCipherPreset extends IPreset {
     }
   }
 
-  get key() {
-    return this._key;
-  }
-
-  get iv() {
-    return this._iv;
-  }
-
-  constructor({method}) {
-    super();
+  onInit({method}) {
     const [keySize, ivSize] = ciphers[method];
     const iv = crypto.randomBytes(ivSize);
     this._algorithm = ['rc4-md5', 'rc4-md5-6'].includes(method) ? 'rc4' : method;
     this._keySize = keySize;
     this._ivSize = ivSize;
-    this._key = EVP_BytesToKey(__KEY__, keySize, ivSize);
+    this._key = EVP_BytesToKey(this._config.key, keySize, ivSize);
     this._iv = method === 'rc4-md5-6' ? iv.slice(0, 6) : iv;
   }
 

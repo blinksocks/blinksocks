@@ -1,9 +1,7 @@
 import {checkPresetClass} from './defs';
 
 // functional
-import StatsPreset from './stats';
 import TrackerPreset from './tracker';
-import AccessControlPreset from './access-control';
 import AutoConfPreset from './auto-conf';
 import MuxPreset from './mux';
 
@@ -32,33 +30,9 @@ import ObfsTls12TicketPreset from './obfs-tls1.2-ticket';
 // others
 import AeadRandomCipherPreset from './aead-random-cipher';
 
-function monkeyPatch(clazz) {
-  // patch onInit()
-  clazz.onInit = (function (onInit) {
-    return function _onInit(...args) {
-      if (!clazz.initialized) {
-        onInit(...args);
-        clazz.initialized = true;
-      }
-    };
-  })(clazz.onInit);
-
-  // patch checkParams()
-  clazz.checkParams = (function (checkParams) {
-    return function _checkParams(...args) {
-      if (!clazz.checked) {
-        checkParams(...args);
-        clazz.checked = true;
-      }
-    };
-  })(clazz.checkParams);
-}
-
 const mapping = {
   // functional
-  'stats': StatsPreset,
   'tracker': TrackerPreset,
-  'access-control': AccessControlPreset,
   'auto-conf': AutoConfPreset,
   'mux': MuxPreset,
 
@@ -89,8 +63,6 @@ const mapping = {
 };
 
 const presetClasses = {...mapping};
-
-Object.keys(presetClasses).forEach((clazzName) => monkeyPatch(presetClasses[clazzName]));
 
 export function getPresetClassByName(name) {
   let clazz = presetClasses[name];

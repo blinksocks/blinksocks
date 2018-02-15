@@ -16,8 +16,8 @@ import SsrAuthChainPreset from './ssr-auth-chain';
  */
 export default class SsrAuthChainAPreset extends SsrAuthChainPreset {
 
-  constructor(params) {
-    super(params);
+  constructor(props) {
+    super(props);
     this._salt = 'auth_chain_a';
   }
 

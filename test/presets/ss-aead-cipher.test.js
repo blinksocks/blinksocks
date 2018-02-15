@@ -7,9 +7,9 @@ test('tcp relay on client and server', async () => {
       method: 'aes-128-gcm'
     }
   }, {
-    __KEY__: 'secret',
-    __IS_CLIENT__: true,
-    __IS_SERVER__: false
+    key: 'secret',
+    is_client: true,
+    is_serevr: false
   });
 
   const packet_1 = await runner.forward('12');
@@ -38,9 +38,9 @@ test('udp relay on client and server', async () => {
       method: 'aes-128-gcm'
     }
   }, {
-    __KEY__: 'secret',
-    __IS_CLIENT__: true,
-    __IS_SERVER__: false
+    key: 'secret',
+    is_client: true,
+    is_server: false
   });
 
   const packet = await runner.forwardUdp('12');

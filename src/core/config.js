@@ -16,94 +16,137 @@ function loadFileSync(file) {
 
 export class Config {
 
-  static init(json) {
+  local_protocol = null;
+  local_host = null;
+  local_port = null;
+
+  forward_host = null;
+  forward_port = null;
+
+  servers = null;
+  is_client = null;
+  is_server = null;
+
+  timeout = null;
+  redirect = null;
+  workers = null;
+
+  dns_expire = null;
+  dns = null;
+
+  transport = null;
+  server_host = null;
+  server_port = null;
+  tls_cert = null;
+  tls_key = null;
+  key = null;
+
+  presets = null;
+  udp_presets = null;
+
+  mux = null;
+  mux_concurrency = null;
+
+  log_path = null;
+  log_level = null;
+  log_max_days = null;
+
+  // an isolate space where presets can store something in.
+  // store[i] is for presets[i]
+  stores = [];
+
+  constructor(json) {
     const {protocol, hostname, port, query} = url.parse(json.service);
-    global.__LOCAL_PROTOCOL__ = protocol.slice(0, -1);
-    global.__LOCAL_HOST__ = hostname;
-    global.__LOCAL_PORT__ = +port;
+    this.local_protocol = protocol.slice(0, -1);
+    this.local_host = hostname;
+    this.local_port = +port;
 
     if (json.servers !== undefined) {
-      global.__SERVERS__ = json.servers.filter((server) => !!server.enabled);
-      global.__IS_CLIENT__ = true;
-      global.__IS_SERVER__ = false;
+      this.servers = json.servers.filter((server) => !!server.enabled);
+      this.is_client = true;
+      this.is_server = false;
     } else {
-      global.__IS_CLIENT__ = false;
-      global.__IS_SERVER__ = true;
+      this.is_client = false;
+      this.is_server = true;
     }
 
-    Config.initLogger(json);
+    this._initLogger(json);
 
-    if (__IS_SERVER__) {
-      Config.initServer(json);
+    if (this.is_server) {
+      this.initServer(json);
     }
 
-    if (__IS_CLIENT__ && __LOCAL_PROTOCOL__ === 'tcp') {
+    if (this.is_client && this.local_protocol === 'tcp') {
       const {forward} = qs.parse(query);
       const {hostname, port} = url.parse('tcp://' + forward);
-      global.__FORWARD_HOST__ = hostname;
-      global.__FORWARD_PORT__ = +port;
+      this.forward_host = hostname;
+      this.forward_port = +port;
     }
 
-    global.__TIMEOUT__ = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
-    global.__REDIRECT__ = (json.redirect !== '') ? json.redirect : null;
-    global.__WORKERS__ = (json.workers !== undefined) ? json.workers : 0;
-    global.__DNS_EXPIRE__ = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
+    this.timeout = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
+    this.redirect = (json.redirect !== '') ? json.redirect : null;
+    this.workers = (json.workers !== undefined) ? json.workers : 0;
+    this.dns_expire = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
 
     // dns
     if (json.dns !== undefined && json.dns.length > 0) {
-      global.__DNS__ = json.dns;
+      this.dns = json.dns;
       dns.setServers(json.dns);
     }
 
     // dns-cache
-    DNSCache.init(__DNS_EXPIRE__);
+    DNSCache.init(this.dns_expire);
   }
 
-  static initServer(server) {
+  initServer(server) {
     // service
     const {protocol, hostname, port} = url.parse(server.service);
-    global.__TRANSPORT__ = protocol.slice(0, -1);
-    global.__SERVER_HOST__ = hostname;
-    global.__SERVER_PORT__ = +port;
+    this.transport = protocol.slice(0, -1);
+    this.server_host = hostname;
+    this.server_port = +port;
 
     // preload tls_cert or tls_key
-    if (__TRANSPORT__ === 'tls') {
+    if (this.transport === 'tls') {
       logger.info(`[config] loading ${server.tls_cert}`);
-      global.__TLS_CERT__ = loadFileSync(server.tls_cert);
-      if (__IS_SERVER__) {
+      this.tls_cert = loadFileSync(server.tls_cert);
+      if (this.is_server) {
         logger.info(`[config] loading ${server.tls_key}`);
-        global.__TLS_KEY__ = loadFileSync(server.tls_key);
+        this.tls_key = loadFileSync(server.tls_key);
       }
     }
 
-    global.__KEY__ = server.key;
-    global.__PRESETS__ = server.presets;
-    global.__UDP_PRESETS__ = server.presets;
+    this.key = server.key;
+    this.presets = server.presets;
+    this.udp_presets = server.presets;
 
     // mux
-    global.__MUX__ = !!server.mux;
-    if (__IS_CLIENT__) {
-      global.__MUX_CONCURRENCY__ = server.mux_concurrency || 10;
+    this.mux = !!server.mux;
+    if (this.is_client) {
+      this.mux_concurrency = server.mux_concurrency || 10;
     }
 
     // remove unnecessary presets
-    if (__MUX__) {
-      global.__PRESETS__ = __PRESETS__.filter(
+    if (this.mux) {
+      this.presets = this.presets.filter(
         ({name}) => !IPresetAddressing.isPrototypeOf(getPresetClassByName(name))
       );
     }
 
-    // pre-init presets
-    for (const {name, params = {}} of server.presets) {
+    // pre-cache presets
+    this.stores = (new Array(this.presets.length)).fill({});
+    for (let i = 0; i < server.presets.length; i++) {
+      const {name, params = {}} = server.presets[i];
       const clazz = getPresetClassByName(name);
-      clazz.checked = false;
-      clazz.checkParams(params);
-      clazz.initialized = false;
-      clazz.onInit(params);
+      const data = clazz.onCache(params, this.stores[i]);
+      if (data instanceof Promise) {
+        data.then((d) => this.stores[i] = d);
+      } else if (typeof data !== 'undefined') {
+        this.stores[i] = data;
+      }
     }
   }
 
-  static initLogger(json) {
+  _initLogger(json) {
     // log_path & log_level
     const absolutePath = path.resolve(process.cwd(), json.log_path || '.');
     let isFile = false;
@@ -114,12 +157,12 @@ export class Config {
     }
 
     // log_path, log_level, log_max_days
-    global.__LOG_PATH__ = isFile ? absolutePath : path.join(absolutePath, `bs-${__IS_CLIENT__ ? 'client' : 'server'}.log`);
-    global.__LOG_LEVEL__ = (json.log_level !== undefined) ? json.log_level : 'info';
-    global.__LOG_MAX_DAYS__ = (json.log_max_days !== undefined) ? json.log_max_days : 0;
+    this.log_path = isFile ? absolutePath : path.join(absolutePath, `bs-${this.is_client ? 'client' : 'server'}.log`);
+    this.log_level = (json.log_level !== undefined) ? json.log_level : 'info';
+    this.log_max_days = (json.log_max_days !== undefined) ? json.log_max_days : 0;
 
     logger.configure({
-      level: __LOG_LEVEL__,
+      level: this.log_level,
       transports: [
         new (winston.transports.Console)({
           colorize: true,
@@ -128,9 +171,9 @@ export class Config {
         new (require('winston-daily-rotate-file'))({
           json: false,
           eol: os.EOL,
-          filename: __LOG_PATH__,
-          level: __LOG_LEVEL__,
-          maxDays: __LOG_MAX_DAYS__
+          filename: this.log_path,
+          level: this.log_level,
+          maxDays: this.log_max_days
         })
       ]
     });
@@ -320,6 +363,8 @@ export class Config {
         if (!isPlainObject(params)) {
           throw Error('"server.presets[].params" must be an plain object');
         }
+        const clazz = getPresetClassByName(name);
+        clazz.onCheckParams(params);
       }
     }
   }

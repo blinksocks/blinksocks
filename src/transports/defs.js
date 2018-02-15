@@ -6,8 +6,11 @@ class Bound extends EventEmitter {
 
   _ctx = null;
 
-  constructor({context}) {
+  _config = null;
+
+  constructor({config, context}) {
     super();
+    this._config = config;
     this._ctx = context;
   }
 

@@ -159,13 +159,8 @@ function createChacha20Poly1305Key(key) {
  */
 export default class V2rayVmessPreset extends IPresetAddressing {
 
-  static uuid = null;
-
-  static security = null;
-
-  static userHashCache = [
-    // {timestamp, authInfo}
-  ];
+  _uuid = null;
+  _security = null;
 
   _atyp = null;
   _host = null; // buffer
@@ -192,7 +187,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
   _cipherNonce = 0;
   _decipherNonce = 0;
 
-  static checkParams({id, security = 'aes-128-gcm'}) {
+  static onCheckParams({id, security = 'aes-128-gcm'}) {
     if (Buffer.from(id.split('-').join(''), 'hex').length !== 16) {
       throw Error('id is not a valid uuid');
     }
@@ -202,17 +197,17 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     }
   }
 
-  static onInit({id, security = 'aes-128-gcm'}) {
-    V2rayVmessPreset.uuid = Buffer.from(id.split('-').join(''), 'hex');
-    if (__IS_CLIENT__) {
-      V2rayVmessPreset.security = securityTypes[security];
-    }
-    setInterval(() => V2rayVmessPreset.updateAuthCache(), 1e3);
-    V2rayVmessPreset.updateAuthCache();
+  static onCache({id}, store) {
+    const uuid = Buffer.from(id.split('-').join(''), 'hex');
+    setInterval(() => V2rayVmessPreset.updateAuthCache(uuid, store), 1e3);
+    V2rayVmessPreset.updateAuthCache(uuid, store);
   }
 
-  static updateAuthCache() {
-    const items = this.userHashCache;
+  static updateAuthCache(uuid, store) {
+    const items = store.userHashCache || [
+      // {timestamp, authInfo},
+      // ...
+    ];
     const now = getCurrentTimestampInt();
     let from = now - TIME_TOLERANCE;
     const to = now + TIME_TOLERANCE;
@@ -224,15 +219,17 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     }
     for (let ts = from; ts <= to; ++ts) {
       // account auth info, 16 bytes
-      const uuid = this.uuid;
       const authInfo = hmac('md5', uuid, ntb(ts, 8));
       newItems.push({timestamp: ts, authInfo: authInfo});
     }
-    this.userHashCache = newItems;
+    store.userHashCache = newItems;
   }
 
-  constructor() {
-    super();
+  onInit({id, security = 'aes-128-gcm'}) {
+    this._uuid = Buffer.from(id.split('-').join(''), 'hex');
+    if (this._config.is_client) {
+      this._security = securityTypes[security];
+    }
     this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});
     this._adBuf.on('data', this.onChunkReceived.bind(this));
   }
@@ -254,7 +251,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
   }
 
   onNotified(action) {
-    if (__IS_CLIENT__ && action.type === CONNECT_TO_REMOTE) {
+    if (this._config.is_client && action.type === CONNECT_TO_REMOTE) {
       const {host, port} = action.payload;
       const type = getAddrType(host);
       this._atyp = type;
@@ -269,7 +266,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
   beforeOut({buffer}) {
     if (!this._isHeaderSent) {
       this._isHeaderSent = true;
-      const header = __IS_CLIENT__ ? this.createRequestHeader() : this.createResponseHeader();
+      const header = this._config.is_client ? this.createRequestHeader() : this.createResponseHeader();
       const chunks = this.getBufferChunks(buffer);
       return Buffer.concat([header, ...chunks]);
     } else {
@@ -307,7 +304,8 @@ export default class V2rayVmessPreset extends IPresetAddressing {
         return fail(`fail to parse request header: ${buffer.toString('hex')}`);
       }
 
-      const {uuid, userHashCache} = V2rayVmessPreset;
+      const uuid = this._uuid;
+      const {userHashCache} = this.getStore();
 
       // verify auth info
       const authInfo = buffer.slice(0, 16);
@@ -409,7 +407,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
         return fail('fail to verify request command');
       }
       const data = buffer.slice(16 + plainReqHeader.length + 4);
-      V2rayVmessPreset.security = securityType;
+      this._security = securityType;
 
       this._isBroadCasting = true;
       this.broadcast({
@@ -448,7 +446,9 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     this._v = rands[32];
     this._opt = 0x05;
 
-    const {userHashCache, uuid} = V2rayVmessPreset;
+    const uuid = this._uuid;
+    const {userHashCache} = this.getStore();
+
     const {timestamp, authInfo} = userHashCache[getRandomInt(0, userHashCache.length - 1)];
 
     // utc timestamp: Big-Endian, 8 bytes
@@ -461,7 +461,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     let command = Buffer.from([
       0x01, // Ver
       ...this._dataEncIV, ...this._dataEncKey, this._v, this._opt,
-      paddingLen << 4 | V2rayVmessPreset.security,
+      paddingLen << 4 | this._security,
       0x00, // RSV
       0x01, // Cmd
       ...this._port, this._atyp,
@@ -489,7 +489,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
   getBufferChunks(buffer) {
     return getChunks(buffer, 0x3fff).map((chunk) => {
       let _chunk = chunk;
-      if ([SECURITY_TYPE_AES_128_GCM, SECURITY_TYPE_CHACHA20_POLY1305].includes(V2rayVmessPreset.security)) {
+      if ([SECURITY_TYPE_AES_128_GCM, SECURITY_TYPE_CHACHA20_POLY1305].includes(this._security)) {
         _chunk = Buffer.concat(this.encrypt(_chunk));
       }
       let _len = _chunk.length;
@@ -514,7 +514,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
   }
 
   onChunkReceived(chunk, {next, fail}) {
-    if ([SECURITY_TYPE_AES_128_GCM, SECURITY_TYPE_CHACHA20_POLY1305].includes(V2rayVmessPreset.security)) {
+    if ([SECURITY_TYPE_AES_128_GCM, SECURITY_TYPE_CHACHA20_POLY1305].includes(this._security)) {
       const tag = chunk.slice(-16);
       const data = this.decrypt(chunk.slice(2, -16), tag);
       if (data === null) {
@@ -526,7 +526,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
   }
 
   encrypt(plaintext) {
-    const {security} = V2rayVmessPreset;
+    const security = this._security;
     const nonce = Buffer.concat([ntb(this._cipherNonce), this._dataEncIV.slice(2, 12)]);
     let ciphertext = null;
     let tag = null;
@@ -548,7 +548,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
   }
 
   decrypt(ciphertext, tag) {
-    const {security} = V2rayVmessPreset;
+    const security = this._security;
     const nonce = Buffer.concat([ntb(this._decipherNonce), this._dataDecIV.slice(2, 12)]);
     if (security === SECURITY_TYPE_AES_128_GCM) {
       const decipher = crypto.createDecipheriv('aes-128-gcm', this._dataDecKey, nonce);

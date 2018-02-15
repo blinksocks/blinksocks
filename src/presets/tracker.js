@@ -95,7 +95,7 @@ export default class TrackerPreset extends IPreset {
     if (strs.length > TRACK_MAX_SIZE) {
       strs = strs.slice(0, perSize).concat([' ... ']).concat(strs.slice(-perSize));
     }
-    const summary = __IS_CLIENT__ ? `out/in = ${up}/${dp}, ${ub}b/${db}b` : `in/out = ${dp}/${up}, ${db}b/${ub}b`;
+    const summary = this._config.is_client ? `out/in = ${up}/${dp}, ${ub}b/${db}b` : `in/out = ${dp}/${up}, ${db}b/${ub}b`;
     logger.info(`[tracker:${this._transport}] summary(${summary}) abstract(${strs.join(' ')})`);
   }
 

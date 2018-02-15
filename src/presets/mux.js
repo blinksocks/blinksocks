@@ -53,8 +53,7 @@ export default class MuxPreset extends IPresetAddressing {
 
   _adBuf = null;
 
-  constructor() {
-    super();
+  onInit() {
     this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});
     this._adBuf.on('data', this.onChunkReceived.bind(this));
   }

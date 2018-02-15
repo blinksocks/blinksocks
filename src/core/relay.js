@@ -54,6 +54,8 @@ export class Relay extends EventEmitter {
 
   _destroyed = false;
 
+  _config = null;
+
   get id() {
     return this._id;
   }
@@ -63,13 +65,14 @@ export class Relay extends EventEmitter {
     this._ctx.cid = id;
   }
 
-  constructor({transport, context, presets = []}) {
+  constructor({config, transport, context, presets = []}) {
     super();
     this.updatePresets = this.updatePresets.bind(this);
     this.onBroadcast = this.onBroadcast.bind(this);
     this.onEncoded = this.onEncoded.bind(this);
     this.onDecoded = this.onDecoded.bind(this);
     this._id = Relay.idcounter++;
+    this._config = config;
     this._transport = transport;
     this._remoteInfo = context.remoteInfo;
     // pipe
@@ -82,8 +85,9 @@ export class Relay extends EventEmitter {
     };
     // bounds
     const {Inbound, Outbound} = this.getBounds(transport);
-    const inbound = new Inbound({context: this._ctx});
-    const outbound = new Outbound({context: this._ctx});
+    const props = {config, context: this._ctx};
+    const inbound = new Inbound(props);
+    const outbound = new Outbound(props);
     this._inbound = inbound;
     this._outbound = outbound;
     // outbound
@@ -127,7 +131,7 @@ export class Relay extends EventEmitter {
     if (transport === 'udp') {
       [Inbound, Outbound] = [UdpInbound, UdpOutbound];
     } else {
-      [Inbound, Outbound] = __IS_CLIENT__ ? [TcpInbound, mapping[transport][1]] : [mapping[transport][0], TcpOutbound];
+      [Inbound, Outbound] = this._config.is_client ? [TcpInbound, mapping[transport][1]] : [mapping[transport][0], TcpOutbound];
     }
     return {Inbound, Outbound};
   }
@@ -164,7 +168,7 @@ export class Relay extends EventEmitter {
     if (type === CONNECT_TO_REMOTE) {
       const remote = `${this._remoteInfo.host}:${this._remoteInfo.port}`;
       const target = `${action.payload.host}:${action.payload.port}`;
-      if (__MUX__ && __IS_CLIENT__ && this._transport !== 'udp') {
+      if (this._config.mux && this._config.is_client && this._transport !== 'udp') {
         logger.info(`[relay-${this.id}] [${remote}] request over mux-${this._ctx.muxRelay.id}: ${target}`);
         return;
       }
@@ -193,7 +197,7 @@ export class Relay extends EventEmitter {
       type: CONNECTION_CREATED,
       payload: {transport, ...this._remoteInfo}
     });
-    if (__IS_CLIENT__) {
+    if (this._config.is_client) {
       this._pipe.broadcast(null, {
         type: CONNECT_TO_REMOTE,
         payload: {...proxyRequest, keepAlive: true} // keep previous connection alive, don't re-connect
@@ -204,7 +208,7 @@ export class Relay extends EventEmitter {
   }
 
   onEncoded(buffer) {
-    if (__IS_CLIENT__) {
+    if (this._config.is_client) {
       this._outbound.write(buffer);
     } else {
       this._inbound.write(buffer);
@@ -212,7 +216,7 @@ export class Relay extends EventEmitter {
   }
 
   onDecoded(buffer) {
-    if (__IS_CLIENT__) {
+    if (this._config.is_client) {
       this._inbound.write(buffer);
     } else {
       this._outbound.write(buffer);
@@ -268,7 +272,7 @@ export class Relay extends EventEmitter {
    * create pipes for both data forward and backward
    */
   createPipe(presets) {
-    const pipe = new Pipe({presets, isUdp: this._transport === 'udp'});
+    const pipe = new Pipe({config: this._config, presets, isUdp: this._transport === 'udp'});
     pipe.on('broadcast', this.onBroadcast.bind(this)); // if no action were caught by presets
     pipe.on(`post_${PIPE_ENCODE}`, this.onEncoded);
     pipe.on(`post_${PIPE_DECODE}`, this.onDecoded);
@@ -291,6 +295,7 @@ export class Relay extends EventEmitter {
       this._remoteInfo = null;
       this._proxyRequest = null;
       this._destroyed = true;
+      this._config = null;
     }
   }
 

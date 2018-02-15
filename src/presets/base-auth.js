@@ -56,11 +56,11 @@ const DEFAULT_HASH_METHOD = 'sha1';
  */
 export default class BaseAuthPreset extends IPresetAddressing {
 
-  static hmacMethod = DEFAULT_HASH_METHOD;
+  _hmacMethod = DEFAULT_HASH_METHOD;
 
-  static hmacLen = null;
+  _hmacLen = null;
 
-  static hmacKey = null;
+  _hmacKey = null;
 
   _cipher = null;
 
@@ -78,24 +78,20 @@ export default class BaseAuthPreset extends IPresetAddressing {
 
   _port = null; // buffer
 
-  static checkParams({method = DEFAULT_HASH_METHOD}) {
+  static onCheckParams({method = DEFAULT_HASH_METHOD}) {
     const methods = Object.keys(HMAC_METHODS);
     if (!methods.includes(method)) {
       throw Error(`base-auth 'method' must be one of [${methods}]`);
     }
   }
 
-  static onInit({method = DEFAULT_HASH_METHOD}) {
-    BaseAuthPreset.hmacMethod = method;
-    BaseAuthPreset.hmacLen = HMAC_METHODS[method];
-    BaseAuthPreset.hmacKey = EVP_BytesToKey(__KEY__, 16, 16);
-  }
-
-  constructor() {
-    super();
-    const {hmacKey: key} = BaseAuthPreset;
-    const iv = hash('md5', Buffer.from(__KEY__ + 'base-auth'));
-    if (__IS_CLIENT__) {
+  onInit({method = DEFAULT_HASH_METHOD}) {
+    const key = EVP_BytesToKey(this._config.key, 16, 16);
+    const iv = hash('md5', Buffer.from(this._config.key + 'base-auth'));
+    this._hmacMethod = method;
+    this._hmacLen = HMAC_METHODS[method];
+    this._hmacKey = key;
+    if (this._config.is_client) {
       this._cipher = crypto.createCipheriv('aes-128-cfb', key, iv);
     } else {
       this._decipher = crypto.createDecipheriv('aes-128-cfb', key, iv);
@@ -111,7 +107,7 @@ export default class BaseAuthPreset extends IPresetAddressing {
   }
 
   onNotified(action) {
-    if (__IS_CLIENT__ && action.type === CONNECT_TO_REMOTE) {
+    if (this._config.is_client && action.type === CONNECT_TO_REMOTE) {
       const {host, port} = action.payload;
       this._host = Buffer.from(host);
       this._port = numberToBuffer(port);
@@ -119,15 +115,14 @@ export default class BaseAuthPreset extends IPresetAddressing {
   }
 
   encodeHeader() {
-    const {hmacMethod, hmacKey} = BaseAuthPreset;
     const header = Buffer.concat([numberToBuffer(this._host.length, 1), this._host, this._port]);
     const encHeader = this._cipher.update(header);
-    const mac = hmac(hmacMethod, hmacKey, encHeader);
+    const mac = hmac(this._hmacMethod, this._hmacKey, encHeader);
     return Buffer.concat([encHeader, mac]);
   }
 
   decodeHeader({buffer, fail}) {
-    const {hmacMethod, hmacLen, hmacKey} = BaseAuthPreset;
+    const hmacLen = this._hmacLen;
 
     // minimal length required
     if (buffer.length < 31) {
@@ -142,7 +137,7 @@ export default class BaseAuthPreset extends IPresetAddressing {
 
     // check hmac
     const givenHmac = buffer.slice(1 + alen + 2, 1 + alen + 2 + hmacLen);
-    const expHmac = hmac(hmacMethod, hmacKey, buffer.slice(0, 1 + alen + 2));
+    const expHmac = hmac(this._hmacMethod, this._hmacKey, buffer.slice(0, 1 + alen + 2));
     if (!givenHmac.equals(expHmac)) {
       return fail(`unexpected HMAC=${givenHmac.toString('hex')} want=${expHmac.toString('hex')} dump=${buffer.slice(0, 60).toString('hex')}`);
     }
