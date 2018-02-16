@@ -1,0 +1,14 @@
+======================
+GET / HTTP/1.1
+Host: bing.com
+Accept: */*
+----------------------
+HTTP/1.1 200 OK
+Content-Type: text/plain
+======================
+POST /login HTTP/1.1
+Host: login.live.com
+Content-type: application/json
+----------------------
+HTTP/1.1 200 OK
+======================

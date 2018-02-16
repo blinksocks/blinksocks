@@ -1,0 +1,104 @@
+[
+  {
+    "description": "shadowsocks stream cipher with random padding",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "obfs-random-padding"
+      },
+      {
+        "name": "ss-stream-cipher",
+        "params": {
+          "method": "aes-128-ctr"
+        }
+      }
+    ]
+  },
+  {
+    "description": "shadowsocks aead cipher with random padding",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "obfs-random-padding"
+      },
+      {
+        "name": "ss-aead-cipher",
+        "params": {
+          "method": "aes-128-gcm"
+        }
+      }
+    ]
+  },
+  {
+    "description": "shadowsocksr auth_aes128_md5",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "ssr-auth-aes128-md5"
+      },
+      {
+        "name": "ss-stream-cipher",
+        "params": {
+          "method": "aes-128-ctr"
+        }
+      }
+    ]
+  },
+  {
+    "description": "shadowsocksr auth_aes128_sha1",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "ssr-auth-aes128-sha1"
+      },
+      {
+        "name": "ss-stream-cipher",
+        "params": {
+          "method": "aes-128-ctr"
+        }
+      }
+    ]
+  },
+  {
+    "description": "shadowsocksr auth_chain_a",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "ssr-auth-chain-a"
+      },
+      {
+        "name": "ss-stream-cipher",
+        "params": {
+          "method": "aes-128-ctr"
+        }
+      }
+    ]
+  },
+  {
+    "description": "shadowsocksr auth_chain_b",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "ssr-auth-chain-b"
+      },
+      {
+        "name": "ss-stream-cipher",
+        "params": {
+          "method": "aes-128-ctr"
+        }
+      }
+    ]
+  }
+]
