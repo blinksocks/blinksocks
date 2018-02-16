@@ -22,7 +22,6 @@ module.exports = function bootstrap(configPath, {Hub, Config}) {
     Config.test(config);
     const hub = new Hub(config);
     hub.run();
-    process.on('SIGINT', () => hub.terminate(() => process.exit(0)));
   } catch (err) {
     console.error(err);
     process.exit(-1);

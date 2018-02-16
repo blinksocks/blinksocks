@@ -12,7 +12,7 @@
   },
   "scripts": {
     "test": "npm run lint && npm run test:coverage",
-    "test:coverage": "jest --silent --coverage --bail",
+    "test:coverage": "cross-env HTTP_PORT=8080 jest --runInBand --silent --coverage --bail",
     "lint": "eslint bin src test pkg",
     "compile": "cross-env NODE_ENV=production babel src --out-dir lib --minified --ignore __tests__,__mocks__",
     "prepkg": "npm run compile && rimraf pkg/blinksocks-* pkg/sha256sum.txt",
@@ -37,7 +37,6 @@
     "long": "^4.0.0",
     "lru-cache": "^4.1.1",
     "node-fetch": "^2.0.0",
-    "pify": "^3.0.0",
     "qs": "^6.5.1",
     "winston": "^2.4.0",
     "winston-daily-rotate-file": "^1.7.2",
@@ -60,6 +59,7 @@
     "filesize": "^3.6.0",
     "husky": "^0.14.3",
     "jest": "^22.3.0",
+    "lodash.clonedeep": "^4.5.0",
     "mkdirp": "^0.5.1",
     "pkg": "^4.3.0",
     "rimraf": "^2.6.2"

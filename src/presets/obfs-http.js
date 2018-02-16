@@ -123,7 +123,7 @@ export default class ObfsHttpPreset extends IPreset {
 
   clientIn({buffer, fail}) {
     if (!this._isHeaderRecv) {
-      const found = this._config.store.pairs.find(({response}) => buffer.indexOf(response) === 0);
+      const found = this.getStore().pairs.find(({response}) => buffer.indexOf(response) === 0);
       if (found !== undefined) {
         this._isHeaderRecv = true;
         return buffer.slice(found.response.length);

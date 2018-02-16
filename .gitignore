@@ -23,7 +23,7 @@ test/tmp/
 /blinksocks*.js
 /blinksocks*.json
 *.map
-*.pem
+/*.pem
 /acl.txt
 
 # benchmark

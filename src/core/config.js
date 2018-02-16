@@ -177,22 +177,27 @@ export class Config {
     this.log_level = (json.log_level !== undefined) ? json.log_level : 'info';
     this.log_max_days = (json.log_max_days !== undefined) ? json.log_max_days : 0;
 
-    logger.configure({
-      level: this.log_level,
-      transports: [
-        new (winston.transports.Console)({
-          colorize: true,
-          prettyPrint: true
-        }),
+    const level = process.env.NODE_ENV === 'test' ? 'error' : this.log_level;
+    const transports = [
+      new (winston.transports.Console)({
+        colorize: true,
+        prettyPrint: true,
+      }),
+    ];
+
+    if (process.env.NODE_ENV !== 'test') {
+      transports.push(
         new (require('winston-daily-rotate-file'))({
+          level: level,
           json: false,
           eol: os.EOL,
           filename: this.log_path,
-          level: this.log_level,
-          maxDays: this.log_max_days
-        })
-      ]
-    });
+          maxDays: this.log_max_days,
+        }),
+      );
+    }
+
+    logger.configure({level, transports});
   }
 
   static test(json) {

@@ -78,6 +78,7 @@ export class MuxRelay extends Relay {
     const muxRelay = this._getRandomMuxRelay();
     if (muxRelay) {
       const relay = new Relay({
+        config: this._config,
         transport: 'mux',
         context: {
           socket: this._ctx.socket,

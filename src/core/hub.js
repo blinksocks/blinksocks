@@ -1,3 +1,4 @@
+import _sodium from 'libsodium-wrappers';
 import dgram from 'dgram';
 import net from 'net';
 import tls from 'tls';
@@ -43,7 +44,25 @@ export class Hub {
     });
   }
 
-  terminate(callback) {
+  async run() {
+    // libsodium-wrappers need to be loaded asynchronously
+    // so we must wait for it ready before run our service.
+    // Ref: https://github.com/jedisct1/libsodium.js#usage-as-a-module
+    await _sodium.ready;
+    if (!global.libsodium) {
+      global.libsodium = _sodium;
+    }
+    if (this._tcpServer !== null) {
+      await this.terminate();
+    }
+    try {
+      await this._createServer();
+    } catch (err) {
+      logger.error('[hub] fail to create server:', err);
+    }
+  }
+
+  async terminate() {
     // relays
     this._udpRelays.reset();
     if (this._config.mux) {
@@ -52,24 +71,11 @@ export class Hub {
     }
     this._tcpRelays.forEach((relay) => relay.destroy());
     this._tcpRelays.clear();
-    // server
-    this._tcpServer.close();
-    logger.info(`[hub] shutdown`);
     // udp server
     this._udpServer.close();
-    typeof callback === 'function' && callback();
-  }
-
-  async run() {
-    if (this._tcpServer !== null) {
-      this.terminate();
-    }
-    try {
-      await this._createServer();
-    } catch (err) {
-      logger.error('[hub] fail to create server:', err);
-      process.exit(-1);
-    }
+    // server
+    this._tcpServer.close();
+    logger.info('[hub] shutdown');
   }
 
   async _createServer() {
@@ -197,12 +203,6 @@ export class Hub {
       });
 
       server.on('error', reject);
-
-      // monkey patch for Socket.close() to prevent closing shared udp socket
-      // eslint-disable-next-line
-      server.close = ((/* close */) => (...args) => {
-        // close.call(server, ...args);
-      })(server.close);
 
       // monkey patch for Socket.send() to meet Socks5 protocol
       if (this._config.is_client) {

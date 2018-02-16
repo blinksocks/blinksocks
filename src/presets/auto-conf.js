@@ -2,7 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import fetch from 'node-fetch';
-import promisify from 'pify';
 import {IPreset, CHANGE_PRESET_SUITE} from './defs';
 import {
   logger,
@@ -15,7 +14,6 @@ import {
 } from '../utils';
 import {PIPE_DECODE, PIPE_ENCODE} from '../constants';
 
-const readFile = promisify(fs.readFile);
 const MAX_TIME_DIFF = 30; // seconds
 const NOOP = Buffer.alloc(0);
 
@@ -92,7 +90,7 @@ export default class AutoConfPreset extends IPreset {
     } else {
       // load from file system
       const suiteJson = path.resolve(process.cwd(), uri);
-      const rawText = await readFile(suiteJson, {encoding: 'utf-8'});
+      const rawText = fs.readFileSync(suiteJson, {encoding: 'utf-8'});
       suites = JSON.parse(rawText);
     }
     if (suites.length < 1) {

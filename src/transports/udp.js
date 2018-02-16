@@ -61,7 +61,8 @@ export class UdpInbound extends Inbound {
 
   close() {
     if (this._socket !== null && this._socket._handle !== null) {
-      this._socket.close();
+      // NOTE: prevent close shared udp socket
+      // this._socket.close();
       this._socket = null;
       this.emit('close');
     }
