@@ -67,13 +67,6 @@ describe('Config#test', () => {
     expect(() => Config.test({ ...baseConf, log_max_days: 1 })).not.toThrow();
   });
 
-  it('should throw when workers(if provided) is invalid', () => {
-    expect(() => Config.test({ ...baseConf, workers: '0' })).toThrow();
-    expect(() => Config.test({ ...baseConf, workers: -1 })).toThrow();
-    expect(() => Config.test({ ...baseConf, workers: 0 })).not.toThrow();
-    expect(() => Config.test({ ...baseConf, workers: 100 })).not.toThrow();
-  });
-
   it('should throw when dns(is provided) is invalid', () => {
     expect(() => Config.test({ ...baseConf, dns: null })).toThrow();
     expect(() => Config.test({ ...baseConf, dns: [''] })).toThrow();
@@ -199,7 +192,6 @@ describe('Config#init', () => {
     expect(config.is_client).toBe(true);
     expect(config.is_server).toBe(false);
     expect(config.timeout).toBe(600 * 1e3);
-    expect(config.workers).toBe(0);
     expect(config.log_level).toBe('warn');
     expect(config.log_path.endsWith('blinksocks.log')).toBe(true);
     expect(config.log_max_days).toBe(30);

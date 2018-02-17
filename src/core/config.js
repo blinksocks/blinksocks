@@ -8,7 +8,9 @@ import qs from 'qs';
 import chalk from 'chalk';
 import winston from 'winston';
 import isPlainObject from 'lodash.isplainobject';
-import { getPresetClassByName, IPresetAddressing } from '../presets';
+import { ACL } from './acl';
+import { getPresetClassByName } from '../presets';
+import { IPresetAddressing } from '../presets/defs';
 import { DNSCache, isValidHostname, isValidPort, logger, DNS_DEFAULT_EXPIRE } from '../utils';
 
 function loadFileSync(file) {
@@ -30,7 +32,6 @@ export class Config {
 
   timeout = null;
   redirect = null;
-  workers = null;
 
   dns_expire = null;
   dns = null;
@@ -41,6 +42,11 @@ export class Config {
   tls_cert = null;
   tls_key = null;
   key = null;
+
+  acl = false;
+  acl_conf = '';
+  acl_rules = [];
+  acl_tries = {};
 
   presets = null;
   udp_presets = null;
@@ -99,9 +105,9 @@ export class Config {
       this.forward_port = +port;
     }
 
+    // common
+
     this.timeout = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
-    this.redirect = (json.redirect !== '') ? json.redirect : null;
-    this.workers = (json.workers !== undefined) ? json.workers : 0;
     this.dns_expire = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
 
     // dns
@@ -134,6 +140,23 @@ export class Config {
     this.key = server.key;
     this.presets = server.presets;
     this.udp_presets = server.presets;
+
+    // acl
+    if (server.acl !== undefined) {
+      this.acl = server.acl;
+    }
+
+    // acl_conf, acl_rules
+    if (server.acl_conf !== undefined && server.acl) {
+      this.acl_conf = server.acl_conf;
+      ACL.loadRules(path.resolve(process.cwd(), server.acl_conf))
+        .then((rules) => this.acl_rules = rules);
+    }
+
+    // redirect
+    if (server.redirect !== undefined) {
+      this.redirect = server.redirect;
+    }
 
     // mux
     this.mux = !!server.mux;
@@ -357,6 +380,20 @@ export class Config {
       throw Error('"server.key" must be a non-empty string');
     }
 
+    // acl, acl_conf
+    if (!from_client && server.acl !== undefined) {
+      if (typeof server.acl !== 'boolean') {
+        throw Error('"server.acl" must be true or false');
+      }
+      if (typeof server.acl_conf !== 'string' || server.acl_conf === '') {
+        throw Error('"server.acl_conf" must be a non-empty string');
+      }
+      const conf = path.resolve(process.cwd(), server.acl_conf);
+      if (!fs.existsSync(conf)) {
+        throw Error(`"server.acl_conf" "${conf}" not exist`);
+      }
+    }
+
     // mux
     if (server.mux !== undefined) {
       if (typeof server.mux !== 'boolean') {
@@ -435,20 +472,6 @@ export class Config {
       }
       if (log_max_days < 1) {
         throw Error('"log_max_days" must be greater than 0');
-      }
-    }
-
-    // workers
-    if (common.workers !== undefined) {
-      const { workers } = common;
-      if (typeof workers !== 'number') {
-        throw Error('"workers" must be a number');
-      }
-      if (workers < 0) {
-        throw Error('"workers" must be an integer');
-      }
-      if (workers > os.cpus().length) {
-        console.warn(`[config] "workers" is greater than the number of CPUs, is ${workers} workers expected?`);
       }
     }
 

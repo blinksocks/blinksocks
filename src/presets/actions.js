@@ -83,13 +83,6 @@ export const PRESET_FAILED = '@action:preset_failed';
  */
 export const CHANGE_PRESET_SUITE = '@action:change_preset_suite';
 
-export const PRESET_CLOSE_CONNECTION = '@action:preset_close_connection';
-
-export const PRESET_PAUSE_RECV = '@action:preset_pause_recv';
-export const PRESET_PAUSE_SEND = '@action:preset_pause_send';
-export const PRESET_RESUME_RECV = '@action:preset_resume_recv';
-export const PRESET_RESUME_SEND = '@action:preset_resume_send';
-
 export const MUX_NEW_CONN = '@action:mux_new_conn';
 export const MUX_DATA_FRAME = '@action:mux_data_frame';
 export const MUX_CLOSE_CONN = '@action:mux_close_conn';

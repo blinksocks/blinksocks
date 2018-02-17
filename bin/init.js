@@ -74,6 +74,8 @@ module.exports = function init({ isMinimal, isOverwrite }) {
     ],
     'tls_key': 'key.pem',
     'tls_cert': 'cert.pem',
+    'acl': true,
+    'acl_conf': 'acl.txt',
     'mux': false,
     'dns': [],
     'dns_expire': 3600,
@@ -87,6 +89,8 @@ module.exports = function init({ isMinimal, isOverwrite }) {
   if (isMinimal) {
     delete serverJson.tls_key;
     delete serverJson.tls_cert;
+    delete serverJson.acl;
+    delete serverJson.acl_conf;
     delete serverJson.mux;
     delete serverJson.dns;
     delete serverJson.dns_expire;

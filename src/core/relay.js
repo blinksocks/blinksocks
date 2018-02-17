@@ -1,4 +1,5 @@
 import EventEmitter from 'events';
+import { ACL } from './acl';
 import { Pipe } from './pipe';
 import { logger } from '../utils';
 import { PIPE_ENCODE, PIPE_DECODE } from '../constants';
@@ -17,6 +18,7 @@ import {
   CONNECTION_CLOSED,
   CONNECTION_WILL_CLOSE,
   CHANGE_PRESET_SUITE,
+  PRESET_FAILED,
 } from '../presets/actions';
 
 /**
@@ -34,7 +36,11 @@ export class Relay extends EventEmitter {
 
   static idcounter = 0;
 
+  _config = null;
+
   _id = null;
+
+  _acl = null;
 
   _ctx = null;
 
@@ -54,8 +60,6 @@ export class Relay extends EventEmitter {
 
   _destroyed = false;
 
-  _config = null;
-
   get id() {
     return this._id;
   }
@@ -67,10 +71,6 @@ export class Relay extends EventEmitter {
 
   constructor({ config, transport, context, presets = [] }) {
     super();
-    this.updatePresets = this.updatePresets.bind(this);
-    this.onBroadcast = this.onBroadcast.bind(this);
-    this.onEncoded = this.onEncoded.bind(this);
-    this.onDecoded = this.onDecoded.bind(this);
     this._id = Relay.idcounter++;
     this._config = config;
     this._transport = transport;
@@ -78,6 +78,7 @@ export class Relay extends EventEmitter {
     // pipe
     this._presets = this.preparePresets(presets);
     this._pipe = this.createPipe(this._presets);
+    // ctx
     this._ctx = {
       pipe: this._pipe,
       thisRelay: this,
@@ -98,6 +99,11 @@ export class Relay extends EventEmitter {
     this._inbound.setOutbound(this._outbound);
     this._inbound.on('close', () => this.onBoundClose(inbound, outbound));
     this._inbound.on('updatePresets', this.updatePresets);
+    // acl
+    if (config.acl) {
+      this._acl = new ACL({ remoteInfo: this._remoteInfo, rules: config.acl_rules });
+      this._acl.on('action', this.onBroadcast);
+    }
   }
 
   init({ proxyRequest }) {
@@ -163,24 +169,31 @@ export class Relay extends EventEmitter {
 
   // hooks of pipe
 
-  onBroadcast(action) {
-    const type = action.type;
-    if (type === CONNECT_TO_REMOTE) {
+  onBroadcast = (action) => {
+    if (action.type === CONNECT_TO_REMOTE) {
       const remote = `${this._remoteInfo.host}:${this._remoteInfo.port}`;
       const target = `${action.payload.host}:${action.payload.port}`;
       if (this._config.mux && this._config.is_client && this._transport !== 'udp') {
         logger.info(`[relay-${this.id}] [${remote}] request over mux-${this._ctx.muxRelay.id}: ${target}`);
         return;
       }
+      if (this._acl) {
+        this._acl.setTargetAddress(action.payload);
+      }
       logger.info(`[relay] [${remote}] request: ${target}`);
     }
-    if (type === CHANGE_PRESET_SUITE) {
+    if (action.type === PRESET_FAILED) {
+      if (this._acl) {
+        this._acl.checkFailTimes(this._config.acl_tries);
+      }
+    }
+    if (action.type === CHANGE_PRESET_SUITE) {
       this.onChangePresetSuite(action);
       return;
     }
     this._inbound && this._inbound.onBroadcast(action);
     this._outbound && this._outbound.onBroadcast(action);
-  }
+  };
 
   onChangePresetSuite(action) {
     const { type, suite, data } = action.payload;
@@ -207,21 +220,27 @@ export class Relay extends EventEmitter {
     this._pipe.feed(type, data);
   }
 
-  onEncoded(buffer) {
+  onEncoded = (buffer) => {
     if (this._config.is_client) {
       this._outbound.write(buffer);
     } else {
+      if (this._acl) {
+        this._acl.collect(PIPE_ENCODE, buffer.length);
+      }
       this._inbound.write(buffer);
     }
-  }
+  };
 
-  onDecoded(buffer) {
+  onDecoded = (buffer) => {
     if (this._config.is_client) {
       this._inbound.write(buffer);
     } else {
+      if (this._acl !== null) {
+        this._acl.collect(PIPE_DECODE, buffer.length);
+      }
       this._outbound.write(buffer);
     }
-  }
+  };
 
   // methods
 
@@ -263,10 +282,10 @@ export class Relay extends EventEmitter {
    * update presets of pipe
    * @param value
    */
-  updatePresets(value) {
+  updatePresets = (value) => {
     this._presets = typeof value === 'function' ? value(this._presets) : value;
     this._pipe.updatePresets(this._presets);
-  }
+  };
 
   /**
    * create pipes for both data forward and backward
@@ -295,7 +314,6 @@ export class Relay extends EventEmitter {
       this._remoteInfo = null;
       this._proxyRequest = null;
       this._destroyed = true;
-      this._config = null;
     }
   }
 

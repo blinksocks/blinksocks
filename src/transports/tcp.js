@@ -2,15 +2,19 @@ import net from 'net';
 import { Inbound, Outbound } from './defs';
 import { MAX_BUFFERED_SIZE, PIPE_ENCODE, PIPE_DECODE } from '../constants';
 import { DNSCache, logger, getRandomInt } from '../utils';
+
+import {
+  ACL_CLOSE_CONNECTION,
+  ACL_PAUSE_RECV,
+  ACL_PAUSE_SEND,
+  ACL_RESUME_RECV,
+  ACL_RESUME_SEND,
+} from '../core/acl';
+
 import {
   CONNECT_TO_REMOTE,
   CONNECTED_TO_REMOTE,
   PRESET_FAILED,
-  PRESET_CLOSE_CONNECTION,
-  PRESET_PAUSE_RECV,
-  PRESET_PAUSE_SEND,
-  PRESET_RESUME_RECV,
-  PRESET_RESUME_SEND,
 } from '../presets/actions';
 
 export class TcpInbound extends Inbound {
@@ -134,14 +138,15 @@ export class TcpInbound extends Inbound {
       case PRESET_FAILED:
         this.onPresetFailed(action);
         break;
-      case PRESET_CLOSE_CONNECTION:
-        this.onPresetCloseConnection();
+      case ACL_CLOSE_CONNECTION:
+        logger.info(`[${this.name}] [${this.remote}] acl request to close connection`);
+        this.close();
         break;
-      case PRESET_PAUSE_RECV:
-        this.onPresetPauseRecv();
+      case ACL_PAUSE_RECV:
+        this._socket && this._socket.pause();
         break;
-      case PRESET_RESUME_RECV:
-        this.onPresetResumeRecv();
+      case ACL_RESUME_RECV:
+        this._socket && this._socket.resume();
         break;
       default:
         break;
@@ -181,19 +186,6 @@ export class TcpInbound extends Inbound {
         setTimeout(this.onClose, timeout * 1e3);
       }
     }
-  }
-
-  onPresetCloseConnection() {
-    logger.info(`[${this.name}] [${this.remote}] preset request to close connection`);
-    this.close();
-  }
-
-  onPresetPauseRecv() {
-    this._config.is_server && (this._socket && this._socket.pause())
-  }
-
-  onPresetResumeRecv() {
-    this._config.is_server && (this._socket && this._socket.resume());
   }
 
 }
@@ -303,11 +295,11 @@ export class TcpOutbound extends Outbound {
       case CONNECT_TO_REMOTE:
         this.onConnectToRemote(action);
         break;
-      case PRESET_PAUSE_SEND:
-        this.onPresetPauseSend();
+      case ACL_PAUSE_SEND:
+        this._socket && this._socket.pause();
         break;
-      case PRESET_RESUME_SEND:
-        this.onPresetResumeSend();
+      case ACL_RESUME_SEND:
+        this._socket && this._socket.resume();
         break;
       default:
         break;
@@ -342,14 +334,6 @@ export class TcpOutbound extends Outbound {
     } else {
       this.ctx.pipe.broadcast(null, { type: CONNECTED_TO_REMOTE, payload: { host, port } });
     }
-  }
-
-  onPresetPauseSend() {
-    this._config.is_server && (this._socket && this._socket.pause());
-  }
-
-  onPresetResumeSend() {
-    this._config.is_server && (this._socket && this._socket.resume());
   }
 
   async connect({ host, port }) {
