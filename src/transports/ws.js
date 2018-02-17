@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
-import {TcpInbound, TcpOutbound} from './tcp';
-import {logger} from '../utils';
+import { TcpInbound, TcpOutbound } from './tcp';
+import { logger } from '../utils';
 
 function patchWebsocket(ws) {
   ws.write = (buffer) => ws.send(buffer, {
@@ -57,9 +57,9 @@ export class WsOutbound extends TcpOutbound {
     return this._socket && this._socket.readyState === WebSocket.OPEN;
   }
 
-  async _connect({host, port}) {
+  async _connect({ host, port }) {
     logger.info(`[${this.name}] [${this.remote}] connecting to ws://${host}:${port}`);
-    const socket = new WebSocket(`ws://${host}:${port}`, {perMessageDeflate: false});
+    const socket = new WebSocket(`ws://${host}:${port}`, { perMessageDeflate: false });
     socket.on('message', this.onReceive);
     socket.on('close', () => socket.destroyed = true);
     return patchWebsocket.call(this, socket);

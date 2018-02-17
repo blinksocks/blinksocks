@@ -71,7 +71,7 @@ function main() {
   if (options[0] === 'init') {
     const isMinimal = hasOption('-m') || hasOption('--minimal');
     const isOverwrite = hasOption('-w') || hasOption('--write');
-    return init({isMinimal, isOverwrite});
+    return init({ isMinimal, isOverwrite });
   }
 
   // parse options
@@ -101,7 +101,7 @@ function main() {
   }
 
   if (hasOption('--list-presets')) {
-    const {presets, legacyPresets} = modules;
+    const { presets, legacyPresets } = modules;
     console.log(chalk.bold.underline('[Built-In]'));
     console.log(presets.join(os.EOL));
     console.log('');

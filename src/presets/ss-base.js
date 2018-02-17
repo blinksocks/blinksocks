@@ -1,7 +1,8 @@
 import net from 'net';
 import ip from 'ip';
-import {isValidHostname, numberToBuffer} from '../utils';
-import {IPresetAddressing, CONNECT_TO_REMOTE} from './defs';
+import { isValidHostname, numberToBuffer } from '../utils';
+import { IPresetAddressing } from './defs';
+import { CONNECT_TO_REMOTE } from './actions';
 
 const ATYP_V4 = 0x01;
 const ATYP_V6 = 0x04;
@@ -85,7 +86,7 @@ export default class SsBasePreset extends IPresetAddressing {
 
   onNotified(action) {
     if (this._config.is_client && action.type === CONNECT_TO_REMOTE) {
-      const {host, port} = action.payload;
+      const { host, port } = action.payload;
       const type = getHostType(host);
       this._atyp = type;
       this._port = numberToBuffer(port);
@@ -104,7 +105,7 @@ export default class SsBasePreset extends IPresetAddressing {
     return head;
   }
 
-  decodeHeader({buffer, fail}) {
+  decodeHeader({ buffer, fail }) {
     if (buffer.length < 7) {
       return fail(`invalid length: ${buffer.length}`);
     }
@@ -144,12 +145,12 @@ export default class SsBasePreset extends IPresetAddressing {
         return fail(`invalid atyp: ${atyp}`);
     }
     const data = buffer.slice(offset);
-    return {host: addr, port, data};
+    return { host: addr, port, data };
   }
 
   // tcp
 
-  clientOut({buffer}) {
+  clientOut({ buffer }) {
     if (!this._isHeaderSent) {
       this._isHeaderSent = true;
       return Buffer.concat([this.encodeHeader(), buffer]);
@@ -158,7 +159,7 @@ export default class SsBasePreset extends IPresetAddressing {
     }
   }
 
-  serverIn({buffer, next, broadcast, fail}) {
+  serverIn({ buffer, next, broadcast, fail }) {
     if (!this._isHeaderRecv) {
 
       // shadowsocks(python) aead cipher put [atyp][dst.addr][dst.port] into the first chunk
@@ -168,12 +169,12 @@ export default class SsBasePreset extends IPresetAddressing {
         return;
       }
 
-      const decoded = this.decodeHeader({buffer, fail});
+      const decoded = this.decodeHeader({ buffer, fail });
       if (!decoded) {
         return;
       }
 
-      const {host, port, data} = decoded;
+      const { host, port, data } = decoded;
 
       // notify to connect to the real server
       this._isConnecting = true;
@@ -198,16 +199,16 @@ export default class SsBasePreset extends IPresetAddressing {
 
   // udp
 
-  beforeOutUdp({buffer}) {
+  beforeOutUdp({ buffer }) {
     return Buffer.concat([this.encodeHeader(), buffer]);
   }
 
-  serverInUdp({buffer, next, broadcast, fail}) {
-    const decoded = this.decodeHeader({buffer, fail});
+  serverInUdp({ buffer, next, broadcast, fail }) {
+    const decoded = this.decodeHeader({ buffer, fail });
     if (!decoded) {
       return;
     }
-    const {host, port, data} = decoded;
+    const { host, port, data } = decoded;
     this._atyp = getHostType(host);
     this._host = this._atyp === ATYP_DOMAIN ? Buffer.from(host) : ip.toBuffer(host);
     this._port = numberToBuffer(port);

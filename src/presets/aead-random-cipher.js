@@ -1,12 +1,12 @@
 import crypto from 'crypto';
+import { IPreset } from './defs';
 import {
   HKDF,
   getRandomChunks,
   numberToBuffer,
   BYTE_ORDER_LE,
-  AdvancedBuffer
+  AdvancedBuffer,
 } from '../utils';
-import {IPreset} from './defs';
 
 const NONCE_LEN = 12;
 const TAG_LEN = 16;
@@ -20,7 +20,7 @@ const DEFAULT_FACTOR = 2;
 const ciphers = {
   'aes-128-gcm': 16,
   'aes-192-gcm': 24,
-  'aes-256-gcm': 32
+  'aes-256-gcm': 32,
 };
 
 const HKDF_HASH_ALGORITHM = 'sha1';
@@ -99,7 +99,7 @@ export default class AeadRandomCipherPreset extends IPreset {
 
   _adBuf = null;
 
-  static onCheckParams({method, info = DEFAULT_INFO, factor = DEFAULT_FACTOR}) {
+  static onCheckParams({ method, info = DEFAULT_INFO, factor = DEFAULT_FACTOR }) {
     if (method === undefined || method === '') {
       throw Error('\'method\' must be set');
     }
@@ -118,13 +118,13 @@ export default class AeadRandomCipherPreset extends IPreset {
     }
   }
 
-  onInit({method, info = DEFAULT_INFO, factor = DEFAULT_FACTOR}) {
+  onInit({ method, info = DEFAULT_INFO, factor = DEFAULT_FACTOR }) {
     this._cipherName = method;
     this._info = Buffer.from(info);
     this._factor = factor;
     this._rawKey = Buffer.from(this._config.key);
     this._keySaltSize = ciphers[method];
-    this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});
+    this._adBuf = new AdvancedBuffer({ getPacketLength: this.onReceiving.bind(this) });
     this._adBuf.on('data', this.onChunkReceived.bind(this));
   }
 
@@ -138,7 +138,7 @@ export default class AeadRandomCipherPreset extends IPreset {
     this._nextExpectDecipherNonce = 0;
   }
 
-  beforeOut({buffer}) {
+  beforeOut({ buffer }) {
     let salt = null;
     if (this._cipherKey === null) {
       const size = this._keySaltSize;
@@ -163,11 +163,11 @@ export default class AeadRandomCipherPreset extends IPreset {
     }
   }
 
-  beforeIn({buffer, next, fail}) {
-    this._adBuf.put(buffer, {next, fail});
+  beforeIn({ buffer, next, fail }) {
+    this._adBuf.put(buffer, { next, fail });
   }
 
-  onReceiving(buffer, {fail}) {
+  onReceiving(buffer, { fail }) {
     // 1. init this._decipherKey
     if (this._decipherKey === null) {
       const size = this._keySaltSize;
@@ -208,7 +208,7 @@ export default class AeadRandomCipherPreset extends IPreset {
     return 2 + TAG_LEN + dataLen + TAG_LEN;
   }
 
-  onChunkReceived(chunk, {next, fail}) {
+  onChunkReceived(chunk, { next, fail }) {
     // verify Data, Data_TAG
     const [encData, dataTag] = [chunk.slice(2 + TAG_LEN, -TAG_LEN), chunk.slice(-TAG_LEN)];
     const data = this.decrypt(encData, dataTag);

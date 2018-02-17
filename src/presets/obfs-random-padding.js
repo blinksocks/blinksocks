@@ -1,6 +1,6 @@
 import crypto from 'crypto';
-import {IPreset} from './defs';
-import {AdvancedBuffer, getRandomChunks, numberToBuffer as ntb} from '../utils';
+import { IPreset } from './defs';
+import { AdvancedBuffer, getRandomChunks, numberToBuffer as ntb } from '../utils';
 
 /**
  * @description
@@ -44,7 +44,7 @@ export default class ObfsRandomPaddingPreset extends IPreset {
   _adBuf = null;
 
   onInit() {
-    this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});
+    this._adBuf = new AdvancedBuffer({ getPacketLength: this.onReceiving.bind(this) });
     this._adBuf.on('data', this.onChunkReceived.bind(this));
   }
 
@@ -79,7 +79,7 @@ export default class ObfsRandomPaddingPreset extends IPreset {
     return random_bytes_len;
   }
 
-  beforeOut({buffer}) {
+  beforeOut({ buffer }) {
     const chunks = getRandomChunks(buffer, 0x3fff, 0xffff).map((data) => {
       const pLen = this.getRandomBytesLength(data.length);
       const padding = crypto.randomBytes(pLen);
@@ -88,8 +88,8 @@ export default class ObfsRandomPaddingPreset extends IPreset {
     return Buffer.concat(chunks);
   }
 
-  beforeIn({buffer, next}) {
-    this._adBuf.put(buffer, {next});
+  beforeIn({ buffer, next }) {
+    this._adBuf.put(buffer, { next });
   }
 
   onReceiving(buffer) {
@@ -107,20 +107,20 @@ export default class ObfsRandomPaddingPreset extends IPreset {
     return 1 + pLen + 2 + dLen;
   }
 
-  onChunkReceived(chunk, {next}) {
+  onChunkReceived(chunk, { next }) {
     const pLen = chunk[0];
     next(chunk.slice(1 + pLen + 2));
   }
 
   // udp
 
-  beforeOutUdp({buffer}) {
+  beforeOutUdp({ buffer }) {
     const pLen = crypto.randomBytes(1)[0] % 128;
     const padding = crypto.randomBytes(pLen);
     return Buffer.concat([ntb(pLen, 1), padding, buffer]);
   }
 
-  beforeInUdp({buffer, fail}) {
+  beforeInUdp({ buffer, fail }) {
     if (buffer.length < 1) {
       return fail(`too short to get PaddingLen, len=${buffer.length} dump=${buffer.toString('hex')}`);
     }

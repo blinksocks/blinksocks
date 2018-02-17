@@ -5,22 +5,16 @@ import tls from 'tls';
 import ws from 'ws';
 import LRU from 'lru-cache';
 import uniqueId from 'lodash.uniqueid';
-import {Config} from './config';
-import {Relay} from './relay';
-import {MuxRelay} from './mux-relay';
-import {dumpHex, getRandomInt, hash, logger} from '../utils';
-import {http, socks, tcp} from '../proxies';
-import {APP_ID} from '../constants';
-
-/**
- * create an connection id, this id is unique across applications
- * @returns {string}
- */
-function makeConnID() {
-  return hash('sha256', uniqueId(APP_ID)).slice(-4).toString('hex');
-}
+import { Config } from './config';
+import { Relay } from './relay';
+import { MuxRelay } from './mux-relay';
+import { dumpHex, getRandomInt, hash, logger } from '../utils';
+import { http, socks, tcp } from '../proxies';
+import { APP_ID } from '../constants';
 
 export class Hub {
+
+  _config = null;
 
   _tcpServer = null;
 
@@ -32,16 +26,9 @@ export class Hub {
 
   _udpRelays = null; // LRU cache
 
-  _config = null;
-
   constructor(config) {
     this._config = new Config(config);
-    this._onConnection = this._onConnection.bind(this);
-    this._udpRelays = LRU({
-      max: 500,
-      dispose: (key, relay) => relay.destroy(),
-      maxAge: 1e5
-    });
+    this._udpRelays = LRU({ max: 500, maxAge: 1e5, dispose: (_, relay) => relay.destroy() });
   }
 
   async run() {
@@ -63,12 +50,14 @@ export class Hub {
   }
 
   async terminate() {
-    // relays
+    // udp relays
     this._udpRelays.reset();
+    // mux relays
     if (this._config.mux) {
       this._muxRelays.forEach((relay) => relay.destroy());
       this._muxRelays.clear();
     }
+    // tcp relays
     this._tcpRelays.forEach((relay) => relay.destroy());
     this._tcpRelays.clear();
     // udp server
@@ -92,13 +81,13 @@ export class Hub {
       let server = null;
       switch (this._config.local_protocol) {
         case 'tcp':
-          server = tcp.createServer({forwardHost: this._config.forward_host, forwardPort: this._config.forward_port});
+          server = tcp.createServer({ forwardHost: this._config.forward_host, forwardPort: this._config.forward_port });
           break;
         case 'socks':
         case 'socks5':
         case 'socks4':
         case 'socks4a':
-          server = socks.createServer({bindAddress: this._config.local_host, bindPort: this._config.local_port});
+          server = socks.createServer({ bindAddress: this._config.local_host, bindPort: this._config.local_port });
           break;
         case 'http':
         case 'https':
@@ -152,7 +141,7 @@ export class Hub {
           break;
         }
         case 'tls': {
-          const server = tls.createServer({key: [this._config.tls_key], cert: [this._config.tls_cert]});
+          const server = tls.createServer({ key: [this._config.tls_key], cert: [this._config.tls_cert] });
           server.on('secureConnection', this._onConnection);
           server.listen(address, () => onListening(server));
           break;
@@ -169,7 +158,7 @@ export class Hub {
       const server = dgram.createSocket('udp4');
 
       server.on('message', (msg, rinfo) => {
-        const {address, port} = rinfo;
+        const { address, port } = rinfo;
         let proxyRequest = null;
         let packet = msg;
         if (this._config.is_client) {
@@ -178,8 +167,8 @@ export class Hub {
             logger.warn(`[hub] [${address}:${port}] drop invalid udp packet: ${dumpHex(msg)}`);
             return;
           }
-          const {host, port, data} = parsed;
-          proxyRequest = {host, port};
+          const { host, port, data } = parsed;
+          proxyRequest = { host, port };
           packet = data;
         }
         const key = `${address}:${port}`;
@@ -187,10 +176,10 @@ export class Hub {
         if (relay === undefined) {
           const context = {
             socket: server,
-            remoteInfo: {host: address, port: port}
+            remoteInfo: { host: address, port: port }
           };
           relay = this._createUdpRelay(context);
-          relay.init({proxyRequest});
+          relay.init({ proxyRequest });
           relay.on('close', function onRelayClose() {
             // relays.del(key);
           });
@@ -212,13 +201,13 @@ export class Hub {
             // compatible with shadowsocks udp addressing
             packet = Buffer.from([0x00, 0x00, 0x00, ...data]);
           } else {
-            packet = socks.encodeSocks5UdpResponse({host, port, data});
+            packet = socks.encodeSocks5UdpResponse({ host, port, data });
           }
           send.call(server, packet, port, host, ...args);
         })(server.send);
       }
 
-      server.bind({address: this._config.local_host, port: this._config.local_port}, () => {
+      server.bind({ address: this._config.local_host, port: this._config.local_port }, () => {
         const service = `udp://${this._config.local_host}:${this._config.local_port}`;
         logger.info(`[hub] blinksocks udp server is running at ${service}`);
         resolve(server);
@@ -226,7 +215,7 @@ export class Hub {
     });
   }
 
-  _onConnection(socket, proxyRequest = null) {
+  _onConnection = (socket, proxyRequest = null) => {
     logger.verbose(`[hub] [${socket.remoteAddress}:${socket.remotePort}] connected`);
 
     const context = {
@@ -241,7 +230,8 @@ export class Hub {
     let muxRelay = null, cid = null;
     if (this._config.mux) {
       if (this._config.is_client) {
-        cid = makeConnID();
+        // create a id for sub relay, this id is unique across applications
+        cid = hash('sha256', uniqueId(APP_ID)).slice(-4).toString('hex');
         muxRelay = this._getMuxRelayOnClient(context, cid);
         context.muxRelay = muxRelay;
       } else {
@@ -263,11 +253,11 @@ export class Hub {
       }
     }
 
-    relay.init({proxyRequest});
+    relay.init({ proxyRequest });
     relay.on('close', () => this._tcpRelays.delete(relay.id));
 
     this._tcpRelays.set(relay.id, relay);
-  }
+  };
 
   _getMuxRelayOnClient(context, cid) {
     // get a mux relay
@@ -282,17 +272,17 @@ export class Hub {
     }
 
     // determine how to initialize the muxRelay
-    const {proxyRequest} = context;
+    const { proxyRequest } = context;
     if (muxRelay.isOutboundReady()) {
       proxyRequest.onConnected((buffer) => {
         // this callback is used for "http" proxy method on client side
         if (buffer) {
-          muxRelay.encode(buffer, {...proxyRequest, cid});
+          muxRelay.encode(buffer, { ...proxyRequest, cid });
         }
       });
     } else {
       proxyRequest.cid = cid;
-      muxRelay.init({proxyRequest});
+      muxRelay.init({ proxyRequest });
     }
     return muxRelay;
   }
@@ -309,7 +299,7 @@ export class Hub {
     }
     if (this._config.mux) {
       if (this._config.is_client) {
-        return new Relay({...props, transport: 'mux', presets: []});
+        return new Relay({ ...props, transport: 'mux', presets: [] });
       } else {
         return new MuxRelay(props);
       }
@@ -319,7 +309,7 @@ export class Hub {
   }
 
   _createUdpRelay(context) {
-    return new Relay({config: this._config, transport: 'udp', context, presets: this._config.udp_presets});
+    return new Relay({ config: this._config, transport: 'udp', context, presets: this._config.udp_presets });
   }
 
   _selectMuxRelay() {

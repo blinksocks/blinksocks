@@ -1,10 +1,11 @@
 import crypto from 'crypto';
-import {EVP_BytesToKey, numberToBuffer, hmac, hash} from '../utils';
-import {IPresetAddressing, CONNECT_TO_REMOTE} from './defs';
+import { EVP_BytesToKey, numberToBuffer, hmac, hash } from '../utils';
+import { IPresetAddressing } from './defs';
+import { CONNECT_TO_REMOTE } from './actions';
 
 // available HMACs and length
 const HMAC_METHODS = {
-  'md5': 16, 'sha1': 20, 'sha256': 32
+  'md5': 16, 'sha1': 20, 'sha256': 32,
 };
 
 const DEFAULT_HASH_METHOD = 'sha1';
@@ -78,14 +79,14 @@ export default class BaseAuthPreset extends IPresetAddressing {
 
   _port = null; // buffer
 
-  static onCheckParams({method = DEFAULT_HASH_METHOD}) {
+  static onCheckParams({ method = DEFAULT_HASH_METHOD }) {
     const methods = Object.keys(HMAC_METHODS);
     if (!methods.includes(method)) {
       throw Error(`base-auth 'method' must be one of [${methods}]`);
     }
   }
 
-  onInit({method = DEFAULT_HASH_METHOD}) {
+  onInit({ method = DEFAULT_HASH_METHOD }) {
     const key = EVP_BytesToKey(this._config.key, 16, 16);
     const iv = hash('md5', Buffer.from(this._config.key + 'base-auth'));
     this._hmacMethod = method;
@@ -108,7 +109,7 @@ export default class BaseAuthPreset extends IPresetAddressing {
 
   onNotified(action) {
     if (this._config.is_client && action.type === CONNECT_TO_REMOTE) {
-      const {host, port} = action.payload;
+      const { host, port } = action.payload;
       this._host = Buffer.from(host);
       this._port = numberToBuffer(port);
     }
@@ -121,7 +122,7 @@ export default class BaseAuthPreset extends IPresetAddressing {
     return Buffer.concat([encHeader, mac]);
   }
 
-  decodeHeader({buffer, fail}) {
+  decodeHeader({ buffer, fail }) {
     const hmacLen = this._hmacLen;
 
     // minimal length required
@@ -150,12 +151,12 @@ export default class BaseAuthPreset extends IPresetAddressing {
     const port = plaintext.slice(alen, alen + 2).readUInt16BE(0);
     const data = buffer.slice(1 + alen + 2 + hmacLen);
 
-    return {host: addr, port, data};
+    return { host: addr, port, data };
   }
 
   // tcp
 
-  clientOut({buffer}) {
+  clientOut({ buffer }) {
     if (!this._isHeaderSent) {
       this._isHeaderSent = true;
       return Buffer.concat([this.encodeHeader(), buffer]);
@@ -164,7 +165,7 @@ export default class BaseAuthPreset extends IPresetAddressing {
     }
   }
 
-  serverIn({buffer, next, broadcast, fail}) {
+  serverIn({ buffer, next, broadcast, fail }) {
     if (!this._isHeaderRecv) {
 
       if (this._isConnecting) {
@@ -172,12 +173,12 @@ export default class BaseAuthPreset extends IPresetAddressing {
         return;
       }
 
-      const decoded = this.decodeHeader({buffer, fail});
+      const decoded = this.decodeHeader({ buffer, fail });
       if (!decoded) {
         return;
       }
 
-      const {host, port, data} = decoded;
+      const { host, port, data } = decoded;
 
       // notify to connect to the real server
       this._isConnecting = true;
@@ -201,16 +202,16 @@ export default class BaseAuthPreset extends IPresetAddressing {
 
   // udp
 
-  clientOutUdp({buffer}) {
+  clientOutUdp({ buffer }) {
     return Buffer.concat([this.encodeHeader(), buffer]);
   }
 
-  serverInUdp({buffer, next, broadcast, fail}) {
-    const decoded = this.decodeHeader({buffer, fail});
+  serverInUdp({ buffer, next, broadcast, fail }) {
+    const decoded = this.decodeHeader({ buffer, fail });
     if (!decoded) {
       return;
     }
-    const {host, port, data} = decoded;
+    const { host, port, data } = decoded;
     broadcast({
       type: CONNECT_TO_REMOTE,
       payload: {

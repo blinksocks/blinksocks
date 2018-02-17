@@ -1,6 +1,6 @@
-import {Inbound, Outbound} from './defs';
-import {CONNECT_TO_REMOTE, CONNECTED_TO_REMOTE, PRESET_FAILED} from '../presets/defs';
-import {logger} from '../utils';
+import { Inbound, Outbound } from './defs';
+import { logger } from '../utils';
+import { CONNECT_TO_REMOTE, CONNECTED_TO_REMOTE, PRESET_FAILED } from '../presets/actions';
 
 export class MuxInbound extends Inbound {
 
@@ -60,7 +60,7 @@ export class MuxInbound extends Inbound {
   }
 
   async onPresetFailed(action) {
-    const {name, message} = action.payload;
+    const { name, message } = action.payload;
     logger.error(`[${this.name}] [${this.remote}] preset "${name}" fail to process: ${message}`);
     // TODO: maybe have more things to do rather than keep silent
   }
@@ -71,8 +71,8 @@ export class MuxInbound extends Inbound {
 
   write(buffer) {
     if (this._config.is_server) {
-      const {muxRelay, cid} = this.ctx;
-      muxRelay.encode(buffer, {cid});
+      const { muxRelay, cid } = this.ctx;
+      muxRelay.encode(buffer, { cid });
     }
   }
 
@@ -84,7 +84,7 @@ export class MuxInbound extends Inbound {
   close() {
     const doClose = () => {
       if (this._config.is_server) {
-        const {muxRelay, cid} = this.ctx;
+        const { muxRelay, cid } = this.ctx;
         const inbound = muxRelay.getInbound();
         if (inbound) {
           inbound.removeListener('drain', this.onDrain);
@@ -149,12 +149,12 @@ export class MuxOutbound extends Outbound {
 
   write(buffer) {
     if (this._config.is_client) {
-      const {muxRelay, proxyRequest, cid} = this.ctx;
+      const { muxRelay, proxyRequest, cid } = this.ctx;
       if (this._isFirstFrame) {
         this._isFirstFrame = false;
-        muxRelay.encode(buffer, {cid, ...proxyRequest});
+        muxRelay.encode(buffer, { cid, ...proxyRequest });
       } else {
-        muxRelay.encode(buffer, {cid});
+        muxRelay.encode(buffer, { cid });
       }
     }
   }
@@ -167,7 +167,7 @@ export class MuxOutbound extends Outbound {
   close() {
     const doClose = () => {
       if (this._config.is_client) {
-        const {muxRelay, cid} = this.ctx;
+        const { muxRelay, cid } = this.ctx;
         const outbound = muxRelay.getOutbound();
         if (outbound) {
           outbound.removeListener('drain', this.onDrain);

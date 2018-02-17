@@ -4,7 +4,7 @@ const path = require('path');
 const utils = require('util');
 const zlib = require('zlib');
 
-const {version} = require('../package.json');
+const { version } = require('../package.json');
 
 const readdir = utils.promisify(fs.readdir);
 const remove = utils.promisify(fs.unlink);

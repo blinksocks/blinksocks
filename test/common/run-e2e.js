@@ -1,7 +1,7 @@
 import http from 'http';
 import util from 'util';
 import child_process from 'child_process';
-import {Hub} from '../../src';
+import { Hub } from '../../src';
 
 let HTTP_PORT = process.env.HTTP_PORT;
 
@@ -32,7 +32,7 @@ afterAll(() => {
   mockServer.close();
 });
 
-async function curl({proxy = 'socks5'}) {
+async function curl({ proxy = 'socks5' }) {
   const client = '127.0.0.1:1081';
   const target = 'http://localhost:' + HTTP_PORT;
   const options = {
@@ -52,7 +52,7 @@ async function curl({proxy = 'socks5'}) {
   }
 
   try {
-    const {stdout} = await exec(`curl -L ${proxyMethod} ${client} ${target}`, options);
+    const { stdout } = await exec(`curl -L ${proxyMethod} ${client} ${target}`, options);
     return stdout;
   } catch (err) {
     console.log(err);
@@ -60,13 +60,13 @@ async function curl({proxy = 'socks5'}) {
   }
 }
 
-export default async function run({proxy, clientJson, serverJson, repeat = 1}) {
+export default async function run({ proxy, clientJson, serverJson, repeat = 1 }) {
   const client = new Hub(clientJson);
   const server = new Hub(serverJson);
   await client.run();
   await server.run();
   while (repeat--) {
-    expect(await curl({proxy})).toBe('mock server response');
+    expect(await curl({ proxy })).toBe('mock server response');
   }
   await client.terminate();
   await server.terminate();

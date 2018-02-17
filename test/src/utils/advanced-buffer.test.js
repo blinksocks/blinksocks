@@ -1,4 +1,4 @@
-import {AdvancedBuffer} from '../../../src/utils/advanced-buffer';
+import { AdvancedBuffer } from '../../../src/utils/advanced-buffer';
 
 describe('AdvancedBuffer#constructor', function () {
 
@@ -7,7 +7,7 @@ describe('AdvancedBuffer#constructor', function () {
   });
 
   it('should throw when getPacketLength not Function', function () {
-    expect(() => new AdvancedBuffer({getPacketLength: null})).toThrow();
+    expect(() => new AdvancedBuffer({ getPacketLength: null })).toThrow();
   });
 
 });
@@ -79,7 +79,7 @@ describe('AdvancedBuffer#put', function () {
 describe('AdvancedBuffer#clear', function () {
 
   it('should throw when pass a non-buffer to put() ', function () {
-    const buffer = new AdvancedBuffer({getPacketLength: () => 0});
+    const buffer = new AdvancedBuffer({ getPacketLength: () => 0 });
     buffer.put(Buffer.from([0x00]));
     buffer.clear();
     expect(buffer.final().equals(Buffer.alloc(0))).toBe(true);

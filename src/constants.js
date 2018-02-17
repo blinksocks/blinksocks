@@ -1,4 +1,4 @@
-import {randomBytes} from './utils/crypto';
+import { randomBytes } from './utils/crypto';
 
 export const APP_ID = randomBytes(16).toString('hex');
 export const PIPE_ENCODE = 1;

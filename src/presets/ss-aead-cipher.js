@@ -1,6 +1,6 @@
 import crypto from 'crypto';
-import {IPreset} from './defs';
-import {EVP_BytesToKey, HKDF, getRandomChunks, numberToBuffer, BYTE_ORDER_LE, AdvancedBuffer} from '../utils';
+import { IPreset } from './defs';
+import { EVP_BytesToKey, HKDF, getRandomChunks, numberToBuffer, BYTE_ORDER_LE, AdvancedBuffer } from '../utils';
 
 const TAG_SIZE = 16;
 const MIN_CHUNK_LEN = TAG_SIZE * 2 + 3;
@@ -119,14 +119,14 @@ export default class SsAeadCipherPreset extends IPreset {
 
   _adBuf = null;
 
-  static onCheckParams({method}) {
+  static onCheckParams({ method }) {
     const cipherNames = Object.keys(ciphers);
     if (!cipherNames.includes(method)) {
       throw Error(`'method' must be one of [${cipherNames}]`);
     }
   }
 
-  onInit({method}) {
+  onInit({ method }) {
     const [keySize, saltSize, nonceSize] = ciphers[method];
     this._cipherName = method;
     this._keySize = keySize;
@@ -134,7 +134,7 @@ export default class SsAeadCipherPreset extends IPreset {
     this._nonceSize = nonceSize;
     this._evpKey = EVP_BytesToKey(this._config.key, keySize, 16);
     this._isUseLibSodium = Object.keys(libsodium_functions).includes(method);
-    this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});
+    this._adBuf = new AdvancedBuffer({ getPacketLength: this.onReceiving.bind(this) });
     this._adBuf.on('data', this.onChunkReceived.bind(this));
   }
 
@@ -149,7 +149,7 @@ export default class SsAeadCipherPreset extends IPreset {
 
   // tcp
 
-  beforeOut({buffer}) {
+  beforeOut({ buffer }) {
     let salt = null;
     if (this._cipherKey === null) {
       salt = crypto.randomBytes(this._saltSize);
@@ -168,11 +168,11 @@ export default class SsAeadCipherPreset extends IPreset {
     }
   }
 
-  beforeIn({buffer, next, fail}) {
-    this._adBuf.put(buffer, {next, fail});
+  beforeIn({ buffer, next, fail }) {
+    this._adBuf.put(buffer, { next, fail });
   }
 
-  onReceiving(buffer, {fail}) {
+  onReceiving(buffer, { fail }) {
     if (this._decipherKey === null) {
       const saltSize = this._saltSize;
       if (buffer.length < saltSize) {
@@ -202,7 +202,7 @@ export default class SsAeadCipherPreset extends IPreset {
     return 2 + TAG_SIZE + dataLen + TAG_SIZE;
   }
 
-  onChunkReceived(chunk, {next, fail}) {
+  onChunkReceived(chunk, { next, fail }) {
     // verify Data, Data_TAG
     const [encData, dataTag] = [chunk.slice(2 + TAG_SIZE, -TAG_SIZE), chunk.slice(-TAG_SIZE)];
     const data = this.decrypt(encData, dataTag);
@@ -264,7 +264,7 @@ export default class SsAeadCipherPreset extends IPreset {
 
   // udp
 
-  beforeOutUdp({buffer}) {
+  beforeOutUdp({ buffer }) {
     const salt = crypto.randomBytes(this._saltSize);
     this._cipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, this._evpKey, this._info, this._keySize);
     this._cipherNonce = 0;
@@ -272,7 +272,7 @@ export default class SsAeadCipherPreset extends IPreset {
     return Buffer.concat([salt, ciphertext, tag]);
   }
 
-  beforeInUdp({buffer, fail}) {
+  beforeInUdp({ buffer, fail }) {
     const saltSize = this._saltSize;
     if (buffer.length < saltSize) {
       return fail(`too short to get salt, len=${buffer.length} dump=${buffer.toString('hex')}`);

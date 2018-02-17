@@ -1,6 +1,6 @@
 import dns from 'dns';
 import net from 'net';
-import {logger} from './logger';
+import { logger } from './logger';
 
 async function lookup(hostname) {
   return new Promise((resolve, reject) => {

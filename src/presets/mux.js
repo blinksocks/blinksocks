@@ -1,3 +1,5 @@
+import { IPresetAddressing } from './defs';
+import { MUX_CLOSE_CONN, MUX_DATA_FRAME, MUX_NEW_CONN } from './actions';
 import {
   AdvancedBuffer,
   dumpHex,
@@ -6,13 +8,6 @@ import {
   isValidPort,
   numberToBuffer as ntb,
 } from '../utils';
-
-import {
-  IPresetAddressing,
-  MUX_CLOSE_CONN,
-  MUX_DATA_FRAME,
-  MUX_NEW_CONN,
-} from './defs';
 
 const CMD_NEW_CONN = 0x00;
 const CMD_DATA_FRAME = 0x01;
@@ -54,7 +49,7 @@ export default class MuxPreset extends IPresetAddressing {
   _adBuf = null;
 
   onInit() {
-    this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});
+    this._adBuf = new AdvancedBuffer({ getPacketLength: this.onReceiving.bind(this) });
     this._adBuf.on('data', this.onChunkReceived.bind(this));
   }
 
@@ -63,7 +58,7 @@ export default class MuxPreset extends IPresetAddressing {
     this._adBuf = null;
   }
 
-  onReceiving(buffer, {fail}) {
+  onReceiving(buffer, { fail }) {
     if (buffer.length < 5) {
       return; // too short, continue to recv
     }
@@ -87,7 +82,7 @@ export default class MuxPreset extends IPresetAddressing {
     }
   }
 
-  onChunkReceived(chunk, {broadcast, fail}) {
+  onChunkReceived(chunk, { broadcast, fail }) {
     const cmd = chunk[0];
     const cid = chunk.slice(1, 5).toString('hex');
     switch (cmd) {
@@ -100,20 +95,20 @@ export default class MuxPreset extends IPresetAddressing {
         }
         return broadcast({
           type: MUX_NEW_CONN,
-          payload: {cid, host, port},
+          payload: { cid, host, port },
         });
       }
       case CMD_DATA_FRAME: {
         const dataLen = chunk.readUInt16BE(5);
         return broadcast({
           type: MUX_DATA_FRAME,
-          payload: {cid, data: chunk.slice(-dataLen)},
+          payload: { cid, data: chunk.slice(-dataLen) },
         });
       }
       case CMD_CLOSE_CONN:
         return broadcast({
           type: MUX_CLOSE_CONN,
-          payload: {cid},
+          payload: { cid },
         });
     }
   }
@@ -135,7 +130,7 @@ export default class MuxPreset extends IPresetAddressing {
     return Buffer.concat([ntb(CMD_CLOSE_CONN, 1), cid]);
   }
 
-  clientOut({buffer, fail}, {host, port, cid, isClosing}) {
+  clientOut({ buffer, fail }, { host, port, cid, isClosing }) {
     if (cid !== undefined) {
       const _cid = Buffer.from(cid, 'hex');
       const dataFrames = this.createDataFrames(_cid, buffer);
@@ -151,7 +146,7 @@ export default class MuxPreset extends IPresetAddressing {
     }
   }
 
-  serverOut({buffer, fail}, {cid, isClosing}) {
+  serverOut({ buffer, fail }, { cid, isClosing }) {
     if (cid !== undefined) {
       const _cid = Buffer.from(cid, 'hex');
       if (isClosing) {
@@ -163,8 +158,8 @@ export default class MuxPreset extends IPresetAddressing {
     }
   }
 
-  beforeIn({buffer, broadcast, fail}) {
-    this._adBuf.put(buffer, {broadcast, fail});
+  beforeIn({ buffer, broadcast, fail }) {
+    this._adBuf.put(buffer, { broadcast, fail });
   }
 
 }

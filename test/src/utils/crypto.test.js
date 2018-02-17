@@ -50,7 +50,7 @@ const tests = [{
   comparator: (output) => output.equals(Buffer.from('160ade10f83c4275fca1c8cd0583e4e6', 'hex'))
 }];
 
-for (const {func, args, comparator} of tests) {
+for (const { func, args, comparator } of tests) {
   test(`${func}() should return expected result`, () => {
     expect(comparator(__module__[func](...args))).toBe(true);
   });

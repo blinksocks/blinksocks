@@ -1,6 +1,6 @@
 import net from 'net';
 import ip from 'ip';
-import {logger, numberToBuffer} from '../utils';
+import { logger, numberToBuffer } from '../utils';
 
 // Socks4 Request Message
 // +----+-----+----------+--------+----------+--------+
@@ -143,7 +143,7 @@ function parseSocks5Request(buffer) {
       break;
   }
   const port = buffer.slice(-2).readUInt16BE(0);
-  return {host: addr, port: port};
+  return { host: addr, port: port };
 }
 
 function parseSocks5UdpRequest(buffer) {
@@ -177,7 +177,7 @@ function parseSocks5UdpRequest(buffer) {
   }
   const port = buffer.slice(pos, pos + 2).readUInt16BE(0);
   const data = buffer.slice(pos + 2);
-  return {host: addr, port: port, data: data};
+  return { host: addr, port: port, data: data };
 }
 
 function parseSocks4Request(buffer) {
@@ -230,7 +230,7 @@ function parseSocks4Request(buffer) {
   };
 }
 
-function encodeSocks5UdpResponse({host, port, data}) {
+function encodeSocks5UdpResponse({ host, port, data }) {
   const atyp = getHostType(host);
   const _host = atyp === ATYP_DOMAIN ? Buffer.from(host) : ip.toBuffer(host);
   const _port = numberToBuffer(port);
@@ -245,7 +245,7 @@ const STAGE_INIT = 0;
 const STAGE_SOCKS5_REQUEST_MESSAGE = 1;
 const STAGE_DONE = 2;
 
-export function createServer({bindAddress, bindPort}) {
+export function createServer({ bindAddress, bindPort }) {
   const server = net.createServer();
 
   server.on('connection', (socket) => {
@@ -274,7 +274,7 @@ export function createServer({bindAddress, bindPort}) {
         request = parseSocks4Request(buffer);
         if (request !== null) {
           stage = STAGE_DONE;
-          const {host, port} = request;
+          const { host, port } = request;
           server.emit('proxyConnection', socket, {
             host: host,
             port: port,
@@ -309,7 +309,7 @@ export function createServer({bindAddress, bindPort}) {
               break;
             }
             case REQUEST_COMMAND_CONNECT: {
-              const {host, port} = request;
+              const { host, port } = request;
               server.emit('proxyConnection', socket, {
                 host: host,
                 port: port,
@@ -351,4 +351,4 @@ export function createServer({bindAddress, bindPort}) {
   return server;
 }
 
-export {parseSocks5UdpRequest, encodeSocks5UdpResponse};
+export { parseSocks5UdpRequest, encodeSocks5UdpResponse };

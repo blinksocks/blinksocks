@@ -10,9 +10,9 @@ const clientJson = {
     "service": "tls://localhost:1082",
     "key": "9{*2gdBSdCrgnSBD",
     "presets": [
-      {"name": "ss-base"},
-      {"name": "obfs-random-padding"},
-      {"name": "ss-stream-cipher", "params": {"method": "aes-128-ctr"}}
+      { "name": "ss-base" },
+      { "name": "obfs-random-padding" },
+      { "name": "ss-stream-cipher", "params": { "method": "aes-128-ctr" } }
     ],
     "tls_cert": tlsCert
   }
@@ -22,12 +22,12 @@ const serverJson = {
   "service": "tls://localhost:1082",
   "key": "9{*2gdBSdCrgnSBD",
   "presets": [
-    {"name": "ss-base"},
-    {"name": "obfs-random-padding"},
-    {"name": "ss-stream-cipher", "params": {"method": "aes-128-ctr"}}
+    { "name": "ss-base" },
+    { "name": "obfs-random-padding" },
+    { "name": "ss-stream-cipher", "params": { "method": "aes-128-ctr" } }
   ],
   "tls_cert": tlsCert,
   "tls_key": tlsKey
 };
 
-test('transport-layer-tls', async () => await run({clientJson, serverJson}));
+test('transport-layer-tls', async () => await run({ clientJson, serverJson }));

@@ -1,4 +1,4 @@
-import SsrAuthChainPreset, {xorshift128plus} from './ssr-auth-chain';
+import SsrAuthChainPreset, { xorshift128plus } from './ssr-auth-chain';
 
 /**
  * Calculates the index of the Array where item X should be placed, assuming the Array is sorted.

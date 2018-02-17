@@ -16,7 +16,7 @@ function obtainConfig(file) {
   return json;
 }
 
-module.exports = function bootstrap(configPath, {Hub, Config}) {
+module.exports = function bootstrap(configPath, { Hub, Config }) {
   try {
     const config = obtainConfig(configPath);
     Config.test(config);

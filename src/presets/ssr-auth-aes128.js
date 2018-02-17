@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import {IPreset} from './defs';
+import { IPreset } from './defs';
 import {
   hmac,
   EVP_BytesToKey,
@@ -8,7 +8,7 @@ import {
   getRandomInt,
   getRandomChunks,
   numberToBuffer as ntb, BYTE_ORDER_LE,
-  AdvancedBuffer
+  AdvancedBuffer,
 } from '../utils';
 
 const DEFAULT_HMAC_HASH_FUNC = 'md5';
@@ -105,7 +105,7 @@ export default class SsrAuthAes128Preset extends IPreset {
   onInit() {
     this._clientId = crypto.randomBytes(4);
     this._connectionId = getRandomInt(0, 0x00ffffff);
-    this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});
+    this._adBuf = new AdvancedBuffer({ getPacketLength: this.onReceiving.bind(this) });
     this._adBuf.on('data', this.onChunkReceived.bind(this));
   }
 
@@ -195,7 +195,7 @@ export default class SsrAuthAes128Preset extends IPreset {
 
   // tcp
 
-  clientOut({buffer}) {
+  clientOut({ buffer }) {
     if (!this._isHeaderSent) {
       this._isHeaderSent = true;
       const headSize = this.readProperty('ss-base', 'headSize');
@@ -210,11 +210,11 @@ export default class SsrAuthAes128Preset extends IPreset {
     }
   }
 
-  serverOut({buffer}) {
+  serverOut({ buffer }) {
     return Buffer.concat(this.createChunks(buffer));
   }
 
-  serverIn({buffer, next, fail}) {
+  serverIn({ buffer, next, fail }) {
     if (!this._isHeaderRecv) {
       if (buffer.length < 42) {
         return fail(`handshake request is too short to parse, request=${dumpHex(buffer)}`);
@@ -280,18 +280,18 @@ export default class SsrAuthAes128Preset extends IPreset {
       next(payload);
 
       if (extra_chunk.length > 0) {
-        this._adBuf.put(extra_chunk, {next, fail});
+        this._adBuf.put(extra_chunk, { next, fail });
       }
     } else {
-      this._adBuf.put(buffer, {next, fail});
+      this._adBuf.put(buffer, { next, fail });
     }
   }
 
-  clientIn({buffer, next, fail}) {
-    this._adBuf.put(buffer, {next, fail});
+  clientIn({ buffer, next, fail }) {
+    this._adBuf.put(buffer, { next, fail });
   }
 
-  onReceiving(buffer, {fail}) {
+  onReceiving(buffer, { fail }) {
     const userKey = this._userKey;
     if (buffer.length < 4) {
       return; // too short to get size and size_hmac
@@ -313,7 +313,7 @@ export default class SsrAuthAes128Preset extends IPreset {
     return size;
   }
 
-  onChunkReceived(chunk, {next, fail}) {
+  onChunkReceived(chunk, { next, fail }) {
     const userKey = this._userKey;
     if (chunk.length < 9) {
       return fail(`invalid chunk size=${chunk.length} dump=${dumpHex(chunk)}`);
@@ -333,7 +333,7 @@ export default class SsrAuthAes128Preset extends IPreset {
 
   // udp
 
-  clientOutUdp({buffer}) {
+  clientOutUdp({ buffer }) {
     const userKey = this.readProperty('ss-stream-cipher', 'key');
     const uid = crypto.randomBytes(4);
     const packet = Buffer.concat([buffer, uid]);
@@ -341,7 +341,7 @@ export default class SsrAuthAes128Preset extends IPreset {
     return Buffer.concat([packet, packet_hmac]);
   }
 
-  serverInUdp({buffer, fail}) {
+  serverInUdp({ buffer, fail }) {
     const userKey = this.readProperty('ss-stream-cipher', 'key');
     const payload = buffer.slice(0, -8);
     // const uid = buffer.slice(-8, -4);
@@ -353,13 +353,13 @@ export default class SsrAuthAes128Preset extends IPreset {
     return payload;
   }
 
-  serverOutUdp({buffer}) {
+  serverOutUdp({ buffer }) {
     const userKey = this.readProperty('ss-stream-cipher', 'key');
     const payload_hmac = this.createHmac(buffer, userKey).slice(0, 4);
     return Buffer.concat([buffer, payload_hmac]);
   }
 
-  clientInUdp({buffer, fail}) {
+  clientInUdp({ buffer, fail }) {
     const userKey = this.readProperty('ss-stream-cipher', 'key');
     const payload = buffer.slice(0, -4);
     const payload_hmac = buffer.slice(-4);

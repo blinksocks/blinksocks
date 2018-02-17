@@ -1,7 +1,7 @@
 import EventEmitter from 'events';
-import {Pipe} from './pipe';
-import {PIPE_ENCODE, PIPE_DECODE} from '../constants';
-import {logger} from '../utils';
+import { Pipe } from './pipe';
+import { logger } from '../utils';
+import { PIPE_ENCODE, PIPE_DECODE } from '../constants';
 
 import {
   TcpInbound, TcpOutbound,
@@ -17,7 +17,7 @@ import {
   CONNECTION_CLOSED,
   CONNECTION_WILL_CLOSE,
   CHANGE_PRESET_SUITE,
-} from '../presets/defs';
+} from '../presets/actions';
 
 /**
  * [client side]
@@ -65,7 +65,7 @@ export class Relay extends EventEmitter {
     this._ctx.cid = id;
   }
 
-  constructor({config, transport, context, presets = []}) {
+  constructor({ config, transport, context, presets = [] }) {
     super();
     this.updatePresets = this.updatePresets.bind(this);
     this.onBroadcast = this.onBroadcast.bind(this);
@@ -84,8 +84,8 @@ export class Relay extends EventEmitter {
       ...context,
     };
     // bounds
-    const {Inbound, Outbound} = this.getBounds(transport);
-    const props = {config, context: this._ctx};
+    const { Inbound, Outbound } = this.getBounds(transport);
+    const props = { config, context: this._ctx };
     const inbound = new Inbound(props);
     const outbound = new Outbound(props);
     this._inbound = inbound;
@@ -100,11 +100,11 @@ export class Relay extends EventEmitter {
     this._inbound.on('updatePresets', this.updatePresets);
   }
 
-  init({proxyRequest}) {
+  init({ proxyRequest }) {
     this._proxyRequest = proxyRequest;
     this._pipe.broadcast('pipe', {
       type: CONNECTION_CREATED,
-      payload: {transport: this._transport, ...this._remoteInfo}
+      payload: { transport: this._transport, ...this._remoteInfo }
     });
     if (proxyRequest) {
       this._pipe.broadcast(null, {
@@ -133,19 +133,19 @@ export class Relay extends EventEmitter {
     } else {
       [Inbound, Outbound] = this._config.is_client ? [TcpInbound, mapping[transport][1]] : [mapping[transport][0], TcpOutbound];
     }
-    return {Inbound, Outbound};
+    return { Inbound, Outbound };
   }
 
   onBoundClose(thisBound, anotherBound) {
     if (anotherBound.__closed) {
       if (this._pipe && !this._pipe.destroyed) {
-        this._pipe.broadcast('pipe', {type: CONNECTION_CLOSED, payload: this._remoteInfo});
+        this._pipe.broadcast('pipe', { type: CONNECTION_CLOSED, payload: this._remoteInfo });
       }
       this.destroy();
       this.emit('close');
     } else {
       if (!this._pipe.destroyed) {
-        this._pipe.broadcast('pipe', {type: CONNECTION_WILL_CLOSE, payload: this._remoteInfo});
+        this._pipe.broadcast('pipe', { type: CONNECTION_WILL_CLOSE, payload: this._remoteInfo });
       }
       thisBound.__closed = true;
     }
@@ -183,24 +183,24 @@ export class Relay extends EventEmitter {
   }
 
   onChangePresetSuite(action) {
-    const {type, suite, data} = action.payload;
+    const { type, suite, data } = action.payload;
     logger.verbose(`[relay] changing presets suite to: ${JSON.stringify(suite)}`);
     // 1. update preset list
     this.updatePresets(this.preparePresets([
       ...suite.presets,
-      {'name': 'auto-conf'}
+      { 'name': 'auto-conf' }
     ]));
     // 2. initialize newly created presets
     const transport = this._transport;
     const proxyRequest = this._proxyRequest;
     this._pipe.broadcast('pipe', {
       type: CONNECTION_CREATED,
-      payload: {transport, ...this._remoteInfo}
+      payload: { transport, ...this._remoteInfo }
     });
     if (this._config.is_client) {
       this._pipe.broadcast(null, {
         type: CONNECT_TO_REMOTE,
-        payload: {...proxyRequest, keepAlive: true} // keep previous connection alive, don't re-connect
+        payload: { ...proxyRequest, keepAlive: true } // keep previous connection alive, don't re-connect
       });
     }
     // 3. re-pipe
@@ -254,7 +254,7 @@ export class Relay extends EventEmitter {
     const last = presets[presets.length - 1];
     // add at least one "tracker" preset to the list
     if (!last || last.name !== 'tracker') {
-      presets = presets.concat([{'name': 'tracker'}]);
+      presets = presets.concat([{ 'name': 'tracker' }]);
     }
     return presets;
   }
@@ -265,14 +265,14 @@ export class Relay extends EventEmitter {
    */
   updatePresets(value) {
     this._presets = typeof value === 'function' ? value(this._presets) : value;
-    this._pipe.updateMiddlewares(this._presets);
+    this._pipe.updatePresets(this._presets);
   }
 
   /**
    * create pipes for both data forward and backward
    */
   createPipe(presets) {
-    const pipe = new Pipe({config: this._config, presets, isUdp: this._transport === 'udp'});
+    const pipe = new Pipe({ config: this._config, presets, isUdp: this._transport === 'udp' });
     pipe.on('broadcast', this.onBroadcast.bind(this)); // if no action were caught by presets
     pipe.on(`post_${PIPE_ENCODE}`, this.onEncoded);
     pipe.on(`post_${PIPE_DECODE}`, this.onDecoded);

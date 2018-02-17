@@ -1,7 +1,7 @@
 import net from 'net';
-import {Inbound, Outbound} from './defs';
-import {MAX_BUFFERED_SIZE, PIPE_ENCODE, PIPE_DECODE} from '../constants';
-import {DNSCache, logger, getRandomInt} from '../utils';
+import { Inbound, Outbound } from './defs';
+import { MAX_BUFFERED_SIZE, PIPE_ENCODE, PIPE_DECODE } from '../constants';
+import { DNSCache, logger, getRandomInt } from '../utils';
 import {
   CONNECT_TO_REMOTE,
   CONNECTED_TO_REMOTE,
@@ -11,7 +11,7 @@ import {
   PRESET_PAUSE_SEND,
   PRESET_RESUME_RECV,
   PRESET_RESUME_SEND,
-} from '../presets/defs';
+} from '../presets/actions';
 
 export class TcpInbound extends Inbound {
 
@@ -149,7 +149,7 @@ export class TcpInbound extends Inbound {
   }
 
   async onPresetFailed(action) {
-    const {name, message} = action.payload;
+    const { name, message } = action.payload;
     logger.error(`[${this.name}] [${this.remote}] preset "${name}" fail to process: ${message}`);
 
     // close connection directly on client side
@@ -161,16 +161,16 @@ export class TcpInbound extends Inbound {
     // for server side, redirect traffic if "redirect" is set, otherwise, close connection after a random timeout
     if (this._config.is_server && !this._config.mux) {
       if (this._config.redirect) {
-        const {orgData} = action.payload;
+        const { orgData } = action.payload;
         const [host, port] = this._config.redirect.split(':');
 
         logger.warn(`[${this.name}] [${this.remote}] connection is redirecting to: ${host}:${port}`);
 
         // replace presets to tracker only
-        this.updatePresets([{name: 'tracker'}]);
+        this.updatePresets([{ name: 'tracker' }]);
 
         // connect to "redirect" remote
-        await this._outbound.connect({host, port: +port});
+        await this._outbound.connect({ host, port: +port });
         if (this._outbound.writable) {
           this._outbound.write(orgData);
         }
@@ -315,32 +315,32 @@ export class TcpOutbound extends Outbound {
   }
 
   async onConnectToRemote(action) {
-    const {host, port, keepAlive, onConnected} = action.payload;
+    const { host, port, keepAlive, onConnected } = action.payload;
     if (!keepAlive || !this._socket) {
       try {
         if (this._config.is_server) {
-          await this.connect({host, port});
+          await this.connect({ host, port });
         }
         if (this._config.is_client) {
-          await this.connect({host: this._config.server_host, port: this._config.server_port});
+          await this.connect({ host: this._config.server_host, port: this._config.server_port });
         }
         this._socket.on('connect', () => {
           if (typeof onConnected === 'function') {
             onConnected((buffer) => {
               if (buffer) {
                 const type = this._config.is_client ? PIPE_ENCODE : PIPE_DECODE;
-                this.ctx.pipe.feed(type, buffer, {cid: this.ctx.proxyRequest.cid, host, port});
+                this.ctx.pipe.feed(type, buffer, { cid: this.ctx.proxyRequest.cid, host, port });
               }
             });
           }
-          this.ctx.pipe.broadcast(null, {type: CONNECTED_TO_REMOTE, payload: {host, port}});
+          this.ctx.pipe.broadcast(null, { type: CONNECTED_TO_REMOTE, payload: { host, port } });
         });
       } catch (err) {
         logger.warn(`[${this.name}] [${this.remote}] cannot connect to ${host}:${port},`, err);
         this.onClose();
       }
     } else {
-      this.ctx.pipe.broadcast(null, {type: CONNECTED_TO_REMOTE, payload: {host, port}});
+      this.ctx.pipe.broadcast(null, { type: CONNECTED_TO_REMOTE, payload: { host, port } });
     }
   }
 
@@ -352,12 +352,12 @@ export class TcpOutbound extends Outbound {
     this._config.is_server && (this._socket && this._socket.resume());
   }
 
-  async connect({host, port}) {
+  async connect({ host, port }) {
     // close alive connection before create a new one
     if (this._socket && !this._socket.destroyed) {
       this._socket.destroy();
     }
-    this._socket = await this._connect({host, port});
+    this._socket = await this._connect({ host, port });
     this._socket.on('error', this.onError);
     this._socket.on('end', this.onHalfClose);
     this._socket.on('close', this.onClose);
@@ -367,10 +367,10 @@ export class TcpOutbound extends Outbound {
     this._socket.setTimeout(this._config.timeout);
   }
 
-  async _connect({host, port}) {
+  async _connect({ host, port }) {
     const ip = await DNSCache.get(host);
     logger.info(`[${this.name}] [${this.remote}] connecting to tcp://${host}:${port} resolved=${ip}`);
-    return net.connect({host: ip, port});
+    return net.connect({ host: ip, port });
   }
 
 }

@@ -6,8 +6,8 @@ const clientJson = {
     "service": "tcp://127.0.0.1:1082",
     "key": "9{*2gdBSdCrgnSBD",
     "presets": [
-      {"name": "ss-base"},
-      {"name": "obfs-tls1.2-ticket", "params": {"sni": ["test.com", "example.com"]}}
+      { "name": "ss-base" },
+      { "name": "obfs-tls1.2-ticket", "params": { "sni": ["test.com", "example.com"] } }
     ]
   }
 };
@@ -16,9 +16,9 @@ const serverJson = {
   "service": "tcp://127.0.0.1:1082",
   "key": "9{*2gdBSdCrgnSBD",
   "presets": [
-    {"name": "ss-base"},
-    {"name": "obfs-tls1.2-ticket"}
+    { "name": "ss-base" },
+    { "name": "obfs-tls1.2-ticket" }
   ]
 };
 
-test('obfs-tls1.2-ticket', async () => await run({clientJson, serverJson}));
+test('obfs-tls1.2-ticket', async () => await run({ clientJson, serverJson }));

@@ -25,7 +25,7 @@ function getRandomInt(min, max) {
   return Math.floor(crypto.randomBytes(1)[0] / 0xff * (max - min)) + min;
 }
 
-module.exports = function init({isMinimal, isOverwrite}) {
+module.exports = function init({ isMinimal, isOverwrite }) {
   const key = random('abcdefghjkmnpqrstuvwxyz23456789!@#$%^&*()_+<>?:|{}-=[];,./ABCDEFGHJKLMNPQRSTUVWXYZ', 16);
   const port = getRandomInt(1024, 65535);
   const timeout = getRandomInt(200, 1000);
@@ -36,9 +36,9 @@ module.exports = function init({isMinimal, isOverwrite}) {
       'service': `tcp://127.0.0.1:${port}`,
       'key': key,
       'presets': [
-        {'name': 'ss-base'},
-        {'name': 'obfs-random-padding'},
-        {'name': 'ss-stream-cipher', 'params': {'method': 'aes-128-ctr'}}
+        { 'name': 'ss-base' },
+        { 'name': 'obfs-random-padding' },
+        { 'name': 'ss-stream-cipher', 'params': { 'method': 'aes-128-ctr' } }
       ],
       'tls_cert': 'cert.pem',
       'mux': false,
@@ -68,9 +68,9 @@ module.exports = function init({isMinimal, isOverwrite}) {
     'service': `tcp://0.0.0.0:${port}`,
     'key': key,
     'presets': [
-      {'name': 'ss-base'},
-      {'name': 'obfs-random-padding'},
-      {'name': 'ss-stream-cipher', 'params': {'method': 'aes-128-ctr'}}
+      { 'name': 'ss-base' },
+      { 'name': 'obfs-random-padding' },
+      { 'name': 'ss-stream-cipher', 'params': { 'method': 'aes-128-ctr' } }
     ],
     'tls_key': 'key.pem',
     'tls_cert': 'cert.pem',

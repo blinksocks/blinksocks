@@ -1,7 +1,8 @@
 import net from 'net';
 import crypto from 'crypto';
 import ip from 'ip';
-import {IPresetAddressing, CONNECT_TO_REMOTE} from './defs';
+import { IPresetAddressing } from './defs';
+import { CONNECT_TO_REMOTE } from './actions';
 import {
   hmac,
   hash,
@@ -11,7 +12,7 @@ import {
   getChunks,
   getCurrentTimestampInt,
   numberToBuffer as ntb,
-  AdvancedBuffer
+  AdvancedBuffer,
 } from '../utils';
 
 const ATYP_V4 = 0x01;
@@ -187,7 +188,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
   _cipherNonce = 0;
   _decipherNonce = 0;
 
-  static onCheckParams({id, security = 'aes-128-gcm'}) {
+  static onCheckParams({ id, security = 'aes-128-gcm' }) {
     if (Buffer.from(id.split('-').join(''), 'hex').length !== 16) {
       throw Error('id is not a valid uuid');
     }
@@ -197,7 +198,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     }
   }
 
-  static onCache({id}, store) {
+  static onCache({ id }, store) {
     const uuid = Buffer.from(id.split('-').join(''), 'hex');
     setInterval(() => V2rayVmessPreset.updateAuthCache(uuid, store), 1e3);
     V2rayVmessPreset.updateAuthCache(uuid, store);
@@ -213,24 +214,24 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     const to = now + TIME_TOLERANCE;
     let newItems = [];
     if (items.length !== 0) {
-      const {timestamp: end} = items[items.length - 1];
+      const { timestamp: end } = items[items.length - 1];
       newItems = items.slice(now - end - TIME_TOLERANCE - 1);
       from = end + 1;
     }
     for (let ts = from; ts <= to; ++ts) {
       // account auth info, 16 bytes
       const authInfo = hmac('md5', uuid, ntb(ts, 8));
-      newItems.push({timestamp: ts, authInfo: authInfo});
+      newItems.push({ timestamp: ts, authInfo: authInfo });
     }
     store.userHashCache = newItems;
   }
 
-  onInit({id, security = 'aes-128-gcm'}) {
+  onInit({ id, security = 'aes-128-gcm' }) {
     this._uuid = Buffer.from(id.split('-').join(''), 'hex');
     if (this._config.is_client) {
       this._security = securityTypes[security];
     }
-    this._adBuf = new AdvancedBuffer({getPacketLength: this.onReceiving.bind(this)});
+    this._adBuf = new AdvancedBuffer({ getPacketLength: this.onReceiving.bind(this) });
     this._adBuf.on('data', this.onChunkReceived.bind(this));
   }
 
@@ -252,7 +253,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
 
   onNotified(action) {
     if (this._config.is_client && action.type === CONNECT_TO_REMOTE) {
-      const {host, port} = action.payload;
+      const { host, port } = action.payload;
       const type = getAddrType(host);
       this._atyp = type;
       this._port = ntb(port);
@@ -263,7 +264,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     // }
   }
 
-  beforeOut({buffer}) {
+  beforeOut({ buffer }) {
     if (!this._isHeaderSent) {
       this._isHeaderSent = true;
       const header = this._config.is_client ? this.createRequestHeader() : this.createResponseHeader();
@@ -275,7 +276,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     }
   }
 
-  clientIn({buffer, next, fail}) {
+  clientIn({ buffer, next, fail }) {
     if (!this._isHeaderRecv) {
       this._isHeaderRecv = true;
       const decipher = crypto.createDecipheriv('aes-128-cfb', this._dataDecKey, this._dataDecIV);
@@ -287,12 +288,12 @@ export default class V2rayVmessPreset extends IPresetAddressing {
       if (this._v !== v) {
         return fail(`server response v doesn't match, expect ${this._v} but got ${v}`);
       }
-      return this._adBuf.put(buffer.slice(4 + cmdLen)/* drop command */, {next, fail});
+      return this._adBuf.put(buffer.slice(4 + cmdLen)/* drop command */, { next, fail });
     }
-    this._adBuf.put(buffer, {next, fail});
+    this._adBuf.put(buffer, { next, fail });
   }
 
-  serverIn({buffer, next, fail}) {
+  serverIn({ buffer, next, fail }) {
     if (!this._isHeaderRecv) {
 
       if (this._isBroadCasting) {
@@ -305,11 +306,11 @@ export default class V2rayVmessPreset extends IPresetAddressing {
       }
 
       const uuid = this._uuid;
-      const {userHashCache} = this.getStore();
+      const { userHashCache } = this.getStore();
 
       // verify auth info
       const authInfo = buffer.slice(0, 16);
-      const cacheItem = userHashCache.find(({authInfo: auth}) => auth.equals(authInfo));
+      const cacheItem = userHashCache.find(({ authInfo: auth }) => auth.equals(authInfo));
       if (cacheItem === undefined) {
         return fail(`cannot find ${authInfo.toString('hex')} in cache, maybe a wrong auth info`);
       }
@@ -416,7 +417,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
           host: addrType === ATYP_DOMAIN ? addr.toString() : ip.toString(addr),
           port: port,
           onConnected: () => {
-            this._adBuf.put(Buffer.concat([data, this._staging]), {next, fail});
+            this._adBuf.put(Buffer.concat([data, this._staging]), { next, fail });
             this._isHeaderRecv = true;
             this._isBroadCasting = false;
             this._staging = null;
@@ -424,7 +425,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
         }
       });
     } else {
-      this._adBuf.put(buffer, {next, fail});
+      this._adBuf.put(buffer, { next, fail });
     }
   }
 
@@ -447,9 +448,9 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     this._opt = 0x05;
 
     const uuid = this._uuid;
-    const {userHashCache} = this.getStore();
+    const { userHashCache } = this.getStore();
 
-    const {timestamp, authInfo} = userHashCache[getRandomInt(0, userHashCache.length - 1)];
+    const { timestamp, authInfo } = userHashCache[getRandomInt(0, userHashCache.length - 1)];
 
     // utc timestamp: Big-Endian, 8 bytes
     const ts = ntb(timestamp, 8);
@@ -513,7 +514,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     return 2 + len;
   }
 
-  onChunkReceived(chunk, {next, fail}) {
+  onChunkReceived(chunk, { next, fail }) {
     if ([SECURITY_TYPE_AES_128_GCM, SECURITY_TYPE_CHACHA20_POLY1305].includes(this._security)) {
       const tag = chunk.slice(-16);
       const data = this.decrypt(chunk.slice(2, -16), tag);

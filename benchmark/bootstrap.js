@@ -26,7 +26,7 @@ function makeConfs(presets) {
   const clientConf = {
     'service': 'tcp://127.0.0.1:1081?forward=127.0.0.1:1083',
     'tls_cert': 'cert.pem',
-    'servers': [Object.assign({}, serverConf, {'enabled': true})],
+    'servers': [Object.assign({}, serverConf, { 'enabled': true })],
     'log_level': 'error',
   };
   return [clientConf, serverConf];
@@ -52,17 +52,17 @@ function parseStdout(stdout) {
   return null;
 }
 
-function formatResult({start, end, bytes, bits_per_second}) {
+function formatResult({ start, end, bytes, bits_per_second }) {
   return {
     interval: start.toFixed(2) + '-' + end.toFixed(2) + ' sec',
     transfer: formatSize(bytes) + 'ytes',
-    bitrate: formatSize(bits_per_second / 8, {bits: true}) + 'its/sec',
+    bitrate: formatSize(bits_per_second / 8, { bits: true }) + 'its/sec',
   };
 }
 
 function printEnv() {
   console.log(chalk.bold.underline('blinksocks:'));
-  console.log('%s %s', 'version'.padEnd(15), child_process.execSync(`node ${BLINKSOCKS_PATH} -v`, {encoding: 'utf-8'}).trim());
+  console.log('%s %s', 'version'.padEnd(15), child_process.execSync(`node ${BLINKSOCKS_PATH} -v`, { encoding: 'utf-8' }).trim());
   console.log('');
   console.log(chalk.bold.underline('Operating System:'));
   const osParams = [
@@ -92,7 +92,7 @@ function run(cases) {
     const [clientJson, serverJson] = writeConfs(i, presets);
     try {
       const stdout = child_process.execFileSync(
-        IPERF_PATH, [clientJson, serverJson, SEC_PER_CASE.toString()], {encoding: 'utf-8'}
+        IPERF_PATH, [clientJson, serverJson, SEC_PER_CASE.toString()], { encoding: 'utf-8' }
       );
       const parsed = parseStdout(stdout);
       if (parsed === null) {
@@ -126,7 +126,7 @@ function printRanking(results) {
   console.log('(ranking):');
   console.log('');
   for (let i = 0; i < sorted.length; ++i) {
-    const {id, bitrates, config} = sorted[i];
+    const { id, bitrates, config } = sorted[i];
     console.log(`${(i + 1).toString().padStart(2)}: Test Case ${id}, Bitrate = ${bitrates.join(', ')}`);
     console.log(`    ${config}`);
   }

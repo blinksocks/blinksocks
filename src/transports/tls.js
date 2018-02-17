@@ -1,6 +1,6 @@
 import tls from 'tls';
-import {TcpInbound, TcpOutbound} from './tcp';
-import {logger} from '../utils';
+import { TcpInbound, TcpOutbound } from './tcp';
+import { logger } from '../utils';
 
 export class TlsInbound extends TcpInbound {
 
@@ -27,9 +27,9 @@ export class TlsOutbound extends TcpOutbound {
   }
 
   // overwrite _connect of tcp outbound using tls.connect()
-  async _connect({host, port}) {
+  async _connect({ host, port }) {
     logger.info(`[tls:outbound] [${this.remote}] connecting to tls://${host}:${port}`);
-    return tls.connect({host, port, ca: [this._config.tls_cert]});
+    return tls.connect({ host, port, ca: [this._config.tls_cert] });
   }
 
 }

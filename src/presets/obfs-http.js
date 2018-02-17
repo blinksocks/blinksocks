@@ -1,6 +1,6 @@
 import fs from 'fs';
 import crypto from 'crypto';
-import {IPreset} from './defs';
+import { IPreset } from './defs';
 
 /**
  * parse text file into {request: response} pairs
@@ -8,7 +8,7 @@ import {IPreset} from './defs';
  * @returns {Array}
  */
 function parseFile(file) {
-  const txt = fs.readFileSync(file, {encoding: 'utf-8'});
+  const txt = fs.readFileSync(file, { encoding: 'utf-8' });
   const lines = txt.split(/\r\n|\n|\r/);
   const parts = [];
   let part = '';
@@ -69,13 +69,13 @@ export default class ObfsHttpPreset extends IPreset {
 
   _response = null;
 
-  static onCheckParams({file}) {
+  static onCheckParams({ file }) {
     if (typeof file !== 'string' || file === '') {
       throw Error('\'file\' must be a non-empty string');
     }
   }
 
-  static onCache({file}) {
+  static onCache({ file }) {
     return {
       pairs: parseFile(file),
     };
@@ -85,21 +85,21 @@ export default class ObfsHttpPreset extends IPreset {
     this._response = null;
   }
 
-  clientOut({buffer}) {
+  clientOut({ buffer }) {
     if (!this._isHeaderSent) {
-      const {pairs} = this.getStore();
+      const { pairs } = this.getStore();
       this._isHeaderSent = true;
       const index = crypto.randomBytes(1)[0] % pairs.length;
-      const {request} = pairs[index];
+      const { request } = pairs[index];
       return Buffer.concat([request, buffer]);
     } else {
       return buffer;
     }
   }
 
-  serverIn({buffer, fail}) {
+  serverIn({ buffer, fail }) {
     if (!this._isHeaderRecv) {
-      const found = this.getStore().pairs.find(({request}) => buffer.indexOf(request) === 0);
+      const found = this.getStore().pairs.find(({ request }) => buffer.indexOf(request) === 0);
       if (found !== undefined) {
         this._isHeaderRecv = true;
         this._response = found.response;
@@ -112,7 +112,7 @@ export default class ObfsHttpPreset extends IPreset {
     }
   }
 
-  serverOut({buffer}) {
+  serverOut({ buffer }) {
     if (!this._isHeaderSent) {
       this._isHeaderSent = true;
       return Buffer.concat([this._response, buffer]);
@@ -121,9 +121,9 @@ export default class ObfsHttpPreset extends IPreset {
     }
   }
 
-  clientIn({buffer, fail}) {
+  clientIn({ buffer, fail }) {
     if (!this._isHeaderRecv) {
-      const found = this.getStore().pairs.find(({response}) => buffer.indexOf(response) === 0);
+      const found = this.getStore().pairs.find(({ response }) => buffer.indexOf(response) === 0);
       if (found !== undefined) {
         this._isHeaderRecv = true;
         return buffer.slice(found.response.length);

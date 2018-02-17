@@ -1,5 +1,5 @@
-import {Relay} from './relay';
-import {getRandomInt, logger} from '../utils';
+import { Relay } from './relay';
+import { getRandomInt, logger } from '../utils';
 
 import {
   TcpInbound, TcpOutbound,
@@ -12,7 +12,7 @@ import {
   MUX_DATA_FRAME,
   MUX_NEW_CONN,
   MUX_CLOSE_CONN,
-} from '../presets/defs';
+} from '../presets/actions';
 
 export class MuxRelay extends Relay {
 
@@ -29,7 +29,7 @@ export class MuxRelay extends Relay {
       'ws': [WsInbound, WsOutbound],
     };
     const [Inbound, Outbound] = this._config.is_client ? [MuxInbound, mapping[transport][1]] : [mapping[transport][0], MuxOutbound];
-    return {Inbound, Outbound};
+    return { Inbound, Outbound };
   }
 
   onBroadcast(action) {
@@ -49,7 +49,7 @@ export class MuxRelay extends Relay {
     const first = presets[0];
     // add "mux" preset to the top
     if (!first || first.name !== 'mux') {
-      presets = [{'name': 'mux'}].concat(presets);
+      presets = [{ 'name': 'mux' }].concat(presets);
     }
     return presets;
   }
@@ -70,7 +70,7 @@ export class MuxRelay extends Relay {
 
   // events
 
-  onNewSubConn({cid, host, port}) {
+  onNewSubConn({ cid, host, port }) {
     // const muxRelay = this;
 
     // instead use "this" mux relay, we can even randomly choose one
@@ -100,7 +100,7 @@ export class MuxRelay extends Relay {
       };
 
       relay.__pendingFrames = [];
-      relay.init({proxyRequest});
+      relay.init({ proxyRequest });
 
       // NOTE: here we should replace relay.id to cid
       relay.id = cid;
@@ -116,7 +116,7 @@ export class MuxRelay extends Relay {
     }
   }
 
-  onDataFrame({cid, data}) {
+  onDataFrame({ cid, data }) {
     const relay = MuxRelay.allSubRelays.get(cid);
     if (!relay) {
       logger.error(`[mux-${this.id}] fail to dispatch data frame(size=${data.length}), no such sub connection(cid=${cid})`);
@@ -133,7 +133,7 @@ export class MuxRelay extends Relay {
     }
   }
 
-  onSubConnCloseByProtocol({cid}) {
+  onSubConnCloseByProtocol({ cid }) {
     const relay = MuxRelay.allSubRelays.get(cid);
     if (relay) {
       this._removeSubRelay(cid);
@@ -145,7 +145,7 @@ export class MuxRelay extends Relay {
     // }
   }
 
-  onSubConnCloseBySelf({cid}) {
+  onSubConnCloseBySelf({ cid }) {
     const relay = this._getSubRelay(cid);
     if (relay) {
       this.destroySubRelay(cid);
@@ -159,7 +159,7 @@ export class MuxRelay extends Relay {
   // methods
 
   addSubRelay(relay) {
-    relay.on('close', this.onSubConnCloseBySelf.bind(this, {cid: relay.id}));
+    relay.on('close', this.onSubConnCloseBySelf.bind(this, { cid: relay.id }));
     this._subRelays.set(relay.id, relay);
     MuxRelay.allSubRelays.set(relay.id, relay);
   }
@@ -171,7 +171,7 @@ export class MuxRelay extends Relay {
   destroySubRelay(cid) {
     const relay = this._getSubRelay(cid);
     if (relay) {
-      this.encode(Buffer.alloc(0), {cid, isClosing: true});
+      this.encode(Buffer.alloc(0), { cid, isClosing: true });
       this._removeSubRelay(cid);
       relay.destroy();
     }
@@ -192,7 +192,7 @@ export class MuxRelay extends Relay {
   }
 
   _getRandomMuxRelay() {
-    const {muxRelays, remoteInfo} = this._ctx;
+    const { muxRelays, remoteInfo } = this._ctx;
     const relays = [...muxRelays.values()].filter((relay) =>
       relay._ctx &&
       relay._ctx.remoteInfo.host === remoteInfo.host &&

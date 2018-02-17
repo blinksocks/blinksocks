@@ -1,6 +1,6 @@
 import crypto from 'crypto';
-import {IPreset} from './defs';
-import {dumpHex, EVP_BytesToKey, hash} from '../utils';
+import { IPreset } from './defs';
+import { dumpHex, EVP_BytesToKey, hash } from '../utils';
 
 // available ciphers and [key size, iv size]
 const ciphers = {
@@ -87,7 +87,7 @@ export default class SsStreamCipherPreset extends IPreset {
     return this._iv;
   }
 
-  static onCheckParams({method}) {
+  static onCheckParams({ method }) {
     if (typeof method !== 'string' || method === '') {
       throw Error('\'method\' must be set');
     }
@@ -97,7 +97,7 @@ export default class SsStreamCipherPreset extends IPreset {
     }
   }
 
-  onInit({method}) {
+  onInit({ method }) {
     const [keySize, ivSize] = ciphers[method];
     const iv = crypto.randomBytes(ivSize);
     this._algorithm = ['rc4-md5', 'rc4-md5-6'].includes(method) ? 'rc4' : method;
@@ -148,7 +148,7 @@ export default class SsStreamCipherPreset extends IPreset {
 
   // tcp
 
-  beforeOut({buffer}) {
+  beforeOut({ buffer }) {
     if (!this._cipher) {
       this._cipher = this.createCipher(this._key, this._iv);
       return Buffer.concat([this._iv, this._cipher.update(buffer)]);
@@ -157,9 +157,9 @@ export default class SsStreamCipherPreset extends IPreset {
     }
   }
 
-  beforeIn({buffer, fail}) {
+  beforeIn({ buffer, fail }) {
     if (!this._decipher) {
-      const {_ivSize} = this;
+      const { _ivSize } = this;
       if (buffer.length < _ivSize) {
         return fail(`buffer is too short to get iv, len=${buffer.length} dump=${dumpHex(buffer)}`);
       }
@@ -173,14 +173,14 @@ export default class SsStreamCipherPreset extends IPreset {
 
   // udp
 
-  beforeOutUdp({buffer}) {
+  beforeOutUdp({ buffer }) {
     this._iv = crypto.randomBytes(this._ivSize);
     this._cipher = this.createCipher(this._key, this._iv);
     return Buffer.concat([this._iv, this._cipher.update(buffer)]);
   }
 
-  beforeInUdp({buffer, fail}) {
-    const {_ivSize} = this;
+  beforeInUdp({ buffer, fail }) {
+    const { _ivSize } = this;
     if (buffer.length < _ivSize) {
       return fail(`buffer is too short to get iv, len=${buffer.length} dump=${dumpHex(buffer)}`);
     }

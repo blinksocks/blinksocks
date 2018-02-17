@@ -6,8 +6,8 @@ const clientJson = {
     "service": "tcp://127.0.0.1:1082",
     "key": "9{*2gdBSdCrgnSBD",
     "presets": [
-      {"name": "ss-base"},
-      {"name": "aead-random-cipher", "params": {"method": "aes-256-gcm"}},
+      { "name": "ss-base" },
+      { "name": "aead-random-cipher", "params": { "method": "aes-256-gcm" } },
     ]
   }
 };
@@ -16,9 +16,9 @@ const serverJson = {
   "service": "tcp://127.0.0.1:1082",
   "key": "9{*2gdBSdCrgnSBD",
   "presets": [
-    {"name": "ss-base"},
-    {"name": "aead-random-cipher", "params": {"method": "aes-256-gcm"}},
+    { "name": "ss-base" },
+    { "name": "aead-random-cipher", "params": { "method": "aes-256-gcm" } },
   ]
 };
 
-test('aead-random-cipher', async () => await run({clientJson, serverJson}));
+test('aead-random-cipher', async () => await run({ clientJson, serverJson }));

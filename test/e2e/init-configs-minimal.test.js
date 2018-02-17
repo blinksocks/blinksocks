@@ -6,9 +6,9 @@ const clientJson = {
     "service": "tcp://127.0.0.1:1082",
     "key": "9{*2gdBSdCrgnSBD",
     "presets": [
-      {"name": "ss-base"},
-      {"name": "obfs-random-padding"},
-      {"name": "ss-stream-cipher", "params": {"method": "aes-128-ctr"}}
+      { "name": "ss-base" },
+      { "name": "obfs-random-padding" },
+      { "name": "ss-stream-cipher", "params": { "method": "aes-128-ctr" } }
     ]
   }
 };
@@ -17,10 +17,10 @@ const serverJson = {
   "service": "tcp://127.0.0.1:1082",
   "key": "9{*2gdBSdCrgnSBD",
   "presets": [
-    {"name": "ss-base"},
-    {"name": "obfs-random-padding"},
-    {"name": "ss-stream-cipher", "params": {"method": "aes-128-ctr"}}
+    { "name": "ss-base" },
+    { "name": "obfs-random-padding" },
+    { "name": "ss-stream-cipher", "params": { "method": "aes-128-ctr" } }
   ]
 };
 
-test('init-configs-minimal', async () => await run({clientJson, serverJson}));
+test('init-configs-minimal', async () => await run({ clientJson, serverJson }));

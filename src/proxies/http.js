@@ -1,14 +1,14 @@
 import url from 'url';
 import http from 'http';
-import {logger} from '../utils';
+import { logger } from '../utils';
 
 export function createServer() {
   const server = http.createServer();
 
   // Simple HTTP Proxy
   server.on('request', (req, res) => {
-    const {hostname, port, path} = url.parse(req.url);
-    const {socket, method, httpVersion, headers} = req;
+    const { hostname, port, path } = url.parse(req.url);
+    const { socket, method, httpVersion, headers } = req;
 
     const _port = +port || 80;
 
@@ -47,7 +47,7 @@ export function createServer() {
 
   // HTTPS tunnel
   server.on('connect', (req, socket) => {
-    const {hostname, port} = url.parse(`http://${req.url}`);
+    const { hostname, port } = url.parse(`http://${req.url}`);
 
     const _port = +port || 443;
 
@@ -68,7 +68,7 @@ export function createServer() {
 
   // errors
   server.on('clientError', (err, socket) => {
-    const {remoteAddress, remotePort} = socket;
+    const { remoteAddress, remotePort } = socket;
     logger.error(`[http] [${remoteAddress}:${remotePort}] invalid http request: ${err.message}`);
     socket.destroy();
   });

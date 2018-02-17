@@ -1,5 +1,3 @@
-import {checkPresetClass} from './defs';
-
 // functional
 import TrackerPreset from './tracker';
 import AutoConfPreset from './auto-conf';
@@ -30,7 +28,7 @@ import ObfsTls12TicketPreset from './obfs-tls1.2-ticket';
 // others
 import AeadRandomCipherPreset from './aead-random-cipher';
 
-const mapping = {
+const presetMap = {
   // functional
   'tracker': TrackerPreset,
   'auto-conf': AutoConfPreset,
@@ -62,10 +60,33 @@ const mapping = {
   'aead-random-cipher': AeadRandomCipherPreset
 };
 
-const presetClasses = {...mapping};
+/**
+ * check if a class is a valid preset class
+ * @param clazz
+ * @returns {boolean}
+ */
+function checkPresetClass(clazz) {
+  if (typeof clazz !== 'function') {
+    return false;
+  }
+  // check require hooks
+  const requiredMethods = [
+    'onNotified', 'onDestroy', 'onInit',
+    'beforeOut', 'beforeIn', 'clientOut', 'serverIn', 'serverOut', 'clientIn',
+    'beforeOutUdp', 'beforeInUdp', 'clientOutUdp', 'serverInUdp', 'serverOutUdp', 'clientInUdp'
+  ];
+  if (requiredMethods.some((method) => typeof clazz.prototype[method] !== 'function')) {
+    return false;
+  }
+  const requiredStaticMethods = ['onCheckParams', 'onCache'];
+  if (requiredStaticMethods.some((method) => typeof clazz[method] !== 'function')) {
+    return false;
+  }
+  return true;
+}
 
 export function getPresetClassByName(name) {
-  let clazz = presetClasses[name];
+  let clazz = presetMap[name];
   if (clazz === undefined) {
     try {
       clazz = require(name);
@@ -79,5 +100,4 @@ export function getPresetClassByName(name) {
   return clazz;
 }
 
-export const presets = Object.keys(mapping);
-export * from './defs';
+export const presets = Object.keys(presetMap);

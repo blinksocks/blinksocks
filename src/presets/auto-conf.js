@@ -2,7 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import fetch from 'node-fetch';
-import {IPreset, CHANGE_PRESET_SUITE} from './defs';
+import { IPreset } from './defs';
+import { CHANGE_PRESET_SUITE } from './actions';
 import {
   logger,
   hmac,
@@ -10,9 +11,9 @@ import {
   dumpHex,
   numberToBuffer as ntb, BYTE_ORDER_LE,
   getCurrentTimestampInt,
-  EVP_BytesToKey
+  EVP_BytesToKey,
 } from '../utils';
-import {PIPE_DECODE, PIPE_ENCODE} from '../constants';
+import { PIPE_DECODE, PIPE_ENCODE } from '../constants';
 
 const MAX_TIME_DIFF = 30; // seconds
 const NOOP = Buffer.alloc(0);
@@ -74,13 +75,13 @@ export default class AutoConfPreset extends IPreset {
 
   _header = null;
 
-  static onCheckParams({suites}) {
+  static onCheckParams({ suites }) {
     if (typeof suites !== 'string' || suites.length < 1) {
       throw Error('\'suites\' is invalid');
     }
   }
 
-  static async onCache({suites: uri}) {
+  static async onCache({ suites: uri }) {
     logger.info(`[auto-conf] loading suites from: ${uri}`);
     let suites = [];
     if (uri.startsWith('http')) {
@@ -90,14 +91,14 @@ export default class AutoConfPreset extends IPreset {
     } else {
       // load from file system
       const suiteJson = path.resolve(process.cwd(), uri);
-      const rawText = fs.readFileSync(suiteJson, {encoding: 'utf-8'});
+      const rawText = fs.readFileSync(suiteJson, { encoding: 'utf-8' });
       suites = JSON.parse(rawText);
     }
     if (suites.length < 1) {
       throw Error(`you must provide at least one suite in ${uri}`);
     }
     logger.info(`[auto-conf] ${suites.length} suites loaded`);
-    return {suites};
+    return { suites };
   }
 
   onDestroy() {
@@ -117,12 +118,12 @@ export default class AutoConfPreset extends IPreset {
     };
   }
 
-  encodeChangeSuite({buffer, broadcast, fail}) {
-    const {suites} = this.getStore();
+  encodeChangeSuite({ buffer, broadcast, fail }) {
+    const { suites } = this.getStore();
     if (suites.length < 1) {
       return fail('suites are not initialized properly');
     }
-    const {header, suite} = this.createRequestHeader(suites);
+    const { header, suite } = this.createRequestHeader(suites);
     this._header = header;
     this._isSuiteChanged = true;
     return broadcast({
@@ -135,8 +136,8 @@ export default class AutoConfPreset extends IPreset {
     });
   }
 
-  decodeChangeSuite({buffer, broadcast, fail}) {
-    const {suites} = this.getStore();
+  decodeChangeSuite({ buffer, broadcast, fail }) {
+    const { suites } = this.getStore();
     if (suites.length < 1) {
       return fail('suites are not initialized properly');
     }
@@ -171,9 +172,9 @@ export default class AutoConfPreset extends IPreset {
 
   // tcp
 
-  clientOut({buffer, broadcast, fail}) {
+  clientOut({ buffer, broadcast, fail }) {
     if (!this._isSuiteChanged) {
-      return this.encodeChangeSuite({buffer, broadcast, fail})
+      return this.encodeChangeSuite({ buffer, broadcast, fail })
     }
     if (!this._isHeaderSent) {
       this._isHeaderSent = true;
@@ -183,9 +184,9 @@ export default class AutoConfPreset extends IPreset {
     }
   }
 
-  serverIn({buffer, broadcast, fail}) {
+  serverIn({ buffer, broadcast, fail }) {
     if (!this._isSuiteChanged) {
-      return this.decodeChangeSuite({buffer, broadcast, fail});
+      return this.decodeChangeSuite({ buffer, broadcast, fail });
     } else {
       return buffer;
     }
@@ -193,18 +194,18 @@ export default class AutoConfPreset extends IPreset {
 
   // udp
 
-  clientOutUdp({buffer, broadcast, fail}) {
+  clientOutUdp({ buffer, broadcast, fail }) {
     if (!this._isSuiteChanged) {
-      return this.encodeChangeSuite({buffer, broadcast, fail});
+      return this.encodeChangeSuite({ buffer, broadcast, fail });
     } else {
       this._isSuiteChanged = false;
       return Buffer.concat([this._header, buffer]);
     }
   }
 
-  serverInUdp({buffer, broadcast, fail}) {
+  serverInUdp({ buffer, broadcast, fail }) {
     if (!this._isSuiteChanged) {
-      return this.decodeChangeSuite({buffer, broadcast, fail});
+      return this.decodeChangeSuite({ buffer, broadcast, fail });
     } else {
       this._isSuiteChanged = false;
       return buffer;

@@ -9,8 +9,8 @@ const clientJson = {
     "service": "tcp://127.0.0.1:1082",
     "key": "9{*2gdBSdCrgnSBD",
     "presets": [
-      {"name": "ss-base"},
-      {"name": "obfs-http", "params": {"file": mockfile}}
+      { "name": "ss-base" },
+      { "name": "obfs-http", "params": { "file": mockfile } }
     ]
   }
 };
@@ -19,9 +19,9 @@ const serverJson = {
   "service": "tcp://127.0.0.1:1082",
   "key": "9{*2gdBSdCrgnSBD",
   "presets": [
-    {"name": "ss-base"},
-    {"name": "obfs-http", "params": {"file": mockfile}}
+    { "name": "ss-base" },
+    { "name": "obfs-http", "params": { "file": mockfile } }
   ]
 };
 
-test('obfs-http', async () => await run({clientJson, serverJson, repeat: 5}));
+test('obfs-http', async () => await run({ clientJson, serverJson, repeat: 5 }));

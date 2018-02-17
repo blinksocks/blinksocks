@@ -1,5 +1,6 @@
-import {IPreset, CONNECTION_CREATED, CONNECT_TO_REMOTE} from './defs';
-import {logger} from '../utils';
+import { IPreset } from './defs';
+import { CONNECTION_CREATED, CONNECT_TO_REMOTE } from './actions';
+import { logger } from '../utils';
 
 const TRACK_CHAR_UPLOAD = 'u';
 const TRACK_CHAR_DOWNLOAD = 'd';
@@ -29,10 +30,10 @@ export default class TrackerPreset extends IPreset {
   _targetHost;
   _targetPort;
 
-  onNotified({type, payload}) {
+  onNotified({ type, payload }) {
     switch (type) {
       case CONNECTION_CREATED: {
-        const {host, port, transport} = payload;
+        const { host, port, transport } = payload;
         if (this._sourceHost !== host && this._sourceHost !== port) {
           this._transport = transport;
           this._sourceHost = host;
@@ -42,7 +43,7 @@ export default class TrackerPreset extends IPreset {
         break;
       }
       case CONNECT_TO_REMOTE: {
-        const {host, port} = payload;
+        const { host, port } = payload;
         if (this._targetHost !== host && this._targetPort !== port) {
           this._targetHost = host;
           this._targetPort = port;
@@ -99,13 +100,13 @@ export default class TrackerPreset extends IPreset {
     logger.info(`[tracker:${this._transport}] summary(${summary}) abstract(${strs.join(' ')})`);
   }
 
-  beforeOut({buffer}) {
+  beforeOut({ buffer }) {
     this._tracks.push(TRACK_CHAR_UPLOAD);
     this._tracks.push(buffer.length);
     return buffer;
   }
 
-  beforeIn({buffer}) {
+  beforeIn({ buffer }) {
     this._tracks.push(TRACK_CHAR_DOWNLOAD);
     this._tracks.push(buffer.length);
     return buffer;

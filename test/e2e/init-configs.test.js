@@ -6,9 +6,9 @@ const clientJson = {
     "service": "tcp://127.0.0.1:1082",
     "key": "2/tS:7|.-ec.7cxk",
     "presets": [
-      {"name": "ss-base"},
-      {"name": "obfs-random-padding"},
-      {"name": "ss-stream-cipher", "params": {"method": "aes-128-ctr"}}
+      { "name": "ss-base" },
+      { "name": "obfs-random-padding" },
+      { "name": "ss-stream-cipher", "params": { "method": "aes-128-ctr" } }
     ],
     "tls_cert": "cert.pem",
     "mux": false,
@@ -26,9 +26,9 @@ const serverJson = {
   "service": "tcp://127.0.0.1:1082",
   "key": "2/tS:7|.-ec.7cxk",
   "presets": [
-    {"name": "ss-base"},
-    {"name": "obfs-random-padding"},
-    {"name": "ss-stream-cipher", "params": {"method": "aes-128-ctr"}}
+    { "name": "ss-base" },
+    { "name": "obfs-random-padding" },
+    { "name": "ss-stream-cipher", "params": { "method": "aes-128-ctr" } }
   ],
   "tls_key": "key.pem",
   "tls_cert": "cert.pem",
@@ -42,4 +42,4 @@ const serverJson = {
   "log_max_days": 30
 };
 
-test('init-configs', async () => await run({clientJson, serverJson}));
+test('init-configs', async () => await run({ clientJson, serverJson }));

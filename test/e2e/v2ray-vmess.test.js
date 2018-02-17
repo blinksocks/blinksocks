@@ -28,7 +28,7 @@ test('v2ray-vmess, none', async () => {
   clientJson.server.presets = presets;
   serverJson.presets = presets;
 
-  await run({clientJson, serverJson});
+  await run({ clientJson, serverJson });
 });
 
 test('v2ray-vmess, aes-128-gcm', async () => {
@@ -45,5 +45,5 @@ test('v2ray-vmess, aes-128-gcm', async () => {
   clientJson.server.presets = presets;
   serverJson.presets = presets;
 
-  await run({clientJson, serverJson});
+  await run({ clientJson, serverJson });
 });
