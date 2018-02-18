@@ -5,6 +5,7 @@ import { PRESET_FAILED } from '../presets/actions';
 import { logger } from '../utils';
 
 // .on('broadcast')
+// .on(`pre_${direction}`)
 // .on(`post_${direction}`)
 export class Pipe extends EventEmitter {
 

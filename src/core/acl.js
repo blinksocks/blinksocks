@@ -193,13 +193,13 @@ export class ACL extends EventEmitter {
 
   _hrTimeBegin = process.hrtime();
 
-  _remoteHost = null;
+  _sourceHost = null;
 
-  _remotePort = null;
+  _sourcePort = null;
 
-  _dstHost = null;
+  _targetHost = null;
 
-  _dstPort = null;
+  _targetPort = null;
 
   _totalOut = 0;
 
@@ -237,8 +237,8 @@ export class ACL extends EventEmitter {
 
   constructor({ remoteInfo, rules, max_tries = DEFAULT_MAX_TRIES }) {
     super();
-    this._remoteHost = remoteInfo.host;
-    this._remotePort = remoteInfo.port;
+    this._sourceHost = remoteInfo.host;
+    this._sourcePort = remoteInfo.port;
     this._rules = rules;
     this._maxTries = max_tries;
   }
@@ -261,7 +261,7 @@ export class ACL extends EventEmitter {
 
   applyRule(rule) {
     const { isBan, upLimit, dlLimit } = rule;
-    logger.debug(`[acl] [${this._remoteHost}:${this._remotePort}] apply rule: "${rule}"`);
+    logger.debug(`[acl] [${this._sourceHost}:${this._sourcePort}] apply rule: "${rule}"`);
 
     // ban
     if (isBan) {
@@ -283,7 +283,7 @@ export class ACL extends EventEmitter {
 
         // determine timeout to resume
         const timeout = speed / upLimit * 1.1; // more 10% cost
-        const direction = `[${this._remoteHost}:${this._remotePort}] -> [${this._dstHost}:${this._dstPort}]`;
+        const direction = `[${this._sourceHost}:${this._sourcePort}] -> [${this._targetHost}:${this._targetPort}]`;
         logger.info(`[acl] ${direction} upload speed exceed: ${speed}b/s > ${upLimit}b/s, pause for ${timeout}s...`);
 
         this.emit('action', { type: ACL_PAUSE_RECV });
@@ -308,7 +308,7 @@ export class ACL extends EventEmitter {
 
         // determine timeout to resume
         const timeout = speed / dlLimit * 1.1; // more 10% cost
-        const direction = `[${this._remoteHost}:${this._remotePort}] <- [${this._dstHost}:${this._dstPort}]`;
+        const direction = `[${this._sourceHost}:${this._sourcePort}] <- [${this._targetHost}:${this._targetPort}]`;
         logger.info(`[acl] ${direction} download speed exceed: ${speed}b/s > ${dlLimit}b/s, pause for ${timeout}s...`);
 
         this.emit('action', { type: ACL_PAUSE_SEND });
@@ -331,14 +331,14 @@ export class ACL extends EventEmitter {
     return false;
   }
 
-  setTargetAddress({ host, port }) {
-    this._dstHost = host;
-    this._dstPort = port;
-    this.checkRule(host, port);
+  setTargetAddress(host, port) {
+    this._targetHost = host;
+    this._targetPort = port;
+    return this.checkRule(host, port);
   }
 
   checkFailTimes(tries) {
-    const host = this._remoteHost;
+    const host = this._sourceHost;
     const maxTries = this._maxTries;
     if (tries[host] === undefined) {
       tries[host] = 0;
@@ -359,8 +359,13 @@ export class ACL extends EventEmitter {
     } else {
       this._totalIn += size;
     }
-    this.checkRule(this._remoteHost, this._remotePort);
-    this.checkRule(this._dstHost, this._dstPort);
+    this.checkRule(this._sourceHost, this._sourcePort);
+    this.checkRule(this._targetHost, this._targetPort);
+  }
+
+  destroy() {
+    this._rules = null;
+    this._cachedRules = null;
   }
 
 }

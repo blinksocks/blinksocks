@@ -2,17 +2,6 @@
 
 /**
  *  {
- *    type: CONNECTION_CREATED,
- *    payload: {
- *      host: '127.0.0.1',
- *      port: 12345
- *    }
- *  }
- */
-export const CONNECTION_CREATED = '@action:connection_created';
-
-/**
- *  {
  *    type: CONNECTION_CLOSED
  *    payload: {
  *      host: '127.0.0.1',

@@ -1,5 +1,4 @@
 // functional
-import TrackerPreset from './tracker';
 import AutoConfPreset from './auto-conf';
 import MuxPreset from './mux';
 
@@ -30,7 +29,6 @@ import AeadRandomCipherPreset from './aead-random-cipher';
 
 const presetMap = {
   // functional
-  'tracker': TrackerPreset,
   'auto-conf': AutoConfPreset,
   'mux': MuxPreset,
 
@@ -91,7 +89,7 @@ export function getPresetClassByName(name) {
     try {
       clazz = require(name);
     } catch (err) {
-      throw Error(`cannot load preset: "${name}" from built-in modules or external`);
+      throw Error(`cannot load preset "${name}" from built-in modules or external`);
     }
     if (!checkPresetClass(clazz)) {
       throw Error(`definition of preset "${name}" is invalid`);
