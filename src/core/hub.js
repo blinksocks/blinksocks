@@ -235,6 +235,8 @@ export class Hub {
         muxRelay = this._getMuxRelayOnClient(context, cid);
         context.muxRelay = muxRelay;
       } else {
+        // sync all mux relays to the current mux relay,
+        // so server can select one to handle upstream traffic.
         context.muxRelays = this._muxRelays;
       }
     }

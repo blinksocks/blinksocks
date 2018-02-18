@@ -16,8 +16,6 @@ import {
 
 export class MuxRelay extends Relay {
 
-  static allSubRelays = new Map();
-
   _subRelays = new Map();
 
   // overwrites
@@ -110,14 +108,13 @@ export class MuxRelay extends Relay {
       muxRelay.addSubRelay(relay);
 
       logger.info(`[mux-${muxRelay.id}] create sub connection(cid=${relay.id}), total: ${muxRelay.getSubRelays().size}`);
-      return relay;
     } else {
       logger.warn(`[mux-${muxRelay.id}] cannot create new sub connection due to no mux connection are available`);
     }
   }
 
   onDataFrame({ cid, data }) {
-    const relay = MuxRelay.allSubRelays.get(cid);
+    const relay = this._subRelays.get(cid);
     if (!relay) {
       logger.error(`[mux-${this.id}] fail to dispatch data frame(size=${data.length}), no such sub connection(cid=${cid})`);
       return;
@@ -134,7 +131,7 @@ export class MuxRelay extends Relay {
   }
 
   onSubConnCloseByProtocol({ cid }) {
-    const relay = MuxRelay.allSubRelays.get(cid);
+    const relay = this._subRelays.get(cid);
     if (relay) {
       this._removeSubRelay(cid);
       relay.destroy();
@@ -161,7 +158,6 @@ export class MuxRelay extends Relay {
   addSubRelay(relay) {
     relay.on('close', this.onSubConnCloseBySelf.bind(this, { cid: relay.id }));
     this._subRelays.set(relay.id, relay);
-    MuxRelay.allSubRelays.set(relay.id, relay);
   }
 
   getSubRelays() {
@@ -182,7 +178,6 @@ export class MuxRelay extends Relay {
 
   _removeSubRelay(cid) {
     this._subRelays.delete(cid);
-    MuxRelay.allSubRelays.delete(cid);
   }
 
   _getSubRelay(cid) {
