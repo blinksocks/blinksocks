@@ -3,6 +3,8 @@ import util from 'util';
 import child_process from 'child_process';
 import { Hub } from '../../src';
 
+const MOCK_RESPONSE = '01234567'.repeat(256);
+
 let HTTP_PORT = process.env.HTTP_PORT;
 
 if (typeof HTTP_PORT === 'undefined') {
@@ -18,7 +20,7 @@ beforeAll(() => {
   mockServer = http.createServer();
 
   mockServer.on('request', (req, res) => {
-    res.end('mock server response');
+    res.end(MOCK_RESPONSE);
   });
 
   mockServer.on('clientError', (err, socket) => {
@@ -66,7 +68,7 @@ export default async function run({ proxy, clientJson, serverJson, repeat = 1 })
   await client.run();
   await server.run();
   while (repeat--) {
-    expect(await curl({ proxy })).toBe('mock server response');
+    expect(await curl({ proxy })).toBe(MOCK_RESPONSE);
   }
   await client.terminate();
   await server.terminate();
