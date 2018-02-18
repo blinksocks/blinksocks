@@ -1,6 +1,7 @@
 import EventEmitter from 'events';
 import { ACL } from './acl';
 import { Pipe } from './pipe';
+import { Tracker } from './tracker';
 import { logger } from '../utils';
 import { PIPE_ENCODE, PIPE_DECODE } from '../constants';
 
@@ -14,7 +15,6 @@ import {
 
 import {
   CONNECT_TO_REMOTE,
-  CONNECTION_CREATED,
   CONNECTION_CLOSED,
   CONNECTION_WILL_CLOSE,
   CHANGE_PRESET_SUITE,
@@ -36,11 +36,13 @@ export class Relay extends EventEmitter {
 
   static idcounter = 0;
 
-  _config = null;
-
   _id = null;
 
+  _config = null;
+
   _acl = null;
+
+  _tracker = null;
 
   _ctx = null;
 
@@ -102,21 +104,16 @@ export class Relay extends EventEmitter {
     // acl
     if (config.acl) {
       this._acl = new ACL({ remoteInfo: this._remoteInfo, rules: config.acl_rules });
-      this._acl.on('action', this.onBroadcast);
+      this._acl.on('action', this.onBroadcast.bind(this));
     }
+    // tracker
+    this._tracker = new Tracker({ config, transport, remoteInfo: this._remoteInfo });
   }
 
   init({ proxyRequest }) {
     this._proxyRequest = proxyRequest;
-    this._pipe.broadcast('pipe', {
-      type: CONNECTION_CREATED,
-      payload: { transport: this._transport, ...this._remoteInfo }
-    });
     if (proxyRequest) {
-      this._pipe.broadcast(null, {
-        type: CONNECT_TO_REMOTE,
-        payload: proxyRequest
-      });
+      this._pipe.broadcast(null, { type: CONNECT_TO_REMOTE, payload: proxyRequest });
     }
   }
 
@@ -169,22 +166,30 @@ export class Relay extends EventEmitter {
 
   // hooks of pipe
 
-  onBroadcast = (action) => {
+  onBroadcast(action) {
     if (action.type === CONNECT_TO_REMOTE) {
-      const remote = `${this._remoteInfo.host}:${this._remoteInfo.port}`;
-      const target = `${action.payload.host}:${action.payload.port}`;
+      const { host: sourceHost, port: sourcePort } = this._remoteInfo;
+      const { host: targetHost, port: targetPort } = action.payload;
+      const remote = `${sourceHost}:${sourcePort}`;
+      const target = `${targetHost}:${targetPort}`;
+      // acl
+      if (this._acl && this._acl.setTargetAddress(targetHost, targetPort)) {
+        return;
+      }
+      // mux
       if (this._config.mux && this._config.is_client && this._transport !== 'udp') {
         logger.info(`[relay-${this.id}] [${remote}] request over mux-${this._ctx.muxRelay.id}: ${target}`);
         return;
       }
-      if (this._acl) {
-        this._acl.setTargetAddress(action.payload);
+      // tracker
+      if (this._tracker) {
+        this._tracker.setTargetAddress(targetHost, targetPort);
       }
       logger.info(`[relay] [${remote}] request: ${target}`);
     }
     if (action.type === PRESET_FAILED) {
-      if (this._acl) {
-        this._acl.checkFailTimes(this._config.acl_tries);
+      if (this._acl && this._acl.checkFailTimes(this._config.acl_tries)) {
+        return;
       }
     }
     if (action.type === CHANGE_PRESET_SUITE) {
@@ -193,9 +198,9 @@ export class Relay extends EventEmitter {
     }
     this._inbound && this._inbound.onBroadcast(action);
     this._outbound && this._outbound.onBroadcast(action);
-  };
+  }
 
-  onChangePresetSuite(action) {
+  onChangePresetSuite = (action) => {
     const { type, suite, data } = action.payload;
     logger.verbose(`[relay] changing presets suite to: ${JSON.stringify(suite)}`);
     // 1. update preset list
@@ -204,27 +209,37 @@ export class Relay extends EventEmitter {
       { 'name': 'auto-conf' }
     ]));
     // 2. initialize newly created presets
-    const transport = this._transport;
     const proxyRequest = this._proxyRequest;
-    this._pipe.broadcast('pipe', {
-      type: CONNECTION_CREATED,
-      payload: { transport, ...this._remoteInfo }
-    });
     if (this._config.is_client) {
       this._pipe.broadcast(null, {
         type: CONNECT_TO_REMOTE,
-        payload: { ...proxyRequest, keepAlive: true } // keep previous connection alive, don't re-connect
+        payload: { ...proxyRequest, keepAlive: true }, // keep previous connection alive, don't re-connect
       });
     }
     // 3. re-pipe
     this._pipe.feed(type, data);
-  }
+  };
+
+  onPreDecode = (buffer, cb) => {
+    if (this._tracker !== null) {
+      this._tracker.trace(PIPE_DECODE, buffer.length);
+    }
+    if (this._config.is_server) {
+      if (this._acl) {
+        this._acl.collect(PIPE_DECODE, buffer.length);
+      }
+    }
+    cb(buffer);
+  };
 
   onEncoded = (buffer) => {
+    if (this._tracker !== null) {
+      this._tracker.trace(PIPE_ENCODE, buffer.length);
+    }
     if (this._config.is_client) {
       this._outbound.write(buffer);
     } else {
-      if (this._acl) {
+      if (this._acl !== null) {
         this._acl.collect(PIPE_ENCODE, buffer.length);
       }
       this._inbound.write(buffer);
@@ -235,9 +250,6 @@ export class Relay extends EventEmitter {
     if (this._config.is_client) {
       this._inbound.write(buffer);
     } else {
-      if (this._acl !== null) {
-        this._acl.collect(PIPE_DECODE, buffer.length);
-      }
       this._outbound.write(buffer);
     }
   };
@@ -270,11 +282,6 @@ export class Relay extends EventEmitter {
    * @returns {[]}
    */
   preparePresets(presets) {
-    const last = presets[presets.length - 1];
-    // add at least one "tracker" preset to the list
-    if (!last || last.name !== 'tracker') {
-      presets = presets.concat([{ 'name': 'tracker' }]);
-    }
     return presets;
   }
 
@@ -293,6 +300,7 @@ export class Relay extends EventEmitter {
   createPipe(presets) {
     const pipe = new Pipe({ config: this._config, presets, isUdp: this._transport === 'udp' });
     pipe.on('broadcast', this.onBroadcast.bind(this)); // if no action were caught by presets
+    pipe.on(`pre_${PIPE_DECODE}`, this.onPreDecode);
     pipe.on(`post_${PIPE_ENCODE}`, this.onEncoded);
     pipe.on(`post_${PIPE_DECODE}`, this.onDecoded);
     return pipe;
@@ -306,6 +314,10 @@ export class Relay extends EventEmitter {
       this._pipe && this._pipe.destroy();
       this._inbound && this._inbound.close();
       this._outbound && this._outbound.close();
+      this._tracker && this._tracker.destroy();
+      this._acl && this._acl.destroy();
+      this._tracker = null;
+      this._acl = null;
       this._ctx = null;
       this._pipe = null;
       this._inbound = null;

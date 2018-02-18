@@ -46,7 +46,6 @@ export class Tracker {
   /**
    * print connection track string, and only display the
    * leading and the trailing TRACK_MAX_SIZE / 2
-   * @param tracks
    */
   dump() {
     let strs = [];
