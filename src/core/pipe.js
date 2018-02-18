@@ -162,6 +162,10 @@ export class Pipe extends EventEmitter {
     // args to be injected
     const isUdp = this._isPipingUdp;
     const direct = (buf, isReverse = false) => this.emit(isReverse ? `post_${-direction}` : `post_${direction}`, buf);
+    // check if it's necessary to pipe
+    if (presets.length < 1) {
+      return direct(buffer);
+    }
     // create event chain among presets
     const event = `next_${direction}`;
     const first = presets[0];
