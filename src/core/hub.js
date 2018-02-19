@@ -39,14 +39,12 @@ export class Hub {
     if (!global.libsodium) {
       global.libsodium = _sodium;
     }
+    // terminate if it already started
     if (this._tcpServer !== null) {
       await this.terminate();
     }
-    try {
-      await this._createServer();
-    } catch (err) {
-      logger.error('[hub] fail to create server:', err);
-    }
+    // create then listen
+    await this._createServer();
   }
 
   async terminate() {
@@ -101,6 +99,7 @@ export class Hub {
         port: this._config.local_port
       };
       server.on('proxyConnection', this._onConnection);
+      server.on('error', reject);
       server.listen(address, () => {
         const service = `${this._config.local_protocol}://${this._config.local_host}:${this._config.local_port}`;
         logger.info(`[hub] blinksocks client is running at ${service}`);
@@ -120,15 +119,16 @@ export class Hub {
         logger.info(`[hub] blinksocks server is running at ${service}`);
         resolve(server);
       };
+      let server = null;
       switch (this._config.local_protocol) {
         case 'tcp': {
-          const server = net.createServer();
+          server = net.createServer();
           server.on('connection', this._onConnection);
           server.listen(address, () => onListening(server));
           break;
         }
         case 'ws': {
-          const server = new ws.Server({
+          server = new ws.Server({
             ...address,
             perMessageDeflate: false
           });
@@ -141,7 +141,7 @@ export class Hub {
           break;
         }
         case 'tls': {
-          const server = tls.createServer({ key: [this._config.tls_key], cert: [this._config.tls_cert] });
+          server = tls.createServer({ key: [this._config.tls_key], cert: [this._config.tls_cert] });
           server.on('secureConnection', this._onConnection);
           server.listen(address, () => onListening(server));
           break;
@@ -149,6 +149,7 @@ export class Hub {
         default:
           return reject(Error(`unsupported protocol: "${this._config.local_protocol}"`));
       }
+      server.on('error', reject);
     });
   }
 
