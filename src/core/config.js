@@ -212,6 +212,10 @@ export class Config {
       transports.push(
         new (require('winston-daily-rotate-file'))({
           level: level,
+          // NOTE: There is bug in winston-daily-rotate-file that
+          // we cannot use logger.stream(...).on('log', (log) => {...});
+          // to stream logs back from this transport when set
+          // "json: false" which output non-json lines in logs.
           json: false,
           eol: os.EOL,
           filename: this.log_path,
@@ -385,12 +389,14 @@ export class Config {
       if (typeof server.acl !== 'boolean') {
         throw Error('"server.acl" must be true or false');
       }
-      if (typeof server.acl_conf !== 'string' || server.acl_conf === '') {
-        throw Error('"server.acl_conf" must be a non-empty string');
-      }
-      const conf = path.resolve(process.cwd(), server.acl_conf);
-      if (!fs.existsSync(conf)) {
-        throw Error(`"server.acl_conf" "${conf}" not exist`);
+      if (server.acl) {
+        if (typeof server.acl_conf !== 'string' || server.acl_conf === '') {
+          throw Error('"server.acl_conf" must be a non-empty string');
+        }
+        const conf = path.resolve(process.cwd(), server.acl_conf);
+        if (!fs.existsSync(conf)) {
+          throw Error(`"server.acl_conf" "${conf}" not exist`);
+        }
       }
     }
 
