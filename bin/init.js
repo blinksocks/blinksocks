@@ -74,7 +74,7 @@ module.exports = function init({ isMinimal, isOverwrite }) {
     ],
     'tls_key': 'key.pem',
     'tls_cert': 'cert.pem',
-    'acl': true,
+    'acl': false,
     'acl_conf': 'acl.txt',
     'mux': false,
     'dns': [],
