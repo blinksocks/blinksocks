@@ -14,7 +14,7 @@
     "test": "npm run lint && npm run test:coverage",
     "test:coverage": "cross-env HTTP_PORT=8080 jest --runInBand --silent --coverage --bail",
     "lint": "eslint bin src test pkg",
-    "compile": "cross-env NODE_ENV=production babel src --out-dir lib --minified --ignore __tests__,__mocks__",
+    "compile": "cross-env NODE_ENV=production babel src --out-dir lib --ignore __tests__,__mocks__",
     "prepkg": "npm run compile && rimraf pkg/blinksocks-* pkg/sha256sum.txt",
     "pkg": "pkg --out-path pkg/ --targets node8.9.0-linux-x64,node8.9.0-macos-x64,node8.9.0-win-x64 .",
     "postpkg": "node pkg/postpkg.js",
