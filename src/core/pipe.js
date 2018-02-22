@@ -28,7 +28,7 @@ export class Pipe extends EventEmitter {
   }
 
   get presets() {
-    return this._presets;
+    return this._rawPresets;
   }
 
   constructor({ config, presets, isUdp = false }) {
