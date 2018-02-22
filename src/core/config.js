@@ -186,17 +186,8 @@ export class Config {
   }
 
   _initLogger(json) {
-    // log_path & log_level
-    const absolutePath = path.resolve(process.cwd(), json.log_path || '.');
-    let isFile = false;
-    if (fs.existsSync(absolutePath)) {
-      isFile = fs.statSync(absolutePath).isFile();
-    } else if (path.extname(absolutePath) !== '') {
-      isFile = true;
-    }
-
     // log_path, log_level, log_max_days
-    this.log_path = isFile ? absolutePath : path.join(absolutePath, `bs-${this.is_client ? 'client' : 'server'}.log`);
+    this.log_path = Config.getLogFilePath(json.log_path);
     this.log_level = (json.log_level !== undefined) ? json.log_level : 'info';
     this.log_max_days = (json.log_max_days !== undefined) ? json.log_max_days : 0;
 
@@ -225,6 +216,17 @@ export class Config {
     }
 
     logger.configure({ level, transports });
+  }
+
+  static getLogFilePath(log_path) {
+    const absolutePath = path.resolve(process.cwd(), log_path || '.');
+    let isFile = false;
+    if (fs.existsSync(absolutePath)) {
+      isFile = fs.statSync(absolutePath).isFile();
+    } else if (path.extname(absolutePath) !== '') {
+      isFile = true;
+    }
+    return isFile ? absolutePath : path.join(absolutePath, `bs-${this.is_client ? 'client' : 'server'}.log`);
   }
 
   static test(json) {
