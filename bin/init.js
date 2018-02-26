@@ -25,7 +25,7 @@ function getRandomInt(min, max) {
   return Math.floor(crypto.randomBytes(1)[0] / 0xff * (max - min)) + min;
 }
 
-module.exports = function init({ isMinimal, isOverwrite }) {
+module.exports = function init({ isMinimal, isOverwrite, isDryRun = false }) {
   const key = random('abcdefghjkmnpqrstuvwxyz23456789!@#$%^&*()_+<>?:|{}-=[];,./ABCDEFGHJKLMNPQRSTUVWXYZ', 16);
   const port = getRandomInt(1024, 65535);
   const timeout = getRandomInt(200, 1000);
@@ -99,6 +99,10 @@ module.exports = function init({ isMinimal, isOverwrite }) {
     delete serverJson.log_path;
     delete serverJson.log_level;
     delete serverJson.log_max_days;
+  }
+
+  if (isDryRun) {
+    return { clientJson, serverJson };
   }
 
   const clientJsonPath = 'blinksocks.client.json';
