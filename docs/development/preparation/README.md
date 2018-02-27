@@ -1,6 +1,6 @@
 # Preparation
 
-## Get the source
+## Get source code
 
 ```
 $ git clone https://github.com/blinksocks/blinksocks
@@ -14,7 +14,7 @@ $ cd blinksocks && npm install
 
 ## Start blinksocks
 
-Prepare your configurations(**blinksocks.client.json** and **blinksocks.server.json**) in the project root folder, then start to test:
+Before start blinksocks, you should prepare two configurations(**blinksocks.client.json** and **blinksocks.server.json**) in the **project root folder**.
 
 ### Debug Mode(Use Chrome Developer Tool)
 
@@ -25,41 +25,32 @@ $ npm run debug:client
 $ npm run debug:server
 ```
 
-Then open **chrome://inspect/#devices** in Chrome, configure **Target discovery settings** then click **inspect** below **Remote Target**.
+Then open **chrome://inspect/#devices**, configure **Target discovery settings** then click **inspect** below **Remote Target**.
 
 ### Production Mode
 
+First compile **src** to **lib**:
+
 ```
 $ npm run compile
+```
+
+Then run:
+
+```
 $ npm run client
 $ npm run server
 ```
 
-This will run compiled code under **lib/**.
+## Unit Test & e2e Test
 
-## Test
-
-Any application support HTTP/Socks5/Socks4/Socks4a can be used for testing.
-
-For example(use curl):
+You should run unit test and e2e test as following and make sure all tests pass before `git commit`:
 
 ```
-# Socks5
-$ curl -L --socks5 localhost:1080 https://www.google.com
-$ curl -L --socks5-hostname localhost:1080 https://www.google.com
-
-# Socks4
-$ curl -L --socks4 localhost:1080 https://www.google.com
-
-# Socks4a
-$ curl -L --socks4a localhost:1080 https://www.google.com
-
-# HTTP(S)
-$ curl -L -x localhost:1080 https://www.google.com
-$ curl -L -p localhost:1080 https://www.google.com
+$ npm run test
 ```
 
-## Compile
+## Publish
 
 For production use, we are running our code under `lib` not `src`, so compilation is necessary.
 
@@ -69,7 +60,11 @@ Compilation of blinksocks is ultra easy:
 $ npm run compile
 ```
 
-This will compile `src/*` to `lib/*`.
+After compile, we can change version in `package.json` then publish a package to npm registry:
+
+```
+$ npm publish
+```
 
 ## Package
 
@@ -79,5 +74,4 @@ For users don't have Node.js installed, we use [zeit/pkg](https://github.com/zei
 $ npm run pkg
 ```
 
-This will generate compressed executables for different platforms named `blinksocks-{platform}-${arch}-${version}.gz`.
-And can be distribute to target platform and architecture at once.
+This will generate compressed executables for different platforms named `blinksocks-{platform}-${arch}-${version}.gz`. And can be distribute to target platform at once.

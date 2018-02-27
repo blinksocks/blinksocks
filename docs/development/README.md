@@ -1,5 +1,5 @@
 # Development Overview
 
 1. [Preparation](preparation)
-2. [Guideline](guideline)
+2. [Architecture](architecture)
 3. [Custom Preset](custom-preset)

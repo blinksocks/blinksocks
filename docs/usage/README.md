@@ -5,7 +5,7 @@ Once installed, you can access blinksocks via CLI:
 ```
 $ blinksocks --help
 
-  blinksocks v2.7.0
+  blinksocks v2.9.0
 
   Usage: blinksocks [command] [options] ...
 
@@ -37,20 +37,20 @@ $ blinksocks --help
 
 ```
 
-`blinksocks init` will generate `blinksocks.client.json` and `blinksocks.server.json` with a random key/port/timeout and default settings.
+`blinksocks init` will generate `blinksocks.client.json` and `blinksocks.server.json` with some random and default settings.
 
 After init, you should edit `blinksocks.client.json` to tell blinksocks client where is the server:
 
 ```
 {
-  "servers": [{
+  "server": {
     "service": "tcp://<server_address>:<server_port>",
     ...
-  }]
+  }
 }
 ```
 
-> You may also want to change default protocol stack(presets) or other settings, please check out [--config](../config) for explanation of every option.
+You can also check out [Configuration](../config) for explanation of every option.
 
 ## Run in production
 
@@ -58,9 +58,9 @@ After init, you should edit `blinksocks.client.json` to tell blinksocks client w
 
 > NOTE: you can only use pm2 on Linux/macOS due to a bug of pm2 on Windows. [#93](https://github.com/blinksocks/blinksocks/issues/93)
 
-You can take advantages of [pm2](https://github.com/unitech/pm2) to run blinksocks in the production.
+You can take advantages of [pm2](https://github.com/unitech/pm2) to run blinksocks in production.
 
-Install `pm2` before running blinksocks in the production:
+Install `pm2` before running blinksocks in production:
 
 ```
 $ npm install -g pm2
@@ -81,7 +81,7 @@ $ pm2 start blinksocks -i 2 -- -c blinksocks.server.json
 ### Using executables
 
 ```
-// download archive
+// download archive from releases page
 $ wget https://github.com/blinksocks/blinksocks/releases/download/v2.5.3/blinksocks-linux-x64-v2.5.3.gz
 
 // you'd better check sha256sum listed in sha256sum.txt
@@ -97,39 +97,10 @@ $ chmod +x blinksocks-linux-x64-v2.5.3
 $ ./blinksocks-linux-x64-v2.5.3 --help
 ```
 
-## For Firefox/Google Chrome and more...
+## Work with browsers
 
-You may want to use blinksocks to surf the Internet with **browsers**, so I give an advise here.
+Most of the time, you are surfing the Internet via web browsers such as Firefox or Google Chrome.
 
-For Google Chrome, [SwitchyOmega](https://github.com/FelisCatus/SwitchyOmega) extension is a great approach to proxy your connections by rules to blinksocks via socks5/socks4(a)/http.
+You can now make use of [SwitchyOmega](https://github.com/FelisCatus/SwitchyOmega) to proxy your connections by rules to blinksocks via socks5/socks4(a)/http protocols.
 
-For FireFox, you can configure proxy at `Preferences - Advanced - Network - Settings`.
-
-## Deploy(Using Docker)
-
-We can use Docker to auto-deploy a blinksocks **server**.
-
-### 1. Get image
-
-You can build an image manually or pull it from docker hub:
-
-* Build an image
-
-```
-$ cd <project-folder>/deploy
-$ docker build --tag <user>/blinksocks:<version> --no-cache .
-```
-
-* Pull from docker hub
-
-```
-$ docker pull blinksocks:<version>
-```
-
-### 2. Run in a container
-
-Container will expose `1080` port, so you must map a host port to `1080` via `-p`.
-
-```
-$ docker run -d -p 7777:1080 blinksocks:<version>
-```
+For FireFox, you can also configure proxy in `Preferences - Advanced - Network - Settings`.

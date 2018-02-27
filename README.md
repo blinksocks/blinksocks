@@ -17,23 +17,20 @@
 ## Features
 
 * Cross-platform: running on Linux, Windows and macOS.
-* Lightweight proxy interface for Socks5/Socks4/Socks4a and HTTP(S).
-* Transmit data over TCP/UDP, [TLS] or [WebSocket].
-* [Multiplexing](docs/config#multiplexing) over TCP/TLS/WS.
-* A variety of customizable protocols and functional middlewares: using [presets](docs/presets).
-* [External preset import].
-* Easy and powerful Access Control([ACL]) and Traffic Control([TC]).
-* Support [shadowsocks], [shadowsocksR], [v2ray vmess] protocols.
-* **Out of the box** distribution and deployment.
-* **Experimental**: [dynamic protocol stack](suites).
-* Portable versions are available: [download here](https://github.com/blinksocks/blinksocks/releases).
+* Lightweight proxy interfaces: Socks5/Socks4/Socks4a and HTTP.
+* Multiple Transport Layers: TCP, UDP, [TLS] and [WebSocket].
+* TLS/TLS/WebSocket [multiplexing].
+* Convenient protocol [customization].
+* Access Control List([ACL]) support.
+* Built-In [shadowsocks], [shadowsocksR], [v2ray vmess] protocols.
+* Out of the box distribution and deployment.
+* [Dynamic Protocol Stack]\(**experimental**\).
 
 ## Getting Started
 
 ### Requirements
 
-blinksocks is built on top of [Node.js](https://nodejs.org), if you want to use it in an ordinary way or do some hacking,
-please install Node.js(**v6.x and above**) on your operating system.
+blinksocks is built on top of [Node.js](https://nodejs.org), if you want to use it in an ordinary way or do some hacking, please install **Node.js(v6.x and above)** on your operating system.
 
 ### Install or Upgrade
 
@@ -61,19 +58,14 @@ $ blinksocks --help
 
 **executable version(~~Node.js~~, not GUI)**
 
+Tips: You can [download](https://github.com/blinksocks/blinksocks/releases) precompiled executables for different platforms and launch it directly without having Node.js installed.
+
 ```
 $ ./blinksocks --help    // Linux and macOS
 $ blinksocks.exe --help  // Windows
 ```
 
-You can [download](https://github.com/blinksocks/blinksocks/releases) precompiled executables for different platforms and launch it directly without having Node.js installed.
-
-> For configuring blinksocks, please refer to [Configuration](docs/config).
-
-## GUI ready(out-of-date)
-
-For desktop use, you can download official [blinksocks-desktop](https://github.com/blinksocks/blinksocks-desktop),
-a cross-platform GUI for blinksocks.
+For configuring blinksocks, please refer to [Configuration](docs/config).
 
 ## Documents
 
@@ -86,7 +78,7 @@ a cross-platform GUI for blinksocks.
 ### For Developers
 
 1. [Preparation](docs/development/preparation)
-2. [Guideline](docs/development/guideline)
+2. [Architecture](docs/development/architecture)
 3. [Custom Preset](docs/development/custom-preset)
 4. [Benchmark](docs/benchmark)
 
@@ -98,11 +90,12 @@ See [contributors](https://github.com/blinksocks/blinksocks/graphs/contributors)
 
 Apache License 2.0
 
-[TLS]: https://github.com/blinksocks/blinksocks/tree/master/docs/config#blinksocks-over-tls
-[WebSocket]: https://github.com/blinksocks/blinksocks/tree/master/docs/config#blinksocks-over-websocket
-[ACL]: https://github.com/blinksocks/blinksocks/tree/master/docs/presets#access-control
-[TC]: https://github.com/blinksocks/blinksocks/tree/master/docs/presets#access-control
-[External preset import]: https://github.com/blinksocks/blinksocks/tree/master/docs/presets#use-external-preset
+[TLS]: docs/config#blinksocks-over-tls
+[WebSocket]: docs/config#blinksocks-over-websocket
+[multiplexing]: docs/config#multiplexing
+[customization]: docs/development/custom-preset
+[ACL]: docs/config#access-control-list
 [shadowsocks]: docs/presets/RECOMMENDATIONS.md#work-with-shadowsocks
 [shadowsocksR]: docs/presets/RECOMMENDATIONS.md#work-with-shadowsocksr
 [v2ray vmess]: docs/presets/RECOMMENDATIONS.md#work-with-v2ray-vmess
+[Dynamic Protocol Stack]: suites

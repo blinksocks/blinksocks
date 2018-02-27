@@ -9,6 +9,6 @@
 ## For Developers
 
 1. [Preparation](development/preparation)
-2. [Guideline](development/guideline)
+2. [Architecture](development/architecture)
 3. [Custom Preset](development/custom-preset)
 4. [Benchmark](benchmark)

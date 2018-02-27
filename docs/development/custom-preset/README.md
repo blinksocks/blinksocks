@@ -27,22 +27,22 @@ const blinksocks = require('blinksocks');
 
 class MyCustomPreset extends blinksocks.IPreset {
 
-  constructor(params) {
-    super();
-    console.log('hello from my custom preset', params);
+  constructor(props) {
+    super(props);
+    console.log('hello from my custom preset');
   }
 
   // implement some of the methods you need
 
 }
 
-// static methods
+// implement static methods
 
-MyCustomPreset.checkParams = function checkParams(params) {
+MyCustomPreset.onCheckParams = function onCheckParams(params) {
 
 };
 
-MyCustomPreset.onInit = function onInit(params) {
+MyCustomPreset.onCache = function onCache(params, store) {
 
 };
 
@@ -51,7 +51,7 @@ module.exports = MyCustomPreset;
 
 ### Hooks
 
-You can implement some of the following methods to interpret data flow:
+You can implement some of the following methods to interact with data stream:
 
 |  METHODS  |                                    DESCRIPTION                                    |
 | :-------- | :-------------------------------------------------------------------------------- |
@@ -85,7 +85,7 @@ clientOut({buffer, next, broadcast, direct, fail}) {
 
 ### Presets Decoupling
 
-When communicate with other presets, you can pass an action to **broadcast(action)**.
+When communicate with other presets, you can emit an action by **broadcast(action)**.
 
 **Action** is a plain object which only requires a `type` field:
 
@@ -97,7 +97,7 @@ When communicate with other presets, you can pass an action to **broadcast(actio
 }
 ```
 
-After broadcast, **all** other presets will receive the action in **onNotified(action)** immediately:
+After broadcast, **all** other presets will receive the action in **onNotified(action)** synchronously:
 
 ```js
 const blinksocks = require('blinksocks');
@@ -116,8 +116,6 @@ class MyCustomPreset extends blinksocks.IPreset {
 
 module.exports = MyCustomPreset;
 ```
-
-> NOTE: `onNotified` is called **synchronous** when broadcast().
 
 ### Handle Address
 
@@ -170,23 +168,20 @@ module.exports = MyCustomPreset;
  
 ### Check Parameters
 
-Your presets may require several parameters, and you can validate them in `constructor(params)`(every time a connection created)
-or `checkParams(params)`(only once):
+Your presets may require several parameters, and you can validate them in:
+ 
+* `constructor({ config, params })`(every time a connection created)
+* `onCheckParams(params)`(only once, recommended)
 
 ```js
 const blinksocks = require('blinksocks');
 
 class MyCustomPreset extends blinksocks.IPreset {
 
-  constructor(params) {
-    super();
-    // here
-  }
-
 }
 
 // check params passed to the preset, if any errors, should throw directly
-MyCustomPreset.checkParams = function checkParams(params) {
+MyCustomPreset.onCheckParams = function onCheckParams(params) {
   // or here
 };
 
@@ -195,7 +190,7 @@ module.exports = MyCustomPreset;
 
 ### Improve Performance
 
-You can initialize some shared/immutable data among connections in `onInit(params)` to improve performance:
+You can initialize some shared/immutable data among connections in `onCache(params)` to improve performance:
 
 ```js
 const blinksocks = require('blinksocks');
@@ -204,26 +199,32 @@ class MyCustomPreset extends blinksocks.IPreset {
 
 }
 
-// you can make some cache in this function
-MyCustomPreset.onInit = function onInit(params) {
-
+/**
+* you can make some cache in store or just return something
+* you want to put in store, then access store later in other
+* hook functions via this.getStore()
+* @param params
+* @param store
+*/
+MyCustomPreset.onCache = function onCache(params, store) {
+  // or return something
 };
 
 module.exports = MyCustomPreset;
 ```
 
-### Access User Configuration
+### Access Configuration
 
-You can access user configuration directly from the `global` object anywhere in your preset class:
+You can access configuration from `this._config` in your preset:
 
 ```js
 const blinksocks = require('blinksocks');
 
 class MyCustomPreset extends blinksocks.IPreset {
 
-  constructor() {
-    super();
-    console.log(__KEY__);
+  constructor(props) {
+    super(props);
+    console.log(this._config.key);
   }
 
 }
@@ -231,21 +232,7 @@ class MyCustomPreset extends blinksocks.IPreset {
 module.exports = MyCustomPreset;
 ```
 
-**Available Items**
-
-|          NAME          |         NAME         |
-| :--------------------- | :------------------- |
-| \_\_IS_SERVER\_\_      | \_\_DNS\_\_          |
-| \_\_IS_CLIENT\_\_      | \_\_DNS_EXPIRE\_\_   |
-| \_\_LOCAL_HOST\_\_     | \_\_TRANSPORT\_\_    |
-| \_\_LOCAL_PORT\_\_     | \_\_TLS_CERT\_\_     |
-| \_\_LOCAL_PROTOCOL\_\_ | \_\_TLS_KEY\_\_      |
-| \_\_SERVER_HOST\_\_    | \_\_TIMEOUT\_\_      |
-| \_\_SERVER_PORT\_\_    | \_\_REDIRECT\_\_     |
-| \_\_SERVERS\_\_        | \_\_LOG_PATH\_\_     |
-| \_\_KEY\_\_            | \_\_LOG_LEVEL\_\_    |
-| \_\_PRESETS\_\_        | \_\_LOG_MAX_DAYS\_\_ |
-| \_\_WORKERS\_\_        |                      |
+For full items you can access to, please read [Config](../../../src/core/config.js).
 
 ### Helper Functions
 
@@ -265,4 +252,8 @@ The same as `fail` parameter in each hook function.
 
 **this.readProperty(presetName, propertyName)**
 
-Direclty read a property from other presets, this is useful when your logic have to depend on other presets.
+Directly read a property from other presets, this is useful when your logic have to depend on other presets.
+
+**this.getStore()**
+
+Returns the store you modified in or returned from `onCache(params, store)`.

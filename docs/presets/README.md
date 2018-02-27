@@ -1,15 +1,6 @@
 # Presets
 
-Presets are chaining and composable, built-in presets are listed here. If you want to customize a new preset, feel free to read [this](../development/guideline#preset) first.
-
-## Built-In Presets
-
-**functional**
-
-* [stats](#stats)
-* [tracker](#tracker)
-* [access-control](#access-control)
-* [auto-conf](#auto-conf)
+Presets are chaining and composable, built-in presets are listed here.
 
 **basic**
 
@@ -40,15 +31,14 @@ Presets are chaining and composable, built-in presets are listed here. If you wa
 
 **others**
 
+* [auto-conf](#auto-conf)*
 * [aead-random-cipher](#aead-random-cipher)
 
-> You **MUST** put preset signed with (*) to the presets list if you want to relay application data to multiple destinations.
+> You **MUST** provide one and only one preset signed with (*) to the presets list if you want to relay application data to dynamic destinations.
 
-## Use External Preset
+## Import External Preset
 
-If you installed blinksocks via **npm install -g blinksocks**, you are free to use external presets.
-
-To use external presets, you can:
+If you have installed blinksocks by **npm install -g blinksocks**, you are free to use external presets:
 
 **Use public npm package:**
 
@@ -60,7 +50,7 @@ $ npm install -g blinksocks-preset-demo
 "presets": [{"name": "blinksocks-preset-demo"}]
 ```
 
-**Use private custom module:**
+**Use private package:**
 
 ```
 "presets": [{"name": "/path/to/your/preset.js"}]
@@ -68,175 +58,9 @@ $ npm install -g blinksocks-preset-demo
 
 > When use external preset, make sure that preset meets the requirements of the current Node.js environment.
 
-To write your own preset, please refer to [Custom Preset](../development/custom-preset).
+To customize your own preset, please refer to [Custom Preset](../development/custom-preset).
 
 ----
-
-## [stats]
-
-This preset perform statistics among traffic via this preset, you can put it anywhere in preset list to obtain **summary/instant/process** information of specific preset traffic. This preset has no side-effect to the traffic through it.
-
-|     PARAMS      |         DESCRIPTION          | DEFAULT |
-| :-------------- | :--------------------------- | :------ |
-| save_to         | path to the result json file | -       |
-| sample_interval | sample interval in seconds   | 30      |
-| save_interval   | save interval in seconds     | 60      |
-
-```
-"presets": [{
-  "name": "ss-base"
-}, {
-  "name": "ss-stream-cipher",
-  "params": {
-    "method": "aes-256-cfb"
-  }
-}, {
-  "name": "stats",
-  "params": {
-    "save_to": "stats.json",
-    "sample_interval": 1,
-    "save_interval": 10
-  }
-}]
-```
-
-```
-// stats.json
-{
-  "sample": {
-    "from": 1503920985192,
-    "to": 1503921026263,
-    "duration": 41071
-  },
-  "summary": {
-    "maxOutSpeed": 105254,
-    "maxInSpeed": 158,
-    "maxConnections": 2,
-    "totalOutBytes": 130360,
-    "totalOutPackets": 34,
-    "totalInBytes": 314,
-    "totalInPackets": 2,
-    "totalBytes": 130674,
-    "totalPackets": 36,
-    "totalErrors": 0
-  },
-  "instant": {
-    "outSpeed": 0,
-    "inSpeed": 0,
-    "totalConnections": 0,
-    "errorRate": 0,
-    "outBytesPerSecond": 3174.0157288597798,
-    "outPacketsPerSecond": 0.8278347252319155,
-    "inBytesPerSecond": 7.645297168318279,
-    "inPacketsPerSecond": 0.04869616030775974,
-    "totalBytesPerSecond": 3181.6610260280977,
-    "totalPacketsPerSecond": 0.8765308855396753
-  },
-  "process": {
-    "upTime": 42.067,
-    "cpuUsage": {
-      "user": 1219598,
-      "system": 96237
-    },
-    "memoryUsage": {
-      "rss": 54575104,
-      "heapTotal": 28311552,
-      "heapUsed": 21701240,
-      "external": 3688374
-    }
-  }
-}
-```
-
-## [tracker]
-
-Track data send/receive events via this preset, and print a part of them after connection closed.
-
-```
-"presets": [
-  ...
-  {"name": "tracker"},
-  ...
-]
-```
-
-And you can get the track message in your terminal and log files:
-
-```
-[tracker] summary(out/in = 14/9, 5191b/3431b) abstract(127.0.0.1:55566 play.google.com:443 u 555 d 394 u 616 d 165 u 221 156 934 795 d 74 u 43 d 1201 u 51 174 531 d 51 573 u 51 172 841 d 51 854 u 51 d 68)
-```
-
-## [access-control]
-
-Easy and powerful Access Control(ACL) to each connection.
-
-> NOTE: This preset is for server use only.
-
-|  PARAMS   |                          DESCRIPTION                          | DEFAULT |
-| :-------- | :------------------------------------------------------------ | :------ |
-| acl       | A path to a text file which contains a list of rules in order | -       |
-| max_tries | The maximum tries from client                                 | 60      |
-
-> NOTE: you'd better put this preset to the last of the preset list.
-
-```
-"presets": [
-  ...,
-  {
-    "name": "access-control",
-    "params": {
-      "acl": "acl.txt",
-      "max_tries": 60
-    }
-  }
-]
-```
-
-**acl.txt** for example:
-
-```
-# [addr[/mask][:port]] [ban] [max_upload_speed(/s)] [max_download_speed(/s)]
-
-example.com     1            # prevent access to example.com
-example.com:*   1            # prevent access to example.com:*, equal to above
-example.com:443 1            # prevent access to example.com:443 only
-*:25            1            # prevent access to SMTP servers
-*:*             1            # prevent all access from/to all endpoints
-127.0.0.1       1            # ban localhost
-192.168.0.0/16  1            # ban hosts in 192.168.*.*
-172.27.1.100    0 120K       # limit upload speed to 120KB/s
-172.27.1.100    0 -    120K  # limit download speed to 120KB/s
-172.27.1.100    0 120K 120K  # limit upload and download speed to 120KB/s
-```
-
-Rules in **acl.txt** has a priority from lower to higher.
-
-If server fail to process client(**by host**) requests over **max_tries** times, client will be **baned immediately**, and a new rule will be appended to the **acl** file.
-
-To recovery unwary ban, you can edit acl file, remove unwanted rule without restarting the program.
-
-> NOTE: rules will take effect immediately each time **acl.txt** was updated.
-
-## [auto-conf]
-
-An **experimental** preset used for auto-configure preset list. It will randomly choose a suite from `suites` for each connection.
-
-| PARAMS |                    DESCRIPTION                    | DEFAULT |
-| :----- | :------------------------------------------------ | :------ |
-| suites | A json file includes a set of preset combinations | -       |
-
-```
-"presets": [
-  {
-    "name": "auto-conf",
-    "params": {
-      "suites": "suites.json"
-    }
-  }
-]
-```
-
-> You can custom `suites.json` or just use one of the [official versions](../../suites).
 
 ## [base-auth]
 
@@ -469,6 +293,27 @@ A TLS1.2 obfuscator, do TLS handshake using SessionTicket TLS mechanism, transfe
 ]
 ```
 
+## [auto-conf]
+
+An **experimental** preset used for auto-configure preset list. It will randomly choose a suite from `suites` for each connection.
+
+| PARAMS |                    DESCRIPTION                    | DEFAULT |
+| :----- | :------------------------------------------------ | :------ |
+| suites | A json file includes a set of preset combinations | -       |
+
+```
+"presets": [
+  {
+    "name": "auto-conf",
+    "params": {
+      "suites": "suites.json"
+    }
+  }
+]
+```
+
+> You can custom `suites.json` or just use one of the [official versions](../../suites).
+
 ## [aead-random-cipher]
 
 This preset is based on **ss-aead-cipher**, but added random padding in the front of **each chunk**. This preset inherited
@@ -503,10 +348,6 @@ all features from **ss-aead-cipher** and prevent server from being detected by p
 
 Here is a [list](./RECOMMENDATIONS.md) of recommended conbinations.
 
-[stats]: ../../src/presets/stats.js
-[tracker]: ../../src/presets/tracker.js
-[access-control]: ../../src/presets/access-control.js
-[auto-conf]: ../../src/presets/auto-conf.js
 [base-auth]: ../../src/presets/base-auth.js
 [ss-base]: ../../src/presets/ss-base.js
 [ss-stream-cipher]: ../../src/presets/ss-stream-cipher.js
@@ -519,5 +360,6 @@ Here is a [list](./RECOMMENDATIONS.md) of recommended conbinations.
 [obfs-random-padding]: ../../src/presets/obfs-random-padding.js
 [obfs-http]: ../../src/presets/obfs-http.js
 [obfs-tls1.2-ticket]: ../../src/presets/obfs-tls1.2-ticket.js
+[auto-conf]: ../../src/presets/auto-conf.js
 [aead-random-cipher]: ../../src/presets/aead-random-cipher.js
 [Server Name Indication]: https://en.wikipedia.org/wiki/Server_Name_Indication

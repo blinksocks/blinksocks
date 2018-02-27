@@ -13,34 +13,30 @@ $ blinksocks init
 ```
 {
   "service": "socks5://127.0.0.1:1080",
-  "servers": [
-    {
-      "enabled": true,
-      "service": "tcp://127.0.0.1:19997",
-      "key": "<=p(^tr;DpEfVe<m",
-      "presets": [
-        {
-          "name": "ss-base"
-        },
-        {
-          "name": "obfs-random-padding"
-        },
-        {
-          "name": "ss-stream-cipher",
-          "params": {
-            "method": "aes-128-ctr"
-          }
+  "server": {
+    "service": "tcp://127.0.0.1:19997",
+    "key": "<=p(^tr;DpEfVe<m",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "obfs-random-padding"
+      },
+      {
+        "name": "ss-stream-cipher",
+        "params": {
+          "method": "aes-128-ctr"
         }
-      ],
-      "tls_cert": "cert.pem",
-      "mux": false,
-      "mux_concurrency": 10
-    }
-  ],
+      }
+    ],
+    "tls_cert": "cert.pem",
+    "mux": false,
+    "mux_concurrency": 10
+  },
   "dns": [],
   "dns_expire": 3600,
   "timeout": 221,
-  "workers": 0,
   "log_path": "bs-client.log",
   "log_level": "info",
   "log_max_days": 30
@@ -74,58 +70,59 @@ $ blinksocks init
   "dns_expire": 3600,
   "timeout": 221,
   "redirect": "",
-  "workers": 0,
   "log_path": "bs-server.log",
   "log_level": "info",
   "log_max_days": 30
 }
 ```
 
-|        KEY         |                         DESCRIPTION                          | OPTIONAL |     DEFAULT     |                                  REMARKS                                   |
-| :----------------- | :----------------------------------------------------------- | :------- | :-------------- | :------------------------------------------------------------------------- |
-| service            | local service address                                        | *        | -               | \<protocol\>://\<host\>:\<port\>\[?params\], e.g, "socks://127.0.0.1:1080" |
-| servers            | a list of server                                             | Yes      | -               | **CLIENT ONLY**                                                            |
-| servers[i].enabled | allow to use this server or not                              | -        | -               | -                                                                          |
-| servers[i].service | see service above                                            | -        | -               | -                                                                          |
-| servers[i].key     | server key for encryption                                    | -        | -               | -                                                                          |
-| presets            | preset list in order                                         | -        | -               | see [presets]                                                              |
-| presets[i].name    | preset name                                                  | -        | -               | -                                                                          |
-| presets[i].params  | preset params                                                | -        | -               | -                                                                          |
-| tls_key            | private key for TLS                                          | -        | -               | required on server if \<protocol\> is "tls"                                |
-| tls_cert           | server certificate                                           | -        | -               | required on both client and server if \<protocol\> is "tls"                |
-| timeout            | timeout for each connection                                  | Yes      | 600             | in seconds                                                                 |
-| mux                | enable multiplexing over TCP/TLS/WS                          | Yes      | false           | -                                                                          |
-| mux_concurrency    | the max mux connection established between client and server | Yes      | 10              | **CLIENT ONLY**                                                            |
-| redirect           | target to redirect when preset fail                          | Yes      | ""              | **SERVER ONLY** \<host\>:\<port\>                                          |
-| workers            | the number of sub-process                                    | Yes      | 0               | enable cluster mode when workers > 0                                       |
-| dns                | an ip list of DNS server                                     | Yes      | []              | -                                                                          |
-| dns_expire         | DNS cache expiration time                                    | Yes      | 3600            | in seconds                                                                 |
-| log_path           | log file path                                                | Yes      | "bs-[type].log" | a relative/absolute directory or file to put logs in                       |
-| log_level          | log level                                                    | Yes      | "info"          | ['error', 'warn', 'info', 'verbose', 'debug', 'silly']                     |
-| log_max_days       | the max of days a log file will be saved                     | Yes      | 30              | remove this option if you want to keep all log files                       |
+|        KEY         |                         DESCRIPTION                          |     DEFAULT     |                                  REMARKS                                   |
+| :----------------- | :----------------------------------------------------------- | :-------------- | :------------------------------------------------------------------------- |
+| service            | local service address                                        | -               | `<protocol>://<host>:<port>[?params]`, e.g, "socks://127.0.0.1:1080"       |
+| server             | remote server config                                         | -               | **CLIENT ONLY**                                                            |
+| server.service     | remote service address                                       | -               | `<protocol>://<host>:<port>`                                               |
+| server.key         | remote server master key                                     | -               | -                                                                          |
+| presets            | an ordered list of presets to build a protocol stack         | -               | see [presets]                                                              |
+| presets[i].name    | preset name                                                  | -               | -                                                                          |
+| presets[i].params  | preset params                                                | -               | -                                                                          |
+| tls_key            | private key for TLS                                          | -               | required on server if `<protocol>` is "tls"                                |
+| tls_cert           | certificate for TLS                                          | -               | required on both client and server if `<protocol>` is "tls"                |
+| acl                | enable access control list or not                            | false           | **SERVER ONLY**                                                            |
+| acl_conf           | access control list configuration file                       | -               | **SERVER ONLY**, see below                                                 |
+| timeout            | timeout for each connection                                  | 600             | in seconds                                                                 |
+| mux                | enable multiplexing or not                                   | false           | -                                                                          |
+| mux_concurrency    | the max mux connection established between client and server | 10              | **CLIENT ONLY**                                                            |
+| redirect           | target address to redirect when preset fail to process       | ""              | **SERVER ONLY** `<host>:<port>`                                            |
+| dns                | a list of DNS server IPs                                     | []              | -                                                                          |
+| dns_expire         | in-memory DNS cache expiration time                          | 3600            | in seconds                                                                 |
+| log_path           | log file path                                                | "bs-[type].log" | a relative/absolute directory or a file to put logs in                     |
+| log_level          | log level                                                    | "info"          | ['error', 'warn', 'info', 'verbose', 'debug', 'silly']                     |
+| log_max_days       | the max of days a log file will be saved                     | 30              | remove this option if you want to keep all log files                       |
 
 ### Service
 
 `service` is a convenient way to specify what kind of service should be created **locally**.
 
-The `<protocol>` should be `tcp`, `socks`(aliases: `socks5`, `socks4`, `socks4a`), `http`(aliases: `https`) on client side, or `tcp`, `tls`, `ws` on server side.
+The `<protocol>` should be:
+
+* On client side: `tcp`, `socks`/`socks5`/`socks4`/`socks4a` or `http`/`https`
+* On server side: `tcp`, `tls` or `ws`.
 
 #### Service Params
 
-**?forward=\<host\>:\<port\>**
+**?forward=<host>:<port>**
 
-You can proxy application data to a **permanent destination** via server by providing **?forward** parameter:
+You can proxy application data to a **permanent destination** via server by providing **?forward** parameter along with **tcp://** protocol:
 
 ```
 // blinksocks.client.json
 {
   "service": "tcp://localhost:1080?forward=localhost:1082",
-  "servers": [{
-    "enabled": true,
+  "server": {
     "service": "tcp://localhost:1081",
     "presets": [...],
     ...
-  }],
+  },
   ...
 }
 ```
@@ -137,21 +134,13 @@ applications <----> [blinksocks client] <----> [blinksocks server] <----> localh
  (iperf -c)           localhost:1080             localhost:1081             (iperf -s)
 ```
 
-In this case, it's useful to use [iperf](https://en.wikipedia.org/wiki/Iperf) to test network performance between client and server through different presets.
+In this case, it uses [iperf](https://en.wikipedia.org/wiki/Iperf) to test network performance between client and server through different protocol stack.
 
 > Note that on client side, `tcp://` cannot obtain proxy destination by itself, so you MUST provide **?forward** in service as well.
 
-### Servers(Client Side Only)
-
-`servers` is a list of blinksocks/shadowsocks servers. Each server consists at least `enabled`, `service`, `key` and `presets`.
-
-You can temporary disable a server by setting `enabled: false`.
-
-blinksocks will detect which server is the fastest in intervals using [balancer.js].
-
 ### Presets
 
-`presets` is a list of procedures, each preset is defined as:
+`presets` is a list of procedures which builds a specific protocol stack, each preset must be defined as:
 
 ```json
 {
@@ -162,13 +151,15 @@ blinksocks will detect which server is the fastest in intervals using [balancer.
 }
 ```
 
-`presets` are chaining from the first to the last, and are almost free to compose.
+`presets` process data stream from the first to the last. You can add/remove/modify them freely.
 
-For usage about presets, please check out [presets].
+For more information about presets, please check out [presets].
 
 ### blinksocks over TLS
 
-By default, blinksocks use "tcp" as transport, but you can also take advantage of TLS technology to protect your data. To use blinksocks over TLS, you should:
+By default, blinksocks use "tcp" as transport, but you can take advantage of TLS technology to protect your data well.
+
+To enable blinksocks over TLS, you should:
 
 1. Generate `key.pem` and `cert.pem` on server
 
@@ -181,6 +172,8 @@ $ openssl req -x509 -newkey rsa:4096 -nodes -keyout key.pem -out cert.pem -days 
 
 2. Server config
 
+Change `tcp://` to `tls://`, then provide `tls_key` and `tls_cert`:
+
 ```
 {
   "service": "tls://<host>:<port>",
@@ -192,26 +185,17 @@ $ openssl req -x509 -newkey rsa:4096 -nodes -keyout key.pem -out cert.pem -days 
 
 3. Client config
 
+Change server's `tcp://` to `tls://`, then provide `tls_cert`:
+
 ```
 {
   ...
-  "servers": [{
-    ...
-    "service": "tls://<Common Name>:<port>", // note here
+  "server": {
+    "service": "tls://<Common Name>:<port>", // take care of <Common Name>
     "tls_cert": "cert.pem",
     ...
-  }],
+  },
   ...
-}
-```
-
-4. How about presets?
-
-You don't have to use extra encryption when transport is "tls", your data is already protected by TLS, so just set "base" preset:
-
-```
-{
-  "presets": [{"name": "ss-base"}]
 }
 ```
 
@@ -233,22 +217,52 @@ Like blinksocks over TLS, it's much easier to setup a websocket tunnel:
 ```
 {
   ...
-  "servers": [{
-    ...
+  "server": {
     "service": "ws://<host>:<port>",
     ...
-  }],
+  },
   ...
 }
 ```
 
-3. How about presets?
+### Access Control List
 
-Although data sent from client is masked(according to [RFC-6455]), you should add cipher presets to ensure confidentiality because websocket server will transfer your data in plain text by default.
+You can enable ACL on **server** by setting **acl: true** and provide a acl configuration file in **acl_conf**:
+
+```
+{
+  "acl": true,
+  "acl_conf": "acl.txt",
+  ...
+}
+```
+
+**acl.txt** for example:
+
+```
+# [addr[/mask][:port]] [ban] [max_upload_speed(/s)] [max_download_speed(/s)]
+
+example.com     1            # prevent access to example.com
+example.com:*   1            # prevent access to example.com:*, equal to above
+example.com:443 1            # prevent access to example.com:443 only
+*:25            1            # prevent access to SMTP servers
+*:*             1            # prevent all access from/to all endpoints
+127.0.0.1       1            # ban localhost
+192.168.0.0/16  1            # ban hosts in 192.168.*.*
+172.27.1.100    0 120K       # limit upload speed to 120KB/s
+172.27.1.100    0 -    120K  # limit download speed to 120KB/s
+172.27.1.100    0 120K 120K  # limit upload and download speed to 120KB/s
+```
+
+Rules in **acl.txt** has a priority from lower to higher.
+
+> NOTE: acl requires a restart each time you updated **acl_conf**.
 
 ### Multiplexing
 
-Since blinksocks v2.9.0, blinksocks supports TCP/TLS/WS multiplexing. You can enable this feature easily by setting `mux: true` on both client and server, and specify the max concurrency in `mux_concurrency: <number>` on client.
+Since blinksocks v2.9.0, blinksocks supports TCP/TLS/WS multiplexing.
+
+You can enable this feature easily by setting `mux: true` on both client and server, and set `mux_concurrency: <number>` on client.
 
 1. Server config
 
@@ -264,12 +278,12 @@ Since blinksocks v2.9.0, blinksocks supports TCP/TLS/WS multiplexing. You can en
 ```
 {
   ...
-  "servers": [{
+  "server": {
     ...
     "mux": true,
     "mux_concurrency": 10
    ...
-  }],
+  },
   ...
 }
 ```
@@ -280,20 +294,20 @@ Specify a relative or absolute path to store log file, if no `log_path` provided
 
 ### Log Levels
 
-The logging library [winston] use npm logging levels by default, you can choose one of them demand:
+The logging library [winston] use npm logging levels by default, you can choose one of them on demand:
 
 ```
 { error: 0, warn: 1, info: 2, verbose: 3, debug: 4, silly: 5 }
 ```
 
-### Custom DNS servers
+### DNS servers
 
-If you encounter **ENOTFOUND** every now and then, you would better custom dns servers via `dns` options:
+If you encounter **ENOTFOUND** every now and then, you can custom dns servers via `dns` options:
 
 ```
 {
   ...
-  "dns": ["8.8.8.8"]
+  "dns": ["8.8.8.8", "4.4.4.4"]
   ...
 }
 ```
@@ -301,20 +315,6 @@ If you encounter **ENOTFOUND** every now and then, you would better custom dns s
 If no `dns` option or no ip provided in `dns`, blinksocks use system dns settings as usual.
 
 See: https://github.com/blinksocks/blinksocks/issues/66
-
-### Cluster Mode
-
-You can enable cluster mode by setting `workers` greater than zero, cluster mode can take advantage of multi-core systems to handle the load.
-
-`workers` is usually set to the number of cpu cores:
-
-```
-{
-  ...
-  "workers": 2
-  ...
-}
-```
 
 ### UDP Relay
 
@@ -326,8 +326,6 @@ Note that Socks5 requires to relay UDP message over UDP, so does blinksocks:
 apps <--SOCKS5--> [blinksocks client] <--UDP--> [blinksocks server] <--UDP--> dests
 ```
 
-[balancer.js]: ../../src/core/balancer.js
 [presets]: ../presets
 [winston]: https://github.com/winstonjs/winston
-[RFC-6455]: https://tools.ietf.org/html/rfc6455
 [UDP ASSOCIATE]: https://tools.ietf.org/html/rfc1928#section-4

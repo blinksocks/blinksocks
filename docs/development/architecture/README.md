@@ -1,4 +1,4 @@
-# Guideline
+# Architecture
 
 ## Proxy Application Data
 
@@ -109,4 +109,4 @@ Pipe process application data from `ss-base` to `ss-stream-cipher`:
 
 ## Preset
 
-Like the graph above, each preset implements a specific protocol, for examples you can check out [src/presets](../../../src/presets).
+Like the graph above, each preset implements specific protocol or a part of protocol, for examples you can check out [src/presets](../../../src/presets).
