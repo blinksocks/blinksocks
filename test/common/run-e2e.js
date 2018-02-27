@@ -43,6 +43,7 @@ export async function curl({ proxy = 'socks5' }) {
   };
   const proxyMethod = {
     'http': '-x',
+    'http_connect': '-p',
     'socks': '--socks5',
     'socks4': '--socks4',
     'socks4a': '--socks4a',
@@ -57,7 +58,7 @@ export async function curl({ proxy = 'socks5' }) {
     const { stdout } = await exec(`curl -L ${proxyMethod} ${client} ${target}`, options);
     return stdout;
   } catch (err) {
-    console.log(err);
+    // console.log(err);
     return '';
   }
 }

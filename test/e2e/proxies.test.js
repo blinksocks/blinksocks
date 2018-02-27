@@ -29,6 +29,12 @@ test('http-proxy', async () => await run({
   serverJson,
 }));
 
+test('http-proxy connect', async () => await run({
+  proxy: 'http_connect',
+  clientJson: { ...clientJson, service: 'http://127.0.0.1:1081' },
+  serverJson,
+}));
+
 test('socks-proxy', async () => await run({
   proxy: 'socks',
   clientJson: { ...clientJson, service: 'socks://127.0.0.1:1081' },
