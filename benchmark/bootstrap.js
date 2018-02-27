@@ -26,7 +26,7 @@ function makeConfs(presets) {
   const clientConf = {
     'service': 'tcp://127.0.0.1:1081?forward=127.0.0.1:1083',
     'tls_cert': 'cert.pem',
-    'servers': [Object.assign({}, serverConf, { 'enabled': true })],
+    'server': serverConf,
     'log_level': 'error',
   };
   return [clientConf, serverConf];
