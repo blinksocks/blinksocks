@@ -3,7 +3,7 @@ import util from 'util';
 import child_process from 'child_process';
 import { Hub } from '../../src';
 
-const MOCK_RESPONSE = '01234567'.repeat(256);
+export const MOCK_RESPONSE = '01234567'.repeat(256);
 
 let HTTP_PORT = process.env.HTTP_PORT;
 
@@ -34,7 +34,7 @@ afterAll(() => {
   mockServer.close();
 });
 
-async function curl({ proxy = 'socks5' }) {
+export async function curl({ proxy = 'socks5' }) {
   const client = '127.0.0.1:1081';
   const target = 'http://localhost:' + HTTP_PORT;
   const options = {
