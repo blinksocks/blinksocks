@@ -30,7 +30,7 @@
 
 ### Requirements
 
-blinksocks is built on top of [Node.js](https://nodejs.org), if you want to use it in an ordinary way or do some hacking, please install **Node.js(v6.x and above)** on your operating system.
+blinksocks is built on top of [Node.js](https://nodejs.org), if you want to use it in an ordinary way or do some hacking, please install **Node.js(v8.x and above)** on your operating system.
 
 ### Install or Upgrade
 
