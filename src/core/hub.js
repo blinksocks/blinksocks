@@ -249,7 +249,7 @@ export class Hub {
     if (this._config.mux) {
       if (this._config.is_client) {
         relay.id = cid; // NOTE: this cid will be used in mux preset
-        muxRelay.addSubRelay(relay);
+        muxRelay.addSubRelay(cid, relay);
       } else {
         // on server side, this relay is a muxRelay
         this._muxRelays.set(relay.id, relay);

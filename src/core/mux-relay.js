@@ -53,8 +53,7 @@ export class MuxRelay extends Relay {
   }
 
   destroy() {
-    super.destroy();
-    const subRelays = this.getSubRelays();
+    const subRelays = this._subRelays;
     if (subRelays) {
       logger.info(`[mux-${this.id}] connection destroyed, cleanup ${subRelays.size} sub connections`);
       // cleanup associate relays
@@ -64,6 +63,7 @@ export class MuxRelay extends Relay {
       subRelays.clear();
       this._subRelays = null;
     }
+    super.destroy();
   }
 
   // events
@@ -105,9 +105,9 @@ export class MuxRelay extends Relay {
 
       // create relations between mux relay and its sub relays,
       // when mux relay destroyed, all sub relays should be destroyed as well.
-      muxRelay.addSubRelay(relay);
+      muxRelay.addSubRelay(cid, relay);
 
-      logger.info(`[mux-${muxRelay.id}] create sub connection(cid=${relay.id}), total: ${muxRelay.getSubRelays().size}`);
+      logger.info(`[mux-${muxRelay.id}] create sub connection(cid=${cid}), total: ${muxRelay._subRelays.size}`);
     } else {
       logger.warn(`[mux-${muxRelay.id}] cannot create new sub connection due to no mux connection are available`);
     }
@@ -133,9 +133,9 @@ export class MuxRelay extends Relay {
   onSubConnCloseByProtocol({ cid }) {
     const relay = this._subRelays.get(cid);
     if (relay) {
-      this._removeSubRelay(cid);
+      this._subRelays.delete(cid);
       relay.destroy();
-      logger.debug(`[mux-${this.id}] sub connection(cid=${cid}) closed by protocol`);
+      logger.info(`[mux-${this.id}] sub connection(cid=${cid}) closed by protocol`);
     }
     // else {
     //   logger.warn(`[mux-${this.id}] fail to close sub connection by protocol, no such sub connection(cid=${cid})`);
@@ -143,47 +143,23 @@ export class MuxRelay extends Relay {
   }
 
   onSubConnCloseBySelf({ cid }) {
-    const relay = this._getSubRelay(cid);
+    const relay = this._subRelays.get(cid);
     if (relay) {
-      this.destroySubRelay(cid);
-      logger.debug(`[mux-${this.id}] sub connection(cid=${cid}) closed by self, remains: ${this.getSubRelays().size}`);
+      this.encode(Buffer.alloc(0), { cid, isClosing: true });
+      this._subRelays.delete(cid);
+      relay.destroy();
+      logger.info(`[mux-${this.id}] sub connection(cid=${cid}) closed by self, remains: ${this._subRelays.size}`);
     }
     // else {
-    //   logger.warn(`[mux-${muxRelay.id}] fail to close sub connection by self, no such sub connection(cid=${cid})`);
+    //   logger.warn(`[mux-${this.id}] fail to close sub connection by self, no such sub connection(cid=${cid})`);
     // }
   }
 
   // methods
 
-  addSubRelay(relay) {
-    relay.on('close', this.onSubConnCloseBySelf.bind(this, { cid: relay.id }));
-    this._subRelays.set(relay.id, relay);
-  }
-
-  getSubRelays() {
-    return this._subRelays;
-  }
-
-  destroySubRelay(cid) {
-    const relay = this._getSubRelay(cid);
-    if (relay) {
-      this.encode(Buffer.alloc(0), { cid, isClosing: true });
-      this._removeSubRelay(cid);
-      relay.destroy();
-    }
-    // else {
-    //   logger.warn(`[mux-${this.id}] fail to close sub connection by calling destroySubRelay(), no such sub connection(cid=${cid})`);
-    // }
-  }
-
-  _removeSubRelay(cid) {
-    this._subRelays.delete(cid);
-  }
-
-  _getSubRelay(cid) {
-    if (this._subRelays) {
-      return this._subRelays.get(cid);
-    }
+  addSubRelay(cid, relay) {
+    relay.on('close', this.onSubConnCloseBySelf.bind(this, { cid }));
+    this._subRelays.set(cid, relay);
   }
 
   _getRandomMuxRelay() {

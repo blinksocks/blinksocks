@@ -76,20 +76,14 @@ export class MuxInbound extends Inbound {
     }
   }
 
-  end() {
-    // TODO: handle half close correctly in mux protocol
-    this.close();
-  }
-
   close() {
     const doClose = () => {
       if (this._config.is_server) {
-        const { muxRelay, cid } = this.ctx;
+        const { muxRelay } = this.ctx;
         const inbound = muxRelay.getInbound();
         if (inbound) {
           inbound.removeListener('drain', this.onDrain);
         }
-        muxRelay.destroySubRelay(cid);
       }
       if (!this._destroyed) {
         this._destroyed = true;
@@ -159,20 +153,14 @@ export class MuxOutbound extends Outbound {
     }
   }
 
-  end() {
-    // TODO: handle half close correctly in mux protocol
-    this.close();
-  }
-
   close() {
     const doClose = () => {
       if (this._config.is_client) {
-        const { muxRelay, cid } = this.ctx;
+        const { muxRelay } = this.ctx;
         const outbound = muxRelay.getOutbound();
         if (outbound) {
           outbound.removeListener('drain', this.onDrain);
         }
-        muxRelay.destroySubRelay(cid);
       }
       if (!this._destroyed) {
         this._destroyed = true;

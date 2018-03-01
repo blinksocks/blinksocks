@@ -1,6 +1,6 @@
 import net from 'net';
 import ip from 'ip';
-import { logger, numberToBuffer } from '../utils';
+import { logger, numberToBuffer, dumpHex } from '../utils';
 
 // Socks4 Request Message
 // +----+-----+----------+--------+----------+--------+
@@ -286,7 +286,7 @@ export function createServer({ bindAddress, bindPort }) {
           removeSocksListeners();
           return;
         }
-        logger.error(`[socks] [${appAddress}] invalid socks handshake message: ${buffer.slice(0, 60).toString('hex')}`);
+        logger.error(`[socks] [${appAddress}] invalid socks handshake message: ${dumpHex(buffer)}`);
         socket.destroy();
       }
       else if (stage === STAGE_SOCKS5_REQUEST_MESSAGE) {
@@ -334,7 +334,7 @@ export function createServer({ bindAddress, bindPort }) {
             }
           }
         } else {
-          logger.error(`[socks] [${appAddress}] invalid socks5 request message: ${buffer.slice(0, 60).toString('hex')}`);
+          logger.error(`[socks] [${appAddress}] invalid socks5 request message: ${dumpHex(buffer)}`);
           socket.destroy();
         }
       }
