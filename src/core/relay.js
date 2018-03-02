@@ -268,10 +268,6 @@ export class Relay extends EventEmitter {
     }
   }
 
-  hasListener(name) {
-    return this.listenerCount(name) > 0;
-  }
-
   isOutboundReady() {
     return this._outbound && this._outbound.writable;
   }
