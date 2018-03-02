@@ -172,6 +172,10 @@ export class Relay extends EventEmitter {
       const { host: targetHost, port: targetPort } = action.payload;
       const remote = `${sourceHost}:${sourcePort}`;
       const target = `${targetHost}:${targetPort}`;
+      // tracker
+      if (this._tracker) {
+        this._tracker.setTargetAddress(targetHost, targetPort);
+      }
       // acl
       if (this._acl && this._acl.setTargetAddress(targetHost, targetPort)) {
         return;
@@ -180,10 +184,6 @@ export class Relay extends EventEmitter {
       if (this._config.mux && this._config.is_client && this._transport !== 'udp') {
         logger.info(`[relay-${this.id}] [${remote}] request over mux-${this._ctx.muxRelay.id}: ${target}`);
         return;
-      }
-      // tracker
-      if (this._tracker) {
-        this._tracker.setTargetAddress(targetHost, targetPort);
       }
       logger.info(`[relay] [${remote}] request: ${target}`);
     }
