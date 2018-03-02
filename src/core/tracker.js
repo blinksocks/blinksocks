@@ -38,9 +38,11 @@ export class Tracker {
   }
 
   setTargetAddress(host, port) {
-    this._targetHost = host;
-    this._targetPort = port;
-    this._tracks.push(`${host}:${port}`);
+    if (host !== this._targetHost && port !== this._targetPort) {
+      this._targetHost = host;
+      this._targetPort = port;
+      this._tracks.push(`${host}:${port}`);
+    }
   }
 
   /**
