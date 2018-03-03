@@ -59,19 +59,22 @@ export class Hub {
     this._tcpRelays.forEach((relay) => relay.destroy());
     this._tcpRelays.clear();
     // udp server
-    this._udpServer.close();
+    this._udpServer && this._udpServer.close();
     // server
     this._tcpServer.close();
     logger.info('[hub] shutdown');
   }
 
   async _createServer() {
-    if (this._config.is_client) {
+    const { is_client, is_server, local_protocol } = this._config;
+    if (is_client) {
       this._tcpServer = await this._createServerOnClient();
     } else {
       this._tcpServer = await this._createServerOnServer();
     }
-    this._udpServer = await this._createUdpServer();
+    if (is_server || ['socks', 'socks5'].includes(local_protocol)) {
+      this._udpServer = await this._createUdpServer();
+    }
   }
 
   async _createServerOnClient() {
