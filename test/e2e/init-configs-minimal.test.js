@@ -23,4 +23,7 @@ const serverJson = {
   ]
 };
 
-test('init-configs-minimal', async () => await run({ clientJson, serverJson }));
+test('init-configs-minimal, tcp', async () => {
+  await run({ clientJson, serverJson });
+  await run({ clientJson, serverJson, isUdp: true });
+});

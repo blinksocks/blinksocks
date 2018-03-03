@@ -23,4 +23,7 @@ const serverJson = {
   ]
 };
 
-test('ssr-auth-chain-b', async () => await run({ clientJson, serverJson }));
+test('ssr-auth-chain-b', async () => {
+  await run({ clientJson, serverJson });
+  await run({ clientJson, serverJson, isUdp: true });
+});

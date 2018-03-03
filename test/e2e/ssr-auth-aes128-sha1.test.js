@@ -23,4 +23,7 @@ const serverJson = {
   ]
 };
 
-test('ssr-auth-aes128-sha1', async () => await run({ clientJson, serverJson }));
+test('ssr-auth-aes128-sha1', async () => {
+  await run({ clientJson, serverJson });
+  await run({ clientJson, serverJson, isUdp: true });
+});

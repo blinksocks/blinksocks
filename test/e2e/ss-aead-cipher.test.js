@@ -30,6 +30,7 @@ test('ss-aead-cipher, aes-128-gcm', async () => {
   serverJson.presets.push(cipher);
 
   await run({ clientJson, serverJson });
+  await run({ clientJson, serverJson, isUdp: true });
 });
 
 test('ss-aead-cipher, chacha20-ietf-poly1305', async () => {
@@ -42,6 +43,7 @@ test('ss-aead-cipher, chacha20-ietf-poly1305', async () => {
   serverJson.presets.push(cipher);
 
   await run({ clientJson, serverJson });
+  await run({ clientJson, serverJson, isUdp: true });
 });
 
 test('ss-aead-cipher, xchacha20-ietf-poly1305', async () => {
@@ -54,4 +56,5 @@ test('ss-aead-cipher, xchacha20-ietf-poly1305', async () => {
   serverJson.presets.push(cipher);
 
   await run({ clientJson, serverJson });
+  await run({ clientJson, serverJson, isUdp: true });
 });

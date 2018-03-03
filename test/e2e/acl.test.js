@@ -1,6 +1,5 @@
 import path from 'path';
-import { curl, MOCK_RESPONSE } from '../common/run-e2e';
-import { Hub } from '../../src';
+import run from '../common/run-e2e';
 
 const clientJson = {
   'service': 'socks5://127.0.0.1:1081',
@@ -29,12 +28,4 @@ const serverJson = {
   'log_level': 'debug'
 };
 
-test('multiplexing', async () => {
-  const client = new Hub(clientJson);
-  const server = new Hub(serverJson);
-  await client.run();
-  await server.run();
-  expect(await curl({})).not.toBe(MOCK_RESPONSE);
-  await client.terminate();
-  await server.terminate();
-});
+test('acl', async () => await run({ clientJson, serverJson, not: true }));

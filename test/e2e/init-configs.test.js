@@ -42,4 +42,7 @@ const serverJson = {
   "log_max_days": 30
 };
 
-test('init-configs', async () => await run({ clientJson, serverJson }));
+test('init-configs', async () => {
+  await run({ clientJson, serverJson });
+  await run({ clientJson, serverJson, isUdp: true });
+});

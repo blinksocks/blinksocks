@@ -1,76 +1,75 @@
+import dgram from 'dgram';
 import http from 'http';
-import util from 'util';
-import child_process from 'child_process';
+import curl from './curl';
+import udp from './udp';
+import { HTTP_SERVER_PORT, UDP_SERVER_PORT, MOCK_RESPONSE } from './constants';
 import { Hub } from '../../src';
 
-export const MOCK_RESPONSE = '01234567'.repeat(256);
+let httpServer = null;
+let udpServer = null;
 
-let HTTP_PORT = process.env.HTTP_PORT;
+function createHttpServer() {
+  httpServer = http.createServer();
 
-if (typeof HTTP_PORT === 'undefined') {
-  console.warn('env HTTP_PORT is not provided, fallback to use 8080');
-  HTTP_PORT = 8080;
-}
-
-const exec = util.promisify(child_process.exec);
-
-let mockServer = null;
-
-beforeAll(() => {
-  mockServer = http.createServer();
-
-  mockServer.on('request', (req, res) => {
+  httpServer.on('request', (req, res) => {
     res.end(MOCK_RESPONSE);
   });
 
-  mockServer.on('clientError', (err, socket) => {
+  httpServer.on('clientError', (err, socket) => {
     socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
   });
 
-  mockServer.listen(HTTP_PORT);
-});
-
-afterAll(() => {
-  mockServer.close();
-});
-
-export async function curl({ proxy = 'socks5' }) {
-  const client = '127.0.0.1:1081';
-  const target = 'http://localhost:' + HTTP_PORT;
-  const options = {
-    encoding: 'utf-8',
-    timeout: 5e3,
-  };
-  const proxyMethod = {
-    'http': '-x',
-    'http_connect': '-p',
-    'socks': '--socks5',
-    'socks4': '--socks4',
-    'socks4a': '--socks4a',
-    'socks5': '--socks5-hostname',
-  }[proxy];
-
-  if (typeof proxyMethod === 'undefined') {
-    throw Error(`unsupported proxy method: ${proxy}`);
-  }
-
-  try {
-    const { stdout } = await exec(`curl -L ${proxyMethod} ${client} ${target}`, options);
-    return stdout;
-  } catch (err) {
-    // console.log(err);
-    return '';
-  }
+  httpServer.listen(HTTP_SERVER_PORT);
 }
 
-export default async function run({ proxy, clientJson, serverJson, repeat = 1 }) {
+function createUdpServer() {
+  udpServer = dgram.createSocket('udp4');
+  udpServer.on('message', (msg, rinfo) => {
+    udpServer.send(MOCK_RESPONSE, rinfo.port, rinfo.address);
+  });
+  udpServer.bind(UDP_SERVER_PORT);
+}
+
+// create http and udp mock servers
+beforeAll(() => {
+  createHttpServer();
+  createUdpServer();
+});
+
+// close all mock servers
+afterAll(() => {
+  httpServer.close();
+  udpServer.close();
+});
+
+export default async function run({ proxy, clientJson, serverJson, not = false, isUdp = false, repeat = 1 }) {
+  const props = {
+    proxyHost: '127.0.0.1',
+    proxyPort: 1081,
+    targetHost: '127.0.0.1',
+    targetPort: 8080,
+  };
   const client = new Hub(clientJson);
   const server = new Hub(serverJson);
-  await client.run();
-  await server.run();
+  await Promise.all([
+    client.run(),
+    server.run(),
+  ]);
   while (repeat--) {
-    expect(await curl({ proxy })).toBe(MOCK_RESPONSE);
+    let response;
+    if (isUdp) {
+      response = await udp(props);
+    } else {
+      response = await curl({ proxyMethod: proxy, ...props });
+    }
+    if (not) {
+      expect(response).not.toBe(MOCK_RESPONSE);
+    } else {
+      expect(response).toBe(MOCK_RESPONSE);
+    }
   }
-  await client.terminate();
-  await server.terminate();
+  await Promise.all([
+    client.terminate(),
+    server.terminate(),
+  ]);
 }

@@ -30,6 +30,7 @@ test('ss-stream-cipher, aes-256-cfb', async () => {
   serverJson.presets.push(cipher);
 
   await run({ clientJson, serverJson });
+  await run({ clientJson, serverJson, isUdp: true });
 });
 
 test('ss-stream-cipher, rc4-md5', async () => {
@@ -42,6 +43,7 @@ test('ss-stream-cipher, rc4-md5', async () => {
   serverJson.presets.push(cipher);
 
   await run({ clientJson, serverJson });
+  await run({ clientJson, serverJson, isUdp: true });
 });
 
 test('ss-stream-cipher, rc4-md5-6', async () => {
@@ -54,4 +56,5 @@ test('ss-stream-cipher, rc4-md5-6', async () => {
   serverJson.presets.push(cipher);
 
   await run({ clientJson, serverJson });
+  await run({ clientJson, serverJson, isUdp: true });
 });

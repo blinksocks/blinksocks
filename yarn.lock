@@ -3436,6 +3436,10 @@ slice-ansi@1.0.0:
   dependencies:
     is-fullwidth-code-point "^2.0.0"
 
+smart-buffer@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/smart-buffer/-/smart-buffer-4.0.1.tgz#07ea1ca8d4db24eb4cac86537d7d18995221ace3"
+
 sntp@1.x.x:
   version "1.0.9"
   resolved "https://registry.yarnpkg.com/sntp/-/sntp-1.0.9.tgz#6541184cc90aeea6c6e7b35e2659082443c66198"
@@ -3447,6 +3451,13 @@ sntp@2.x.x:
   resolved "https://registry.yarnpkg.com/sntp/-/sntp-2.1.0.tgz#2c6cec14fedc2222739caf9b5c3d85d1cc5a2cc8"
   dependencies:
     hoek "4.x.x"
+
+socks@^2.1.2:
+  version "2.1.2"
+  resolved "https://registry.yarnpkg.com/socks/-/socks-2.1.2.tgz#70e78794eb30647e6adfa0331cab6d4f01c1c91d"
+  dependencies:
+    ip "^1.1.5"
+    smart-buffer "^4.0.1"
 
 source-map-support@^0.4.15:
   version "0.4.18"
