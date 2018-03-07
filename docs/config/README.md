@@ -112,7 +112,7 @@ The `<protocol>` should be:
 
 **?forward=<host>:<port>**
 
-You can proxy application data to a **permanent destination** via server by providing **?forward** parameter along with **tcp://** protocol:
+When use `tcp://` protocol, you can proxy application data to a **permanent destination** via server by providing **?forward** parameter:
 
 ```
 // blinksocks.client.json

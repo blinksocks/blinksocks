@@ -79,7 +79,7 @@ For configuring blinksocks, please refer to [Configuration](docs/config).
 
 1. [Preparation](docs/development/preparation)
 2. [Architecture](docs/development/architecture)
-3. [Custom Preset](docs/development/custom-preset)
+3. [API](docs/development/api)
 4. [Benchmark](docs/benchmark)
 
 ## Contributors

@@ -1,6 +1,8 @@
-# Custom Preset
+# API
 
-### Prerequisites
+`blinksocks` provides several useful APIs to help you to integrate your own magic to the framework.
+
+## Prerequisites
 
 Install `blinksocks` globally, it's usually already done:
 
@@ -8,23 +10,49 @@ Install `blinksocks` globally, it's usually already done:
 $ npm install -g blinksocks
 ```
 
-### Using blinksocks APIs
-
-`blinksocks` provides several useful APIs to help you to integrate your own magic to the framework.
-
-1. Create a js file named `my-custom-preset.js` then require `blinksocks` module:
+Then you can `require` it in your code:
 
 ```js
-// my-custom-preset.js
 const blinksocks = require('blinksocks');
 ```
 
-2. Export a class that extends from [IPreset](../../../src/presets/defs.js) interface:
+## Class: Hub
+
+The `Hub` class can be used to create a blinksocks client/server instance with different configurations.
+
+### new Hub(config)
+
+* `config` a configuration in plain object.
+
+### hub.run()
+
+* Returns a `<Promise>`.
 
 ```js
-// my-custom-preset.js
-const blinksocks = require('blinksocks');
+const client = new blinksocks.Hub(clientConfig);
 
+client.run()
+  .then(() => {
+    console.log('blinksocks client is running now');
+  })
+  .catch((err) => {
+    console.error(err);
+  });
+```
+
+### hub.terminate()
+
+* Returns a `<Promise>`.
+
+Close all living connections and destroy the hub instance.
+
+## Class: IPreset
+
+The `IPreset` class defines a specific protocol, acting as data stream interpreter.
+
+Export a class that extends from [IPreset](../../../src/presets/defs.js) interface:
+
+```js
 class MyCustomPreset extends blinksocks.IPreset {
 
   constructor(props) {
@@ -100,8 +128,6 @@ When communicate with other presets, you can emit an action by **broadcast(actio
 After broadcast, **all** other presets will receive the action in **onNotified(action)** synchronously:
 
 ```js
-const blinksocks = require('blinksocks');
-
 class MyCustomPreset extends blinksocks.IPreset {
 
   /**
@@ -174,8 +200,6 @@ Your presets may require several parameters, and you can validate them in:
 * `onCheckParams(params)`(only once, recommended)
 
 ```js
-const blinksocks = require('blinksocks');
-
 class MyCustomPreset extends blinksocks.IPreset {
 
 }
@@ -193,8 +217,6 @@ module.exports = MyCustomPreset;
 You can initialize some shared/immutable data among connections in `onCache(params)` to improve performance:
 
 ```js
-const blinksocks = require('blinksocks');
-
 class MyCustomPreset extends blinksocks.IPreset {
 
 }
@@ -218,8 +240,6 @@ module.exports = MyCustomPreset;
 You can access configuration from `this._config` in your preset:
 
 ```js
-const blinksocks = require('blinksocks');
-
 class MyCustomPreset extends blinksocks.IPreset {
 
   constructor(props) {
