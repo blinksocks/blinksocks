@@ -46,6 +46,36 @@ client.run()
 
 Close all living connections and destroy the hub instance.
 
+### hub.getConnections()
+
+* Returns connection number associate with the hub.
+
+### hub.getTotalRead()
+
+* Returns total download bytes from server/client.
+
+### hub.getTotalWritten()
+
+* Returns total upload bytes to server/client.
+
+### hub.getPerformance()
+
+* Returns an instance of class `<Performance>`.
+
+## Class: Performance
+
+### new Performance(hub)
+
+* `hub` is an instance of class `Hub`.
+
+### performance.getUploadSpeed()
+
+* Returns upload bytes per second.
+
+### performance.getDownloadSpeed()
+
+* Returns download bytes per second.
+
 ## Class: IPreset
 
 The `IPreset` class defines a specific protocol, acting as data stream interpreter.
