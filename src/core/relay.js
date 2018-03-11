@@ -230,6 +230,7 @@ export class Relay extends EventEmitter {
       }
     }
     cb(buffer);
+    setImmediate(() => this.emit('_read', buffer.length));
   };
 
   onEncoded = (buffer) => {
@@ -244,6 +245,7 @@ export class Relay extends EventEmitter {
       }
       this._inbound.write(buffer);
     }
+    setImmediate(() => this.emit('_write', buffer.length));
   };
 
   onDecoded = (buffer) => {
