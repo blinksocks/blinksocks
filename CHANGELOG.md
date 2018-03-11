@@ -1,5 +1,30 @@
 #  Change Log
 
+## 3.1.0 (2018-03-11)
+
+> The minimal version of Node.js required is 8.x now, please upgrade your Node.js if necessary.
+
+### :rocket: Features & Improvements
+
+- lib: compiled to Node.js 8.
+- core: start udp server only when use socks protocol on client.
+- core: add performance.js to collect upload/download speed.
+- core: add Hub::getConnections(), Hub::getTotalRead(), Hub::getTotalWritten() and Hub::getPerformance().
+- test: add tests for udp relay.
+- test: add tests for multiplexing over ws and tls.
+
+### :bug: Bug Fixes:
+
+- src: reduce error rate when enable multiplexing on server.
+- core: include target address in tracker's log when enable multiplexing.
+- core: avoid putting duplicate target address in tracker's log.
+
+### Migrating from 3.0.0 to 3.1.0
+
+```
+$ npm install -g blinksocks@3.1.0
+```
+
 ## 3.0.0 (2018-02-27)
 
 ### :boom: Breaking Changes:
