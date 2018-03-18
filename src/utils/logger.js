@@ -1,3 +1,3 @@
 import winston from 'winston';
 
-export const logger = new (winston.Logger)();
+export const logger = winston.createLogger();

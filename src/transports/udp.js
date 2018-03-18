@@ -48,7 +48,7 @@ export class UdpInbound extends Inbound {
     const { address, port } = this._rinfo;
     const onSendError = (err) => {
       if (err) {
-        logger.warn(`[udp:inbound] [${this.remote}]:`, err);
+        logger.warn(`[udp:inbound] [${this.remote}]: ${err.message}`);
       }
     };
     if (this._config.is_client) {
@@ -114,7 +114,7 @@ export class UdpOutbound extends Outbound {
     else {
       this._socket.send(buffer, port, host, (err) => {
         if (err) {
-          logger.warn(`[udp:outbound] [${this.remote}]:`, err);
+          logger.warn(`[udp:outbound] [${this.remote}]: ${err.message}`);
         }
       });
     }

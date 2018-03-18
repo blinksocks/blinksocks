@@ -328,7 +328,7 @@ export class TcpOutbound extends Outbound {
           this.ctx.pipe.broadcast(null, { type: CONNECTED_TO_REMOTE, payload: { host, port } });
         });
       } catch (err) {
-        logger.warn(`[${this.name}] [${this.remote}] cannot connect to ${host}:${port},`, err);
+        logger.warn(`[${this.name}] [${this.remote}] cannot connect to ${host}:${port}, ${err.message}`);
         this.onClose();
       }
     } else {

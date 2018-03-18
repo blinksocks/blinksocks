@@ -1,12 +1,12 @@
 import dns from 'dns';
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
 import net from 'net';
 import url from 'url';
 import qs from 'qs';
 import chalk from 'chalk';
 import winston from 'winston';
+import WinstonDailyRotateFile from 'winston-daily-rotate-file';
 import isPlainObject from 'lodash.isplainobject';
 import { ACL } from './acl';
 import { getPresetClassByName } from '../presets';
@@ -187,46 +187,33 @@ export class Config {
 
   _initLogger(json) {
     // log_path, log_level, log_max_days
-    this.log_path = Config.getLogFilePath(json.log_path);
-    this.log_level = (json.log_level !== undefined) ? json.log_level : 'info';
-    this.log_max_days = (json.log_max_days !== undefined) ? json.log_max_days : 0;
+    this.log_path = path.resolve(process.cwd(), json.log_path || 'blinksocks.log');
+    this.log_level = json.log_level || 'info';
+    this.log_max_days = json.log_max_days || null;
 
-    const level = process.env.NODE_ENV === 'test' ? 'error' : this.log_level;
-    const transports = [
-      new (winston.transports.Console)({
-        colorize: true,
-        prettyPrint: true,
-      }),
-    ];
+    const { transports, format: { printf, combine, timestamp, splat, colorize, prettyPrint } } = winston;
+    const trans = [new transports.Console()];
 
     if (process.env.NODE_ENV !== 'test') {
-      transports.push(
-        new (require('winston-daily-rotate-file'))({
-          level: level,
-          // NOTE: There is bug in winston-daily-rotate-file that
-          // we cannot use logger.stream(...).on('log', (log) => {...});
-          // to stream logs back from this transport when set
-          // "json: false" which output non-json lines in logs.
-          json: false,
-          eol: os.EOL,
+      trans.push(
+        new WinstonDailyRotateFile({
           filename: this.log_path,
-          maxDays: this.log_max_days,
+          maxFiles: this.log_max_days ? this.log_max_days + 'd' : null,
         }),
       );
     }
 
-    logger.configure({ level, transports });
-  }
-
-  static getLogFilePath(log_path) {
-    const absolutePath = path.resolve(process.cwd(), log_path || '.');
-    let isFile = false;
-    if (fs.existsSync(absolutePath)) {
-      isFile = fs.statSync(absolutePath).isFile();
-    } else if (path.extname(absolutePath) !== '') {
-      isFile = true;
-    }
-    return isFile ? absolutePath : path.join(absolutePath, `bs-${this.is_client ? 'client' : 'server'}.log`);
+    logger.configure({
+      level: process.env.NODE_ENV === 'test' ? 'error' : this.log_level,
+      format: combine(
+        timestamp(),
+        splat(),
+        colorize(),
+        prettyPrint(),
+        printf((info) => `${info.timestamp} - ${info.level}: ${info.message}`)
+      ),
+      transports: trans,
+    });
   }
 
   static test(json) {
@@ -461,6 +448,10 @@ export class Config {
     if (common.log_path !== undefined) {
       if (typeof common.log_path !== 'string') {
         throw Error('"log_path" must be a string');
+      }
+      const absolutePath = path.resolve(process.cwd(), common.log_path);
+      if (fs.existsSync(absolutePath) && !fs.statSync(absolutePath).isFile()) {
+        throw Error('"log_path" must be a file not directory');
       }
     }
 

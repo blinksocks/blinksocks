@@ -22,9 +22,10 @@ test/tmp/
 # others
 /blinksocks*.js
 /blinksocks*.json
-*.map
 /*.pem
 /acl.txt
+*.map
+.audit.json
 
 # benchmark
 benchmark/jsons/
