@@ -19,10 +19,9 @@ bs_client_pid=$!
 ${BLINKSOCKS} -c ${server_conf} > /dev/null &
 bs_server_pid=$!
 
-# because cluster mode will take a while to start
-sleep 4
+sleep 2
 
-iperf3 -s -p 1083 > /dev/null &
+iperf3 -s -p 1083 > /dev/null 2>&1 &
 iperf_pid=$!
 
 sleep 1
@@ -30,12 +29,11 @@ sleep 1
 iperf3 -c 127.0.0.1 -p 1081 -t ${seconds} -P 20 -J
 
 # Wait for iperf server to receive all data.
-# One second should be enough in most cases.
-sleep 1
+sleep 3
 
 kill -SIGINT ${bs_client_pid}
 kill -SIGINT ${bs_server_pid}
-kill ${iperf_pid}
+kill -SIGINT ${iperf_pid}
 
 # Wait for system gc
-sleep 5
+sleep 3
