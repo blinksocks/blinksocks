@@ -78,6 +78,45 @@ $ pm2 start blinksocks -- -c blinksocks.client.json
 $ pm2 start blinksocks -i 2 -- -c blinksocks.server.json
 ```
 
+### Using systemd
+
+If you want to deploy a service on **Linux**, you can make use of systemd.
+
+1. Create a system service under `/etc/systemd/system/`.
+
+```
+# vim /etc/systemd/system/blinksocks.service
+```
+
+```
+[Unit]
+Description=blinksocks
+After=network.target
+Wants=network.target
+
+[Service]
+ExecStart=/usr/bin/blinksocks /root/blinksocks.server.json
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+> NOTE: Assume that your configuration for blinksocks is located at `/root/blinksocks.server.json`.
+
+2. Refresh services then start blinksocks.
+
+```
+# systemctl daemon-reload
+# systemctl start blinksocks
+```
+
+3. If not successful, checkout startup logs.
+
+```
+# journalctl -u blinksocks.service
+```
+
 ### Using executables
 
 ```
