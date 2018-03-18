@@ -63,7 +63,7 @@
     "mkdirp": "^0.5.1",
     "pkg": "^4.3.0",
     "rimraf": "^2.6.2",
-    "socks": "^2.1.5"
+    "socks": "^2.1.6"
   },
   "repository": {
     "url": "https://github.com/blinksocks/blinksocks",
