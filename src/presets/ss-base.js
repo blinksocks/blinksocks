@@ -185,7 +185,9 @@ export default class SsBasePreset extends IPresetAddressing {
           port: port,
           // once connected
           onConnected: () => {
-            next(Buffer.concat([data, this._pending]));
+            if (this._pending !== null) {
+              next(Buffer.concat([data, this._pending]));
+            }
             this._isHeaderRecv = true;
             this._isConnecting = false;
             this._pending = null;

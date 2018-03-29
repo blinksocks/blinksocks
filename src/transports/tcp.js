@@ -318,12 +318,16 @@ export class TcpOutbound extends Outbound {
         }
         this._socket.on('connect', () => {
           if (typeof onConnected === 'function') {
-            onConnected((buffer) => {
-              if (buffer) {
-                const type = this._config.is_client ? PIPE_ENCODE : PIPE_DECODE;
-                this.ctx.pipe.feed(type, buffer, { cid: this.ctx.proxyRequest.cid, host, port });
-              }
-            });
+            try {
+              onConnected((buffer) => {
+                if (buffer) {
+                  const type = this._config.is_client ? PIPE_ENCODE : PIPE_DECODE;
+                  this.ctx.pipe.feed(type, buffer, { cid: this.ctx.proxyRequest.cid, host, port });
+                }
+              });
+            } catch (err) {
+              logger.error(`[${this.name}] [${this.remote}] onConnected callback error: ${err.message}`);
+            }
           }
           this.ctx.pipe.broadcast(null, { type: CONNECTED_TO_REMOTE, payload: { host, port } });
         });
