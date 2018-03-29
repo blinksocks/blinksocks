@@ -23,8 +23,7 @@
     "client": "cross-env NODE_ENV=production node bin/cli.js blinksocks.client.json",
     "server": "cross-env NODE_ENV=production node bin/cli.js blinksocks.server.json",
     "prebenchmark": "npm run compile",
-    "benchmark": "node benchmark/bootstrap.js",
-    "precommit": "npm test"
+    "benchmark": "node benchmark/bootstrap.js"
   },
   "dependencies": {
     "chalk": "^2.3.2",
@@ -39,9 +38,9 @@
     "lru-cache": "^4.1.2",
     "node-fetch": "^2.1.1",
     "qs": "^6.5.1",
-    "ws": "3.3.3",
     "winston": "^3.0.0-rc3",
-    "winston-daily-rotate-file": "^3.0.0"
+    "winston-daily-rotate-file": "^3.0.0",
+    "ws": "3.3.3"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
@@ -57,7 +56,6 @@
     "eslint-config-babel": "^7.0.2",
     "eslint-plugin-babel": "^4.1.2",
     "eslint-plugin-flowtype": "^2.46.1",
-    "husky": "^0.14.3",
     "jest": "^22.4.2",
     "lodash.clonedeep": "^4.5.0",
     "mkdirp": "^0.5.1",
