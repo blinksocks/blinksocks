@@ -191,7 +191,7 @@ export class Config {
     this.log_level = json.log_level || 'info';
     this.log_max_days = json.log_max_days || null;
 
-    const { transports, format: { printf, combine, timestamp, splat, colorize, prettyPrint } } = winston;
+    const { transports, format: { printf, combine, timestamp, splat, prettyPrint } } = winston;
     const trans = [new transports.Console()];
 
     if (process.env.NODE_ENV !== 'test') {
@@ -208,7 +208,8 @@ export class Config {
       format: combine(
         timestamp(),
         splat(),
-        colorize(),
+        // TODO: Enable coloring. Currently we have to prevent dumping color characters in log files.
+        // colorize(),
         prettyPrint(),
         printf((info) => `${info.timestamp} - ${info.level}: ${info.message}`)
       ),
