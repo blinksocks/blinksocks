@@ -103,7 +103,6 @@ export class Pipe extends EventEmitter {
     // update members
     this._encode_presets = presets;
     this._decode_presets = [].concat(presets).reverse();
-    this._presets = rawPresets;
   }
 
   feed(direction, buffer, extraArgs) {
@@ -118,7 +117,7 @@ export class Pipe extends EventEmitter {
         this._feed(direction, buffer, extraArgs);
       }
     } catch (err) {
-      logger.error('[pipe] error occurred while piping: %o', err);
+      logger.error('[pipe] error occurred while piping: %s', err.stack);
     }
   }
 
