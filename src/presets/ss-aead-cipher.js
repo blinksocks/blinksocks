@@ -220,6 +220,7 @@ export default class SsAeadCipherPreset extends IPreset {
     let tag = null;
     if (this._isUseLibSodium) {
       const noop = Buffer.alloc(0);
+      // eslint-disable-next-line
       const result = libsodium[libsodium_functions[cipherName][0]](
         message, noop, noop, nonce, cipherKey
       );
@@ -241,6 +242,7 @@ export default class SsAeadCipherPreset extends IPreset {
     if (this._isUseLibSodium) {
       const noop = Buffer.alloc(0);
       try {
+        // eslint-disable-next-line
         const plaintext = libsodium[libsodium_functions[cipherName][1]](
           noop, ciphertext, tag, noop, nonce, decipherKey
         );

@@ -8,9 +8,7 @@
     "jest": true
   },
   "rules": {
-    "no-undef": "off",
     "max-len": "off",
-    "object-curly-spacing": "off",
     "quotes": [
       "error",
       "single"

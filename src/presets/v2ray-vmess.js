@@ -538,6 +538,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     }
     else if (security === SECURITY_TYPE_CHACHA20_POLY1305) {
       const noop = Buffer.alloc(0);
+      // eslint-disable-next-line
       const result = libsodium.crypto_aead_chacha20poly1305_ietf_encrypt_detached(
         plaintext, noop, noop, nonce, this._dataEncKeyForChaCha20
       );
@@ -565,6 +566,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     else if (security === SECURITY_TYPE_CHACHA20_POLY1305) {
       const noop = Buffer.alloc(0);
       try {
+        // eslint-disable-next-line
         const plaintext = libsodium.crypto_aead_chacha20poly1305_ietf_decrypt_detached(
           noop, ciphertext, tag, noop, nonce, this._dataDecKeyForChaCha20
         );
