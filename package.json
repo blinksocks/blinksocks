@@ -54,7 +54,7 @@
     "cross-env": "^5.1.4",
     "eslint": "^4.19.1",
     "eslint-config-babel": "^7.0.2",
-    "eslint-plugin-babel": "^4.1.2",
+    "eslint-plugin-babel": "^5.0.0",
     "eslint-plugin-flowtype": "^2.46.1",
     "jest": "^22.4.3",
     "lodash.clonedeep": "^4.5.0",
