@@ -29,12 +29,17 @@ export class Tracker {
   _targetHost;
   _targetPort;
 
-  constructor({ config, transport, remoteInfo }) {
+  constructor({ config, transport }) {
     this._config = config;
     this._transport = transport;
-    this._sourceHost = remoteInfo.host;
-    this._sourcePort = remoteInfo.port;
-    this._tracks.push(`${this._sourceHost}:${this._sourcePort}`);
+  }
+
+  setSourceAddress(host, port) {
+    if (host !== this._sourceHost && port !== this._sourcePort) {
+      this._sourceHost = host;
+      this._sourcePort = port;
+      this._tracks.push(`${host}:${port}`);
+    }
   }
 
   setTargetAddress(host, port) {
@@ -45,11 +50,28 @@ export class Tracker {
     }
   }
 
+  trace(type, size) {
+    if (type === PIPE_ENCODE) {
+      this._tracks.push(TRACK_CHAR_UPLOAD);
+      this._tracks.push(size);
+    } else {
+      this._tracks.push(TRACK_CHAR_DOWNLOAD);
+      this._tracks.push(size);
+    }
+  }
+
+  destroy() {
+    if (this._tracks !== null) {
+      this._finish();
+    }
+    this._tracks = null;
+  }
+
   /**
    * print connection track string, and only display the
    * leading and the trailing TRACK_MAX_SIZE / 2
    */
-  dump() {
+  _finish() {
     let strs = [];
     let dp = 0, db = 0;
     let up = 0, ub = 0;
@@ -81,23 +103,6 @@ export class Tracker {
     ub = format(ub, { output: 'array' }).join('');
     const summary = this._config.is_client ? `out/in = ${up}/${dp}, ${ub}/${db}` : `in/out = ${dp}/${up}, ${db}/${ub}`;
     logger.info(`[tracker:${this._transport}] summary(${summary}) abstract(${strs.join(' ')})`);
-  }
-
-  trace(type, size) {
-    if (type === PIPE_ENCODE) {
-      this._tracks.push(TRACK_CHAR_UPLOAD);
-      this._tracks.push(size);
-    } else {
-      this._tracks.push(TRACK_CHAR_DOWNLOAD);
-      this._tracks.push(size);
-    }
-  }
-
-  destroy() {
-    if (this._tracks !== null) {
-      this.dump();
-    }
-    this._tracks = null;
   }
 
 }
