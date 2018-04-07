@@ -46,6 +46,7 @@ test('multiplexing over tcp', async () => {
   serverJson.service = service;
 
   await run({ clientJson, serverJson, repeat: 10 });
+  await run({ clientJson, serverJson, repeat: 10, isUdp: true });
 });
 
 test('multiplexing over ws', async () => {
@@ -58,6 +59,7 @@ test('multiplexing over ws', async () => {
   serverJson.service = service;
 
   await run({ clientJson, serverJson, repeat: 10 });
+  await run({ clientJson, serverJson, repeat: 10, isUdp: true });
 });
 
 test('multiplexing over tls', async () => {
@@ -70,4 +72,5 @@ test('multiplexing over tls', async () => {
   serverJson.service = service;
 
   await run({ clientJson, serverJson, repeat: 10 });
+  await run({ clientJson, serverJson, repeat: 10, isUdp: true });
 });
