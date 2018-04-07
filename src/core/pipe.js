@@ -19,16 +19,10 @@ export class Pipe extends EventEmitter {
 
   _cacheBuffer = null;
 
-  _rawPresets = null;
-
   _destroyed = false;
 
   get destroyed() {
     return this._destroyed;
-  }
-
-  get presets() {
-    return this._rawPresets;
   }
 
   constructor({ config, presets, isUdp = false }) {
@@ -39,7 +33,6 @@ export class Pipe extends EventEmitter {
     const _presets = presets.map(this._createPreset.bind(this));
     this._encode_presets = _presets;
     this._decode_presets = [].concat(_presets).reverse();
-    this._rawPresets = presets;
   }
 
   broadcast = (name, action) => {
@@ -123,13 +116,14 @@ export class Pipe extends EventEmitter {
 
   destroy() {
     if (!this._destroyed) {
-      this.getPresets().forEach((preset) => preset.destroy());
+      this.getPresets().forEach((preset) => {
+        preset.destroy();
+        preset.removeAllListeners();
+      });
       this._encode_presets = null;
       this._decode_presets = null;
-      this._rawPresets = null;
       this._cacheBuffer = null;
       this._destroyed = true;
-      this.removeAllListeners();
     }
   }
 

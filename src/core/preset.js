@@ -89,7 +89,6 @@ export class Preset extends EventEmitter {
 
   destroy() {
     this._impl.onDestroy();
-    this.removeAllListeners();
   }
 
 }

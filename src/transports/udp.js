@@ -52,7 +52,7 @@ export class UdpInbound extends Inbound {
       }
     };
     if (this._config.is_client) {
-      const isSs = this.ctx.pipe.presets.some(({ name }) => ['ss-base'].includes(name));
+      const isSs = this.ctx.rawPresets.some(({ name }) => 'ss-base' === name);
       this._socket.send(buffer, port, address, isSs, onSendError);
     } else {
       this._socket.send(buffer, port, address, onSendError);

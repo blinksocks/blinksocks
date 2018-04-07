@@ -31,6 +31,8 @@ import {
  *           (MuxInbound) relay (TcpOutbound) <==> app
  */
 
+// .on('_read')
+// .on('_write')
 // .on('close')
 export class Relay extends EventEmitter {
 
@@ -83,6 +85,7 @@ export class Relay extends EventEmitter {
     // ctx
     this._ctx = {
       pipe: this._pipe,
+      rawPresets: presets,
       thisRelay: this,
       ...context,
     };
@@ -107,7 +110,8 @@ export class Relay extends EventEmitter {
       this._acl.on('action', this.onBroadcast.bind(this));
     }
     // tracker
-    this._tracker = new Tracker({ config, transport, remoteInfo: this._remoteInfo });
+    this._tracker = new Tracker({ config, transport });
+    this._tracker.setSourceAddress(this._remoteInfo.host, this._remoteInfo.port);
   }
 
   init({ proxyRequest }) {
@@ -147,7 +151,7 @@ export class Relay extends EventEmitter {
       this.destroy();
       this.emit('close');
     } else {
-      if (!this._pipe.destroyed) {
+      if (this._pipe && !this._pipe.destroyed) {
         this._pipe.broadcast('pipe', { type: CONNECTION_WILL_CLOSE, payload: this._remoteInfo });
       }
       thisBound.__closed = true;
@@ -309,21 +313,34 @@ export class Relay extends EventEmitter {
    */
   destroy() {
     if (!this._destroyed) {
-      this._pipe && this._pipe.destroy();
-      this._inbound && this._inbound.close();
-      this._outbound && this._outbound.close();
-      this._tracker && this._tracker.destroy();
-      this._acl && this._acl.destroy();
-      this._tracker = null;
-      this._acl = null;
+      this._destroyed = true;
+      if (this._pipe) {
+        this._pipe.destroy();
+        this._pipe.removeAllListeners();
+        this._pipe = null;
+        this._presets = null;
+      }
+      if (this._inbound) {
+        this._inbound.close();
+        this._inbound.removeAllListeners();
+        this._inbound = null;
+      }
+      if (this._outbound) {
+        this._outbound.close();
+        this._outbound.removeAllListeners();
+        this._outbound = null;
+      }
+      if (this._tracker) {
+        this._tracker.destroy();
+        this._tracker = null;
+      }
+      if (this._acl) {
+        this._acl.destroy();
+        this._acl = null;
+      }
       this._ctx = null;
-      this._pipe = null;
-      this._inbound = null;
-      this._outbound = null;
-      this._presets = null;
       this._remoteInfo = null;
       this._proxyRequest = null;
-      this._destroyed = true;
     }
   }
 
