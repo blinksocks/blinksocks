@@ -8,36 +8,46 @@ import uniqueId from 'lodash.uniqueid';
 import { Config } from './config';
 import { Relay } from './relay';
 import { MuxRelay } from './mux-relay';
-import { Performance } from './performance';
 import { dumpHex, getRandomInt, hash, logger } from '../utils';
 import { http, socks, tcp } from '../proxies';
 import { APP_ID } from '../constants';
+
+export const MAX_CONNECTIONS = 50;
+
+export const CONN_STAGE_INIT = 0;
+export const CONN_STAGE_TRANSFER = 1;
+export const CONN_STAGE_FINISH = 2;
+export const CONN_STAGE_ERROR = 3;
 
 export class Hub {
 
   _config = null;
 
-  _performance = null;
-
   _tcpServer = null;
-
   _udpServer = null;
 
   _tcpRelays = new Map(/* id: <Relay> */);
-
   _muxRelays = new Map(/* id: <MuxRelay> */);
-
   _udpRelays = null; // LRU cache
 
-  _totalRead = 0;
+  // instant variables
 
+  _prevHrtime = process.hrtime();
+
+  _totalRead = 0;
   _totalWritten = 0;
+
+  _prevTotalRead = 0;
+  _prevTotalWritten = 0;
+
+  _connQueue = [];
 
   constructor(config) {
     this._config = new Config(config);
-    this._performance = new Performance(this);
     this._udpRelays = LRU({ max: 500, maxAge: 1e5, dispose: (_, relay) => relay.destroy() });
   }
+
+  // public interfaces
 
   async run() {
     // libsodium-wrappers need to be loaded asynchronously
@@ -73,6 +83,8 @@ export class Hub {
     logger.info('[hub] shutdown');
   }
 
+  // performance parameters
+
   async getConnections() {
     return new Promise((resolve, reject) => {
       if (this._tcpServer) {
@@ -97,9 +109,29 @@ export class Hub {
     return this._totalWritten;
   }
 
-  getPerformance() {
-    return this._performance;
+  getUploadSpeed() {
+    const [sec, nano] = process.hrtime(this._prevHrtime);
+    const totalWritten = this._totalWritten;
+    const diff = totalWritten - this._prevTotalWritten;
+    const speed = Math.ceil(diff / (sec + nano / 1e9)); // b/s
+    this._prevTotalWritten = totalWritten;
+    return speed;
   }
+
+  getDownloadSpeed() {
+    const [sec, nano] = process.hrtime(this._prevHrtime);
+    const totalRead = this._totalRead;
+    const diff = totalRead - this._prevTotalRead;
+    const speed = Math.ceil(diff / (sec + nano / 1e9)); // b/s
+    this._prevTotalRead = totalRead;
+    return speed;
+  }
+
+  getConnStatuses() {
+    return this._connQueue;
+  }
+
+  // private methods
 
   async _createServer() {
     const { is_client, is_server, local_protocol } = this._config;
@@ -135,7 +167,7 @@ export class Hub {
       }
       const address = {
         host: this._config.local_host,
-        port: this._config.local_port
+        port: this._config.local_port,
       };
       server.on('proxyConnection', this._onConnection);
       server.on('error', reject);
@@ -151,7 +183,7 @@ export class Hub {
     return new Promise((resolve, reject) => {
       const address = {
         host: this._config.local_host,
-        port: this._config.local_port
+        port: this._config.local_port,
       };
       const onListening = (server) => {
         const service = `${this._config.local_protocol}://${this._config.local_host}:${this._config.local_port}`;
@@ -169,7 +201,7 @@ export class Hub {
         case 'ws': {
           server = new ws.Server({
             ...address,
-            perMessageDeflate: false
+            perMessageDeflate: false,
           });
           server.on('connection', (ws, req) => {
             ws.remoteAddress = req.connection.remoteAddress;
@@ -216,7 +248,7 @@ export class Hub {
         if (relay === undefined) {
           const context = {
             socket: server,
-            remoteInfo: { host: address, port: port }
+            remoteInfo: { host: address, port: port },
           };
           relay = this._createUdpRelay(context);
           relay.init({ proxyRequest });
@@ -258,13 +290,18 @@ export class Hub {
   _onConnection = (socket, proxyRequest = null) => {
     logger.verbose(`[hub] [${socket.remoteAddress}:${socket.remotePort}] connected`);
 
+    const sourceAddress = { host: socket.remoteAddress, port: socket.remotePort };
+
+    const updateConnStatus = (event, extra) => {
+      this._updateConnStatus(event, sourceAddress, extra);
+    };
+
+    updateConnStatus('new');
+
     const context = {
       socket,
       proxyRequest,
-      remoteInfo: {
-        host: socket.remoteAddress,
-        port: socket.remotePort
-      }
+      remoteInfo: sourceAddress,
     };
 
     let muxRelay = null, cid = null;
@@ -296,9 +333,18 @@ export class Hub {
     }
 
     relay.init({ proxyRequest });
+    relay.on('_error', (err) => {
+      updateConnStatus('error', err.message);
+    });
+    relay.on('_connect', (targetAddress) => {
+      updateConnStatus('target', targetAddress);
+    });
     relay.on('_read', (size) => this._totalRead += size);
     relay.on('_write', (size) => this._totalWritten += size);
-    relay.on('close', () => this._tcpRelays.delete(relay.id));
+    relay.on('close', () => {
+      updateConnStatus('close');
+      this._tcpRelays.delete(relay.id);
+    });
 
     this._tcpRelays.set(relay.id, relay);
   };
@@ -309,10 +355,23 @@ export class Hub {
 
     // create a mux relay if needed
     if (muxRelay === null) {
+      const updateConnStatus = (event, extra) => {
+        const sourceAddress = context.remoteInfo;
+        this._updateConnStatus(event, sourceAddress, extra);
+      };
       muxRelay = this._createRelay(context, true);
+      muxRelay.on('_error', (err) => {
+        updateConnStatus('error', err.message);
+      });
+      muxRelay.on('_connect', (targetAddress) => {
+        updateConnStatus('target', targetAddress);
+      });
       muxRelay.on('_read', (size) => this._totalRead += size);
       muxRelay.on('_write', (size) => this._totalWritten += size);
-      muxRelay.on('close', () => this._muxRelays.delete(muxRelay.id));
+      muxRelay.on('close', () => {
+        updateConnStatus('close');
+        this._muxRelays.delete(muxRelay.id);
+      });
       this._muxRelays.set(muxRelay.id, muxRelay);
       logger.info(`[mux-${muxRelay.id}] create mux connection, total: ${this._muxRelays.size}`);
     }
@@ -338,7 +397,7 @@ export class Hub {
       config: this._config,
       context: context,
       transport: this._config.transport,
-      presets: this._config.presets
+      presets: this._config.presets,
     };
     if (isMux) {
       return new MuxRelay(props);
@@ -368,6 +427,50 @@ export class Hub {
       return null;
     }
     return relays.get([...relays.keys()][getRandomInt(0, concurrency - 1)]);
+  }
+
+  _updateConnStatus(event, sourceAddress, extra = null) {
+    const conn = this._connQueue.find(({ sourceHost, sourcePort }) =>
+      sourceAddress.host === sourceHost &&
+      sourceAddress.port === sourcePort,
+    );
+    switch (event) {
+      case 'new':
+        if (this._connQueue.length > MAX_CONNECTIONS) {
+          this._connQueue.shift();
+        }
+        if (!conn) {
+          this._connQueue.push({
+            id: uniqueId('conn_'),
+            stage: CONN_STAGE_INIT,
+            startTime: Date.now(),
+            sourceHost: sourceAddress.host,
+            sourcePort: sourceAddress.port,
+          });
+        }
+        break;
+      case 'target':
+        if (conn) {
+          const targetAddress = extra;
+          conn.stage = CONN_STAGE_TRANSFER;
+          conn.targetHost = targetAddress.host;
+          conn.targetPort = targetAddress.port;
+        }
+        break;
+      case 'close':
+        if (conn && conn.stage !== CONN_STAGE_ERROR) {
+          conn.stage = CONN_STAGE_FINISH;
+          conn.endTime = Date.now();
+        }
+        break;
+      case 'error':
+        if (conn && conn.stage !== CONN_STAGE_FINISH) {
+          conn.stage = CONN_STAGE_ERROR;
+          conn.endTime = Date.now();
+          conn.message = extra;
+        }
+        break;
+    }
   }
 
 }

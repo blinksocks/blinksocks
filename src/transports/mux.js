@@ -62,6 +62,7 @@ export class MuxInbound extends Inbound {
   async onPresetFailed(action) {
     const { name, message } = action.payload;
     logger.error(`[${this.name}] [${this.remote}] preset "${name}" fail to process: ${message}`);
+    this.emit('_error', new Error(message));
     // TODO: maybe have more things to do rather than keep silent
   }
 

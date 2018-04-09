@@ -63,6 +63,7 @@ export class TcpInbound extends Inbound {
 
   onError(err) {
     logger.warn(`[${this.name}] [${this.remote}] ${err.message}`);
+    this.emit('_error', err);
   }
 
   onReceive(buffer) {
@@ -156,6 +157,7 @@ export class TcpInbound extends Inbound {
   async onPresetFailed(action) {
     const { name, message } = action.payload;
     logger.error(`[${this.name}] [${this.remote}] preset "${name}" fail to process: ${message}`);
+    this.emit('_error', new Error(message));
 
     // close connection directly on client side
     if (this._config.is_client) {
@@ -226,6 +228,7 @@ export class TcpOutbound extends Outbound {
 
   onError(err) {
     logger.warn(`[${this.name}] [${this.remote}] ${err.message}`);
+    this.emit('_error', err);
   }
 
   onReceive(buffer) {
@@ -327,12 +330,14 @@ export class TcpOutbound extends Outbound {
               });
             } catch (err) {
               logger.error(`[${this.name}] [${this.remote}] onConnected callback error: ${err.message}`);
+              this.emit('_error', err);
             }
           }
           this.ctx.pipe.broadcast(null, { type: CONNECTED_TO_REMOTE, payload: { host, port } });
         });
       } catch (err) {
         logger.warn(`[${this.name}] [${this.remote}] cannot connect to ${host}:${port}, ${err.message}`);
+        this.emit('_error', err);
         this.onClose();
       }
     } else {

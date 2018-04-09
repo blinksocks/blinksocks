@@ -158,6 +158,8 @@ export class MuxRelay extends Relay {
   // methods
 
   addSubRelay(cid, relay) {
+    relay.on('_error', (err) => this.emit('_error', err));
+    relay.on('_connect', (addr) => this.emit('_connect', addr));
     relay.on('close', this.onSubConnCloseBySelf.bind(this, { cid }));
     this._subRelays.set(cid, relay);
   }

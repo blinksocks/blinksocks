@@ -31,8 +31,10 @@ import {
  *           (MuxInbound) relay (TcpOutbound) <==> app
  */
 
+// .on('_connect')
 // .on('_read')
 // .on('_write')
+// .on('_error');
 // .on('close')
 export class Relay extends EventEmitter {
 
@@ -98,10 +100,12 @@ export class Relay extends EventEmitter {
     this._outbound = outbound;
     // outbound
     this._outbound.setInbound(this._inbound);
+    this._outbound.on('_error', (err) => this.emit('_error', err));
     this._outbound.on('close', () => this.onBoundClose(outbound, inbound));
     this._outbound.on('updatePresets', this.updatePresets);
     // inbound
     this._inbound.setOutbound(this._outbound);
+    this._inbound.on('_error', (err) => this.emit('_error', err));
     this._inbound.on('close', () => this.onBoundClose(inbound, outbound));
     this._inbound.on('updatePresets', this.updatePresets);
     // acl
@@ -176,6 +180,7 @@ export class Relay extends EventEmitter {
       const { host: targetHost, port: targetPort } = action.payload;
       const remote = `${sourceHost}:${sourcePort}`;
       const target = `${targetHost}:${targetPort}`;
+      this.emit('_connect', action.payload);
       // tracker
       if (this._tracker) {
         this._tracker.setTargetAddress(targetHost, targetPort);
