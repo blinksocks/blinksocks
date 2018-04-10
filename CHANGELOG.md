@@ -1,5 +1,27 @@
 #  Change Log
 
+## 3.1.1 (2018-04-10)
+
+### :rocket: Features & Improvements
+
+- api: remove Hub::getPerformance().
+- api: add Hub::getUploadSpeed(), Hub::getDownloadSpeed() and Hub::getConnStatuses().
+- benchmark: enlarge wait time before kill iperf server.
+- package: upgrade winston logger to v3.
+- package: remove husky and precommit hook, it's annoying.
+- test: add udp tests for multiplexing.
+- docs: add usage for systemd.
+
+### :bug: Bug Fixes:
+
+- src: fix crash when onConnected() triggered after ss-base is destroyed.
+
+### Migrating from 3.0.0 to 3.1.1
+
+```
+$ npm install -g blinksocks@3.1.1
+```
+
 ## 3.1.0 (2018-03-11)
 
 > The minimal version of Node.js required is 8.x now, please upgrade your Node.js if necessary.
