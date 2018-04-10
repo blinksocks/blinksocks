@@ -4013,9 +4013,9 @@ sntp@2.x.x:
   dependencies:
     hoek "4.x.x"
 
-socks@^2.1.6:
-  version "2.1.6"
-  resolved "https://registry.yarnpkg.com/socks/-/socks-2.1.6.tgz#684d98e137bdba484f3f4b13bacecb9fa5acc597"
+socks@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/socks/-/socks-2.2.0.tgz#144985b3331ced3ab5ccbee640ab7cb7d43fdd1f"
   dependencies:
     ip "^1.1.5"
     smart-buffer "^4.0.1"
