@@ -29,15 +29,30 @@ The `Hub` class can be used to create a blinksocks client/server instance with d
 * Returns a `<Promise>`.
 
 ```js
-const client = new blinksocks.Hub(clientConfig);
+const { Hub } = require('blinksocks');
+const hub = new Hub(clientConfig);
 
-client.run()
+hub.run()
   .then(() => {
     console.log('blinksocks client is running now');
   })
   .catch((err) => {
     console.error(err);
   });
+```
+
+Or use **async/await** for convenience:
+
+```js
+const { Hub } = require('blinksocks');
+const hub = new Hub(clientConfig);
+
+try {
+  await hub.run();
+  console.log('blinksocks client is running now');
+} catch (err) {
+  console.error(err);
+}
 ```
 
 ### hub.terminate()
@@ -58,23 +73,50 @@ Close all living connections and destroy the hub instance.
 
 * Returns total upload bytes to server/client.
 
-### hub.getPerformance()
-
-* Returns an instance of class `<Performance>`.
-
-## Class: Performance
-
-### new Performance(hub)
-
-* `hub` is an instance of class `Hub`.
-
-### performance.getUploadSpeed()
+### hub.getUploadSpeed()
 
 * Returns upload bytes per second.
 
-### performance.getDownloadSpeed()
+### hub.getDownloadSpeed()
 
 * Returns download bytes per second.
+
+### hub.getConnStatuses()
+
+* Returns current status of all connections.
+
+Results for example:
+
+```json
+[
+  {
+    "id": "conn_1",
+    "stage": 2,
+    "startTime": 1523344893955,
+    "sourceHost": "127.0.0.1",
+    "sourcePort": 56739,
+    "targetHost": "facebook.com",
+    "targetPort": 443,
+    "endTime": 1523344894457
+  },
+  {
+    "id": "conn_2",
+    "stage": 1,
+    "startTime": 1523344894134,
+    "sourceHost": "127.0.0.1",
+    "sourcePort": 56742,
+    "targetHost": "cx.atdmt.com",
+    "targetPort": 443
+  }
+]
+```
+
+### Stage Constants
+
+- `CONN_STAGE_INIT`: 0
+- `CONN_STAGE_TRANSFER`: 1
+- `CONN_STAGE_FINISH`: 2
+- `CONN_STAGE_ERROR`: 3
 
 ## Class: IPreset
 

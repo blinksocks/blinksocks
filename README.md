@@ -14,6 +14,8 @@
 
 ![](docs/blinksocks.png)
 
+> Looking for GUI? Here it is: https://github.com/blinksocks/blinksocks-gui
+
 ## Features
 
 * Cross-platform: running on Linux, Windows and macOS.
@@ -50,7 +52,7 @@ Please check out [blinksocks-nightly-releases](https://github.com/blinksocks/bli
 
 ## Run blinksocks
 
-**npm version(require Node.js)**
+**npm version(require Node.js, recommended)**
 
 ```
 $ blinksocks --help
