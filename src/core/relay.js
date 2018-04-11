@@ -215,7 +215,7 @@ export class Relay extends EventEmitter {
     // 1. update preset list
     this.updatePresets(this.preparePresets([
       ...suite.presets,
-      { 'name': 'auto-conf' }
+      { 'name': 'auto-conf' },
     ]));
     // 2. initialize newly created presets
     const proxyRequest = this._proxyRequest;

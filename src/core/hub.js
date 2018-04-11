@@ -332,19 +332,15 @@ export class Hub {
       }
     }
 
-    relay.init({ proxyRequest });
-    relay.on('_error', (err) => {
-      updateConnStatus('error', err.message);
-    });
-    relay.on('_connect', (targetAddress) => {
-      updateConnStatus('target', targetAddress);
-    });
+    relay.on('_error', (err) => updateConnStatus('error', err.message));
+    relay.on('_connect', (targetAddress) => updateConnStatus('target', targetAddress));
     relay.on('_read', (size) => this._totalRead += size);
     relay.on('_write', (size) => this._totalWritten += size);
     relay.on('close', () => {
       updateConnStatus('close');
       this._tcpRelays.delete(relay.id);
     });
+    relay.init({ proxyRequest });
 
     this._tcpRelays.set(relay.id, relay);
   };
@@ -360,12 +356,8 @@ export class Hub {
         this._updateConnStatus(event, sourceAddress, extra);
       };
       muxRelay = this._createRelay(context, true);
-      muxRelay.on('_error', (err) => {
-        updateConnStatus('error', err.message);
-      });
-      muxRelay.on('_connect', (targetAddress) => {
-        updateConnStatus('target', targetAddress);
-      });
+      muxRelay.on('_error', (err) => updateConnStatus('error', err.message));
+      muxRelay.on('_connect', (targetAddress) => updateConnStatus('target', targetAddress));
       muxRelay.on('_read', (size) => this._totalRead += size);
       muxRelay.on('_write', (size) => this._totalWritten += size);
       muxRelay.on('close', () => {
