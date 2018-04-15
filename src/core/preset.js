@@ -2,6 +2,7 @@ import EventEmitter from 'events';
 import { getPresetClassByName } from '../presets';
 import { kebabCase } from '../utils';
 import { PIPE_ENCODE } from '../constants';
+import { CONNECT_TO_REMOTE } from '../presets/actions';
 
 function createPreset({ config, preset }) {
   const name = preset.name;
@@ -25,6 +26,7 @@ export class Preset extends EventEmitter {
     this._impl.next = this.onPresetNext;
     this._impl.broadcast = this.onPresetBroadcast;
     this._impl.fail = this.onPresetFail;
+    this._impl.resolveTargetAddress = this.onResolveTargetAddress;
   }
 
   get name() {
@@ -49,6 +51,10 @@ export class Preset extends EventEmitter {
 
   onPresetFail = (message) => {
     this.emit('fail', this.name, message);
+  };
+
+  onResolveTargetAddress = ({ host, port }, cb) => {
+    this.onPresetBroadcast({ type: CONNECT_TO_REMOTE, payload: { host, port, onConnected: cb } });
   };
 
   write({ direction, buffer, direct, isUdp }, extraArgs) {
