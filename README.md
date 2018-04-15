@@ -26,7 +26,6 @@
 * Access Control List([ACL]) support.
 * Built-In [shadowsocks], [shadowsocksR], [v2ray vmess] protocols.
 * Out of the box distribution and deployment.
-* [Dynamic Protocol Stack]\(**experimental**\).
 
 ## Getting Started
 
@@ -95,9 +94,8 @@ Apache License 2.0
 [TLS]: docs/config#blinksocks-over-tls
 [WebSocket]: docs/config#blinksocks-over-websocket
 [multiplexing]: docs/config#multiplexing
-[customization]: docs/development/custom-preset
+[customization]: docs/development/api
 [ACL]: docs/config#access-control-list
 [shadowsocks]: docs/presets/RECOMMENDATIONS.md#work-with-shadowsocks
 [shadowsocksR]: docs/presets/RECOMMENDATIONS.md#work-with-shadowsocksr
 [v2ray vmess]: docs/presets/RECOMMENDATIONS.md#work-with-v2ray-vmess
-[Dynamic Protocol Stack]: suites

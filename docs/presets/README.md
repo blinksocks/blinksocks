@@ -31,7 +31,6 @@ Presets are chaining and composable, built-in presets are listed here.
 
 **others**
 
-* [auto-conf](#auto-conf)*
 * [aead-random-cipher](#aead-random-cipher)
 
 > You **MUST** provide one and only one preset signed with (*) to the presets list if you want to relay application data to dynamic destinations.
@@ -293,27 +292,6 @@ A TLS1.2 obfuscator, do TLS handshake using SessionTicket TLS mechanism, transfe
 ]
 ```
 
-## [auto-conf]
-
-An **experimental** preset used for auto-configure preset list. It will randomly choose a suite from `suites` for each connection.
-
-| PARAMS |                    DESCRIPTION                    | DEFAULT |
-| :----- | :------------------------------------------------ | :------ |
-| suites | A json file includes a set of preset combinations | -       |
-
-```
-"presets": [
-  {
-    "name": "auto-conf",
-    "params": {
-      "suites": "suites.json"
-    }
-  }
-]
-```
-
-> You can custom `suites.json` or just use one of the [official versions](../../suites).
-
 ## [aead-random-cipher]
 
 This preset is based on **ss-aead-cipher**, but added random padding in the front of **each chunk**. This preset inherited
@@ -360,6 +338,5 @@ Here is a [list](./RECOMMENDATIONS.md) of recommended conbinations.
 [obfs-random-padding]: ../../src/presets/obfs-random-padding.js
 [obfs-http]: ../../src/presets/obfs-http.js
 [obfs-tls1.2-ticket]: ../../src/presets/obfs-tls1.2-ticket.js
-[auto-conf]: ../../src/presets/auto-conf.js
 [aead-random-cipher]: ../../src/presets/aead-random-cipher.js
 [Server Name Indication]: https://en.wikipedia.org/wiki/Server_Name_Indication
