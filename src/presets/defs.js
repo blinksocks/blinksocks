@@ -58,16 +58,6 @@ export class IPreset {
 
   }
 
-  // callbacks
-
-  /**
-   * how to handle the action, return false/undefined to continue delivery
-   * @returns {boolean}
-   */
-  onNotified(action) {
-    return false;
-  }
-
   /**
    * you can do something when preset destroyed
    */
@@ -163,5 +153,14 @@ export class IPreset {
  * a class which handle addressing
  */
 export class IPresetAddressing extends IPreset {
+
+  /**
+   * triggered once target address resolved on client side
+   * @param host
+   * @param port
+   */
+  onInitTargetAddress({ host, port }) {
+
+  }
 
 }

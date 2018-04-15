@@ -99,20 +99,17 @@ export default class BaseAuthPreset extends IPresetAddressing {
     }
   }
 
+  onInitTargetAddress({ host, port }) {
+    this._host = Buffer.from(host);
+    this._port = numberToBuffer(port);
+  }
+
   onDestroy() {
     this._cipher = null;
     this._decipher = null;
     this._pending = null;
     this._host = null;
     this._port = null;
-  }
-
-  onNotified(action) {
-    if (this._config.is_client && action.type === CONNECT_TO_REMOTE) {
-      const { host, port } = action.payload;
-      this._host = Buffer.from(host);
-      this._port = numberToBuffer(port);
-    }
   }
 
   encodeHeader() {

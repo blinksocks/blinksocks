@@ -78,20 +78,17 @@ export default class SsBasePreset extends IPresetAddressing {
     return this._headSize;
   }
 
+  onInitTargetAddress({ host, port }) {
+    const type = getHostType(host);
+    this._atyp = type;
+    this._port = numberToBuffer(port);
+    this._host = type === ATYP_DOMAIN ? Buffer.from(host) : ip.toBuffer(host);
+  }
+
   onDestroy() {
     this._pending = null;
     this._host = null;
     this._port = null;
-  }
-
-  onNotified(action) {
-    if (this._config.is_client && action.type === CONNECT_TO_REMOTE) {
-      const { host, port } = action.payload;
-      const type = getHostType(host);
-      this._atyp = type;
-      this._port = numberToBuffer(port);
-      this._host = type === ATYP_DOMAIN ? Buffer.from(host) : ip.toBuffer(host);
-    }
   }
 
   encodeHeader() {

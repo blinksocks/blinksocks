@@ -235,6 +235,13 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     this._adBuf.on('data', this.onChunkReceived.bind(this));
   }
 
+  onInitTargetAddress({ host, port }) {
+    const type = getAddrType(host);
+    this._atyp = type;
+    this._port = ntb(port);
+    this._host = (type === ATYP_DOMAIN) ? Buffer.from(host) : ip.toBuffer(host);
+  }
+
   onDestroy() {
     this._adBuf.clear();
     this._adBuf = null;
@@ -249,19 +256,6 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     this._dataDecIV = null;
     this._chunkLenEncMaskGenerator = null;
     this._chunkLenDecMaskGenerator = null;
-  }
-
-  onNotified(action) {
-    if (this._config.is_client && action.type === CONNECT_TO_REMOTE) {
-      const { host, port } = action.payload;
-      const type = getAddrType(host);
-      this._atyp = type;
-      this._port = ntb(port);
-      this._host = (type === ATYP_DOMAIN) ? Buffer.from(host) : ip.toBuffer(host);
-    }
-    // if (action.type === CONNECTION_WILL_CLOSE) {
-    //   this.next(PIPE_ENCODE, Buffer.alloc(2));
-    // }
   }
 
   beforeOut({ buffer }) {
@@ -293,7 +287,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     this._adBuf.put(buffer, { next, fail });
   }
 
-  serverIn({ buffer, next, fail }) {
+  serverIn({ buffer, next, broadcast, fail }) {
     if (!this._isHeaderRecv) {
 
       if (this._isBroadCasting) {
@@ -411,7 +405,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
       this._security = securityType;
 
       this._isBroadCasting = true;
-      this.broadcast({
+      broadcast({
         type: CONNECT_TO_REMOTE,
         payload: {
           host: addrType === ATYP_DOMAIN ? addr.toString() : ip.toString(addr),

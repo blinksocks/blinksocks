@@ -69,7 +69,7 @@ function checkPresetClass(clazz) {
   }
   // check require hooks
   const requiredMethods = [
-    'onNotified', 'onDestroy', 'onInit',
+    'onDestroy', 'onInit',
     'beforeOut', 'beforeIn', 'clientOut', 'serverIn', 'serverOut', 'clientIn',
     'beforeOutUdp', 'beforeInUdp', 'clientOutUdp', 'serverInUdp', 'serverOutUdp', 'clientInUdp'
   ];
