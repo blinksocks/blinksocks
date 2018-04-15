@@ -119,9 +119,10 @@ export class Relay extends EventEmitter {
   }
 
   init({ proxyRequest }) {
-    this._proxyRequest = proxyRequest;
     if (proxyRequest) {
-      this._pipe.broadcast(null, { type: CONNECT_TO_REMOTE, payload: proxyRequest });
+      this._proxyRequest = proxyRequest;
+      this._pipe.initTargetAddress(proxyRequest);
+      this.onBroadcast({ type: CONNECT_TO_REMOTE, payload: proxyRequest });
     }
   }
 
@@ -220,7 +221,8 @@ export class Relay extends EventEmitter {
     // 2. initialize newly created presets
     const proxyRequest = this._proxyRequest;
     if (this._config.is_client) {
-      this._pipe.broadcast(null, {
+      this._pipe.initTargetAddress(proxyRequest);
+      this.onBroadcast({
         type: CONNECT_TO_REMOTE,
         payload: { ...proxyRequest, keepAlive: true }, // keep previous connection alive, don't re-connect
       });

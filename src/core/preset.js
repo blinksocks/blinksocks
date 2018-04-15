@@ -39,10 +39,6 @@ export class Preset extends EventEmitter {
     return this.listenerCount(event) > 0;
   }
 
-  notify(action) {
-    return this._impl.onNotified(action);
-  }
-
   onPresetNext = (direction, buffer) => {
     this.emit(`next_${direction}`, buffer);
   };

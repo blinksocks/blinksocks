@@ -2,6 +2,7 @@ import EventEmitter from 'events';
 import { Preset } from './preset';
 import { PIPE_ENCODE } from '../constants';
 import { PRESET_FAILED } from '../presets/actions';
+import { IPresetAddressing } from '../presets/defs';
 import { logger } from '../utils';
 
 // .on('broadcast')
@@ -35,16 +36,18 @@ export class Pipe extends EventEmitter {
     this._decode_presets = [].concat(_presets).reverse();
   }
 
-  broadcast = (name, action) => {
+  initTargetAddress({ host, port }) {
     const presets = this.getPresets();
-    const results = [];
     for (const preset of presets) {
-      if (preset.name !== name) {
-        results.push(preset.notify(action));
+      const impl = preset.getImplement();
+      if (impl instanceof IPresetAddressing) {
+        impl.onInitTargetAddress({ host, port });
       }
     }
-    // if no preset handled this action, bubble up to where pipe created.
-    if (name !== 'pipe' && results.every((result) => !!result === false)) {
+  }
+
+  broadcast = (name, action) => {
+    if (name !== 'pipe') {
       this.emit('broadcast', action);
     }
   };
