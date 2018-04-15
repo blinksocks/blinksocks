@@ -17,7 +17,6 @@ import {
   CONNECT_TO_REMOTE,
   CONNECTION_CLOSED,
   CONNECTION_WILL_CLOSE,
-  CHANGE_PRESET_SUITE,
   PRESET_FAILED,
 } from '../presets/actions';
 
@@ -102,12 +101,10 @@ export class Relay extends EventEmitter {
     this._outbound.setInbound(this._inbound);
     this._outbound.on('_error', (err) => this.emit('_error', err));
     this._outbound.on('close', () => this.onBoundClose(outbound, inbound));
-    this._outbound.on('updatePresets', this.updatePresets);
     // inbound
     this._inbound.setOutbound(this._outbound);
     this._inbound.on('_error', (err) => this.emit('_error', err));
     this._inbound.on('close', () => this.onBoundClose(inbound, outbound));
-    this._inbound.on('updatePresets', this.updatePresets);
     // acl
     if (config.acl) {
       this._acl = new ACL({ remoteInfo: this._remoteInfo, rules: config.acl_rules });
@@ -202,34 +199,9 @@ export class Relay extends EventEmitter {
         return;
       }
     }
-    if (action.type === CHANGE_PRESET_SUITE) {
-      this.onChangePresetSuite(action);
-      return;
-    }
     this._inbound && this._inbound.onBroadcast(action);
     this._outbound && this._outbound.onBroadcast(action);
   }
-
-  onChangePresetSuite = (action) => {
-    const { type, suite, data } = action.payload;
-    logger.verbose(`[relay] changing presets suite to: ${JSON.stringify(suite)}`);
-    // 1. update preset list
-    this.updatePresets(this.preparePresets([
-      ...suite.presets,
-      { 'name': 'auto-conf' },
-    ]));
-    // 2. initialize newly created presets
-    const proxyRequest = this._proxyRequest;
-    if (this._config.is_client) {
-      this._pipe.initTargetAddress(proxyRequest);
-      this.onBroadcast({
-        type: CONNECT_TO_REMOTE,
-        payload: { ...proxyRequest, keepAlive: true }, // keep previous connection alive, don't re-connect
-      });
-    }
-    // 3. re-pipe
-    this._pipe.feed(type, data);
-  };
 
   onPreDecode = (buffer, cb) => {
     if (this._tracker !== null) {
@@ -293,15 +265,6 @@ export class Relay extends EventEmitter {
   preparePresets(presets) {
     return presets;
   }
-
-  /**
-   * update presets of pipe
-   * @param value
-   */
-  updatePresets = (value) => {
-    this._presets = typeof value === 'function' ? value(this._presets) : value;
-    this._pipe.updatePresets(this._presets);
-  };
 
   /**
    * create pipes for both data forward and backward

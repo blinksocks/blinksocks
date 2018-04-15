@@ -1,5 +1,4 @@
 // functional
-import AutoConfPreset from './auto-conf';
 import MuxPreset from './mux';
 
 // basic
@@ -29,7 +28,6 @@ import AeadRandomCipherPreset from './aead-random-cipher';
 
 const presetMap = {
   // functional
-  'auto-conf': AutoConfPreset,
   'mux': MuxPreset,
 
   // basic

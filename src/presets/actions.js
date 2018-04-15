@@ -60,18 +60,6 @@ export const CONNECTED_TO_REMOTE = '@action:connected_to_remote';
  */
 export const PRESET_FAILED = '@action:preset_failed';
 
-/**
- *  {
- *    type: CHANGE_PRESET_SUITE,
- *    payload: {
- *      type: <PIPE_ENCODE|PIPE_DECODE>,
- *      suite: [...],
- *      data: <Buffer>
- *    }
- *  }
- */
-export const CHANGE_PRESET_SUITE = '@action:change_preset_suite';
-
 export const MUX_NEW_CONN = '@action:mux_new_conn';
 export const MUX_DATA_FRAME = '@action:mux_data_frame';
 export const MUX_CLOSE_CONN = '@action:mux_close_conn';
