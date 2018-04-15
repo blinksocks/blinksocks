@@ -2,7 +2,6 @@ import net from 'net';
 import crypto from 'crypto';
 import ip from 'ip';
 import { IPresetAddressing } from './defs';
-import { CONNECT_TO_REMOTE } from './actions';
 import {
   hmac,
   hash,
@@ -287,7 +286,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     this._adBuf.put(buffer, { next, fail });
   }
 
-  serverIn({ buffer, next, broadcast, fail }) {
+  serverIn({ buffer, next, fail }) {
     if (!this._isHeaderRecv) {
 
       if (this._isBroadCasting) {
@@ -405,18 +404,14 @@ export default class V2rayVmessPreset extends IPresetAddressing {
       this._security = securityType;
 
       this._isBroadCasting = true;
-      broadcast({
-        type: CONNECT_TO_REMOTE,
-        payload: {
-          host: addrType === ATYP_DOMAIN ? addr.toString() : ip.toString(addr),
-          port: port,
-          onConnected: () => {
-            this._adBuf.put(Buffer.concat([data, this._staging]), { next, fail });
-            this._isHeaderRecv = true;
-            this._isBroadCasting = false;
-            this._staging = null;
-          }
-        }
+      this.resolveTargetAddress({
+        host: addrType === ATYP_DOMAIN ? addr.toString() : ip.toString(addr),
+        port: port,
+      }, () => {
+        this._adBuf.put(Buffer.concat([data, this._staging]), { next, fail });
+        this._isHeaderRecv = true;
+        this._isBroadCasting = false;
+        this._staging = null;
       });
     } else {
       this._adBuf.put(buffer, { next, fail });

@@ -163,4 +163,15 @@ export class IPresetAddressing extends IPreset {
 
   }
 
+  /**
+   * DO NOT overwrite it!
+   * call it when target address was resolved on server side,
+   * @param host
+   * @param port
+   * @param callback
+   */
+  resolveTargetAddress({ host, port }, callback) {
+
+  }
+
 }

@@ -2,7 +2,6 @@ import net from 'net';
 import ip from 'ip';
 import { isValidHostname, numberToBuffer } from '../utils';
 import { IPresetAddressing } from './defs';
-import { CONNECT_TO_REMOTE } from './actions';
 
 const ATYP_V4 = 0x01;
 const ATYP_V6 = 0x04;
@@ -156,7 +155,7 @@ export default class SsBasePreset extends IPresetAddressing {
     }
   }
 
-  serverIn({ buffer, next, broadcast, fail }) {
+  serverIn({ buffer, next, fail }) {
     if (!this._isHeaderRecv) {
 
       // shadowsocks(python) aead cipher put [atyp][dst.addr][dst.port] into the first chunk
@@ -175,21 +174,13 @@ export default class SsBasePreset extends IPresetAddressing {
 
       // notify to connect to the real server
       this._isConnecting = true;
-      broadcast({
-        type: CONNECT_TO_REMOTE,
-        payload: {
-          host: host,
-          port: port,
-          // once connected
-          onConnected: () => {
-            if (this._pending !== null) {
-              next(Buffer.concat([data, this._pending]));
-            }
-            this._isHeaderRecv = true;
-            this._isConnecting = false;
-            this._pending = null;
-          }
+      this.resolveTargetAddress({ host, port }, () => {
+        if (this._pending !== null) {
+          next(Buffer.concat([data, this._pending]));
         }
+        this._isHeaderRecv = true;
+        this._isConnecting = false;
+        this._pending = null;
       });
     } else {
       return buffer;
@@ -202,7 +193,7 @@ export default class SsBasePreset extends IPresetAddressing {
     return Buffer.concat([this.encodeHeader(), buffer]);
   }
 
-  serverInUdp({ buffer, next, broadcast, fail }) {
+  serverInUdp({ buffer, next, fail }) {
     const decoded = this.decodeHeader({ buffer, fail });
     if (!decoded) {
       return;
@@ -211,14 +202,7 @@ export default class SsBasePreset extends IPresetAddressing {
     this._atyp = getHostType(host);
     this._host = this._atyp === ATYP_DOMAIN ? Buffer.from(host) : ip.toBuffer(host);
     this._port = numberToBuffer(port);
-    broadcast({
-      type: CONNECT_TO_REMOTE,
-      payload: {
-        host: host,
-        port: port,
-        onConnected: () => next(data)
-      }
-    });
+    this.resolveTargetAddress({ host, port }, () => next(data));
   }
 
 }

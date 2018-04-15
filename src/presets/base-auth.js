@@ -1,7 +1,6 @@
 import crypto from 'crypto';
 import { EVP_BytesToKey, numberToBuffer, hmac, hash } from '../utils';
 import { IPresetAddressing } from './defs';
-import { CONNECT_TO_REMOTE } from './actions';
 
 // available HMACs and length
 const HMAC_METHODS = {
@@ -162,7 +161,7 @@ export default class BaseAuthPreset extends IPresetAddressing {
     }
   }
 
-  serverIn({ buffer, next, broadcast, fail }) {
+  serverIn({ buffer, next, fail }) {
     if (!this._isHeaderRecv) {
 
       if (this._isConnecting) {
@@ -179,18 +178,11 @@ export default class BaseAuthPreset extends IPresetAddressing {
 
       // notify to connect to the real server
       this._isConnecting = true;
-      broadcast({
-        type: CONNECT_TO_REMOTE,
-        payload: {
-          host: host,
-          port: port,
-          onConnected: () => {
-            next(Buffer.concat([data, this._pending]));
-            this._isHeaderRecv = true;
-            this._isConnecting = false;
-            this._pending = null;
-          }
-        }
+      this.resolveTargetAddress({ host, port }, () => {
+        next(Buffer.concat([data, this._pending]));
+        this._isHeaderRecv = true;
+        this._isConnecting = false;
+        this._pending = null;
       });
     } else {
       return buffer;
@@ -203,20 +195,13 @@ export default class BaseAuthPreset extends IPresetAddressing {
     return Buffer.concat([this.encodeHeader(), buffer]);
   }
 
-  serverInUdp({ buffer, next, broadcast, fail }) {
+  serverInUdp({ buffer, next, fail }) {
     const decoded = this.decodeHeader({ buffer, fail });
     if (!decoded) {
       return;
     }
     const { host, port, data } = decoded;
-    broadcast({
-      type: CONNECT_TO_REMOTE,
-      payload: {
-        host: host,
-        port: port,
-        onConnected: () => next(data)
-      }
-    });
+    this.resolveTargetAddress({ host, port }, () => next(data));
   }
 
 }
