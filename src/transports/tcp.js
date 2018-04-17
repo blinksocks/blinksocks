@@ -75,11 +75,11 @@ export class TcpInbound extends Inbound {
     const outbound = this.getOutbound();
     if (outbound && outbound.bufferSize >= MAX_BUFFERED_SIZE) {
       logger.debug(`[${this.name}] [${this.remote}] recv paused due to outbound.bufferSize=${outbound.bufferSize} >= ${MAX_BUFFERED_SIZE}`);
-      this._socket.pause();
+      this.pause();
       outbound.once('drain', () => {
         if (this._socket && !this._socket.destroyed) {
           logger.debug(`[${this.name}] [${this.remote}] resume to recv`);
-          this._socket.resume();
+          this.resume();
         }
       });
     }
@@ -103,6 +103,18 @@ export class TcpInbound extends Inbound {
     if (this._outbound) {
       this._outbound.close();
       this._outbound = null;
+    }
+  }
+
+  pause() {
+    if (this._socket && typeof this._socket.pause === 'function') {
+      this._socket.pause();
+    }
+  }
+
+  resume() {
+    if (this._socket && typeof this._socket.resume === 'function') {
+      this._socket.resume();
     }
   }
 
@@ -131,10 +143,10 @@ export class TcpInbound extends Inbound {
   onBroadcast(action) {
     switch (action.type) {
       case CONNECT_TO_REMOTE:
-        this._socket && this._socket.pause();
+        this.pause();
         break;
       case CONNECTED_TO_REMOTE:
-        this._socket && this._socket.resume();
+        this.resume();
         break;
       case PRESET_FAILED:
         this.onPresetFailed(action);
@@ -144,10 +156,10 @@ export class TcpInbound extends Inbound {
         this.close();
         break;
       case ACL_PAUSE_RECV:
-        this._socket && this._socket.pause();
+        this.pause();
         break;
       case ACL_RESUME_RECV:
-        this._socket && this._socket.resume();
+        this.resume();
         break;
       default:
         break;
@@ -182,7 +194,7 @@ export class TcpInbound extends Inbound {
           this._outbound.write(orgData);
         }
       } else {
-        this._socket && this._socket.pause();
+        this.pause();
         const timeout = getRandomInt(10, 40);
         logger.warn(`[${this.name}] [${this.remote}] connection will be closed in ${timeout}s...`);
         setTimeout(this.onClose, timeout * 1e3);
@@ -240,11 +252,11 @@ export class TcpOutbound extends Outbound {
     const inbound = this.getInbound();
     if (inbound && inbound.bufferSize >= MAX_BUFFERED_SIZE) {
       logger.debug(`[${this.name}] [${this.remote}] recv paused due to inbound.bufferSize=${inbound.bufferSize} >= ${MAX_BUFFERED_SIZE}`);
-      this._socket.pause();
+      this.pause();
       inbound.once('drain', () => {
         if (this._socket && !this._socket.destroyed) {
           logger.debug(`[${this.name}] [${this.remote}]  resume to recv`);
-          this._socket.resume();
+          this.resume();
         }
       });
     }
@@ -268,6 +280,18 @@ export class TcpOutbound extends Outbound {
     if (this._inbound) {
       this._inbound.close();
       this._inbound = null;
+    }
+  }
+
+  pause() {
+    if (this._socket && typeof this._socket.pause === 'function') {
+      this._socket.pause();
+    }
+  }
+
+  resume() {
+    if (this._socket && typeof this._socket.resume === 'function') {
+      this._socket.resume();
     }
   }
 
@@ -299,10 +323,10 @@ export class TcpOutbound extends Outbound {
         this.onConnectToRemote(action);
         break;
       case ACL_PAUSE_SEND:
-        this._socket && this._socket.pause();
+        this.pause();
         break;
       case ACL_RESUME_SEND:
-        this._socket && this._socket.resume();
+        this.resume();
         break;
       default:
         break;

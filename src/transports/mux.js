@@ -46,10 +46,14 @@ export class MuxInbound extends Inbound {
     const socket = this.ctx.socket;
     switch (action.type) {
       case CONNECT_TO_REMOTE:
-        socket && socket.pause();
+        if (socket && typeof socket.pause === 'function') {
+          socket.pause();
+        }
         break;
       case CONNECTED_TO_REMOTE:
-        socket && socket.resume();
+        if (socket && typeof socket.resume === 'function') {
+          socket.resume();
+        }
         break;
       case PRESET_FAILED:
         this.onPresetFailed(action);
