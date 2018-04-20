@@ -20,11 +20,10 @@ function loadFileSync(file) {
 export class Config {
 
   local_protocol = null;
+  local_protocol_auth = null;
+  local_protocol_query = null;
   local_host = null;
   local_port = null;
-
-  forward_host = null;
-  forward_port = null;
 
   server = null;
   is_client = null;
@@ -63,8 +62,10 @@ export class Config {
   stores = [];
 
   constructor(json) {
-    const { protocol, hostname, port, query } = url.parse(json.service);
+    const { protocol, hostname, port, query, auth } = url.parse(json.service);
     this.local_protocol = protocol.slice(0, -1);
+    this.local_protocol_auth = auth;
+    this.local_protocol_query = query;
     this.local_host = hostname;
     this.local_port = +port;
 
@@ -96,13 +97,6 @@ export class Config {
       this._initServer(json);
     } else {
       this._initServer(server);
-    }
-
-    if (this.is_client && this.local_protocol === 'tcp') {
-      const { forward } = qs.parse(query);
-      const { hostname, port } = url.parse('tcp://' + forward);
-      this.forward_host = hostname;
-      this.forward_port = +port;
     }
 
     // common
@@ -236,7 +230,7 @@ export class Config {
       throw Error('"service" must be provided as "<protocol>://<host>:<port>[?params]"');
     }
 
-    const { protocol: _protocol, hostname, port, query } = url.parse(json.service);
+    const { protocol: _protocol, hostname, port, query, auth } = url.parse(json.service);
 
     // service.protocol
     if (typeof _protocol !== 'string') {
@@ -250,6 +244,11 @@ export class Config {
     ];
     if (!available_client_protocols.includes(protocol)) {
       throw Error(`service.protocol must be: ${available_client_protocols.join(', ')}`);
+    }
+
+    // service.auth
+    if (typeof auth === 'string' && auth.length < 1) {
+      throw Error('service.auth is invalid');
     }
 
     // service.host

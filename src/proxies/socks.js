@@ -40,6 +40,13 @@ import { logger, numberToBuffer, dumpHex } from '../utils';
 // | 1  |   1    |
 // +----+--------+
 
+// Socks5 Initial negotiation(only when METHOD is 0x02)
+// +----+------+----------+------+----------+
+// |VER | ULEN |  UNAME   | PLEN |  PASSWD  |
+// +----+------+----------+------+----------+
+// | 1  |  1   | 1 to 255 |  1   | 1 to 255 |
+// +----+------+----------+------+----------+
+
 // Socks5 Request Message
 // +----+-----+-------+------+----------+----------+
 // |VER | CMD |  RSV  | ATYP | DST.ADDR | DST.PORT |
@@ -65,6 +72,8 @@ const NOOP = 0x00;
 const SOCKS_VERSION_V4 = 0x04;
 const SOCKS_VERSION_V5 = 0x05;
 const METHOD_NO_AUTH = 0x00;
+const METHOD_USERNAME_PASSWORD = 0x02;
+const METHOD_NOT_ACCEPTABLE = 0xff;
 
 const REQUEST_COMMAND_CONNECT = 0x01;
 const REQUEST_COMMAND_BIND = 0x02;
@@ -106,10 +115,40 @@ function parseSocks5Identifier(buffer) {
   if (buffer[1] < 1) {
     return null;
   }
-  if (buffer.slice(2).length !== buffer[1]) {
+  if (buffer.length - 2 !== buffer[1]) {
     return null;
   }
-  return true;
+  let method = METHOD_NO_AUTH;
+  for (let i = 2; i <= 2 + buffer[1]; ++i) {
+    if (buffer[i] === METHOD_USERNAME_PASSWORD) {
+      method = METHOD_USERNAME_PASSWORD;
+      break;
+    }
+  }
+  return { method };
+}
+
+function parseSocks5InitialNegotiation(buffer) {
+  if (buffer.length < 3) {
+    return null;
+  }
+  // if (buffer[0] !== SOCKS_VERSION_V5) {
+  //   return null;
+  // }
+  const ulen = buffer[1];
+  if (buffer.length < ulen + 2) {
+    return null;
+  }
+  const uname = buffer.slice(2, 2 + ulen);
+  const plen = buffer[2 + ulen];
+  if (buffer.length !== 3 + ulen + plen) {
+    return null;
+  }
+  const passwd = buffer.slice(-plen);
+  return {
+    username: uname.toString(),
+    password: passwd.toString(),
+  };
 }
 
 function parseSocks5Request(buffer) {
@@ -243,9 +282,10 @@ function encodeSocks5UdpResponse({ host, port, data }) {
 
 const STAGE_INIT = 0;
 const STAGE_SOCKS5_REQUEST_MESSAGE = 1;
-const STAGE_DONE = 2;
+const STAGE_SOCKS5_INITIAL_NEGOTIATION_MESSAGE = 2;
+const STAGE_DONE = 3;
 
-export function createServer({ bindAddress, bindPort }) {
+export function createServer({ bindAddress, bindPort, username, password }) {
   const server = net.createServer();
 
   server.on('connection', (socket) => {
@@ -265,9 +305,23 @@ export function createServer({ bindAddress, bindPort }) {
         // try socks5
         request = parseSocks5Identifier(buffer);
         if (request !== null) {
-          stage = STAGE_SOCKS5_REQUEST_MESSAGE;
-          // Socks5 Select Message
-          socket.write(Buffer.from([SOCKS_VERSION_V5, METHOD_NO_AUTH]));
+          const { method } = request;
+          switch (method) {
+            case METHOD_NO_AUTH:
+              stage = STAGE_SOCKS5_REQUEST_MESSAGE;
+              // Socks5 Select Message
+              socket.write(Buffer.from([SOCKS_VERSION_V5, METHOD_NO_AUTH]));
+              break;
+            case METHOD_USERNAME_PASSWORD:
+              stage = STAGE_SOCKS5_INITIAL_NEGOTIATION_MESSAGE;
+              // Socks5 Initial negotiation
+              socket.write(Buffer.from([SOCKS_VERSION_V5, METHOD_USERNAME_PASSWORD]));
+              break;
+            default:
+              logger.error(`[socks] [${appAddress}] unsupported socks5 identifier method: ${method}`);
+              socket.end(Buffer.from([SOCKS_VERSION_V5, METHOD_NOT_ACCEPTABLE]));
+              break;
+          }
           return;
         }
         // try socks4(a)
@@ -288,6 +342,24 @@ export function createServer({ bindAddress, bindPort }) {
         }
         logger.error(`[socks] [${appAddress}] invalid socks handshake message: ${dumpHex(buffer)}`);
         socket.destroy();
+      }
+      else if (stage === STAGE_SOCKS5_INITIAL_NEGOTIATION_MESSAGE) {
+        request = parseSocks5InitialNegotiation(buffer);
+        if (request !== null) {
+          // Username/Password Authentication
+          if (username !== null && password !== null) {
+            if (username !== request.username || password !== request.password) {
+              logger.error(`[socks] [${appAddress}] invalid socks5 username or password`);
+              socket.end(Buffer.from([SOCKS_VERSION_V5, 0x01]));
+              return;
+            }
+          }
+          stage = STAGE_SOCKS5_REQUEST_MESSAGE;
+          socket.write(Buffer.from([SOCKS_VERSION_V5, 0x00]));
+        } else {
+          logger.error(`[socks] [${appAddress}] invalid socks5 initial negotiation message: ${dumpHex(buffer)}`);
+          socket.end(Buffer.from([SOCKS_VERSION_V5, 0x01]));
+        }
       }
       else if (stage === STAGE_SOCKS5_REQUEST_MESSAGE) {
         request = parseSocks5Request(buffer);

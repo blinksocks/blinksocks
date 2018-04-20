@@ -1,8 +1,10 @@
 import _sodium from 'libsodium-wrappers';
 import dgram from 'dgram';
 import net from 'net';
+import url from 'url';
 import tls from 'tls';
 import ws from 'ws';
+import qs from 'qs';
 import LRU from 'lru-cache';
 import uniqueId from 'lodash.uniqueid';
 import { Config } from './config';
@@ -147,32 +149,52 @@ export class Hub {
 
   async _createServerOnClient() {
     return new Promise((resolve, reject) => {
+      const { local_protocol, local_protocol_query, local_protocol_auth, local_host, local_port } = this._config;
       let server = null;
-      switch (this._config.local_protocol) {
-        case 'tcp':
-          server = tcp.createServer({ forwardHost: this._config.forward_host, forwardPort: this._config.forward_port });
+      switch (local_protocol) {
+        case 'tcp': {
+          const { forward } = qs.parse(local_protocol_query);
+          const { hostname, port } = url.parse('tcp://' + forward);
+          const forwardHost = hostname;
+          const forwardPort = +port;
+          server = tcp.createServer({ forwardHost, forwardPort });
           break;
+        }
         case 'socks':
         case 'socks5':
         case 'socks4':
-        case 'socks4a':
-          server = socks.createServer({ bindAddress: this._config.local_host, bindPort: this._config.local_port });
+        case 'socks4a': {
+          let username = null;
+          let password = null;
+          if (typeof local_protocol_auth === 'string') {
+            [username, password] = local_protocol_auth.split(':');
+            if (!username || !password) {
+              return reject(Error('invalid auth info in service'));
+            }
+          }
+          server = socks.createServer({
+            bindAddress: local_host,
+            bindPort: local_port,
+            username: username,
+            password: password,
+          });
           break;
+        }
         case 'http':
         case 'https':
           server = http.createServer();
           break;
         default:
-          return reject(Error(`unsupported protocol: "${this._config.local_protocol}"`));
+          return reject(Error(`unsupported protocol: "${local_protocol}"`));
       }
       const address = {
-        host: this._config.local_host,
-        port: this._config.local_port,
+        host: local_host,
+        port: local_port,
       };
       server.on('proxyConnection', this._onConnection);
       server.on('error', reject);
       server.listen(address, () => {
-        const service = `${this._config.local_protocol}://${this._config.local_host}:${this._config.local_port}`;
+        const service = `${local_protocol}://${local_host}:${local_port}`;
         logger.info(`[hub] blinksocks client is running at ${service}`);
         resolve(server);
       });
