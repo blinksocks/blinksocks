@@ -1501,21 +1501,21 @@ eslint-config-babel@^7.0.2:
   version "7.0.2"
   resolved "https://registry.yarnpkg.com/eslint-config-babel/-/eslint-config-babel-7.0.2.tgz#cbde74f61cee087d8cd6e607fcfa087869a02d99"
 
-eslint-plugin-babel@^5.0.0:
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-babel/-/eslint-plugin-babel-5.0.0.tgz#57c082f89bfc67f535757a8a939617667c3c5c97"
+eslint-plugin-babel@^5.1.0:
+  version "5.1.0"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-babel/-/eslint-plugin-babel-5.1.0.tgz#9c76e476162041e50b6ba69aa4eae3bdd6a4e1c3"
   dependencies:
-    eslint-rule-composer "^0.1.1"
+    eslint-rule-composer "^0.3.0"
 
-eslint-plugin-flowtype@^2.46.2:
-  version "2.46.2"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-flowtype/-/eslint-plugin-flowtype-2.46.2.tgz#8749fddda6f6c30d0672011151bea726765b5753"
+eslint-plugin-flowtype@^2.46.3:
+  version "2.46.3"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-flowtype/-/eslint-plugin-flowtype-2.46.3.tgz#7e84131d87ef18b496b1810448593374860b4e8e"
   dependencies:
     lodash "^4.15.0"
 
-eslint-rule-composer@^0.1.1:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/eslint-rule-composer/-/eslint-rule-composer-0.1.1.tgz#479dfd4e93d7f2777499a35ce9be76403c8e982a"
+eslint-rule-composer@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/eslint-rule-composer/-/eslint-rule-composer-0.3.0.tgz#79320c927b0c5c0d3d3d2b76c8b4a488f25bbaf9"
 
 eslint-scope@^3.7.1, eslint-scope@~3.7.1:
   version "3.7.1"
@@ -4560,9 +4560,9 @@ winston-compat@^0.1.0:
     cycle "~1.0.3"
     vows "^0.8.1"
 
-winston-daily-rotate-file@^3.0.2:
-  version "3.0.2"
-  resolved "https://registry.yarnpkg.com/winston-daily-rotate-file/-/winston-daily-rotate-file-3.0.2.tgz#37c94cd9df30bf3d79f5de2077f3528075920b14"
+winston-daily-rotate-file@^3.1.2:
+  version "3.1.2"
+  resolved "https://registry.yarnpkg.com/winston-daily-rotate-file/-/winston-daily-rotate-file-3.1.2.tgz#3aae6bb71b8f7c8aa3911c564dc485263f592a2a"
   dependencies:
     file-stream-rotator "^0.2.1"
     semver "^5.5.0"
@@ -4623,18 +4623,18 @@ write@^0.2.1:
   dependencies:
     mkdirp "^0.5.1"
 
-ws@5.1.1:
-  version "5.1.1"
-  resolved "https://registry.yarnpkg.com/ws/-/ws-5.1.1.tgz#1d43704689711ac1942fd2f283e38f825c4b8b95"
-  dependencies:
-    async-limiter "~1.0.0"
-
 ws@^4.0.0:
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/ws/-/ws-4.1.0.tgz#a979b5d7d4da68bf54efe0408967c324869a7289"
   dependencies:
     async-limiter "~1.0.0"
     safe-buffer "~5.1.0"
+
+ws@^5.1.1:
+  version "5.1.1"
+  resolved "https://registry.yarnpkg.com/ws/-/ws-5.1.1.tgz#1d43704689711ac1942fd2f283e38f825c4b8b95"
+  dependencies:
+    async-limiter "~1.0.0"
 
 xml-name-validator@^3.0.0:
   version "3.0.0"

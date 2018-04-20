@@ -39,7 +39,7 @@
     "node-fetch": "^2.1.2",
     "qs": "^6.5.1",
     "winston": "^3.0.0-rc4",
-    "winston-daily-rotate-file": "^3.0.2",
+    "winston-daily-rotate-file": "^3.1.2",
     "ws": "^5.1.1"
   },
   "devDependencies": {
@@ -54,8 +54,8 @@
     "cross-env": "^5.1.4",
     "eslint": "^4.19.1",
     "eslint-config-babel": "^7.0.2",
-    "eslint-plugin-babel": "^5.0.0",
-    "eslint-plugin-flowtype": "^2.46.2",
+    "eslint-plugin-babel": "^5.1.0",
+    "eslint-plugin-flowtype": "^2.46.3",
     "jest": "^22.4.3",
     "lodash.clonedeep": "^4.5.0",
     "mkdirp": "^0.5.1",
