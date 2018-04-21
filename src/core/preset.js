@@ -4,15 +4,6 @@ import { kebabCase } from '../utils';
 import { PIPE_ENCODE } from '../constants';
 import { CONNECT_TO_REMOTE } from '../presets/actions';
 
-function createPreset({ config, preset }) {
-  const name = preset.name;
-  const params = preset.params || {};
-  const ImplClass = getPresetClassByName(name);
-  const instance = new ImplClass({ config, params });
-  instance.onInit(params);
-  return instance;
-}
-
 export class Preset extends EventEmitter {
 
   _config = null;
@@ -22,11 +13,15 @@ export class Preset extends EventEmitter {
   constructor({ config, preset }) {
     super();
     this._config = config;
-    this._impl = createPreset({ config, preset });
+    // initialize preset instance
+    const { name, params = {} } = preset;
+    const ImplClass = getPresetClassByName(name);
+    this._impl = new ImplClass({ config, params });
     this._impl.next = this.onPresetNext;
     this._impl.broadcast = this.onPresetBroadcast;
     this._impl.fail = this.onPresetFail;
     this._impl.resolveTargetAddress = this.onResolveTargetAddress;
+    this._impl.onInit(params);
   }
 
   get name() {
