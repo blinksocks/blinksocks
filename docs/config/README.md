@@ -76,37 +76,59 @@ $ blinksocks init
 }
 ```
 
-|        KEY         |                         DESCRIPTION                          |     DEFAULT     |                                  REMARKS                                   |
-| :----------------- | :----------------------------------------------------------- | :-------------- | :------------------------------------------------------------------------- |
-| service            | local service address                                        | -               | `<protocol>://<host>:<port>[?params]`, e.g, "socks://127.0.0.1:1080"       |
-| server             | remote server config                                         | -               | **CLIENT ONLY**                                                            |
-| server.service     | remote service address                                       | -               | `<protocol>://<host>:<port>`                                               |
-| server.key         | remote server master key                                     | -               | -                                                                          |
-| presets            | an ordered list of presets to build a protocol stack         | -               | see [presets]                                                              |
-| presets[i].name    | preset name                                                  | -               | -                                                                          |
-| presets[i].params  | preset params                                                | -               | -                                                                          |
-| tls_key            | private key for TLS                                          | -               | required on server if `<protocol>` is "tls"                                |
-| tls_cert           | certificate for TLS                                          | -               | required on both client and server if `<protocol>` is "tls"                |
-| acl                | enable access control list or not                            | false           | **SERVER ONLY**                                                            |
-| acl_conf           | access control list configuration file                       | -               | **SERVER ONLY**, see below                                                 |
-| timeout            | timeout for each connection                                  | 600             | in seconds                                                                 |
-| mux                | enable multiplexing or not                                   | false           | -                                                                          |
-| mux_concurrency    | the max mux connection established between client and server | 10              | **CLIENT ONLY**                                                            |
-| redirect           | target address to redirect when preset fail to process       | ""              | **SERVER ONLY** `<host>:<port>`                                            |
-| dns                | a list of DNS server IPs                                     | []              | -                                                                          |
-| dns_expire         | in-memory DNS cache expiration time                          | 3600            | in seconds                                                                 |
-| log_path           | log file path                                                | "bs-[type].log" | a relative/absolute directory or a file to put logs in                     |
-| log_level          | log level                                                    | "info"          | ['error', 'warn', 'info', 'verbose', 'debug', 'silly']                     |
-| log_max_days       | the max of days a log file will be saved                     | 30              | remove this option if you want to keep all log files                       |
+|        KEY        |                         DESCRIPTION                          |     DEFAULT     |                           REMARKS                           |
+| :---------------- | :----------------------------------------------------------- | :-------------- | :---------------------------------------------------------- |
+| service           | local service address                                        | -               | a [WHATWG URL] e.g, "socks://127.0.0.1:1080"                |
+| server            | remote server config                                         | -               | **CLIENT ONLY**                                             |
+| server.service    | remote service address                                       | -               | `<protocol>://<host>:<port>`                                |
+| server.key        | remote server master key                                     | -               | -                                                           |
+| presets           | an ordered list of presets to build a protocol stack         | -               | see [presets]                                               |
+| presets[i].name   | preset name                                                  | -               | -                                                           |
+| presets[i].params | preset params                                                | -               | -                                                           |
+| tls_key           | private key for TLS                                          | -               | required on server if `<protocol>` is "tls"                 |
+| tls_cert          | certificate for TLS                                          | -               | required on both client and server if `<protocol>` is "tls" |
+| acl               | enable access control list or not                            | false           | **SERVER ONLY**                                             |
+| acl_conf          | access control list configuration file                       | -               | **SERVER ONLY**, see below                                  |
+| timeout           | timeout for each connection                                  | 600             | in seconds                                                  |
+| mux               | enable multiplexing or not                                   | false           | -                                                           |
+| mux_concurrency   | the max mux connection established between client and server | 10              | **CLIENT ONLY**                                             |
+| redirect          | target address to redirect when preset fail to process       | ""              | **SERVER ONLY** `<host>:<port>`                             |
+| dns               | a list of DNS server IPs                                     | []              | -                                                           |
+| dns_expire        | in-memory DNS cache expiration time                          | 3600            | in seconds                                                  |
+| log_path          | log file path                                                | "bs-[type].log" | a relative/absolute directory or a file to put logs in      |
+| log_level         | log level                                                    | "info"          | ['error', 'warn', 'info', 'verbose', 'debug', 'silly']      |
+| log_max_days      | the max of days a log file will be saved                     | 30              | remove this option if you want to keep all log files        |
 
 ### Service
 
-`service` is a convenient way to specify what kind of service should be created **locally**.
+`service` is a [WHATWG URL] that includes what kind of service should be created **locally**.
 
 The `<protocol>` should be:
 
-* On client side: `tcp`, `socks`/`socks5`/`socks4`/`socks4a` or `http`/`https`
+* On client side: `tcp`, `socks`/`socks5`/`socks4`/`socks4a` or `http`/`https`.
 * On server side: `tcp`, `tls` or `ws`.
+
+#### Service Authentication
+
+* Create a **http** service with [Basic Authentication](https://www.iana.org/go/rfc7617).
+
+```
+// blinksocks.client.json
+{
+  "service": "http://user:pass@localhost:1080",
+  ...
+}
+```
+
+* Create a **socks5** service with [Username/Password Authentication](https://tools.ietf.org/html/rfc1929).
+
+```
+// blinksocks.client.json
+{
+  "service": "socks5://user:pass@localhost:1080",
+  ...
+}
+```
 
 #### Service Params
 
@@ -326,6 +348,7 @@ Note that Socks5 requires to relay UDP message over UDP, so does blinksocks:
 apps <--SOCKS5--> [blinksocks client] <--UDP--> [blinksocks server] <--UDP--> dests
 ```
 
+[WHATWG URL]: https://nodejs.org/dist/latest/docs/api/url.html#url_url_strings_and_url_objects
 [presets]: ../presets
 [winston]: https://github.com/winstonjs/winston
 [UDP ASSOCIATE]: https://tools.ietf.org/html/rfc1928#section-4
