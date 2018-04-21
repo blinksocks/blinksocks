@@ -3,7 +3,9 @@ import util from 'util';
 
 const exec = util.promisify(child_process.exec);
 
-export default async function curl({ proxyMethod = 'socks5', proxyHost, proxyPort, targetHost, targetPort }) {
+export default async function curl(args) {
+  const { proxyMethod = 'socks5', proxyHost, proxyPort, targetHost, targetPort } = args;
+  const { username, password } = args;
   const proxy = {
     'http': '-x',
     'http_connect': '-p',
@@ -18,8 +20,15 @@ export default async function curl({ proxyMethod = 'socks5', proxyHost, proxyPor
   }
 
   try {
-    const options = { encoding: 'utf-8', timeout: 5e3 };
-    const { stdout } = await exec(`curl -L ${proxy} ${proxyHost}:${proxyPort} ${targetHost}:${targetPort}`, options);
+    let command = `curl `;
+    if (username && password) {
+      command += `-U ${username}:${password} `;
+    }
+    if (proxy) {
+      command += `-L ${proxy} ${proxyHost}:${proxyPort} `;
+    }
+    command += `${targetHost}:${targetPort} `;
+    const { stdout } = await exec(command, { encoding: 'utf-8', timeout: 5e3 });
     return stdout;
   } catch (err) {
     // console.log(err);

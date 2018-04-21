@@ -42,8 +42,10 @@ afterAll(() => {
   udpServer.close();
 });
 
-export default async function run({ proxy, clientJson, serverJson, not = false, isUdp = false, repeat = 1 }) {
+export default async function run({ proxy, auth = {}, clientJson, serverJson, not = false, isUdp = false, repeat = 1 }) {
   const props = {
+    username: auth.username,
+    password: auth.password,
     proxyHost: '127.0.0.1',
     proxyPort: 1081,
     targetHost: '127.0.0.1',

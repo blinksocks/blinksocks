@@ -1,21 +1,44 @@
 import url from 'url';
 import http from 'http';
-import { logger } from '../utils';
+import { logger, isValidPort } from '../utils';
 
-export function createServer() {
+function checkBasicAuthorization(credentials, { username, password }) {
+  if (!credentials) {
+    return false;
+  }
+  const utf8str = Buffer.from(credentials, 'base64').toString();
+  const [uname, passwd] = utf8str.split(':');
+  if (uname !== username || passwd !== password) {
+    return false;
+  }
+  return true;
+}
+
+export function createServer({ username, password }) {
   const server = http.createServer();
 
   // Simple HTTP Proxy
   server.on('request', (req, res) => {
     const { hostname, port, path } = url.parse(req.url);
     const { socket, method, httpVersion, headers } = req;
+    const appAddress = `${socket.remoteAddress}:${socket.remotePort}`;
 
     const _port = +port || 80;
 
-    if (hostname === null || _port === null) {
+    if (hostname === null || !isValidPort(_port)) {
       const remote = `${socket.remoteAddress}:${socket.remotePort}`;
       logger.warn(`[http] drop invalid http request sent from ${remote}`);
       return res.end();
+    }
+
+    // Basic Authorization
+    const proxyAuth = headers['proxy-authorization'];
+    if (proxyAuth && username !== null && password !== null) {
+      const [type, credentials] = proxyAuth.split(' ');
+      if (type !== 'Basic' || !checkBasicAuthorization(credentials, { username, password })) {
+        logger.error(`[http] [${appAddress}] authorization failed, type=${type} credentials=${credentials}`);
+        return res.end('HTTP/1.1 401 Unauthorized\r\n\r\n');
+      }
     }
 
     // prevent recv before we connected to the server
@@ -31,12 +54,11 @@ export function createServer() {
 
         // rebuild headers
         const headerKeys = Object.keys(headers);
-        const _headers = [];
-        for (const key of headerKeys) {
-          const value = headers[key];
-          _headers.push(`${key}: ${value}\r\n`);
-        }
-        const reqMsg = `${method} ${path} HTTP/${httpVersion}\r\n` + _headers.join('') + '\r\n';
+        const newHeaders = headerKeys.reduce((result, key) => {
+          result.push(`${key}: ${headers[key]}\r\n`);
+          return result;
+        }, []);
+        const reqMsg = `${method} ${path} HTTP/${httpVersion}\r\n` + newHeaders.join('') + '\r\n';
         send(Buffer.from(reqMsg));
 
         // free to recv from application now
@@ -48,13 +70,24 @@ export function createServer() {
   // HTTPS tunnel
   server.on('connect', (req, socket) => {
     const { hostname, port } = url.parse(`http://${req.url}`);
+    const appAddress = `${socket.remoteAddress}:${socket.remotePort}`;
 
     const _port = +port || 443;
 
-    if (hostname === null || _port === null) {
+    if (hostname === null || !isValidPort(_port)) {
       const remote = `${socket.remoteAddress}:${socket.remotePort}`;
-      logger.warn(`[http] drop invalid http CONNECT request sent from ${remote}`);
+      logger.warn(`[http] [${appAddress}] drop invalid http CONNECT request sent from ${remote}`);
       return socket.destroy();
+    }
+
+    // Basic Authorization
+    const proxyAuth = req.headers['proxy-authorization'];
+    if (proxyAuth && username !== null && password !== null) {
+      const [type, credentials] = proxyAuth.split(' ');
+      if (type !== 'Basic' || !checkBasicAuthorization(credentials, { username, password })) {
+        logger.error(`[http] [${appAddress}] authorization failed, type=${type} credentials=${credentials}`);
+        return socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+      }
     }
 
     server.emit('proxyConnection', socket, {
@@ -68,8 +101,8 @@ export function createServer() {
 
   // errors
   server.on('clientError', (err, socket) => {
-    const { remoteAddress, remotePort } = socket;
-    logger.error(`[http] [${remoteAddress}:${remotePort}] invalid http request: ${err.message}`);
+    const appAddress = `${socket.remoteAddress}:${socket.remotePort}`;
+    logger.error(`[http] [${appAddress}] invalid http request: ${err.message}`);
     socket.destroy();
   });
 

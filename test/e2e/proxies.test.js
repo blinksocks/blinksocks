@@ -28,10 +28,28 @@ test('http-proxy', async () => await run({
   clientJson: { ...clientJson, service: 'http://127.0.0.1:1081' },
   serverJson,
 }));
+test('http-proxy with authorization', async () => await run({
+  proxy: 'http',
+  auth: {
+    username: 'user',
+    password: 'pass',
+  },
+  clientJson: { ...clientJson, service: 'http://user:pass@127.0.0.1:1081' },
+  serverJson,
+}));
 
-test('http-proxy connect', async () => await run({
+test('http-proxy using connect', async () => await run({
   proxy: 'http_connect',
   clientJson: { ...clientJson, service: 'http://127.0.0.1:1081' },
+  serverJson,
+}));
+test('http-proxy using connect with authorization', async () => await run({
+  proxy: 'http_connect',
+  auth: {
+    username: 'user',
+    password: 'pass',
+  },
+  clientJson: { ...clientJson, service: 'http://user:pass@127.0.0.1:1081' },
   serverJson,
 }));
 
@@ -40,22 +58,57 @@ test('socks-proxy', async () => await run({
   clientJson: { ...clientJson, service: 'socks://127.0.0.1:1081' },
   serverJson,
 }));
+test('socks-proxy with authorization', async () => await run({
+  proxy: 'socks',
+  auth: {
+    username: 'user',
+    password: 'pass',
+  },
+  clientJson: { ...clientJson, service: 'socks://user:pass@127.0.0.1:1081' },
+  serverJson,
+}));
 
-// TODO: make curl --socks4 work
-// test('socks4-proxy', async () => await run({
-//   proxy: 'socks4',
-//   clientJson: {...clientJson, service: 'socks4://127.0.0.1:1081'},
-//   serverJson,
-// }));
+test('socks4-proxy', async () => await run({
+  proxy: 'socks4',
+  clientJson: { ...clientJson, service: 'socks4://127.0.0.1:1081' },
+  serverJson,
+}));
+test('socks4-proxy with authorization', async () => await run({
+  proxy: 'socks4',
+  auth: {
+    username: 'user',
+    password: 'pass',
+  },
+  clientJson: { ...clientJson, service: 'socks4://user:pass@127.0.0.1:1081' },
+  serverJson,
+}));
 
 test('socks4a-proxy', async () => await run({
   proxy: 'socks4a',
   clientJson: { ...clientJson, service: 'socks4a://127.0.0.1:1081' },
   serverJson,
 }));
+test('socks4a-proxy with authorization', async () => await run({
+  proxy: 'socks4a',
+  auth: {
+    username: 'user',
+    password: 'pass',
+  },
+  clientJson: { ...clientJson, service: 'socks4a://user:pass@127.0.0.1:1081' },
+  serverJson,
+}));
 
 test('socks5-proxy', async () => await run({
   proxy: 'socks5',
   clientJson: { ...clientJson, service: 'socks5://127.0.0.1:1081' },
+  serverJson,
+}));
+test('socks5-proxy with authorization', async () => await run({
+  proxy: 'socks5',
+  auth: {
+    username: 'user',
+    password: 'pass',
+  },
+  clientJson: { ...clientJson, service: 'socks5://user:pass@127.0.0.1:1081' },
   serverJson,
 }));

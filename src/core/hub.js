@@ -150,6 +150,15 @@ export class Hub {
   async _createServerOnClient() {
     return new Promise((resolve, reject) => {
       const { local_protocol, local_protocol_query, local_protocol_auth, local_host, local_port } = this._config;
+      // parse protocol auth part
+      let username = null;
+      let password = null;
+      if (typeof local_protocol_auth === 'string') {
+        [username, password] = local_protocol_auth.split(':');
+        if (!username || !password) {
+          return reject(Error('invalid auth info in service'));
+        }
+      }
       let server = null;
       switch (local_protocol) {
         case 'tcp': {
@@ -163,26 +172,12 @@ export class Hub {
         case 'socks':
         case 'socks5':
         case 'socks4':
-        case 'socks4a': {
-          let username = null;
-          let password = null;
-          if (typeof local_protocol_auth === 'string') {
-            [username, password] = local_protocol_auth.split(':');
-            if (!username || !password) {
-              return reject(Error('invalid auth info in service'));
-            }
-          }
-          server = socks.createServer({
-            bindAddress: local_host,
-            bindPort: local_port,
-            username: username,
-            password: password,
-          });
+        case 'socks4a':
+          server = socks.createServer({ bindAddress: local_host, bindPort: local_port, username, password });
           break;
-        }
         case 'http':
         case 'https':
-          server = http.createServer();
+          server = http.createServer({ username, password });
           break;
         default:
           return reject(Error(`unsupported protocol: "${local_protocol}"`));
