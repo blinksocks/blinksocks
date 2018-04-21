@@ -8,7 +8,7 @@ export default async function curl(args) {
   const { username, password } = args;
   const proxy = {
     'http': '-x',
-    'http_connect': '-p',
+    'http_connect': '-px',
     'socks': '--socks5',
     'socks4': '--socks4',
     'socks4a': '--socks4a',

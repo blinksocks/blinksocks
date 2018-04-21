@@ -28,45 +28,81 @@ test('http-proxy', async () => await run({
   clientJson: { ...clientJson, service: 'http://127.0.0.1:1081' },
   serverJson,
 }));
-test('http-proxy with authorization', async () => await run({
-  proxy: 'http',
-  auth: {
-    username: 'user',
-    password: 'pass',
-  },
-  clientJson: { ...clientJson, service: 'http://user:pass@127.0.0.1:1081' },
-  serverJson,
-}));
+test('http-proxy with authorization', async () => {
+  await run({
+    proxy: 'http',
+    auth: {
+      username: 'user',
+      password: 'pass',
+    },
+    clientJson: { ...clientJson, service: 'http://user:pass@127.0.0.1:1081' },
+    serverJson,
+  });
+  await run({
+    proxy: 'http',
+    auth: {
+      username: '_user',
+      password: '_pass',
+    },
+    clientJson: { ...clientJson, service: 'http://user:pass@127.0.0.1:1081' },
+    serverJson,
+    not: true,
+  });
+});
 
 test('http-proxy using connect', async () => await run({
   proxy: 'http_connect',
   clientJson: { ...clientJson, service: 'http://127.0.0.1:1081' },
   serverJson,
 }));
-test('http-proxy using connect with authorization', async () => await run({
-  proxy: 'http_connect',
-  auth: {
-    username: 'user',
-    password: 'pass',
-  },
-  clientJson: { ...clientJson, service: 'http://user:pass@127.0.0.1:1081' },
-  serverJson,
-}));
+test('http-proxy using connect with authorization', async () => {
+  await run({
+    proxy: 'http_connect',
+    auth: {
+      username: 'user',
+      password: 'pass',
+    },
+    clientJson: { ...clientJson, service: 'http://user:pass@127.0.0.1:1081' },
+    serverJson,
+  });
+  await run({
+    proxy: 'http_connect',
+    auth: {
+      username: '_user',
+      password: '_pass',
+    },
+    clientJson: { ...clientJson, service: 'http://user:pass@127.0.0.1:1081' },
+    serverJson,
+    not: true,
+  });
+});
 
 test('socks-proxy', async () => await run({
   proxy: 'socks',
   clientJson: { ...clientJson, service: 'socks://127.0.0.1:1081' },
   serverJson,
 }));
-test('socks-proxy with authorization', async () => await run({
-  proxy: 'socks',
-  auth: {
-    username: 'user',
-    password: 'pass',
-  },
-  clientJson: { ...clientJson, service: 'socks://user:pass@127.0.0.1:1081' },
-  serverJson,
-}));
+test('socks-proxy with authorization', async () => {
+  await run({
+    proxy: 'socks',
+    auth: {
+      username: 'user',
+      password: 'pass',
+    },
+    clientJson: { ...clientJson, service: 'socks://user:pass@127.0.0.1:1081' },
+    serverJson,
+  });
+  await run({
+    proxy: 'socks',
+    auth: {
+      username: '_user',
+      password: '_pass',
+    },
+    clientJson: { ...clientJson, service: 'socks://user:pass@127.0.0.1:1081' },
+    serverJson,
+    not: true,
+  });
+});
 
 test('socks4-proxy', async () => await run({
   proxy: 'socks4',
