@@ -32,11 +32,9 @@
     "js-sha3": "^0.7.0",
     "libsodium-wrappers": "^0.7.3",
     "lodash.isplainobject": "^4.0.6",
-    "lodash.minby": "^4.6.0",
     "lodash.uniqueid": "^4.0.1",
     "long": "^4.0.0",
     "lru-cache": "^4.1.2",
-    "node-fetch": "^2.1.2",
     "winston": "^3.0.0-rc4",
     "winston-daily-rotate-file": "^3.1.2",
     "ws": "^5.1.1"
