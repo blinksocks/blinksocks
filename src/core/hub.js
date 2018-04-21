@@ -1,10 +1,9 @@
 import _sodium from 'libsodium-wrappers';
 import dgram from 'dgram';
 import net from 'net';
-import url from 'url';
+import { URL } from 'url';
 import tls from 'tls';
 import ws from 'ws';
-import qs from 'qs';
 import LRU from 'lru-cache';
 import uniqueId from 'lodash.uniqueid';
 import { Config } from './config';
@@ -149,21 +148,13 @@ export class Hub {
 
   async _createServerOnClient() {
     return new Promise((resolve, reject) => {
-      const { local_protocol, local_protocol_query, local_protocol_auth, local_host, local_port } = this._config;
-      // parse protocol auth part
-      let username = null;
-      let password = null;
-      if (typeof local_protocol_auth === 'string') {
-        [username, password] = local_protocol_auth.split(':');
-        if (!username || !password) {
-          return reject(Error('invalid auth info in service'));
-        }
-      }
+      const { local_protocol, local_search_params, local_host, local_port } = this._config;
+      const { local_username: username, local_password: password } = this._config;
       let server = null;
       switch (local_protocol) {
         case 'tcp': {
-          const { forward } = qs.parse(local_protocol_query);
-          const { hostname, port } = url.parse('tcp://' + forward);
+          const forward = local_search_params.get('forward');
+          const { hostname, port } = new URL('tcp://' + forward);
           const forwardHost = hostname;
           const forwardPort = +port;
           server = tcp.createServer({ forwardHost, forwardPort });

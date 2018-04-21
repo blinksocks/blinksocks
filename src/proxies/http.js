@@ -19,7 +19,7 @@ export function createServer({ username, password }) {
 
   // Simple HTTP Proxy
   server.on('request', (req, res) => {
-    const { hostname, port, path } = url.parse(req.url);
+    const { hostname, port, path: pathname } = url.parse(req.url);
     const { socket, method, httpVersion, headers } = req;
     const appAddress = `${socket.remoteAddress}:${socket.remotePort}`;
 
@@ -33,7 +33,7 @@ export function createServer({ username, password }) {
 
     // Basic Authorization
     const proxyAuth = headers['proxy-authorization'];
-    if (proxyAuth && username !== null && password !== null) {
+    if (proxyAuth && username !== '' && password !== '') {
       const [type, credentials] = proxyAuth.split(' ');
       if (type !== 'Basic' || !checkBasicAuthorization(credentials, { username, password })) {
         logger.error(`[http] [${appAddress}] authorization failed, type=${type} credentials=${credentials}`);
@@ -58,7 +58,7 @@ export function createServer({ username, password }) {
           result.push(`${key}: ${headers[key]}\r\n`);
           return result;
         }, []);
-        const reqMsg = `${method} ${path} HTTP/${httpVersion}\r\n` + newHeaders.join('') + '\r\n';
+        const reqMsg = `${method} ${pathname} HTTP/${httpVersion}\r\n` + newHeaders.join('') + '\r\n';
         send(Buffer.from(reqMsg));
 
         // free to recv from application now
@@ -69,7 +69,7 @@ export function createServer({ username, password }) {
 
   // HTTPS tunnel
   server.on('connect', (req, socket) => {
-    const { hostname, port } = url.parse(`http://${req.url}`);
+    const { hostname, port } = new URL(`http://${req.url}`);
     const appAddress = `${socket.remoteAddress}:${socket.remotePort}`;
 
     const _port = +port || 443;
@@ -82,7 +82,7 @@ export function createServer({ username, password }) {
 
     // Basic Authorization
     const proxyAuth = req.headers['proxy-authorization'];
-    if (proxyAuth && username !== null && password !== null) {
+    if (proxyAuth && username !== '' && password !== '') {
       const [type, credentials] = proxyAuth.split(' ');
       if (type !== 'Basic' || !checkBasicAuthorization(credentials, { username, password })) {
         logger.error(`[http] [${appAddress}] authorization failed, type=${type} credentials=${credentials}`);

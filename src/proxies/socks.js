@@ -347,7 +347,7 @@ export function createServer({ bindAddress, bindPort, username, password }) {
         request = parseSocks5InitialNegotiation(buffer);
         if (request !== null) {
           // Username/Password Authentication
-          if (username !== null && password !== null) {
+          if (username !== '' && password !== '') {
             if (username !== request.username || password !== request.password) {
               logger.error(`[socks] [${appAddress}] invalid socks5 authorization, username=${request.username} password=${request.password}`);
               socket.end(Buffer.from([SOCKS_VERSION_V5, 0x01]));

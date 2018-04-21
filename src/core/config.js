@@ -2,8 +2,7 @@ import dns from 'dns';
 import fs from 'fs';
 import path from 'path';
 import net from 'net';
-import url from 'url';
-import qs from 'qs';
+import { URL } from 'url';
 import chalk from 'chalk';
 import winston from 'winston';
 import WinstonDailyRotateFile from 'winston-daily-rotate-file';
@@ -20,8 +19,9 @@ function loadFileSync(file) {
 export class Config {
 
   local_protocol = null;
-  local_protocol_auth = null;
-  local_protocol_query = null;
+  local_username = null;
+  local_password = null;
+  local_search_params = null;
   local_host = null;
   local_port = null;
 
@@ -62,10 +62,11 @@ export class Config {
   stores = [];
 
   constructor(json) {
-    const { protocol, hostname, port, query, auth } = url.parse(json.service);
+    const { protocol, hostname, port, searchParams, username, password } = new URL(json.service);
     this.local_protocol = protocol.slice(0, -1);
-    this.local_protocol_auth = auth;
-    this.local_protocol_query = query;
+    this.local_username = username;
+    this.local_password = password;
+    this.local_search_params = searchParams;
     this.local_host = hostname;
     this.local_port = +port;
 
@@ -116,7 +117,7 @@ export class Config {
 
   _initServer(server) {
     // service
-    const { protocol, hostname, port } = url.parse(server.service);
+    const { protocol, hostname, port } = new URL(server.service);
     this.transport = protocol.slice(0, -1);
     this.server_host = hostname;
     this.server_port = +port;
@@ -230,7 +231,7 @@ export class Config {
       throw Error('"service" must be provided as "<protocol>://<host>:<port>[?params]"');
     }
 
-    const { protocol: _protocol, hostname, port, query, auth } = url.parse(json.service);
+    const { protocol: _protocol, hostname, port, searchParams } = new URL(json.service);
 
     // service.protocol
     if (typeof _protocol !== 'string') {
@@ -246,11 +247,6 @@ export class Config {
       throw Error(`service.protocol must be: ${available_client_protocols.join(', ')}`);
     }
 
-    // service.auth
-    if (typeof auth === 'string' && auth.length < 1) {
-      throw Error('service.auth is invalid');
-    }
-
     // service.host
     if (!isValidHostname(hostname)) {
       throw Error('service.host is invalid');
@@ -263,14 +259,14 @@ export class Config {
 
     // service.query
     if (protocol === 'tcp') {
-      const { forward } = qs.parse(query);
+      const forward = searchParams.get('forward');
 
       // ?forward
       if (!forward) {
         throw Error('require "?forward=<host>:<port>" parameter in service when using "tcp" on client side');
       }
 
-      const { hostname, port } = url.parse('tcp://' + forward);
+      const { hostname, port } = new URL('tcp://' + forward);
       if (!isValidHostname(hostname)) {
         throw Error('service.?forward.host is invalid');
       }
@@ -331,7 +327,7 @@ export class Config {
       throw Error('"service" must be provided as "<protocol>://<host>:<port>[?params]"');
     }
 
-    const { protocol: _protocol, hostname, port } = url.parse(server.service);
+    const { protocol: _protocol, hostname, port } = new URL(server.service);
 
     // service.protocol
     if (typeof _protocol !== 'string') {
