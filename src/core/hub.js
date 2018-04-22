@@ -211,6 +211,7 @@ export class Hub {
             ...address,
             perMessageDeflate: false,
           });
+          server.getConnections = server._server.getConnections.bind(server._server);
           server.on('connection', (ws, req) => {
             ws.remoteAddress = req.connection.remoteAddress;
             ws.remotePort = req.connection.remotePort;
