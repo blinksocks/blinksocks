@@ -1,4 +1,4 @@
-import url from 'url';
+import { URL } from 'url';
 import http from 'http';
 import { logger, isValidPort } from '../utils';
 
@@ -19,7 +19,7 @@ export function createServer({ username, password }) {
 
   // Simple HTTP Proxy
   server.on('request', (req, res) => {
-    const { hostname, port, path: pathname } = url.parse(req.url);
+    const { hostname, port, pathname } = new URL(req.url);
     const { socket, method, httpVersion, headers } = req;
     const appAddress = `${socket.remoteAddress}:${socket.remotePort}`;
 
@@ -69,12 +69,12 @@ export function createServer({ username, password }) {
 
   // HTTPS tunnel
   server.on('connect', (req, socket) => {
-    const { hostname, port } = new URL(`http://${req.url}`);
+    const [hostname, _port] = req.url.split(':');
     const appAddress = `${socket.remoteAddress}:${socket.remotePort}`;
 
-    const _port = +port || 443;
+    const port = parseInt(_port) || 443;
 
-    if (hostname === null || !isValidPort(_port)) {
+    if (hostname === null || !isValidPort(port)) {
       const remote = `${socket.remoteAddress}:${socket.remotePort}`;
       logger.warn(`[http] [${appAddress}] drop invalid http CONNECT request sent from ${remote}`);
       return socket.destroy();
@@ -92,7 +92,7 @@ export function createServer({ username, password }) {
 
     server.emit('proxyConnection', socket, {
       host: hostname,
-      port: _port,
+      port: port,
       onConnected: () => {
         socket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
       }
