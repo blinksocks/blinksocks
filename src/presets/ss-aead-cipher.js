@@ -1,6 +1,14 @@
 import crypto from 'crypto';
 import { IPreset } from './defs';
-import { EVP_BytesToKey, HKDF, getRandomChunks, numberToBuffer, BYTE_ORDER_LE, AdvancedBuffer } from '../utils';
+import {
+  AdvancedBuffer,
+  dumpHex,
+  EVP_BytesToKey,
+  HKDF,
+  getRandomChunks,
+  numberToBuffer,
+  incrementLE,
+} from '../utils';
 
 const TAG_SIZE = 16;
 const MIN_CHUNK_LEN = TAG_SIZE * 2 + 3;
@@ -14,24 +22,25 @@ const ciphers = {
   'aes-256-gcm': [32, 32, 12],
   'chacha20-poly1305': [32, 32, 8],
   'chacha20-ietf-poly1305': [32, 32, 12],
-  'xchacha20-ietf-poly1305': [32, 32, 24]
+  'xchacha20-ietf-poly1305': [32, 32, 24],
 };
 
 const libsodium_functions = {
   'chacha20-poly1305': [
     'crypto_aead_chacha20poly1305_encrypt_detached',
-    'crypto_aead_chacha20poly1305_decrypt_detached'
+    'crypto_aead_chacha20poly1305_decrypt_detached',
   ],
   'chacha20-ietf-poly1305': [
     'crypto_aead_chacha20poly1305_ietf_encrypt_detached',
-    'crypto_aead_chacha20poly1305_ietf_decrypt_detached'
+    'crypto_aead_chacha20poly1305_ietf_decrypt_detached',
   ],
   'xchacha20-ietf-poly1305': [
     'crypto_aead_xchacha20poly1305_ietf_encrypt_detached',
-    'crypto_aead_xchacha20poly1305_ietf_decrypt_detached'
-  ]
+    'crypto_aead_xchacha20poly1305_ietf_decrypt_detached',
+  ],
 };
 
+const DEFAULT_METHOD = 'aes-256-gcm';
 const HKDF_HASH_ALGORITHM = 'sha1';
 const HKDF_INFO = 'ss-subkey';
 
@@ -100,9 +109,7 @@ export default class SsAeadCipherPreset extends IPreset {
   _info = Buffer.from(HKDF_INFO);
 
   _keySize = 0;
-
   _saltSize = 0;
-
   _nonceSize = 0;
 
   _evpKey = null;
@@ -110,23 +117,21 @@ export default class SsAeadCipherPreset extends IPreset {
   _isUseLibSodium = false;
 
   _cipherKey = null;
-
   _decipherKey = null;
 
-  _cipherNonce = 0;
-
-  _decipherNonce = 0;
+  _cipherNonce = null;
+  _decipherNonce = null;
 
   _adBuf = null;
 
-  static onCheckParams({ method }) {
+  static onCheckParams({ method = DEFAULT_METHOD }) {
     const cipherNames = Object.keys(ciphers);
     if (!cipherNames.includes(method)) {
       throw Error(`'method' must be one of [${cipherNames}]`);
     }
   }
 
-  onInit({ method }) {
+  onInit({ method = DEFAULT_METHOD }) {
     const [keySize, saltSize, nonceSize] = ciphers[method];
     this._cipherName = method;
     this._keySize = keySize;
@@ -136,6 +141,13 @@ export default class SsAeadCipherPreset extends IPreset {
     this._isUseLibSodium = Object.keys(libsodium_functions).includes(method);
     this._adBuf = new AdvancedBuffer({ getPacketLength: this.onReceiving.bind(this) });
     this._adBuf.on('data', this.onChunkReceived.bind(this));
+    this._cipherNonce = Buffer.alloc(nonceSize);
+    this._decipherNonce = Buffer.alloc(nonceSize);
+    // TODO: prefer to use openssl in Node.js v10.
+    // if (this._cipherName === 'chacha20-ietf-poly1305' && process.version.startsWith('v10')) {
+    //   this._cipherName = 'chacha20-poly1305';
+    //   this._isUseLibSodium = false;
+    // }
   }
 
   onDestroy() {
@@ -143,8 +155,8 @@ export default class SsAeadCipherPreset extends IPreset {
     this._adBuf = null;
     this._cipherKey = null;
     this._decipherKey = null;
-    this._cipherNonce = 0;
-    this._decipherNonce = 0;
+    this._cipherNonce = null;
+    this._decipherNonce = null;
   }
 
   // tcp
@@ -191,12 +203,12 @@ export default class SsAeadCipherPreset extends IPreset {
     const [encLen, lenTag] = [buffer.slice(0, 2), buffer.slice(2, 2 + TAG_SIZE)];
     const dataLenBuf = this.decrypt(encLen, lenTag);
     if (dataLenBuf === null) {
-      fail(`unexpected DataLen_TAG=${lenTag.toString('hex')} when verify DataLen=${encLen.toString('hex')}, dump=${buffer.slice(0, 60).toString('hex')}`);
+      fail(`unexpected DataLen_TAG=${dumpHex(lenTag)} when verify DataLen=${dumpHex(encLen)}, dump=${dumpHex(buffer)}`);
       return -1;
     }
     const dataLen = dataLenBuf.readUInt16BE(0);
     if (dataLen > MAX_CHUNK_SPLIT_LEN) {
-      fail(`invalid DataLen=${dataLen} is over ${MAX_CHUNK_SPLIT_LEN}, dump=${buffer.slice(0, 60).toString('hex')}`);
+      fail(`invalid DataLen=${dataLen} is over ${MAX_CHUNK_SPLIT_LEN}, dump=${dumpHex(buffer)}`);
       return -1;
     }
     return 2 + TAG_SIZE + dataLen + TAG_SIZE;
@@ -207,7 +219,7 @@ export default class SsAeadCipherPreset extends IPreset {
     const [encData, dataTag] = [chunk.slice(2 + TAG_SIZE, -TAG_SIZE), chunk.slice(-TAG_SIZE)];
     const data = this.decrypt(encData, dataTag);
     if (data === null) {
-      return fail(`unexpected Data_TAG=${dataTag.toString('hex')} when verify Data=${encData.slice(0, 60).toString('hex')}, dump=${chunk.slice(0, 60).toString('hex')}`);
+      return fail(`unexpected Data_TAG=${dumpHex(dataTag)} when verify Data=${dumpHex(encData)}, dump=${dumpHex(chunk)}`);
     }
     next(data);
   }
@@ -215,14 +227,14 @@ export default class SsAeadCipherPreset extends IPreset {
   encrypt(message) {
     const cipherName = this._cipherName;
     const cipherKey = this._cipherKey;
-    const nonce = numberToBuffer(this._cipherNonce, this._nonceSize, BYTE_ORDER_LE);
+    const nonce = this._cipherNonce;
     let ciphertext = null;
     let tag = null;
     if (this._isUseLibSodium) {
       const noop = Buffer.alloc(0);
       // eslint-disable-next-line
       const result = libsodium[libsodium_functions[cipherName][0]](
-        message, noop, noop, nonce, cipherKey
+        message, noop, noop, nonce, cipherKey,
       );
       ciphertext = Buffer.from(result.ciphertext);
       tag = Buffer.from(result.mac);
@@ -231,22 +243,22 @@ export default class SsAeadCipherPreset extends IPreset {
       ciphertext = Buffer.concat([cipher.update(message), cipher.final()]);
       tag = cipher.getAuthTag();
     }
-    this._cipherNonce += 1;
+    incrementLE(nonce);
     return [ciphertext, tag];
   }
 
   decrypt(ciphertext, tag) {
     const cipherName = this._cipherName;
     const decipherKey = this._decipherKey;
-    const nonce = numberToBuffer(this._decipherNonce, this._nonceSize, BYTE_ORDER_LE);
+    const nonce = this._decipherNonce;
     if (this._isUseLibSodium) {
       const noop = Buffer.alloc(0);
       try {
         // eslint-disable-next-line
         const plaintext = libsodium[libsodium_functions[cipherName][1]](
-          noop, ciphertext, tag, noop, nonce, decipherKey
+          noop, ciphertext, tag, noop, nonce, decipherKey,
         );
-        this._decipherNonce += 1;
+        incrementLE(nonce);
         return Buffer.from(plaintext);
       } catch (err) {
         return null;
@@ -256,7 +268,7 @@ export default class SsAeadCipherPreset extends IPreset {
       decipher.setAuthTag(tag);
       try {
         const plaintext = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
-        this._decipherNonce += 1;
+        incrementLE(nonce);
         return plaintext;
       } catch (err) {
         return null;
@@ -269,7 +281,7 @@ export default class SsAeadCipherPreset extends IPreset {
   beforeOutUdp({ buffer }) {
     const salt = crypto.randomBytes(this._saltSize);
     this._cipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, this._evpKey, this._info, this._keySize);
-    this._cipherNonce = 0;
+    this._cipherNonce = Buffer.alloc(this._nonceSize);
     const [ciphertext, tag] = this.encrypt(buffer);
     return Buffer.concat([salt, ciphertext, tag]);
   }
@@ -277,18 +289,18 @@ export default class SsAeadCipherPreset extends IPreset {
   beforeInUdp({ buffer, fail }) {
     const saltSize = this._saltSize;
     if (buffer.length < saltSize) {
-      return fail(`too short to get salt, len=${buffer.length} dump=${buffer.toString('hex')}`);
+      return fail(`too short to get salt, len=${buffer.length} dump=${dumpHex(buffer)}`);
     }
     const salt = buffer.slice(0, saltSize);
     this._decipherKey = HKDF(HKDF_HASH_ALGORITHM, salt, this._evpKey, this._info, this._keySize);
-    this._decipherNonce = 0;
+    this._decipherNonce = Buffer.alloc(this._nonceSize);
     if (buffer.length < saltSize + TAG_SIZE + 1) {
-      return fail(`too short to verify Data, len=${buffer.length} dump=${buffer.toString('hex')}`);
+      return fail(`too short to verify Data, len=${buffer.length} dump=${dumpHex(buffer)}`);
     }
     const [encData, dataTag] = [buffer.slice(saltSize, -TAG_SIZE), buffer.slice(-TAG_SIZE)];
     const data = this.decrypt(encData, dataTag);
     if (data === null) {
-      return fail(`unexpected Data_TAG=${dataTag.toString('hex')} when verify Data=${encData.slice(0, 60).toString('hex')}, dump=${buffer.slice(0, 60).toString('hex')}`);
+      return fail(`unexpected Data_TAG=${dumpHex(dataTag)} when verify Data=${dumpHex(encData)}, dump=${dumpHex(buffer)}`);
     }
     return data;
   }

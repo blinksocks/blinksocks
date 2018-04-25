@@ -1,11 +1,11 @@
 import crypto from 'crypto';
 import { IPreset } from './defs';
 import {
+  AdvancedBuffer,
   HKDF,
   getRandomChunks,
   numberToBuffer,
-  BYTE_ORDER_LE,
-  AdvancedBuffer,
+  incrementLE,
 } from '../utils';
 
 const NONCE_LEN = 12;
@@ -88,14 +88,14 @@ export default class AeadRandomCipherPreset extends IPreset {
 
   _decipherKey = null;
 
-  _cipherNonce = 0;
+  _cipherNonce = null;
 
-  _decipherNonce = 0;
+  _decipherNonce = null;
 
   // sorry for bad naming,
   // this is used for determining if the current chunk had dropped random padding.
   // please check out onReceiving()
-  _nextExpectDecipherNonce = 0;
+  _nextExpectDecipherNonce = null;
 
   _adBuf = null;
 
@@ -126,6 +126,9 @@ export default class AeadRandomCipherPreset extends IPreset {
     this._keySaltSize = ciphers[method];
     this._adBuf = new AdvancedBuffer({ getPacketLength: this.onReceiving.bind(this) });
     this._adBuf.on('data', this.onChunkReceived.bind(this));
+    this._cipherNonce = Buffer.alloc(NONCE_LEN);
+    this._decipherNonce = Buffer.alloc(NONCE_LEN);
+    this._nextExpectDecipherNonce = Buffer.alloc(NONCE_LEN);
   }
 
   onDestroy() {
@@ -133,9 +136,9 @@ export default class AeadRandomCipherPreset extends IPreset {
     this._adBuf = null;
     this._cipherKey = null;
     this._decipherKey = null;
-    this._cipherNonce = 0;
-    this._decipherNonce = 0;
-    this._nextExpectDecipherNonce = 0;
+    this._cipherNonce = null;
+    this._decipherNonce = null;
+    this._nextExpectDecipherNonce = null;
   }
 
   beforeOut({ buffer }) {
@@ -180,12 +183,14 @@ export default class AeadRandomCipherPreset extends IPreset {
     }
 
     // 2. determine padding length then drop it
-    if (this._decipherNonce === this._nextExpectDecipherNonce) {
+    if (this._decipherNonce.equals(this._nextExpectDecipherNonce)) {
       const paddingLen = this.getPaddingLength(this._decipherKey, this._decipherNonce);
       if (buffer.length < paddingLen) {
         return; // too short to drop padding
       }
-      this._nextExpectDecipherNonce += 2; // because each chunk increases the nonce twice
+      // because each chunk increases the nonce twice
+      incrementLE(this._nextExpectDecipherNonce);
+      incrementLE(this._nextExpectDecipherNonce);
       return buffer.slice(paddingLen); // drop random padding
     }
 
@@ -220,9 +225,8 @@ export default class AeadRandomCipherPreset extends IPreset {
   }
 
   getPaddingLength(key, nonce) {
-    const nonceBuffer = numberToBuffer(nonce, NONCE_LEN, BYTE_ORDER_LE);
-    const cipher = crypto.createCipheriv(this._cipherName, key, nonceBuffer);
-    cipher.update(nonceBuffer);
+    const cipher = crypto.createCipheriv(this._cipherName, key, nonce);
+    cipher.update(nonce);
     cipher.final();
     return cipher.getAuthTag()[0] * this._factor;
   }
@@ -231,11 +235,11 @@ export default class AeadRandomCipherPreset extends IPreset {
     const cipher = crypto.createCipheriv(
       this._cipherName,
       this._cipherKey,
-      numberToBuffer(this._cipherNonce, NONCE_LEN, BYTE_ORDER_LE)
+      this._cipherNonce,
     );
     const encrypted = Buffer.concat([cipher.update(message), cipher.final()]);
     const tag = cipher.getAuthTag();
-    this._cipherNonce += 1;
+    incrementLE(this._cipherNonce);
     return [encrypted, tag];
   }
 
@@ -243,12 +247,12 @@ export default class AeadRandomCipherPreset extends IPreset {
     const decipher = crypto.createDecipheriv(
       this._cipherName,
       this._decipherKey,
-      numberToBuffer(this._decipherNonce, NONCE_LEN, BYTE_ORDER_LE)
+      this._decipherNonce,
     );
     decipher.setAuthTag(tag);
     try {
       const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
-      this._decipherNonce += 1;
+      incrementLE(this._decipherNonce);
       return decrypted;
     } catch (err) {
       return null;
