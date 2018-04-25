@@ -3,6 +3,8 @@ import {
   getRandomInt,
   getRandomChunks,
   getChunks,
+  incrementBE,
+  incrementLE,
   BYTE_ORDER_LE,
 } from '../../../src/utils/common';
 
@@ -64,6 +66,28 @@ describe('getChunks', () => {
     const chunks = getChunks([1, 2, 3], 2);
     expect(chunks[0]).toEqual([1, 2]);
     expect(chunks[1]).toEqual([3]);
+  });
+
+});
+
+describe('incrementBE', () => {
+
+  it('should return expected buffer', () => {
+    const buffer = Buffer.from([0x00, 0xfe]);
+    expect(incrementBE(buffer).equals(Buffer.from([0x00, 0xff]))).toBe(true);
+    expect(incrementBE(buffer).equals(Buffer.from([0x01, 0x00]))).toBe(true);
+    expect(incrementBE(Buffer.from([0xff])).equals(Buffer.from([0x00]))).toBe(true);
+  });
+
+});
+
+describe('incrementLE', () => {
+
+  it('should return expected buffer', () => {
+    const buffer = Buffer.from([0xfe, 0x00]);
+    expect(incrementLE(buffer).equals(Buffer.from([0xff, 0x00]))).toBe(true);
+    expect(incrementLE(buffer).equals(Buffer.from([0x00, 0x01]))).toBe(true);
+    expect(incrementLE(Buffer.from([0xff])).equals(Buffer.from([0x00]))).toBe(true);
   });
 
 });

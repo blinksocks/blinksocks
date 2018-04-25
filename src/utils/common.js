@@ -4,7 +4,8 @@ export const BYTE_ORDER_BE = 0;
 export const BYTE_ORDER_LE = 1;
 
 /**
- * convert a number to a buffer with specified length in specified byte order
+ * convert an unsigned number to a buffer,
+ * with specified length in specified byte order.
  * @param num
  * @param len
  * @param byteOrder
@@ -14,12 +15,6 @@ export function numberToBuffer(num, len = 2, byteOrder = BYTE_ORDER_BE) {
   if (len < 1) {
     throw Error('len must be greater than 0');
   }
-
-  const isOutOfRange = num > parseInt(`0x${'ff'.repeat(len)}`);
-  if (isOutOfRange) {
-    throw Error(`Number ${num} is too big to put into a ${len} byte(s) size buffer`);
-  }
-
   const buf = Buffer.alloc(len);
   if (byteOrder === BYTE_ORDER_BE) {
     buf.writeUIntBE(num, 0, len);
@@ -82,4 +77,28 @@ export function getChunks(buffer, maxSize) {
     bufs.push(buffer.slice(ptr));
   }
   return bufs;
+}
+
+/**
+ * increment buffer by one in big endian.
+ * @param buffer
+ * @returns {Array<Buffer>}
+ */
+export function incrementLE(buffer) {
+  for (let i = 0; i < buffer.length; i++) {
+    if (buffer[i]++ !== 255) break;
+  }
+  return buffer;
+}
+
+/**
+ * increment buffer by one in little endian.
+ * @param buffer
+ * @returns {Array<Buffer>}
+ */
+export function incrementBE(buffer) {
+  for (let i = buffer.length - 1; i >= 0; i--) {
+    if (buffer[i]++ !== 255) break;
+  }
+  return buffer;
 }
