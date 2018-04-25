@@ -101,9 +101,9 @@ This is a very basic preset which delivers the real destination address from cli
 
 The shadowsocks's [stream cipher](https://shadowsocks.org/en/spec/Stream-Ciphers.html).
 
-| PARAMS |           DESCRIPTION            | DEFAULT |
-| :----- | :------------------------------- | :------ |
-| method | encryption and decryption method | -       |
+| PARAMS |           DESCRIPTION            |   DEFAULT   |
+| :----- | :------------------------------- | :---------- |
+| method | encryption and decryption method | aes-256-ctr |
 
 `method` can be one of:
 
@@ -113,7 +113,7 @@ aes-128-cfb, aes-192-cfb, aes-256-cfb,
 
 camellia-128-cfb, camellia-192-cfb, camellia-256-cfb
 
-rc4-md5, rc4-md5-6, none
+rc4-md5, rc4-md5-6, chacha20-ietf, none
 
 ```
 "presets": [
@@ -129,13 +129,15 @@ rc4-md5, rc4-md5-6, none
 ]
 ```
 
+> NOTE: This preset should be combined with "ssr-auth-chain-*" presets when choose **"none"** method.
+
 ## [ss-aead-cipher]
 
 The shadowsocks's [aead cipher](https://shadowsocks.org/en/spec/AEAD-Ciphers.html).
 
-| PARAMS |           DESCRIPTION            | DEFAULT |
-| :----- | :------------------------------- | :------ |
-| method | encryption and decryption method | -       |
+| PARAMS |           DESCRIPTION            |   DEFAULT   |
+| :----- | :------------------------------- | :---------- |
+| method | encryption and decryption method | aes-256-gcm |
 
 `method` can be one of:
 
