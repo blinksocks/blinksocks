@@ -6,16 +6,21 @@ import { dumpHex, EVP_BytesToKey, hash } from '../utils';
 const ciphers = {
   'aes-128-ctr': [16, 16], 'aes-192-ctr': [24, 16], 'aes-256-ctr': [32, 16],
   'aes-128-cfb': [16, 16], 'aes-192-cfb': [24, 16], 'aes-256-cfb': [32, 16],
-  'camellia-128-cfb': [16, 16], 'camellia-192-cfb': [24, 16], 'camellia-256-cfb': [32, 16],
-  'rc4-md5': [16, 16], 'rc4-md5-6': [16, 6],
+  'camellia-128-cfb': [16, 16],
+  'camellia-192-cfb': [24, 16],
+  'camellia-256-cfb': [32, 16],
+  'rc4-md5': [16, 16],
+  'rc4-md5-6': [16, 6],
 
   // NOTE: "none" cipher is just prepared for "ssr-auth-chain-*" presets.
   // DO NOT use "none" without "ssr-auth-chain-*".
-  'none': [16, 0]
+  'none': [16, 0],
 
-  // 'chacha20-ietf': [32, 12], wait for libsodium-wrappers
+  // require Node.js v10.x
+  'chacha20-ietf': [32, 12],
 };
 
+const DEFAULT_METHOD = 'aes-256-ctr';
 const NOOP = Buffer.alloc(0);
 
 /**
@@ -73,7 +78,6 @@ export default class SsStreamCipherPreset extends IPreset {
   _key = null;
   _iv = null;
 
-  _keySize = 0;
   _ivSize = 0;
 
   _cipher = null;
@@ -87,7 +91,7 @@ export default class SsStreamCipherPreset extends IPreset {
     return this._iv;
   }
 
-  static onCheckParams({ method }) {
+  static onCheckParams({ method = DEFAULT_METHOD }) {
     if (typeof method !== 'string' || method === '') {
       throw Error('\'method\' must be set');
     }
@@ -95,16 +99,27 @@ export default class SsStreamCipherPreset extends IPreset {
     if (!cipherNames.includes(method)) {
       throw Error(`'method' must be one of [${cipherNames}]`);
     }
+    if (method === 'chacha20-ietf' && !process.version.startsWith('v10')) {
+      throw Error('require Node.js v10.x to run "chacha20-ietf"');
+    }
   }
 
-  onInit({ method }) {
+  onInit({ method = DEFAULT_METHOD }) {
     const [keySize, ivSize] = ciphers[method];
     const iv = crypto.randomBytes(ivSize);
-    this._algorithm = ['rc4-md5', 'rc4-md5-6'].includes(method) ? 'rc4' : method;
-    this._keySize = keySize;
+    this._algorithm = method;
     this._ivSize = ivSize;
     this._key = EVP_BytesToKey(this._config.key, keySize, ivSize);
-    this._iv = method === 'rc4-md5-6' ? iv.slice(0, 6) : iv;
+    this._iv = iv;
+    if (this._algorithm.startsWith('rc4')) {
+      this._algorithm = 'rc4';
+      if (this._algorithm === 'rc4-md5-6') {
+        this._iv = this._iv.slice(0, 6);
+      }
+    }
+    if (this._algorithm === 'chacha20-ietf') {
+      this._algorithm = 'chacha20';
+    }
   }
 
   onDestroy() {
@@ -124,8 +139,12 @@ export default class SsStreamCipherPreset extends IPreset {
     }
     else if (algorithm === 'none') {
       return {
-        update: (buffer) => buffer
+        update: (buffer) => buffer,
       };
+    }
+    else if (algorithm === 'chacha20') {
+      // 4 bytes counter + 12 bytes nonce
+      _iv = Buffer.concat([Buffer.alloc(4), _iv]);
     }
     return crypto.createCipheriv(algorithm, _key, _iv);
   }
@@ -140,8 +159,12 @@ export default class SsStreamCipherPreset extends IPreset {
     }
     else if (algorithm === 'none') {
       return {
-        update: (buffer) => buffer
+        update: (buffer) => buffer,
       };
+    }
+    else if (algorithm === 'chacha20') {
+      // 4 bytes counter + 12 bytes nonce
+      _iv = Buffer.concat([Buffer.alloc(4), _iv]);
     }
     return crypto.createDecipheriv(algorithm, _key, _iv);
   }
