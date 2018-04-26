@@ -7,6 +7,8 @@ import {
   hash,
   shake128,
   fnv1a,
+  dumpHex,
+  uint64ToBuffer,
   getRandomInt,
   getChunks,
   getCurrentTimestampInt,
@@ -36,12 +38,21 @@ const SECURITY_TYPE_NONE = 5;
 const securityTypes = {
   'aes-128-gcm': SECURITY_TYPE_AES_128_GCM,
   'chacha20-poly1305': SECURITY_TYPE_CHACHA20_POLY1305,
-  'none': SECURITY_TYPE_NONE
+  'none': SECURITY_TYPE_NONE,
 };
 
 function createChacha20Poly1305Key(key) {
   const md5Key = hash('md5', key);
   return Buffer.concat([md5Key, hash('md5', md5Key)]);
+}
+
+/**
+ * convert uuid string to buffer
+ * @param id
+ * @returns {Buffer}
+ */
+function getUUIDBuffer(id) {
+  return Buffer.from(id.split('-').join(''), 'hex');
 }
 
 /**
@@ -188,7 +199,8 @@ export default class V2rayVmessPreset extends IPresetAddressing {
   _decipherNonce = 0;
 
   static onCheckParams({ id, security = 'aes-128-gcm' }) {
-    if (Buffer.from(id.split('-').join(''), 'hex').length !== 16) {
+    const uuid = getUUIDBuffer(id);
+    if (uuid.length !== 16) {
       throw Error('id is not a valid uuid');
     }
     const securities = Object.keys(securityTypes);
@@ -198,7 +210,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
   }
 
   static onCache({ id }, store) {
-    const uuid = Buffer.from(id.split('-').join(''), 'hex');
+    const uuid = getUUIDBuffer(id);
     setInterval(() => V2rayVmessPreset.updateAuthCache(uuid, store), 1e3);
     V2rayVmessPreset.updateAuthCache(uuid, store);
   }
@@ -219,14 +231,14 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     }
     for (let ts = from; ts <= to; ++ts) {
       // account auth info, 16 bytes
-      const authInfo = hmac('md5', uuid, ntb(ts, 8));
+      const authInfo = hmac('md5', uuid, uint64ToBuffer(ts));
       newItems.push({ timestamp: ts, authInfo: authInfo });
     }
     store.userHashCache = newItems;
   }
 
   onInit({ id, security = 'aes-128-gcm' }) {
-    this._uuid = Buffer.from(id.split('-').join(''), 'hex');
+    this._uuid = getUUIDBuffer(id);
     if (this._config.is_client) {
       this._security = securityTypes[security];
     }
@@ -309,11 +321,11 @@ export default class V2rayVmessPreset extends IPresetAddressing {
       }
 
       // decrypt request header
-      const ts = ntb(cacheItem.timestamp, 8);
+      const ts = uint64ToBuffer(cacheItem.timestamp);
       const decipher = crypto.createDecipheriv(
         'aes-128-cfb',
         hash('md5', Buffer.concat([uuid, Buffer.from('c48619fe-8f02-49e0-b9e9-edf763e17e21')])),
-        hash('md5', Buffer.concat([ts, ts, ts, ts]))
+        hash('md5', Buffer.concat([ts, ts, ts, ts])),
       );
       const reqCommand = Buffer.from(buffer.slice(16));
       if (reqCommand.length < 41) {
@@ -395,7 +407,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
       const plainReqHeader = Buffer.from([
         ...reqHeader.slice(0, 41),
         ...(addrType === ATYP_DOMAIN ? [addr.length] : []), ...addr,
-        ...padding
+        ...padding,
       ]);
       if (fnv1a(plainReqHeader).equals(f)) {
         return fail('fail to verify request command');
@@ -442,7 +454,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     const { timestamp, authInfo } = userHashCache[getRandomInt(0, userHashCache.length - 1)];
 
     // utc timestamp: Big-Endian, 8 bytes
-    const ts = ntb(timestamp, 8);
+    const ts = uint64ToBuffer(timestamp);
 
     const paddingLen = getRandomInt(0, 15);
     const padding = crypto.randomBytes(paddingLen);
@@ -457,15 +469,15 @@ export default class V2rayVmessPreset extends IPresetAddressing {
       ...this._port, this._atyp,
       ...Buffer.concat([
         (this._atyp === ATYP_DOMAIN) ? ntb(this._host.length, 1) : Buffer.alloc(0),
-        this._host
+        this._host,
       ]),
-      ...padding
+      ...padding,
     ]);
     command = Buffer.concat([command, fnv1a(command)]);
     const cipher = crypto.createCipheriv(
       'aes-128-cfb',
       hash('md5', Buffer.concat([uuid, Buffer.from('c48619fe-8f02-49e0-b9e9-edf763e17e21')])),
-      hash('md5', Buffer.concat([ts, ts, ts, ts]))
+      hash('md5', Buffer.concat([ts, ts, ts, ts])),
     );
     command = cipher.update(command);
     return Buffer.concat([authInfo, command]);
@@ -508,7 +520,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
       const tag = chunk.slice(-16);
       const data = this.decrypt(chunk.slice(2, -16), tag);
       if (data === null) {
-        return fail(`fail to verify data chunk, dump=${chunk.slice(0, 60).toString('hex')}`);
+        return fail(`fail to verify data chunk, dump=${dumpHex(chunk)}`);
       }
       return next(data);
     }
@@ -529,7 +541,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
       const noop = Buffer.alloc(0);
       // eslint-disable-next-line
       const result = libsodium.crypto_aead_chacha20poly1305_ietf_encrypt_detached(
-        plaintext, noop, noop, nonce, this._dataEncKeyForChaCha20
+        plaintext, noop, noop, nonce, this._dataEncKeyForChaCha20,
       );
       ciphertext = Buffer.from(result.ciphertext);
       tag = Buffer.from(result.mac);
@@ -557,7 +569,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
       try {
         // eslint-disable-next-line
         const plaintext = libsodium.crypto_aead_chacha20poly1305_ietf_decrypt_detached(
-          noop, ciphertext, tag, noop, nonce, this._dataDecKeyForChaCha20
+          noop, ciphertext, tag, noop, nonce, this._dataDecKeyForChaCha20,
         );
         this._decipherNonce += 1;
         return Buffer.from(plaintext);
