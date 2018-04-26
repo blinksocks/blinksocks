@@ -1,5 +1,6 @@
 import {
   numberToBuffer,
+  uint64ToBuffer,
   getRandomInt,
   getRandomChunks,
   getChunks,
@@ -24,6 +25,24 @@ describe('numberToBuffer', () => {
 
   it('should throw when pass an out of range number', () => {
     expect(() => numberToBuffer(65535 + 1, 2)).toThrow();
+  });
+
+});
+
+describe('uint64ToBuffer', () => {
+
+  it('should return correct buffer', () => {
+    expect(
+      uint64ToBuffer(1524721335).equals(
+        Buffer.from([0x00, 0x00, 0x00, 0x00, 0x5a, 0xe1, 0x66, 0xb7]),
+      )).toBe(true);
+  });
+
+  it('should return correct buffer', () => {
+    expect(
+      uint64ToBuffer(1524721335, BYTE_ORDER_LE).equals(
+        Buffer.from([0xb7, 0x66, 0xe1, 0x5a, 0x00, 0x00, 0x00, 0x00]),
+      )).toBe(true);
   });
 
 });

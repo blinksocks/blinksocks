@@ -1,3 +1,4 @@
+import Long from 'long';
 import * as crypto from './crypto';
 
 export const BYTE_ORDER_BE = 0;
@@ -22,6 +23,17 @@ export function numberToBuffer(num, len = 2, byteOrder = BYTE_ORDER_BE) {
     buf.writeUIntLE(num, 0, len);
   }
   return buf;
+}
+
+/**
+ * convert uint64 to buffer
+ * @param uint64
+ * @param byteOrder
+ * @returns {Buffer}
+ */
+export function uint64ToBuffer(uint64, byteOrder = BYTE_ORDER_BE) {
+  const numbers = Long.fromNumber(uint64, true).toBytes(byteOrder === BYTE_ORDER_LE);
+  return Buffer.from(numbers);
 }
 
 /**
