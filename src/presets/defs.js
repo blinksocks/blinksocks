@@ -123,14 +123,6 @@ export class IPreset {
 
   }
 
-  broadcast(action) {
-
-  }
-
-  fail(message) {
-
-  }
-
   /**
    * direct read any property(match non-static then static) of other preset
    * @param presetName
