@@ -1,5 +1,38 @@
 #  Change Log
 
+## 3.2.0 (2018-04-28)
+
+> Node.js 10 is supported in this version!
+
+### :exclamation: Notable Changes
+
+- src: support socks4(a), socks5, http `basic authorization`(username/password).
+- presets: add `IPresetAddressing::onInitTargetAddress()` and `IPresetAddressing::resolveTargetAddress()`.
+- presets: add `chacha20-ietf` method for `ss-stream-cipher`, but require Node.js 10.x.
+- presets: deprecated `IPreset::onNotified()`.
+- presets: deprecated `auto-conf` preset.
+
+### :rocket: Features & Improvements
+
+- core: add `Pipe::initTargetAddress()`.
+- utils: add `uint64ToBuffer()`, `incrementLE()` and `incrementBE()`.
+- package: upgrade ws from v3.3.3 to v5.1.1.
+- package: use WHATWG URL API instead of legacy qs api.
+- package: add package-lock.json.
+- package: remove unused dependencies.
+- ci: add test on the latest stable Node.js.
+
+### :bug: Bug Fixes:
+
+- hub: fix sequence between calling `relay::on()` and `relay.init()`.
+- hub: patch `server.getConnections()` for ws.
+
+### Migrating from 3.1.1 to 3.2.0
+
+```
+$ npm install -g blinksocks@3.2.0
+```
+
 ## 3.1.1 (2018-04-10)
 
 ### :rocket: Features & Improvements
