@@ -169,7 +169,7 @@ You can implement some of the following methods to interact with data stream:
 Each method gets an object which contains several parameters and callbacks you may need:
 
 ```js
-clientOut({buffer, next, broadcast, direct, fail}) {
+clientOut({ buffer, next, broadcast, direct, fail }) {
   // your magic here
   // return a buffer or next(a buffer)
 }
@@ -183,79 +183,32 @@ clientOut({buffer, next, broadcast, direct, fail}) {
 | direct(buffer, isReverse) | ignore the following presets, finish piping.                                                               |
 | fail(message)             | report an error message when the preset fail to process.                                                   |
 
-### Presets Decoupling
-
-When communicate with other presets, you can emit an action by **broadcast(action)**.
-
-**Action** is a plain object which only requires a `type` field:
-
-```
-// action
-{
-  type: <string>,
-  ...
-}
-```
-
-After broadcast, **all** other presets will receive the action in **onNotified(action)** synchronously:
-
-```js
-class MyCustomPreset extends blinksocks.IPreset {
-
-  /**
-   * how to deal with the action, return false/undefined to ignore
-   * @returns {boolean}
-   */
-  onNotified(/* action */) {
-    return false;
-  }
-
-}
-
-module.exports = MyCustomPreset;
-```
-
 ### Handle Address
 
-You are probably want to know the target host and port when write your own preset, an action:
+You probably want to know the target host and port when write your own preset on `client` side, `IPresetAddressing::onInitTargetAddress()` will be called with target `host` and `port`:
 
 ```js
-{
-  type: CONNECT_TO_REMOTE,
-  payload: {host, port}
+const { IPresetAddressing } = require('blinksocks');
+
+class MyCustomPreset extends IPresetAddressing {
+
+  onInitTargetAddress({ host, port }) {
+    // got target host and port here
+  }
+
 }
 ```
 
-will be emitted once pipe created, you can access to it in `onNotified(action)` on client side or `broadcast(action)` it once decoded on server side:
+After target address resolved on `server` side, you should call `this.resolveTargetAddress()` explicit:
 
 ```js
-const {IPreset, CONNECT_TO_REMOTE} = require('blinksocks');
+const { IPresetAddressing } = require('blinksocks');
 
-class MyCustomPreset extends IPreset {
+class MyCustomPreset extends IPresetAddressing {
 
-  onNotified(action) {
-    if (__IS_CLIENT__ && action.type === CONNECT_TO_REMOTE) {
-      // host and port are obtained from client proxy protocol
-      const {host, port} = action.payload;
-      // 1.store on client side
-    }
-  }
-
-  clientOut() {
-    // 2.encode on client side
-  }
-
-  serverIn({..., broadcast}) {
-    // 3.decode on server side
-    broadcast({
-      type: CONNECT_TO_REMOTE,
-      payload: {
-        host: _host,
-        port: _port,
-        onConnected: () => {
-          // ...
-        }
-      }
+  serverIn() {
+    this.resolveTargetAddress({ host, port }, () => {
+      // successfully connected to the target address
     });
   }
 
@@ -269,16 +222,21 @@ module.exports = MyCustomPreset;
 Your presets may require several parameters, and you can validate them in:
  
 * `constructor({ config, params })`(every time a connection created)
-* `onCheckParams(params)`(only once, recommended)
+* `static onCheckParams(params)`(only once, recommended)
 
 ```js
 class MyCustomPreset extends blinksocks.IPreset {
+  
+  constructor(props) {
+    super(props);
+    // check props.params
+  }
 
 }
 
 // check params passed to the preset, if any errors, should throw directly
 MyCustomPreset.onCheckParams = function onCheckParams(params) {
-  // or here
+  // or here (recommended)
 };
 
 module.exports = MyCustomPreset;
@@ -309,7 +267,7 @@ module.exports = MyCustomPreset;
 
 ### Access Configuration
 
-You can access configuration from `this._config` in your preset:
+You can access user configuration anywhere via `this._config` in your preset:
 
 ```js
 class MyCustomPreset extends blinksocks.IPreset {
@@ -333,14 +291,6 @@ The following functions are auto-generated to your preset, DO NOT overwrite them
 **this.next(direction, buffer)**
 
 The same as `next` parameter in each hook function, but here you should provide `direction` to tell which direction the data should transfer to.
-
-**this.broadcast(action)**
-
-The same as `broadcast` parameter in each hook function.
-
-**this.fail(message)**
-
-The same as `fail` parameter in each hook function.
 
 **this.readProperty(presetName, propertyName)**
 
