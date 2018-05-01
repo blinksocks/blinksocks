@@ -16,6 +16,10 @@ const shadowsocks_presets = [
     {"name": "ss-base"},
     {"name": "ss-stream-cipher", "params": {"method": "camellia-256-cfb"}}
   ],
+  [
+    {"name": "ss-base"},
+    {"name": "ss-stream-cipher", "params": {"method": "chacha20-ietf"}}
+  ],
   // [aead ciphers]
   [
     {"name": "ss-base"},
