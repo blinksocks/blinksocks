@@ -1,13 +1,13 @@
 import EventEmitter from 'events';
-import { Preset } from './preset';
+import { logger } from '../utils';
 import { PIPE_ENCODE } from '../constants';
+import { getPresetClassByName } from '../presets';
 import { PRESET_FAILED } from '../presets/actions';
 import { IPresetAddressing } from '../presets/defs';
-import { logger } from '../utils';
 
 // .on('broadcast')
-// .on(`pre_${direction}`)
-// .on(`post_${direction}`)
+// .on(`pre_${type}`)
+// .on(`post_${type}`)
 export class Pipe extends EventEmitter {
 
   _config = null;
@@ -39,9 +39,8 @@ export class Pipe extends EventEmitter {
   initTargetAddress({ host, port }) {
     const presets = this.getPresets();
     for (const preset of presets) {
-      const impl = preset.getImplement();
-      if (impl instanceof IPresetAddressing) {
-        impl.onInitTargetAddress({ host, port });
+      if (preset instanceof IPresetAddressing) {
+        preset.onInitTargetAddress({ host, port });
       }
     }
   }
@@ -56,9 +55,8 @@ export class Pipe extends EventEmitter {
     const presets = this.getPresets();
     const preset = presets.find((m) => m.name === targetName);
     if (preset) {
-      const impl = preset.getImplement();
-      const value = impl[propertyName];
-      return value !== undefined ? value : impl.constructor[propertyName];
+      const value = preset[propertyName];
+      return value !== undefined ? value : preset.constructor[propertyName];
     } else {
       logger.warn(`[preset] "${fromName}" cannot read property from nonexistent preset "${targetName}".`);
     }
@@ -95,7 +93,7 @@ export class Pipe extends EventEmitter {
       presets.push(preset);
     }
     // destroy redundant presets
-    Object.keys(mdIndex).forEach((key) => mdIndex[key].destroy());
+    Object.keys(mdIndex).forEach((key) => mdIndex[key].onDestroy());
     // update members
     this._encode_presets = presets;
     this._decode_presets = [].concat(presets).reverse();
@@ -120,7 +118,7 @@ export class Pipe extends EventEmitter {
   destroy() {
     if (!this._destroyed) {
       this.getPresets().forEach((preset) => {
-        preset.destroy();
+        preset.onDestroy();
         preset.removeAllListeners();
       });
       this._encode_presets = null;
@@ -131,13 +129,14 @@ export class Pipe extends EventEmitter {
   }
 
   _createPreset(rawPreset, index) {
-    const _preset = new Preset({ config: this._config, preset: rawPreset });
-    this._attachEvents(_preset);
-    // set readProperty() and getStore()
-    const impl = _preset.getImplement();
-    impl.readProperty = (...args) => this.onReadProperty(_preset.name, ...args);
-    impl.getStore = () => this._config.stores[index];
-    return _preset;
+    const { name, params = {} } = rawPreset;
+    const ImplClass = getPresetClassByName(name);
+    const preset = new ImplClass({ config: this._config, params });
+    preset.readProperty = (...args) => this.onReadProperty(preset.name, ...args);
+    preset.getStore = () => this._config.stores[index];
+    preset.onInit(params);
+    this._attachEvents(preset);
+    return preset;
   }
 
   _attachEvents(preset) {
@@ -153,28 +152,28 @@ export class Pipe extends EventEmitter {
     }));
   }
 
-  _feed(direction, buffer, extraArgs) {
-    const presets = this.getPresets(direction);
+  _feed(type, buffer, extraArgs) {
+    const presets = this.getPresets(type);
     // args to be injected
     const isUdp = this._isPipingUdp;
-    const direct = (buf, isReverse = false) => this.emit(isReverse ? `post_${-direction}` : `post_${direction}`, buf);
+    const direct = (buf, isReverse = false) => this.emit(isReverse ? `post_${-type}` : `post_${type}`, buf);
     // check if it's necessary to pipe
     if (presets.length < 1) {
       return direct(buffer);
     }
     // create event chain among presets
-    const event = `next_${direction}`;
+    const event = `next_${type}`;
     const first = presets[0];
-    if (!first.hasListener(event)) {
+    if (!first.listenerCount(event) > 0) {
       const last = presets.reduce((prev, next) => {
-        prev.on(event, (buf) => next.write({ direction, buffer: buf, direct, isUdp }, extraArgs));
+        prev.on(event, (buf) => next._write({ type, buffer: buf, direct, isUdp }, extraArgs));
         return next;
       });
       // the last preset send data out via direct(buf, false)
       last.on(event, direct);
     }
     // begin pipe
-    first.write({ direction, buffer, direct, isUdp }, extraArgs);
+    first._write({ type, buffer, direct, isUdp }, extraArgs);
   }
 
 }
