@@ -3,7 +3,6 @@ import { ACL } from './acl';
 import { Pipe } from './pipe';
 import { Tracker } from './tracker';
 import { logger } from '../utils';
-import { PIPE_ENCODE, PIPE_DECODE } from '../constants';
 
 import {
   TcpInbound, TcpOutbound,
@@ -13,12 +12,7 @@ import {
   MuxInbound, MuxOutbound,
 } from '../transports';
 
-import {
-  CONNECT_TO_REMOTE,
-  CONNECTION_CLOSED,
-  CONNECTION_WILL_CLOSE,
-  PRESET_FAILED,
-} from '../presets/actions';
+import { PIPE_ENCODE, PIPE_DECODE, CONNECT_TO_REMOTE, PRESET_FAILED } from '../constants';
 
 /**
  * [client side]
@@ -74,6 +68,10 @@ export class Relay extends EventEmitter {
     this._ctx.cid = id;
   }
 
+  get destroyed() {
+    return this._destroyed;
+  }
+
   constructor({ config, transport, context, presets = [] }) {
     super();
     this._id = Relay.idcounter++;
@@ -85,9 +83,9 @@ export class Relay extends EventEmitter {
     this._pipe = this.createPipe(this._presets);
     // ctx
     this._ctx = {
+      relay: this,
       pipe: this._pipe,
       rawPresets: presets,
-      thisRelay: this,
       ...context,
     };
     // bounds
@@ -147,15 +145,9 @@ export class Relay extends EventEmitter {
 
   onBoundClose(thisBound, anotherBound) {
     if (anotherBound.__closed) {
-      if (this._pipe && !this._pipe.destroyed) {
-        this._pipe.broadcast('pipe', { type: CONNECTION_CLOSED, payload: this._remoteInfo });
-      }
       this.destroy();
       this.emit('close');
     } else {
-      if (this._pipe && !this._pipe.destroyed) {
-        this._pipe.broadcast('pipe', { type: CONNECTION_WILL_CLOSE, payload: this._remoteInfo });
-      }
       thisBound.__closed = true;
     }
   }

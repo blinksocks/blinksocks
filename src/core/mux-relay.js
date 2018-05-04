@@ -12,7 +12,7 @@ import {
   MUX_DATA_FRAME,
   MUX_NEW_CONN,
   MUX_CLOSE_CONN,
-} from '../presets/actions';
+} from '../constants';
 
 export class MuxRelay extends Relay {
 
@@ -45,9 +45,9 @@ export class MuxRelay extends Relay {
 
   preparePresets(presets) {
     const first = presets[0];
-    // add "mux" preset to the top
+    // prepend "mux" preset on the top
     if (!first || first.name !== 'mux') {
-      presets = [{ 'name': 'mux' }].concat(presets);
+      presets = [{ 'name': 'mux', 'usePrivate': true }].concat(presets);
     }
     return presets;
   }

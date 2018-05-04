@@ -1,8 +1,16 @@
 import EventEmitter from 'events';
 import { logger } from '../utils';
-import { PIPE_ENCODE } from '../constants';
+
+import {
+  PIPE_ENCODE,
+  CONNECT_TO_REMOTE,
+  MUX_CLOSE_CONN,
+  MUX_DATA_FRAME,
+  MUX_NEW_CONN,
+  PRESET_FAILED
+} from '../constants';
+
 import { getPresetClassByName } from '../presets';
-import { PRESET_FAILED } from '../presets/actions';
 import { IPresetAddressing } from '../presets/defs';
 
 // .on('broadcast')
@@ -45,10 +53,8 @@ export class Pipe extends EventEmitter {
     }
   }
 
-  broadcast = (name, action) => {
-    if (name !== 'pipe') {
-      this.emit('broadcast', action);
-    }
+  broadcast = (action) => {
+    this.emit('broadcast', action);
   };
 
   onReadProperty = (fromName, targetName, propertyName) => {
@@ -62,8 +68,8 @@ export class Pipe extends EventEmitter {
     }
   };
 
-  getPresets(direction = PIPE_ENCODE) {
-    if (direction === PIPE_ENCODE) {
+  getPresets(type = PIPE_ENCODE) {
+    if (type === PIPE_ENCODE) {
       return this._encode_presets || [];
     } else {
       return this._decode_presets || [];
@@ -99,16 +105,16 @@ export class Pipe extends EventEmitter {
     this._decode_presets = [].concat(presets).reverse();
   }
 
-  feed(direction, buffer, extraArgs) {
+  feed(type, buffer, extraArgs) {
     try {
       // cache the current buffer for PRESET_FAILED action
       this._cacheBuffer = buffer;
       // pre-feed hook
-      const preEventName = `pre_${direction}`;
+      const preEventName = `pre_${type}`;
       if (this.listenerCount(preEventName) > 0) {
-        this.emit(preEventName, buffer, (buf) => this._feed(direction, buf, extraArgs));
+        this.emit(preEventName, buffer, (buf) => this._feed(type, buf, extraArgs));
       } else {
-        this._feed(direction, buffer, extraArgs);
+        this._feed(type, buffer, extraArgs);
       }
     } catch (err) {
       logger.error('[pipe] error occurred while piping: %s', err.stack);
@@ -129,20 +135,34 @@ export class Pipe extends EventEmitter {
   }
 
   _createPreset(rawPreset, index) {
-    const { name, params = {} } = rawPreset;
-    const ImplClass = getPresetClassByName(name);
+    const { name, params = {}, usePrivate } = rawPreset;
+    const ImplClass = getPresetClassByName(name, usePrivate);
     const preset = new ImplClass({ config: this._config, params });
+    // inject common methods
     preset.readProperty = (...args) => this.onReadProperty(preset.name, ...args);
     preset.getStore = () => this._config.stores[index];
+    // inject methods for IPresetAddressing
+    if (this._config.is_server && preset instanceof IPresetAddressing) {
+      preset.resolveTargetAddress = ({ host, port }, callback) => {
+        const action = { type: CONNECT_TO_REMOTE, payload: { host, port, onConnected: callback } };
+        this.broadcast(action);
+      };
+    }
+    // inject methods for mux
+    if (preset.name === 'mux') {
+      preset.muxNewConn = (payload) => this.broadcast({ type: MUX_NEW_CONN, payload });
+      preset.muxDataFrame = (payload) => this.broadcast({ type: MUX_DATA_FRAME, payload });
+      preset.muxCloseConn = (payload) => this.broadcast({ type: MUX_CLOSE_CONN, payload });
+    }
+    // ::onInit()
     preset.onInit(params);
     this._attachEvents(preset);
     return preset;
   }
 
   _attachEvents(preset) {
-    preset.setMaxListeners(4);
-    preset.on('broadcast', this.broadcast);
-    preset.on('fail', (name, message) => void this.broadcast(name, {
+    preset.setMaxListeners(3);
+    preset.on('fail', (name, message) => void this.broadcast({
       type: PRESET_FAILED,
       payload: {
         name,
