@@ -238,6 +238,9 @@ export class Hub {
       const relays = this._udpRelays;
       const server = dgram.createSocket('udp4');
 
+      // destroy old relays every 5s
+      setInterval(() => relays.prune(), 5e3);
+
       server.on('message', (msg, rinfo) => {
         const { address, port } = rinfo;
         let proxyRequest = null;
@@ -265,7 +268,6 @@ export class Hub {
             // relays.del(key);
           });
           relays.set(key, relay);
-          relays.prune(); // destroy old relays every time a new relay created
         }
         if (relay._inbound) {
           relay._inbound.onReceive(packet, rinfo);
