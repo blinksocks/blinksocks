@@ -1,5 +1,5 @@
-// functional
-import MuxPreset from './mux';
+// private presets
+import MuxPreset from './_mux';
 
 // basic
 import BaseAuthPreset from './base-auth';
@@ -81,7 +81,7 @@ function checkPresetClass(clazz) {
   return true;
 }
 
-export function getPresetClassByName(name) {
+export function getPresetClassByName(name, allowPrivate = false) {
   let clazz = presetMap[name];
   if (clazz === undefined) {
     try {
@@ -92,6 +92,9 @@ export function getPresetClassByName(name) {
     if (!checkPresetClass(clazz)) {
       throw Error(`definition of preset "${name}" is invalid`);
     }
+  }
+  if (!allowPrivate && clazz.isPrivate) {
+    throw Error(`cannot load private preset "${name}"`);
   }
   return clazz;
 }

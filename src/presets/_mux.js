@@ -1,5 +1,4 @@
 import { IPresetAddressing } from './defs';
-import { MUX_CLOSE_CONN, MUX_DATA_FRAME, MUX_NEW_CONN } from './actions';
 import {
   AdvancedBuffer,
   dumpHex,
@@ -46,6 +45,8 @@ const CMD_CLOSE_CONN = 0x02;
  */
 export default class MuxPreset extends IPresetAddressing {
 
+  static isPrivate = true;
+
   _adBuf = null;
 
   onInit() {
@@ -82,7 +83,7 @@ export default class MuxPreset extends IPresetAddressing {
     }
   }
 
-  onChunkReceived(chunk, { broadcast, fail }) {
+  onChunkReceived(chunk, { fail }) {
     const cmd = chunk[0];
     const cid = chunk.slice(1, 5).toString('hex');
     switch (cmd) {
@@ -93,23 +94,14 @@ export default class MuxPreset extends IPresetAddressing {
         if (!isValidHostname(host) || !isValidPort(port)) {
           return fail(`invalid host or port, host=${dumpHex(hostBuf)} port=${port}`);
         }
-        return broadcast({
-          type: MUX_NEW_CONN,
-          payload: { cid, host, port },
-        });
+        return this.muxNewConn({ cid, host, port });
       }
       case CMD_DATA_FRAME: {
         const dataLen = chunk.readUInt16BE(5);
-        return broadcast({
-          type: MUX_DATA_FRAME,
-          payload: { cid, data: chunk.slice(-dataLen) },
-        });
+        return this.muxDataFrame({ cid, data: chunk.slice(-dataLen) });
       }
       case CMD_CLOSE_CONN:
-        return broadcast({
-          type: MUX_CLOSE_CONN,
-          payload: { cid },
-        });
+        return this.muxCloseConn({ cid });
     }
   }
 
@@ -158,8 +150,8 @@ export default class MuxPreset extends IPresetAddressing {
     }
   }
 
-  beforeIn({ buffer, broadcast, fail }) {
-    this._adBuf.put(buffer, { broadcast, fail });
+  beforeIn({ buffer, fail }) {
+    this._adBuf.put(buffer, { fail });
   }
 
 }

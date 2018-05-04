@@ -177,7 +177,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
   _host = null; // buffer
   _port = null; // buffer
 
-  _isBroadCasting = false;
+  _isConnecting = false;
   _staging = Buffer.alloc(0);
 
   _isHeaderSent = false;
@@ -301,7 +301,7 @@ export default class V2rayVmessPreset extends IPresetAddressing {
   serverIn({ buffer, next, fail }) {
     if (!this._isHeaderRecv) {
 
-      if (this._isBroadCasting) {
+      if (this._isConnecting) {
         this._staging = Buffer.concat([this._staging, buffer]);
         return;
       }
@@ -415,14 +415,14 @@ export default class V2rayVmessPreset extends IPresetAddressing {
       const data = buffer.slice(16 + plainReqHeader.length + 4);
       this._security = securityType;
 
-      this._isBroadCasting = true;
+      this._isConnecting = true;
       this.resolveTargetAddress({
         host: addrType === ATYP_DOMAIN ? addr.toString() : ip.toString(addr),
         port: port,
       }, () => {
         this._adBuf.put(Buffer.concat([data, this._staging]), { next, fail });
         this._isHeaderRecv = true;
-        this._isBroadCasting = false;
+        this._isConnecting = false;
         this._staging = null;
       });
     } else {

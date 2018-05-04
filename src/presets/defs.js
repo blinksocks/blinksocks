@@ -1,7 +1,6 @@
 /* eslint-disable no-unused-vars */
 import EventEmitter from 'events';
 import { PIPE_ENCODE } from '../constants';
-import { CONNECT_TO_REMOTE } from './actions';
 import { kebabCase } from '../utils';
 
 /**
@@ -24,7 +23,6 @@ export class IPreset extends EventEmitter {
     const postfix = (type === PIPE_ENCODE ? 'Out' : 'In') + (isUdp ? 'Udp' : '');
 
     // prepare args
-    const broadcast = (action) => this.emit('broadcast', this.name, action);
     const fail = (message) => this.emit('fail', this.name, message);
     const next = (processed, isReverse = false) => {
       // oh my nice hack to deal with reverse pipeline if haven't been created
@@ -36,7 +34,7 @@ export class IPreset extends EventEmitter {
 
     // clientXXX, serverXXX
     const nextLifeCycleHook = (buf/*, isReverse = false */) => {
-      const args = { buffer: buf, next, broadcast, direct, fail };
+      const args = { buffer: buf, next, fail };
       const ret = this._config.is_client ? this[`client${postfix}`](args, extraArgs) : this[`server${postfix}`](args, extraArgs);
       if (ret instanceof Buffer) {
         next(ret);
@@ -45,7 +43,7 @@ export class IPreset extends EventEmitter {
 
     // beforeXXX
     // NOTE: next(buf, isReverse) is not available in beforeXXX
-    const args = { buffer, next: nextLifeCycleHook, broadcast, direct, fail };
+    const args = { buffer, next: nextLifeCycleHook, fail };
     const ret = this[`before${postfix}`](args, extraArgs);
     if (ret instanceof Buffer) {
       nextLifeCycleHook(ret);
@@ -102,61 +100,57 @@ export class IPreset extends EventEmitter {
 
   // hooks for tcp
 
-  beforeOut({ buffer/* , next, broadcast, direct, fail */ }) {
+  beforeOut({ buffer, next, fail }) {
     return buffer;
   }
 
-  beforeIn({ buffer/* , next, broadcast, direct, fail */ }) {
+  beforeIn({ buffer, next, fail }) {
     return buffer;
   }
 
-  clientOut({ buffer/* , next, broadcast, direct, fail */ }) {
+  clientOut({ buffer, next, fail }) {
     return buffer;
   }
 
-  serverIn({ buffer/* , next, broadcast, direct, fail */ }) {
+  serverIn({ buffer, next, fail }) {
     return buffer;
   }
 
-  serverOut({ buffer/* , next, broadcast, direct, fail */ }) {
+  serverOut({ buffer, next, fail }) {
     return buffer;
   }
 
-  clientIn({ buffer/* , next, broadcast, direct, fail */ }) {
+  clientIn({ buffer, next, fail }) {
     return buffer;
   }
 
   // hooks for udp
 
-  beforeOutUdp({ buffer/* , next, broadcast, direct, fail */ }) {
+  beforeOutUdp({ buffer, next, fail }) {
     return buffer;
   }
 
-  beforeInUdp({ buffer/* , next, broadcast, direct, fail */ }) {
+  beforeInUdp({ buffer, next, fail }) {
     return buffer;
   }
 
-  clientOutUdp({ buffer/* , next, broadcast, direct, fail */ }) {
+  clientOutUdp({ buffer, next, fail }) {
     return buffer;
   }
 
-  serverInUdp({ buffer/* , next, broadcast, direct, fail */ }) {
+  serverInUdp({ buffer, next, fail }) {
     return buffer;
   }
 
-  serverOutUdp({ buffer/* , next, broadcast, direct, fail */ }) {
+  serverOutUdp({ buffer, next, fail }) {
     return buffer;
   }
 
-  clientInUdp({ buffer/* , next, broadcast, direct, fail */ }) {
+  clientInUdp({ buffer, next, fail }) {
     return buffer;
   }
 
   // reserved methods, DO NOT overwrite them!
-
-  next(type, buffer) {
-    this.emit(`next_${type}`, buffer);
-  }
 
   /**
    * direct read any property(match non-static then static) of other preset
@@ -199,8 +193,7 @@ export class IPresetAddressing extends IPreset {
    * @param callback
    */
   resolveTargetAddress({ host, port }, callback) {
-    const action = { type: CONNECT_TO_REMOTE, payload: { host, port, onConnected: callback } };
-    this.emit('broadcast', this.name, action);
+
   }
 
 }
