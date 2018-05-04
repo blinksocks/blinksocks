@@ -169,7 +169,7 @@ You can implement some of the following methods to interact with data stream:
 Each method gets an object which contains several parameters and callbacks you may need:
 
 ```js
-clientOut({ buffer, next, broadcast, direct, fail }) {
+clientOut({ buffer, next, fail }) {
   // your magic here
   // return a buffer or next(a buffer)
 }
@@ -179,8 +179,6 @@ clientOut({ buffer, next, broadcast, direct, fail }) {
 | :------------------------ | :--------------------------------------------------------------------------------------------------------- |
 | buffer                    | output from the previous preset.                                                                           |
 | next(buffer, isReverse)   | transmit processed buffer to the next preset. If isReverse is true, send data back to the previous preset. |
-| broadcast(action)         | broadcast an action to other presets in the list.                                                          |
-| direct(buffer, isReverse) | ignore the following presets, finish piping.                                                               |
 | fail(message)             | report an error message when the preset fail to process.                                                   |
 
 ### Handle Address
@@ -288,9 +286,9 @@ For full items you can access to, please read [Config](../../../src/core/config.
 
 The following functions are auto-generated to your preset, DO NOT overwrite them:
 
-**this.next(direction, buffer)**
+**this.next(type, buffer)**
 
-The same as `next` parameter in each hook function, but here you should provide `direction` to tell which direction the data should transfer to.
+The same as `next` parameter in each hook function, but here you should provide `type` to tell which pipe direction the data should transfer to.
 
 **this.readProperty(presetName, propertyName)**
 
