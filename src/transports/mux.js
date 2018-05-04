@@ -1,6 +1,6 @@
 import { Inbound, Outbound } from './defs';
 import { logger } from '../utils';
-import { CONNECT_TO_REMOTE, CONNECTED_TO_REMOTE, PRESET_FAILED } from '../presets/actions';
+import { CONNECT_TO_REMOTE, CONNECTED_TO_REMOTE, PRESET_FAILED } from '../constants';
 
 export class MuxInbound extends Inbound {
 
@@ -22,7 +22,7 @@ export class MuxInbound extends Inbound {
   get bufferSize() {
     if (this._config.is_client) {
       const totalBufferSize = 0;
-      // const subRelays = this.ctx.thisRelay.getSubRelays();
+      // const subRelays = this.ctx.relay.getSubRelays();
       // if (subRelays) {
       //   for (const relay of subRelays.values()) {
       //     const inbound = relay.getInbound();
@@ -129,7 +129,7 @@ export class MuxOutbound extends Outbound {
       }
     } else {
       const totalBufferSize = 0;
-      // const subRelays = this.ctx.thisRelay.getSubRelays();
+      // const subRelays = this.ctx.relay.getSubRelays();
       // if (subRelays) {
       //   for (const relay of subRelays.values()) {
       //     const outbound = relay.getOutbound();

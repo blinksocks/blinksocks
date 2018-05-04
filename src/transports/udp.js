@@ -1,7 +1,6 @@
 import dgram from 'dgram';
 import { Inbound, Outbound } from './defs';
-import { PIPE_ENCODE, PIPE_DECODE } from '../constants';
-import { CONNECT_TO_REMOTE, CONNECTION_CLOSED, PRESET_FAILED } from '../presets/actions';
+import { PIPE_ENCODE, PIPE_DECODE, CONNECT_TO_REMOTE, PRESET_FAILED } from '../constants';
 import { logger } from '../utils';
 
 export class UdpInbound extends Inbound {
@@ -41,7 +40,6 @@ export class UdpInbound extends Inbound {
       this._outbound = null;
     }
     this.close();
-    this.broadcast({ type: CONNECTION_CLOSED, payload: { host: this.remoteHost, port: this.remotePort } });
   }
 
   write(buffer) {
@@ -133,7 +131,6 @@ export class UdpOutbound extends Outbound {
         onConnected();
       }
     }
-    logger.info(`[udp:outbound] [${this.remote}] request: ${host}:${port}`);
   }
 
   close() {

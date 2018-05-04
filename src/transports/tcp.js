@@ -1,7 +1,15 @@
 import net from 'net';
 import { Inbound, Outbound } from './defs';
-import { MAX_BUFFERED_SIZE, PIPE_ENCODE, PIPE_DECODE } from '../constants';
 import { DNSCache, logger, getRandomInt } from '../utils';
+
+import {
+  MAX_BUFFERED_SIZE,
+  PIPE_ENCODE,
+  PIPE_DECODE,
+  CONNECT_TO_REMOTE,
+  CONNECTED_TO_REMOTE,
+  PRESET_FAILED,
+} from '../constants';
 
 import {
   ACL_CLOSE_CONNECTION,
@@ -10,12 +18,6 @@ import {
   ACL_RESUME_RECV,
   ACL_RESUME_SEND,
 } from '../core/acl';
-
-import {
-  CONNECT_TO_REMOTE,
-  CONNECTED_TO_REMOTE,
-  PRESET_FAILED,
-} from '../presets/actions';
 
 export class TcpInbound extends Inbound {
 
@@ -357,7 +359,7 @@ export class TcpOutbound extends Outbound {
               this.emit('_error', err);
             }
           }
-          this.ctx.pipe.broadcast(null, { type: CONNECTED_TO_REMOTE, payload: { host, port } });
+          this.broadcast({ type: CONNECTED_TO_REMOTE, payload: { host, port } });
         });
       } catch (err) {
         logger.warn(`[${this.name}] [${this.remote}] cannot connect to ${host}:${port}, ${err.message}`);
@@ -365,7 +367,7 @@ export class TcpOutbound extends Outbound {
         this.onClose();
       }
     } else {
-      this.ctx.pipe.broadcast(null, { type: CONNECTED_TO_REMOTE, payload: { host, port } });
+      this.broadcast({ type: CONNECTED_TO_REMOTE, payload: { host, port } });
     }
   }
 

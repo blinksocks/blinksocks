@@ -54,7 +54,10 @@ class Bound extends EventEmitter {
   }
 
   broadcast(action) {
-    !this.ctx.pipe.destroyed && this.ctx.pipe.broadcast('pipe', action);
+    const { relay } = this.ctx;
+    if (!relay.destroyed) {
+      relay.onBroadcast(action);
+    }
   }
 
 }
