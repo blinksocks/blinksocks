@@ -21,4 +21,7 @@ const serverJson = {
   ]
 };
 
-test('obfs-tls1.2-ticket', async () => await run({ clientJson, serverJson }));
+test('obfs-tls1.2-ticket', async () => {
+  await run({ clientJson, serverJson });
+  await run({ clientJson, serverJson, isUdp: true });
+});
