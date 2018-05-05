@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { EVP_BytesToKey, numberToBuffer, hmac, hash } from '../utils';
+import { EVP_BytesToKey, numberToBuffer, hmac, hash, dumpHex } from '../utils';
 import { IPresetAddressing } from './defs';
 
 // available HMACs and length
@@ -123,20 +123,20 @@ export default class BaseAuthPreset extends IPresetAddressing {
 
     // minimal length required
     if (buffer.length < 31) {
-      return fail(`length is too short: ${buffer.length}, dump=${buffer.toString('hex')}`);
+      return fail(`length is too short: ${buffer.length}, dump=${dumpHex(buffer)}`);
     }
 
     // decrypt the first byte and check length overflow
     const alen = this._decipher.update(buffer.slice(0, 1))[0];
     if (buffer.length <= 1 + alen + 2 + hmacLen) {
-      return fail(`unexpected length: ${buffer.length}, dump=${buffer.toString('hex')}`);
+      return fail(`unexpected length: ${buffer.length}, dump=${dumpHex(buffer)}`);
     }
 
     // check hmac
     const givenHmac = buffer.slice(1 + alen + 2, 1 + alen + 2 + hmacLen);
     const expHmac = hmac(this._hmacMethod, this._hmacKey, buffer.slice(0, 1 + alen + 2));
     if (!givenHmac.equals(expHmac)) {
-      return fail(`unexpected HMAC=${givenHmac.toString('hex')} want=${expHmac.toString('hex')} dump=${buffer.slice(0, 60).toString('hex')}`);
+      return fail(`unexpected HMAC=${dumpHex(givenHmac)} want=${dumpHex(expHmac)} dump=${dumpHex(buffer)}`);
     }
 
     // decrypt the following bytes

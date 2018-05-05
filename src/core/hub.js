@@ -43,6 +43,8 @@ export class Hub {
 
   _connQueue = [];
 
+  _udpCleanerTimer = null;
+
   constructor(config) {
     this._config = new Config(config);
     this._udpRelays = LRU({ max: 500, maxAge: 1e5, dispose: (_, relay) => relay.destroy() });
@@ -81,6 +83,9 @@ export class Hub {
     this._udpServer && this._udpServer.close();
     // server
     this._tcpServer.close();
+    // others
+    this._connQueue = [];
+    clearInterval(this._udpCleanerTimer);
     logger.info('[hub] shutdown');
   }
 
@@ -239,7 +244,8 @@ export class Hub {
       const server = dgram.createSocket('udp4');
 
       // destroy old relays every 5s
-      setInterval(() => relays.prune(), 5e3);
+      clearInterval(this._udpCleanerTimer);
+      this._udpCleanerTimer = setInterval(() => relays.prune(), 5e3);
 
       server.on('message', (msg, rinfo) => {
         const { address, port } = rinfo;
