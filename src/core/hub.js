@@ -9,6 +9,7 @@ import uniqueId from 'lodash.uniqueid';
 import { Config } from './config';
 import { Relay } from './relay';
 import { MuxRelay } from './mux-relay';
+import { SpeedTester } from './speed-tester';
 import { dumpHex, getRandomInt, hash, logger } from '../utils';
 import { http, socks, tcp } from '../proxies';
 import { APP_ID } from '../constants';
@@ -31,15 +32,15 @@ export class Hub {
   _muxRelays = new Map(/* id: <MuxRelay> */);
   _udpRelays = null; // LRU cache
 
-  // instant variables
+  // speed testers
 
-  _prevHrtime = process.hrtime();
+  _upSpeedTester = null;
+  _dlSpeedTester = null;
+
+  // instant variables
 
   _totalRead = 0;
   _totalWritten = 0;
-
-  _prevTotalRead = 0;
-  _prevTotalWritten = 0;
 
   _connQueue = [];
 
@@ -48,6 +49,8 @@ export class Hub {
   constructor(config) {
     this._config = new Config(config);
     this._udpRelays = LRU({ max: 500, maxAge: 1e5, dispose: (_, relay) => relay.destroy() });
+    this._upSpeedTester = new SpeedTester();
+    this._dlSpeedTester = new SpeedTester();
   }
 
   // public interfaces
@@ -116,21 +119,11 @@ export class Hub {
   }
 
   getUploadSpeed() {
-    const [sec, nano] = process.hrtime(this._prevHrtime);
-    const totalWritten = this._totalWritten;
-    const diff = totalWritten - this._prevTotalWritten;
-    const speed = Math.ceil(diff / (sec + nano / 1e9)); // b/s
-    this._prevTotalWritten = totalWritten;
-    return speed;
+    return this._upSpeedTester.getSpeed();
   }
 
   getDownloadSpeed() {
-    const [sec, nano] = process.hrtime(this._prevHrtime);
-    const totalRead = this._totalRead;
-    const diff = totalRead - this._prevTotalRead;
-    const speed = Math.ceil(diff / (sec + nano / 1e9)); // b/s
-    this._prevTotalRead = totalRead;
-    return speed;
+    return this._dlSpeedTester.getSpeed();
   }
 
   getConnStatuses() {
@@ -304,6 +297,16 @@ export class Hub {
     });
   }
 
+  _onRead = (size) => {
+    this._totalRead += size;
+    this._dlSpeedTester.feed(size);
+  };
+
+  _onWrite = (size) => {
+    this._totalWritten += size;
+    this._upSpeedTester.feed(size);
+  };
+
   _onConnection = (socket, proxyRequest = null) => {
     logger.verbose(`[hub] [${socket.remoteAddress}:${socket.remotePort}] connected`);
 
@@ -351,8 +354,8 @@ export class Hub {
 
     relay.on('_error', (err) => updateConnStatus('error', err.message));
     relay.on('_connect', (targetAddress) => updateConnStatus('target', targetAddress));
-    relay.on('_read', (size) => this._totalRead += size);
-    relay.on('_write', (size) => this._totalWritten += size);
+    relay.on('_read', this._onRead);
+    relay.on('_write', this._onWrite);
     relay.on('close', () => {
       updateConnStatus('close');
       this._tcpRelays.delete(relay.id);
@@ -375,8 +378,8 @@ export class Hub {
       muxRelay = this._createRelay(context, true);
       muxRelay.on('_error', (err) => updateConnStatus('error', err.message));
       muxRelay.on('_connect', (targetAddress) => updateConnStatus('target', targetAddress));
-      muxRelay.on('_read', (size) => this._totalRead += size);
-      muxRelay.on('_write', (size) => this._totalWritten += size);
+      muxRelay.on('_read', this._onRead);
+      muxRelay.on('_write', this._onWrite);
       muxRelay.on('close', () => {
         updateConnStatus('close');
         this._muxRelays.delete(muxRelay.id);
