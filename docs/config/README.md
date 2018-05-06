@@ -187,10 +187,11 @@ To enable blinksocks over TLS, you should:
 
 ```
 // self-signed
-$ openssl req -x509 -newkey rsa:4096 -nodes -keyout key.pem -out cert.pem -days 365
+$ openssl req -x509 -newkey rsa:4096 -nodes -sha256 -subj '/CN=localhost' \
+    -keyout key.pem -out cert.pem
 ```
 
-> NOTE: Remember the **Common Name** you entered in the command prompt.
+> NOTE: Remember the **Common Name(CN)** you typed in the command line.
 
 2. Server config
 
