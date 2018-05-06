@@ -122,11 +122,13 @@ export class Config {
     this.server_host = hostname;
     this.server_port = +port;
 
-    // preload tls_cert or tls_key
-    if (this.transport === 'tls') {
-      logger.info(`[config] loading ${server.tls_cert}`);
-      this.tls_cert = loadFileSync(server.tls_cert);
-      if (this.is_server) {
+    // preload tls_cert and tls_key
+    if (this.transport === 'tls' || this.transport === 'h2') {
+      if (server.tls_cert) {
+        logger.info(`[config] loading ${server.tls_cert}`);
+        this.tls_cert = loadFileSync(server.tls_cert);
+      }
+      if (this.is_server && server.tls_key) {
         logger.info(`[config] loading ${server.tls_key}`);
         this.tls_key = loadFileSync(server.tls_key);
       }
@@ -336,14 +338,14 @@ export class Config {
 
     const protocol = _protocol.slice(0, -1);
     const available_server_protocols = [
-      'tcp', 'ws', 'tls'
+      'tcp', 'ws', 'tls', 'h2'
     ];
     if (!available_server_protocols.includes(protocol)) {
       throw Error(`service.protocol must be: ${available_server_protocols.join(', ')}`);
     }
 
     // tls_cert, tls_key
-    if (protocol === 'tls') {
+    if (protocol === 'tls' || protocol === 'h2') {
       if (typeof server.tls_cert !== 'string' || server.tls_cert === '') {
         throw Error('"tls_cert" must be provided');
       }

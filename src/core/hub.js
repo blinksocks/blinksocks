@@ -2,6 +2,7 @@ import _sodium from 'libsodium-wrappers';
 import dgram from 'dgram';
 import net from 'net';
 import { URL } from 'url';
+import http2 from 'http2';
 import tls from 'tls';
 import ws from 'ws';
 import LRU from 'lru-cache';
@@ -225,6 +226,12 @@ export class Hub {
           server.listen(address, () => onListening(server));
           break;
         }
+        case 'h2': {
+          server = http2.createSecureServer({ key: tls_key, cert: tls_cert });
+          server.on('stream', (stream) => this._onConnection(stream));
+          server.listen(address, () => onListening(server));
+          break;
+        }
         default:
           return reject(Error(`unsupported protocol: "${local_protocol}"`));
       }
@@ -308,19 +315,16 @@ export class Hub {
     this._upSpeedTester.feed(size);
   };
 
-  _onConnection = (socket, proxyRequest = null) => {
-    logger.verbose(`[hub] [${socket.remoteAddress}:${socket.remotePort}] connected`);
+  _onConnection = (conn, proxyRequest = null) => {
+    const sourceAddress = this._getSourceAddress(conn);
+    const updateConnStatus = (event, extra) => this._updateConnStatus(event, sourceAddress, extra);
 
-    const sourceAddress = { host: socket.remoteAddress, port: socket.remotePort };
-
-    const updateConnStatus = (event, extra) => {
-      this._updateConnStatus(event, sourceAddress, extra);
-    };
+    logger.verbose(`[hub] [${sourceAddress.host}:${sourceAddress.port}] connected`);
 
     updateConnStatus('new');
 
     const context = {
-      socket,
+      socket: conn,
       proxyRequest,
       remoteInfo: sourceAddress,
     };
@@ -365,6 +369,18 @@ export class Hub {
 
     this._tcpRelays.set(relay.id, relay);
   };
+
+  _getSourceAddress(conn) {
+    let sourceHost, sourcePort;
+    if (conn.session) {
+      sourceHost = conn.session.socket.remoteAddress;
+      sourcePort = conn.session.socket.remotePort;
+    } else {
+      sourceHost = conn.remoteAddress;
+      sourcePort = conn.remotePort;
+    }
+    return { host: sourceHost, port: sourcePort };
+  }
 
   _getMuxRelayOnClient(context, cid) {
     // get a mux relay

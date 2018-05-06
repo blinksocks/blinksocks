@@ -8,6 +8,7 @@ import {
   TcpInbound, TcpOutbound,
   UdpInbound, UdpOutbound,
   TlsInbound, TlsOutbound,
+  Http2Inbound, Http2Outbound,
   WsInbound, WsOutbound,
   MuxInbound, MuxOutbound,
 } from '../transports';
@@ -131,6 +132,7 @@ export class Relay extends EventEmitter {
       'tcp': [TcpInbound, TcpOutbound],
       'udp': [UdpInbound, UdpOutbound],
       'tls': [TlsInbound, TlsOutbound],
+      'h2': [Http2Inbound, Http2Outbound],
       'ws': [WsInbound, WsOutbound],
       'mux': [MuxInbound, MuxOutbound],
     };
