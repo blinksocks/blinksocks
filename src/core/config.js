@@ -50,7 +50,7 @@ export class Config {
   presets = null;
   udp_presets = null;
 
-  mux = null;
+  mux = false;
   mux_concurrency = null;
 
   log_path = null;
@@ -153,8 +153,8 @@ export class Config {
       this.redirect = server.redirect;
     }
 
-    // mux
-    this.mux = !!server.mux;
+    // mux, mux_concurrency
+    this.mux = server.mux === true;
     if (this.is_client) {
       this.mux_concurrency = server.mux_concurrency || 10;
     }

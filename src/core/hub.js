@@ -186,18 +186,19 @@ export class Hub {
   }
 
   async _createServerOnServer() {
+    const { local_protocol, local_host, local_port, tls_key, tls_cert } = this._config;
     return new Promise((resolve, reject) => {
       const address = {
-        host: this._config.local_host,
-        port: this._config.local_port,
+        host: local_host,
+        port: local_port,
       };
       const onListening = (server) => {
-        const service = `${this._config.local_protocol}://${this._config.local_host}:${this._config.local_port}`;
+        const service = `${local_protocol}://${local_host}:${local_port}`;
         logger.info(`[hub] blinksocks server is running at ${service}`);
         resolve(server);
       };
       let server = null;
-      switch (this._config.local_protocol) {
+      switch (local_protocol) {
         case 'tcp': {
           server = net.createServer();
           server.on('connection', this._onConnection);
@@ -219,13 +220,13 @@ export class Hub {
           break;
         }
         case 'tls': {
-          server = tls.createServer({ key: [this._config.tls_key], cert: [this._config.tls_cert] });
+          server = tls.createServer({ key: tls_key, cert: tls_cert });
           server.on('secureConnection', this._onConnection);
           server.listen(address, () => onListening(server));
           break;
         }
         default:
-          return reject(Error(`unsupported protocol: "${this._config.local_protocol}"`));
+          return reject(Error(`unsupported protocol: "${local_protocol}"`));
       }
       server.on('error', reject);
     });
