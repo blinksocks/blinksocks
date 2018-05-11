@@ -34,9 +34,9 @@
     "lodash.isplainobject": "^4.0.6",
     "lodash.uniqueid": "^4.0.1",
     "long": "^4.0.0",
-    "lru-cache": "^4.1.2",
+    "lru-cache": "^4.1.3",
     "winston": "^3.0.0-rc4",
-    "winston-daily-rotate-file": "^3.1.3",
+    "winston-daily-rotate-file": "^3.1.4",
     "ws": "^5.1.1"
   },
   "devDependencies": {
@@ -46,9 +46,9 @@
     "babel-jest": "^22.4.3",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
+    "babel-preset-env": "^1.7.0",
     "babel-register": "^6.26.0",
-    "cross-env": "^5.1.4",
+    "cross-env": "^5.1.5",
     "eslint": "^4.19.1",
     "eslint-config-babel": "^7.0.2",
     "eslint-plugin-babel": "^5.1.0",
