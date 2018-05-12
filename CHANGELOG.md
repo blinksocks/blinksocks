@@ -1,5 +1,25 @@
 #  Change Log
 
+## 3.2.1 (2018-05-12)
+
+### :rocket: Features & Improvements
+
+- benchmark: add test for chacha20-ietf.
+- hub: set a timer to prune udp relays.
+- src: move constants from `presets/actions.js` to `src/constants.js`.
+- src: remove `preset.js`, implement `_write()` in `IPreset`.
+- test: add udp test for `obfs-tls1.2-ticket`.
+
+### :bug: Bug Fixes:
+
+- core: add `speed-tester.js`, fix speed measurement.
+
+### Migrating from 3.2.0 to 3.2.1
+
+```
+$ npm install -g blinksocks@3.2.1
+```
+
 ## 3.2.0 (2018-04-28)
 
 > Node.js 10 is supported in this version!
