@@ -287,6 +287,7 @@ const STAGE_DONE = 3;
 
 export function createServer({ bindAddress, bindPort, username, password }) {
   const server = net.createServer();
+  const isAuthRequired = username !== '' && password !== '';
 
   server.on('connection', (socket) => {
     const appAddress = `${socket.remoteAddress}:${socket.remotePort}`;
@@ -308,6 +309,11 @@ export function createServer({ bindAddress, bindPort, username, password }) {
           const { method } = request;
           switch (method) {
             case METHOD_NO_AUTH:
+              if (isAuthRequired) {
+                logger.error(`[socks] [${appAddress}] server requires authorization but got METHOD_NO_AUTH`);
+                socket.end(Buffer.from([SOCKS_VERSION_V5, METHOD_NOT_ACCEPTABLE]));
+                break;
+              }
               stage = STAGE_SOCKS5_REQUEST_MESSAGE;
               // Socks5 Select Message
               socket.write(Buffer.from([SOCKS_VERSION_V5, METHOD_NO_AUTH]));
@@ -347,7 +353,7 @@ export function createServer({ bindAddress, bindPort, username, password }) {
         request = parseSocks5InitialNegotiation(buffer);
         if (request !== null) {
           // Username/Password Authentication
-          if (username !== '' && password !== '') {
+          if (isAuthRequired) {
             if (username !== request.username || password !== request.password) {
               logger.error(`[socks] [${appAddress}] invalid socks5 authorization, username=${request.username} password=${request.password}`);
               socket.end(Buffer.from([SOCKS_VERSION_V5, 0x01]));

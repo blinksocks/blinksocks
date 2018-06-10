@@ -16,6 +16,7 @@ function checkBasicAuthorization(credentials, { username, password }) {
 
 export function createServer({ username, password }) {
   const server = http.createServer();
+  const isAuthRequired = username !== '' && password !== '';
 
   // Simple HTTP Proxy
   server.on('request', (req, res) => {
@@ -32,8 +33,8 @@ export function createServer({ username, password }) {
     }
 
     // Basic Authorization
-    const proxyAuth = headers['proxy-authorization'];
-    if (proxyAuth && username !== '' && password !== '') {
+    if (isAuthRequired) {
+      const proxyAuth = headers['proxy-authorization'] || '';
       const [type, credentials] = proxyAuth.split(' ');
       if (type !== 'Basic' || !checkBasicAuthorization(credentials, { username, password })) {
         logger.error(`[http] [${appAddress}] authorization failed, type=${type} credentials=${credentials}`);
@@ -81,8 +82,8 @@ export function createServer({ username, password }) {
     }
 
     // Basic Authorization
-    const proxyAuth = req.headers['proxy-authorization'];
-    if (proxyAuth && username !== '' && password !== '') {
+    if (isAuthRequired) {
+      const proxyAuth = req.headers['proxy-authorization'] || '';
       const [type, credentials] = proxyAuth.split(' ');
       if (type !== 'Basic' || !checkBasicAuthorization(credentials, { username, password })) {
         logger.error(`[http] [${appAddress}] authorization failed, type=${type} credentials=${credentials}`);
