@@ -1,5 +1,26 @@
 #  Change Log
 
+## 3.2.2 (2018-06-10)
+
+### :exclamation: Notable Changes
+
+> For security reason, **executables** are no longer uploaded in the following releases, we only publish npm packages.
+
+### :rocket: Features & Improvements
+
+- deploy: add `install-run-debian.sh`.
+- transports: add `pathname` support for websocket.
+
+### :bug: Bug Fixes:
+
+- proxies: fix a security bug of authorization bypass when use `socks` or `http` protocol.
+
+### Migrating from 3.2.1 to 3.2.2
+
+```
+$ npm install -g blinksocks@3.2.2
+```
+
 ## 3.2.1 (2018-05-12)
 
 ### :rocket: Features & Improvements

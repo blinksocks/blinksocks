@@ -1,6 +1,6 @@
 {
   "name": "blinksocks",
-  "version": "3.2.1",
+  "version": "3.2.2",
   "description": "A framework for building composable proxy protocol stack",
   "main": "lib/index.js",
   "files": [
