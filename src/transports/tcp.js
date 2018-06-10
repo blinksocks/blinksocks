@@ -343,7 +343,11 @@ export class TcpOutbound extends Outbound {
           await this.connect({ host, port });
         }
         if (this._config.is_client) {
-          await this.connect({ host: this._config.server_host, port: this._config.server_port });
+          await this.connect({
+            host: this._config.server_host,
+            port: this._config.server_port,
+            pathname: this._config.server_pathname,
+          });
         }
         this._socket.on('connect', () => {
           if (typeof onConnected === 'function') {
@@ -371,12 +375,12 @@ export class TcpOutbound extends Outbound {
     }
   }
 
-  async connect({ host, port }) {
+  async connect(target) {
     // close alive connection before create a new one
     if (this._socket && !this._socket.destroyed) {
       this._socket.destroy();
     }
-    this._socket = await this._connect({ host, port });
+    this._socket = await this._connect(target);
     this._socket.on('error', this.onError);
     this._socket.on('end', this.onHalfClose);
     this._socket.on('close', this.onClose);

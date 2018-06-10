@@ -186,14 +186,14 @@ export class Hub {
   }
 
   async _createServerOnServer() {
-    const { local_protocol, local_host, local_port, tls_key, tls_cert } = this._config;
+    const { local_protocol, local_host, local_port, local_pathname, tls_key, tls_cert } = this._config;
     return new Promise((resolve, reject) => {
       const address = {
         host: local_host,
         port: local_port,
       };
       const onListening = (server) => {
-        const service = `${local_protocol}://${local_host}:${local_port}`;
+        const service = `${local_protocol}://${local_host}:${local_port}` + (local_pathname ? local_pathname : '');
         logger.info(`[hub] blinksocks server is running at ${service}`);
         resolve(server);
       };
@@ -208,6 +208,7 @@ export class Hub {
         case 'ws': {
           server = new ws.Server({
             ...address,
+            path: local_pathname,
             perMessageDeflate: false,
           });
           server.getConnections = server._server.getConnections.bind(server._server);

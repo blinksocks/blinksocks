@@ -24,6 +24,7 @@ export class Config {
   local_search_params = null;
   local_host = null;
   local_port = null;
+  local_pathname = null;
 
   server = null;
   is_client = null;
@@ -38,6 +39,8 @@ export class Config {
   transport = null;
   server_host = null;
   server_port = null;
+  server_pathname = null;
+
   tls_cert = null;
   tls_key = null;
   key = null;
@@ -62,13 +65,14 @@ export class Config {
   stores = [];
 
   constructor(json) {
-    const { protocol, hostname, port, searchParams, username, password } = new URL(json.service);
+    const { protocol, hostname, port, pathname, searchParams, username, password } = new URL(json.service);
     this.local_protocol = protocol.slice(0, -1);
     this.local_username = username;
     this.local_password = password;
     this.local_search_params = searchParams;
     this.local_host = hostname;
     this.local_port = +port;
+    this.local_pathname = pathname;
 
     let server;
     // TODO(remove in next version): make backwards compatibility to "json.servers"
@@ -117,10 +121,11 @@ export class Config {
 
   _initServer(server) {
     // service
-    const { protocol, hostname, port } = new URL(server.service);
+    const { protocol, hostname, port, pathname } = new URL(server.service);
     this.transport = protocol.slice(0, -1);
     this.server_host = hostname;
     this.server_port = +port;
+    this.server_pathname = pathname;
 
     // preload tls_cert or tls_key
     if (this.transport === 'tls') {
