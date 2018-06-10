@@ -51,19 +51,8 @@ Please check out [blinksocks-nightly-releases](https://github.com/blinksocks/bli
 
 ## Run blinksocks
 
-**npm version(require Node.js, recommended)**
-
 ```
 $ blinksocks --help
-```
-
-**executable version(~~Node.js~~, not GUI)**
-
-Tips: You can [download](https://github.com/blinksocks/blinksocks/releases) precompiled executables for different platforms and launch it directly without having Node.js installed.
-
-```
-$ ./blinksocks --help    // Linux and macOS
-$ blinksocks.exe --help  // Windows
 ```
 
 For configuring blinksocks, please refer to [Configuration](docs/config).

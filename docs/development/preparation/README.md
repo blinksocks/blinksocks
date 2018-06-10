@@ -65,13 +65,3 @@ After compile, we can change version in `package.json` then publish a package to
 ```
 $ npm publish
 ```
-
-## Package
-
-For users don't have Node.js installed, we use [zeit/pkg](https://github.com/zeit/pkg) to prepare compiled executables:
-
-```
-$ npm run pkg
-```
-
-This will generate compressed executables for different platforms named `blinksocks-{platform}-${arch}-${version}.gz`. And can be distribute to target platform at once.

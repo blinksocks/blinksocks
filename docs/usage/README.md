@@ -117,25 +117,6 @@ WantedBy=multi-user.target
 # journalctl -u blinksocks.service
 ```
 
-### Using executables
-
-```
-// download archive from releases page
-$ wget https://github.com/blinksocks/blinksocks/releases/download/v2.5.3/blinksocks-linux-x64-v2.5.3.gz
-
-// you'd better check sha256sum listed in sha256sum.txt
-$ wget https://github.com/blinksocks/blinksocks/releases/download/v2.5.3/sha256sum.txt
-
-// decompress
-$ gunzip blinksocks-linux-x64-v2.5.3.gz
-
-// grant executable permission
-$ chmod +x blinksocks-linux-x64-v2.5.3
-
-// run directly
-$ ./blinksocks-linux-x64-v2.5.3 --help
-```
-
 ## Work with browsers
 
 Most of the time, you are surfing the Internet via web browsers such as Firefox or Google Chrome.

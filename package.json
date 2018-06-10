@@ -15,15 +15,13 @@
     "test:coverage": "jest --runInBand --silent --coverage --bail",
     "lint": "eslint bin src test pkg",
     "compile": "cross-env NODE_ENV=production babel src --out-dir lib --ignore __tests__,__mocks__",
-    "prepkg": "npm run compile && rimraf pkg/blinksocks-* pkg/sha256sum.txt",
-    "pkg": "pkg --out-path pkg/ --targets node8.9.0-linux-x64,node8.9.0-macos-x64,node8.9.0-win-x64 .",
-    "postpkg": "node pkg/postpkg.js",
     "debug:client": "cross-env NODE_ENV=development node --inspect --inspect-port=9200 bin/cli.js blinksocks.client.json",
     "debug:server": "cross-env NODE_ENV=development node --inspect --inspect-port=9300 bin/cli.js blinksocks.server.json",
     "client": "cross-env NODE_ENV=production node bin/cli.js blinksocks.client.json",
     "server": "cross-env NODE_ENV=production node bin/cli.js blinksocks.server.json",
     "prebenchmark": "npm run compile",
-    "benchmark": "node benchmark/bootstrap.js"
+    "benchmark": "node benchmark/bootstrap.js",
+    "prepublishOnly": "npm run compile"
   },
   "dependencies": {
     "chalk": "^2.4.1",
@@ -56,8 +54,6 @@
     "jest": "^23.1.0",
     "lodash.clonedeep": "^4.5.0",
     "mkdirp": "^0.5.1",
-    "pkg": "^4.3.1",
-    "rimraf": "^2.6.2",
     "socks": "^2.2.0"
   },
   "repository": {
