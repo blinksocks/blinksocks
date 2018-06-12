@@ -251,8 +251,7 @@ export class Config {
 
     const protocol = _protocol.slice(0, -1);
     const available_client_protocols = [
-      'tcp', 'http', 'https',
-      'socks', 'socks5', 'socks4', 'socks4a'
+      'tcp', 'http', 'socks', 'socks5', 'socks4', 'socks4a',
     ];
     if (!available_client_protocols.includes(protocol)) {
       throw Error(`service.protocol must be: ${available_client_protocols.join(', ')}`);
