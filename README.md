@@ -82,7 +82,7 @@ Apache License 2.0
 
 [TLS]: docs/config#blinksocks-over-tls
 [WebSocket]: docs/config#blinksocks-over-websocket
-[WebSocket/TLS]: docs/config#blinksocks-over-websocket-tls
+[WebSocket/TLS]: docs/config#blinksocks-over-websockettls
 [multiplexing]: docs/config#multiplexing
 [customization]: docs/development/api
 [ACL]: docs/config#access-control-list

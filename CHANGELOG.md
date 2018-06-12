@@ -4,7 +4,7 @@
 
 ### :exclamation: Notable Changes
 
-- **transports**: add `wss`([WebSocket/TLS](docs/config#blinksocks-over-websocket-tls)).
+- **transports**: add `wss`([WebSocket/TLS](docs/config#blinksocks-over-websockettls)).
 
 If you encounter the following warning, and the certificate is `self-signed`, please add `"tls_cert_self_signed": true` to client configuration and provide server certificate in `"tls_cert"` as well:
 
