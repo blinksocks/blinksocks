@@ -62,7 +62,7 @@ export default async function run({ proxy, auth = {}, clientJson, serverJson, no
     if (isUdp) {
       response = await udp(props);
     } else {
-      response = await curl({ proxyMethod: proxy, ...props });
+      response = await curl({ proxyMethod: proxy ...props });
     }
     if (not) {
       expect(response).not.toBe(MOCK_RESPONSE);

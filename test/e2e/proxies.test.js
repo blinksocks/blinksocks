@@ -2,25 +2,25 @@ import run from '../common/run-e2e';
 
 const clientJson = {
   // "service": "",
-  "server": {
-    "service": "tcp://127.0.0.1:1082",
-    "key": "9{*2gdBSdCrgnSBD",
-    "presets": [
-      { "name": "ss-base" },
-      { "name": "obfs-random-padding" },
-      { "name": "ss-stream-cipher", "params": { "method": "aes-128-ctr" } }
-    ]
-  }
+  'server': {
+    'service': 'tcp://127.0.0.1:1082',
+    'key': '9{*2gdBSdCrgnSBD',
+    'presets': [
+      { 'name': 'ss-base' },
+      { 'name': 'obfs-random-padding' },
+      { 'name': 'ss-stream-cipher', 'params': { 'method': 'aes-128-ctr' } },
+    ],
+  },
 };
 
 const serverJson = {
-  "service": "tcp://127.0.0.1:1082",
-  "key": "9{*2gdBSdCrgnSBD",
-  "presets": [
-    { "name": "ss-base" },
-    { "name": "obfs-random-padding" },
-    { "name": "ss-stream-cipher", "params": { "method": "aes-128-ctr" } }
-  ]
+  'service': 'tcp://127.0.0.1:1082',
+  'key': '9{*2gdBSdCrgnSBD',
+  'presets': [
+    { 'name': 'ss-base' },
+    { 'name': 'obfs-random-padding' },
+    { 'name': 'ss-stream-cipher', 'params': { 'method': 'aes-128-ctr' } },
+  ],
 };
 
 test('http-proxy', async () => await run({

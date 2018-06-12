@@ -1,31 +1,31 @@
 import { AdvancedBuffer } from '../../../src/utils/advanced-buffer';
 
-describe('AdvancedBuffer#constructor', function () {
+describe('AdvancedBuffer#constructor', function() {
 
-  it('should throw when options is not given', function () {
+  it('should throw when options is not given', function() {
     expect(() => new AdvancedBuffer()).toThrow();
   });
 
-  it('should throw when getPacketLength not Function', function () {
+  it('should throw when getPacketLength not Function', function() {
     expect(() => new AdvancedBuffer({ getPacketLength: null })).toThrow();
   });
 
 });
 
-describe('AdvancedBuffer#put', function () {
+describe('AdvancedBuffer#put', function() {
 
-  it('should throw when pass a non-buffer to put() ', function () {
+  it('should throw when pass a non-buffer to put() ', function() {
     const buffer = new AdvancedBuffer({
-      getPacketLength: () => 0
+      getPacketLength: () => 0,
     });
     expect(() => buffer.put()).toThrow();
   });
 
-  it('should leave 0xff', function () {
+  it('should leave 0xff', function() {
     const buffer = new AdvancedBuffer({
       getPacketLength: (chunk) => {
         return (chunk.length < 2) ? 0 : chunk.readUInt16BE(0);
-      }
+      },
     });
     const callback = jest.fn();
     buffer.on('data', callback);
@@ -39,7 +39,7 @@ describe('AdvancedBuffer#put', function () {
     expect(callback).toHaveBeenCalledTimes(3);
   });
 
-  it('should drop the first byte', function () {
+  it('should drop the first byte', function() {
     let dropped = false;
     const buffer = new AdvancedBuffer({
       getPacketLength: (chunk) => {
@@ -49,7 +49,7 @@ describe('AdvancedBuffer#put', function () {
         } else {
           return chunk.length > 1 ? chunk.readUInt16BE(0) : 0;
         }
-      }
+      },
     });
     const callback = jest.fn();
     buffer.on('data', callback);
@@ -63,9 +63,9 @@ describe('AdvancedBuffer#put', function () {
     expect(callback).toHaveBeenCalledTimes(3);
   });
 
-  it('should drop buffer', function () {
+  it('should drop buffer', function() {
     const buffer = new AdvancedBuffer({
-      getPacketLength: () => -1
+      getPacketLength: () => -1,
     });
     const callback = jest.fn();
     buffer.on('data', callback);
@@ -76,9 +76,9 @@ describe('AdvancedBuffer#put', function () {
 
 });
 
-describe('AdvancedBuffer#clear', function () {
+describe('AdvancedBuffer#clear', function() {
 
-  it('should throw when pass a non-buffer to put() ', function () {
+  it('should throw when pass a non-buffer to put() ', function() {
     const buffer = new AdvancedBuffer({ getPacketLength: () => 0 });
     buffer.put(Buffer.from([0x00]));
     buffer.clear();
