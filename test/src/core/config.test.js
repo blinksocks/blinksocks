@@ -213,7 +213,7 @@ describe('Config#initServer', () => {
 
   it('should config set correctly', () => {
     const config = new Config(serverConf);
-    expect(config.transport).toBe('tls');
+    expect(config.server_protocol).toBe('tls');
     expect(config.tls_cert).toBeDefined();
     expect(config.tls_key).toBeDefined();
   });

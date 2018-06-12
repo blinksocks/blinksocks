@@ -36,12 +36,13 @@ export class Config {
   dns_expire = null;
   dns = null;
 
-  transport = null;
+  server_protocol = null;
   server_host = null;
   server_port = null;
   server_pathname = null;
 
   tls_cert = null;
+  tls_cert_self_signed = false;
   tls_key = null;
   key = null;
 
@@ -82,7 +83,7 @@ export class Config {
         chalk.bgYellowBright('WARN'),
         '"servers" will be deprecated in the next version,' +
         ' please configure only one server in "server: {...}",' +
-        ' for migration guide please refer to CHANGELOG.md.'
+        ' for migration guide please refer to CHANGELOG.md.',
       );
     } else {
       server = json.server;
@@ -122,15 +123,20 @@ export class Config {
   _initServer(server) {
     // service
     const { protocol, hostname, port, pathname } = new URL(server.service);
-    this.transport = protocol.slice(0, -1);
+    this.server_protocol = protocol.slice(0, -1);
     this.server_host = hostname;
     this.server_port = +port;
     this.server_pathname = pathname;
 
     // preload tls_cert or tls_key
-    if (this.transport === 'tls') {
-      logger.info(`[config] loading ${server.tls_cert}`);
-      this.tls_cert = loadFileSync(server.tls_cert);
+    if (this.server_protocol === 'tls' || this.server_protocol === 'wss') {
+      if (this.is_client) {
+        this.tls_cert_self_signed = !!server.tls_cert_self_signed;
+      }
+      if (this.tls_cert_self_signed || this.is_server) {
+        logger.info(`[config] loading ${server.tls_cert}`);
+        this.tls_cert = loadFileSync(server.tls_cert);
+      }
       if (this.is_server) {
         logger.info(`[config] loading ${server.tls_key}`);
         this.tls_key = loadFileSync(server.tls_key);
@@ -167,7 +173,7 @@ export class Config {
     // remove unnecessary presets
     if (this.mux) {
       this.presets = this.presets.filter(
-        ({ name }) => !IPresetAddressing.isPrototypeOf(getPresetClassByName(name))
+        ({ name }) => !IPresetAddressing.isPrototypeOf(getPresetClassByName(name)),
       );
     }
 
@@ -211,7 +217,7 @@ export class Config {
         // TODO: Enable coloring. Currently we have to prevent dumping color characters in log files.
         // colorize(),
         prettyPrint(),
-        printf((info) => `${info.timestamp} - ${info.level}: ${info.message}`)
+        printf((info) => `${info.timestamp} - ${info.level}: ${info.message}`),
       ),
       transports: trans,
     });
@@ -348,11 +354,17 @@ export class Config {
     }
 
     // tls_cert, tls_key
-    if (protocol === 'tls') {
-      if (typeof server.tls_cert !== 'string' || server.tls_cert === '') {
-        throw Error('"tls_cert" must be provided');
+    if (protocol === 'tls' || protocol === 'wss') {
+      if (from_client && server.tls_cert_self_signed) {
+        if (typeof server.tls_cert !== 'string' || server.tls_cert === '') {
+          throw Error('"tls_cert" must be provided when "tls_cert_self_signed" is set');
+        }
       }
+      // on server, both tls_cert and tls_key must be set
       if (!from_client) {
+        if (typeof server.tls_cert !== 'string' || server.tls_cert === '') {
+          throw Error('"tls_cert" must be provided');
+        }
         if (typeof server.tls_key !== 'string' || server.tls_key === '') {
           throw Error('"tls_key" must be provided');
         }

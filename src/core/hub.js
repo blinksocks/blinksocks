@@ -408,9 +408,9 @@ export class Hub {
 
   _createRelay(context, isMux = false) {
     const props = {
-      config: this._config,
       context: context,
-      transport: this._config.transport,
+      config: this._config,
+      transport: this._config.server_protocol,
       presets: this._config.presets,
     };
     if (isMux) {

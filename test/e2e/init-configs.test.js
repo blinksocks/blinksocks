@@ -11,6 +11,7 @@ const clientJson = {
       { 'name': 'ss-stream-cipher', 'params': { 'method': 'aes-128-ctr' } },
     ],
     'tls_cert': 'cert.pem',
+    'tls_cert_self_signed': false,
     'mux': false,
     'mux_concurrency': 10,
   },

@@ -18,6 +18,7 @@ const client = {
     'mux': true,
     'mux_concurrency': 5,
     'tls_cert': tlsCert,
+    'tls_cert_self_signed': true,
   },
   'log_level': 'debug',
 };

@@ -29,7 +29,11 @@ export class TlsOutbound extends TcpOutbound {
   // overwrite _connect of tcp outbound using tls.connect()
   async _connect({ host, port }) {
     logger.info(`[tls:outbound] [${this.remote}] connecting to tls://${host}:${port}`);
-    return tls.connect({ host, port, ca: [this._config.tls_cert] });
+    const options = { host, port };
+    if (this._config.tls_cert_self_signed) {
+      options.ca = [this._config.tls_cert];
+    }
+    return tls.connect(options);
   }
 
 }
