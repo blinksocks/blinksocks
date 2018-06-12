@@ -31,6 +31,7 @@ $ blinksocks init
       }
     ],
     "tls_cert": "cert.pem",
+    "tls_cert_self_signed": false,
     "mux": false,
     "mux_concurrency": 10
   },
@@ -76,28 +77,29 @@ $ blinksocks init
 }
 ```
 
-|        KEY        |                         DESCRIPTION                          |     DEFAULT     |                           REMARKS                           |
-| :---------------- | :----------------------------------------------------------- | :-------------- | :---------------------------------------------------------- |
-| service           | local service address                                        | -               | a [WHATWG URL] e.g, "socks://127.0.0.1:1080"                |
-| server            | remote server config                                         | -               | **CLIENT ONLY**                                             |
-| server.service    | remote service address                                       | -               | `<protocol>://<host>:<port>`                                |
-| server.key        | remote server master key                                     | -               | -                                                           |
-| presets           | an ordered list of presets to build a protocol stack         | -               | see [presets]                                               |
-| presets[i].name   | preset name                                                  | -               | -                                                           |
-| presets[i].params | preset params                                                | -               | -                                                           |
-| tls_key           | private key for TLS                                          | -               | required on server if `<protocol>` is "tls"                 |
-| tls_cert          | certificate for TLS                                          | -               | required on both client and server if `<protocol>` is "tls" |
-| acl               | enable access control list or not                            | false           | **SERVER ONLY**                                             |
-| acl_conf          | access control list configuration file                       | -               | **SERVER ONLY**, see below                                  |
-| timeout           | timeout for each connection                                  | 600             | in seconds                                                  |
-| mux               | enable multiplexing or not                                   | false           | -                                                           |
-| mux_concurrency   | the max mux connection established between client and server | 10              | **CLIENT ONLY**                                             |
-| redirect          | target address to redirect when preset fail to process       | ""              | **SERVER ONLY** `<host>:<port>`                             |
-| dns               | a list of DNS server IPs                                     | []              | -                                                           |
-| dns_expire        | in-memory DNS cache expiration time                          | 3600            | in seconds                                                  |
-| log_path          | log file path                                                | "bs-[type].log" | a relative/absolute directory or a file to put logs in      |
-| log_level         | log level                                                    | "info"          | ['error', 'warn', 'info', 'verbose', 'debug', 'silly']      |
-| log_max_days      | the max of days a log file will be saved                     | 30              | remove this option if you want to keep all log files        |
+|         KEY          |                         DESCRIPTION                          |     DEFAULT     |                           REMARKS                           |
+| :------------------- | :----------------------------------------------------------- | :-------------- | :---------------------------------------------------------- |
+| service              | local service address                                        | -               | a [WHATWG URL] e.g, "socks://127.0.0.1:1080"                |
+| server               | remote server config                                         | -               | **CLIENT ONLY**                                             |
+| server.service       | remote service address                                       | -               | `<protocol>://<host>:<port>`                                |
+| server.key           | remote server master key                                     | -               | -                                                           |
+| presets              | an ordered list of presets to build a protocol stack         | -               | see [presets]                                               |
+| presets[i].name      | preset name                                                  | -               | -                                                           |
+| presets[i].params    | preset params                                                | -               | -                                                           |
+| tls_key              | private key for TLS                                          | -               | required on server if `<protocol>` is "tls"                 |
+| tls_cert             | certificate for TLS                                          | -               | required on both client and server if `<protocol>` is "tls" |
+| tls_cert_self_signed | whether "tls_cert" is `self-signed` or not                   | false           | -                                                           |
+| acl                  | enable access control list or not                            | false           | **SERVER ONLY**                                             |
+| acl_conf             | access control list configuration file                       | -               | **SERVER ONLY**, see below                                  |
+| timeout              | timeout for each connection                                  | 600             | in seconds                                                  |
+| mux                  | enable multiplexing or not                                   | false           | -                                                           |
+| mux_concurrency      | the max mux connection established between client and server | 10              | **CLIENT ONLY**                                             |
+| redirect             | target address to redirect when preset fail to process       | ""              | **SERVER ONLY** `<host>:<port>`                             |
+| dns                  | a list of DNS server IPs                                     | []              | -                                                           |
+| dns_expire           | in-memory DNS cache expiration time                          | 3600            | in seconds                                                  |
+| log_path             | log file path                                                | "bs-[type].log" | a relative/absolute directory or a file to put logs in      |
+| log_level            | log level                                                    | "info"          | ['error', 'warn', 'info', 'verbose', 'debug', 'silly']      |
+| log_max_days         | the max of days a log file will be saved                     | 30              | remove this option if you want to keep all log files        |
 
 ### Service
 
@@ -105,8 +107,8 @@ $ blinksocks init
 
 The `<protocol>` should be:
 
-* On client side: `tcp`, `socks`/`socks5`/`socks4`/`socks4a` or `http`/`https`.
-* On server side: `tcp`, `tls` or `ws`.
+* On client side: `tcp`, `socks`/`socks5`/`socks4`/`socks4a` or `http`.
+* On server side: `tcp`, `tls`, `ws` or `wss`.
 
 #### Service Authentication
 
@@ -181,12 +183,12 @@ For more information about presets, please check out [presets].
 
 By default, blinksocks use "tcp" as transport, but you can take advantage of TLS technology to protect your data well.
 
-To enable blinksocks over TLS, you should:
+To enable blinksocks over TLS, you can:
 
 1. Generate `key.pem` and `cert.pem` on server
 
 ```
-// self-signed
+// Generate self-signed certificate
 $ openssl req -x509 -newkey rsa:4096 -nodes -sha256 -subj '/CN=localhost' \
     -keyout key.pem -out cert.pem
 ```
@@ -216,11 +218,14 @@ Change server's `tcp://` to `tls://`, then provide `tls_cert`:
   "server": {
     "service": "tls://<Common Name>:<port>", // take care of <Common Name>
     "tls_cert": "cert.pem",
+    "tls_cert_self_signed": true
     ...
   },
   ...
 }
 ```
+
+> NOTE: You don't have to set `"tls_cert_self_signed": true` if your certificate is NOT self-signed.
 
 ### blinksocks over WebSocket
 
@@ -247,6 +252,38 @@ Like blinksocks over TLS, it's much easier to setup a websocket tunnel:
   ...
 }
 ```
+
+### blinksocks over WebSocket/TLS
+
+Similar to `blinksocks over TLS`, but the protocol part is become `wss` other than `tls`:
+
+1. Server config
+
+```
+{
+  "service": "wss://<host>:<port>",
+  "tls_key": "key.pem",
+  "tls_cert": "cert.pem",
+  ...
+}
+```
+
+2. Client config
+
+```
+{
+  ...
+  "server": {
+    "service": "wss://<host>:<port>",
+    "tls_cert": "cert.pem",
+    "tls_cert_self_signed": true
+    ...
+  },
+  ...
+}
+```
+
+> NOTE: You don't have to set `"tls_cert_self_signed": true` if your certificate is NOT self-signed.
 
 ### Access Control List
 

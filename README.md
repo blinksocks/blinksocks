@@ -20,7 +20,7 @@
 
 * Cross-platform: running on Linux, Windows and macOS.
 * Lightweight proxy interfaces: Socks5/Socks4/Socks4a and HTTP.
-* Multiple Transport Layers: TCP, UDP, [TLS] and [WebSocket].
+* Multiple Transport Layers: TCP, UDP, [TLS], [WebSocket] and [WebSocket/TLS].
 * TLS/TLS/WebSocket [multiplexing].
 * Convenient protocol [customization].
 * Access Control List([ACL]) support.
@@ -82,6 +82,7 @@ Apache License 2.0
 
 [TLS]: docs/config#blinksocks-over-tls
 [WebSocket]: docs/config#blinksocks-over-websocket
+[WebSocket/TLS]: docs/config#blinksocks-over-websocket-tls
 [multiplexing]: docs/config#multiplexing
 [customization]: docs/development/api
 [ACL]: docs/config#access-control-list
