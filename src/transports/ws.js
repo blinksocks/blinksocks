@@ -6,7 +6,7 @@ function patchWebsocket(ws) {
   ws.write = (buffer) => ws.send(buffer, {
     compress: false,
     mask: false,
-    fin: true // send data out immediately
+    fin: true, // send data out immediately
   }, () => this.emit('drain'));
   ws.end = () => ws.close();
   ws.destroy = () => ws.close();
@@ -57,13 +57,21 @@ export class WsOutbound extends TcpOutbound {
     return this._socket && this._socket.readyState === WebSocket.OPEN;
   }
 
-  async _connect({ host, port, pathname = '/' }) {
-    const target = `ws://${host}:${port}` + (pathname ? pathname : '');
-    logger.info(`[${this.name}] [${this.remote}] connecting to ${target}`);
-    const socket = new WebSocket(target, { perMessageDeflate: false });
+  async _connect(target) {
+    const address = this.getConnAddress(target);
+    logger.info(`[${this.name}] [${this.remote}] connecting to ${address}`);
+    const socket = new WebSocket(address, this.getConnOptions({ perMessageDeflate: false }));
     socket.on('message', this.onReceive);
     socket.on('close', () => socket.destroyed = true);
     return patchWebsocket.call(this, socket);
+  }
+
+  getConnAddress({ host, port, pathname }) {
+    return `ws://${host}:${port}` + (pathname ? pathname : '');
+  }
+
+  getConnOptions(options) {
+    return options;
   }
 
 }

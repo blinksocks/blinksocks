@@ -346,7 +346,7 @@ export class Config {
 
     const protocol = _protocol.slice(0, -1);
     const available_server_protocols = [
-      'tcp', 'ws', 'tls'
+      'tcp', 'ws', 'wss', 'tls',
     ];
     if (!available_server_protocols.includes(protocol)) {
       throw Error(`service.protocol must be: ${available_server_protocols.join(', ')}`);

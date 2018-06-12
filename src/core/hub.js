@@ -1,6 +1,8 @@
 import _sodium from 'libsodium-wrappers';
 import dgram from 'dgram';
 import net from 'net';
+import http from 'http';
+import https from 'https';
 import { URL } from 'url';
 import tls from 'tls';
 import ws from 'ws';
@@ -11,7 +13,7 @@ import { Relay } from './relay';
 import { MuxRelay } from './mux-relay';
 import { SpeedTester } from './speed-tester';
 import { dumpHex, getRandomInt, hash, logger } from '../utils';
-import { http, socks, tcp } from '../proxies';
+import { http as httpProxy, socks, tcp } from '../proxies';
 import { APP_ID } from '../constants';
 
 export const MAX_CONNECTIONS = 50;
@@ -165,8 +167,7 @@ export class Hub {
           server = socks.createServer({ bindAddress: local_host, bindPort: local_port, username, password });
           break;
         case 'http':
-        case 'https':
-          server = http.createServer({ username, password });
+          server = httpProxy.createServer({ username, password });
           break;
         default:
           return reject(Error(`unsupported protocol: "${local_protocol}"`));
@@ -205,9 +206,16 @@ export class Hub {
           server.listen(address, () => onListening(server));
           break;
         }
+        case 'wss':
         case 'ws': {
+          let http_s_server = null;
+          if (local_protocol === 'wss') {
+            http_s_server = https.createServer({ key: tls_key, cert: tls_cert });
+          } else {
+            http_s_server = http.createServer();
+          }
           server = new ws.Server({
-            ...address,
+            server: http_s_server,
             path: local_pathname,
             perMessageDeflate: false,
           });
@@ -217,7 +225,7 @@ export class Hub {
             ws.remotePort = req.connection.remotePort;
             this._onConnection(ws);
           });
-          server.on('listening', () => onListening(server));
+          http_s_server.listen(address, () => onListening(http_s_server));
           break;
         }
         case 'tls': {

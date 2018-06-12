@@ -9,6 +9,7 @@ import {
   UdpInbound, UdpOutbound,
   TlsInbound, TlsOutbound,
   WsInbound, WsOutbound,
+  WssInbound, WssOutbound,
   MuxInbound, MuxOutbound,
 } from '../transports';
 
@@ -132,6 +133,7 @@ export class Relay extends EventEmitter {
       'udp': [UdpInbound, UdpOutbound],
       'tls': [TlsInbound, TlsOutbound],
       'ws': [WsInbound, WsOutbound],
+      'wss': [WssInbound, WssOutbound],
       'mux': [MuxInbound, MuxOutbound],
     };
     let Inbound = null, Outbound = null;
