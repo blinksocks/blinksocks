@@ -8,12 +8,12 @@
 
 ### :rocket: Features & Improvements
 
-- deploy: add `install-run-debian.sh`.
-- transports: add `pathname` support for websocket.
+- **deploy**: add `install-run-debian.sh`.
+- **transports**: add `pathname` support for websocket.
 
 ### :bug: Bug Fixes:
 
-- proxies: fix a security bug of authorization bypass when use `socks` or `http` protocol.
+- **proxies**: fix a security bug of authorization bypass when use `socks` or `http` protocol.
 
 ### Migrating from 3.2.1 to 3.2.2
 
@@ -25,15 +25,15 @@ $ npm install -g blinksocks@3.2.2
 
 ### :rocket: Features & Improvements
 
-- benchmark: add test for chacha20-ietf.
-- hub: set a timer to prune udp relays.
-- src: move constants from `presets/actions.js` to `src/constants.js`.
-- src: remove `preset.js`, implement `_write()` in `IPreset`.
-- test: add udp test for `obfs-tls1.2-ticket`.
+- **benchmark**: add test for chacha20-ietf.
+- **hub**: set a timer to prune udp relays.
+- **src**: move constants from `presets/actions.js` to `src/constants.js`.
+- **src**: remove `preset.js`, implement `_write()` in `IPreset`.
+- **test**: add udp test for `obfs-tls1.2-ticket`.
 
 ### :bug: Bug Fixes:
 
-- core: add `speed-tester.js`, fix speed measurement.
+- **core**: add `speed-tester.js`, fix speed measurement.
 
 ### Migrating from 3.2.0 to 3.2.1
 
@@ -47,26 +47,26 @@ $ npm install -g blinksocks@3.2.1
 
 ### :exclamation: Notable Changes
 
-- src: support socks4(a), socks5, http `basic authorization`(username/password).
-- presets: add `IPresetAddressing::onInitTargetAddress()` and `IPresetAddressing::resolveTargetAddress()`.
-- presets: add `chacha20-ietf` method for `ss-stream-cipher`, but require Node.js 10.x.
-- presets: deprecated `IPreset::onNotified()`.
-- presets: deprecated `auto-conf` preset.
+- **src**: support socks4(a), socks5, http `basic authorization`(username/password).
+- **presets**: add `IPresetAddressing::onInitTargetAddress()` and `IPresetAddressing::resolveTargetAddress()`.
+- **presets**: add `chacha20-ietf` method for `ss-stream-cipher`, but require Node.js 10.x.
+- **presets**: deprecated `IPreset::onNotified()`.
+- **presets**: deprecated `auto-conf` preset.
 
 ### :rocket: Features & Improvements
 
-- core: add `Pipe::initTargetAddress()`.
-- utils: add `uint64ToBuffer()`, `incrementLE()` and `incrementBE()`.
-- package: upgrade ws from v3.3.3 to v5.1.1.
-- package: use WHATWG URL API instead of legacy qs api.
-- package: add package-lock.json.
-- package: remove unused dependencies.
-- ci: add test on the latest stable Node.js.
+- **core**: add `Pipe::initTargetAddress()`.
+- **utils**: add `uint64ToBuffer()`, `incrementLE()` and `incrementBE()`.
+- **package**: upgrade ws from v3.3.3 to v5.1.1.
+- **package**: use WHATWG URL API instead of legacy qs api.
+- **package**: add package-lock.json.
+- **package**: remove unused dependencies.
+- **ci**: add test on the latest stable Node.js.
 
 ### :bug: Bug Fixes:
 
-- hub: fix sequence between calling `relay::on()` and `relay.init()`.
-- hub: patch `server.getConnections()` for ws.
+- **hub**: fix sequence between calling `relay::on()` and `relay.init()`.
+- **hub**: patch `server.getConnections()` for ws.
 
 ### Migrating from 3.1.1 to 3.2.0
 
@@ -78,13 +78,13 @@ $ npm install -g blinksocks@3.2.0
 
 ### :rocket: Features & Improvements
 
-- api: remove Hub::getPerformance().
-- api: add Hub::getUploadSpeed(), Hub::getDownloadSpeed() and Hub::getConnStatuses().
-- benchmark: enlarge wait time before kill iperf server.
-- package: upgrade winston logger to v3.
-- package: remove husky and precommit hook, it's annoying.
-- test: add udp tests for multiplexing.
-- docs: add usage for systemd.
+- **api**: remove Hub::getPerformance().
+- **api**: add Hub::getUploadSpeed(), Hub::getDownloadSpeed() and Hub::getConnStatuses().
+- **benchmark**: enlarge wait time before kill iperf server.
+- **package**: upgrade winston logger to v3.
+- **package**: remove husky and precommit hook, it's annoying.
+- **test**: add udp tests for multiplexing.
+- **docs**: add usage for systemd.
 
 ### :bug: Bug Fixes:
 
@@ -102,18 +102,18 @@ $ npm install -g blinksocks@3.1.1
 
 ### :rocket: Features & Improvements
 
-- lib: compiled to Node.js 8.
-- core: start udp server only when use socks protocol on client.
-- core: add performance.js to collect upload/download speed.
-- core: add Hub::getConnections(), Hub::getTotalRead(), Hub::getTotalWritten() and Hub::getPerformance().
-- test: add tests for udp relay.
-- test: add tests for multiplexing over ws and tls.
+- **lib**: compiled to Node.js 8.
+- **core**: start udp server only when use socks protocol on client.
+- **core**: add performance.js to collect upload/download speed.
+- **core**: add Hub::getConnections(), Hub::getTotalRead(), Hub::getTotalWritten() and Hub::getPerformance().
+- **test**: add tests for udp relay.
+- **test**: add tests for multiplexing over ws and tls.
 
 ### :bug: Bug Fixes:
 
-- src: reduce error rate when enable multiplexing on server.
-- core: include target address in tracker's log when enable multiplexing.
-- core: avoid putting duplicate target address in tracker's log.
+- **src**: reduce error rate when enable multiplexing on server.
+- **core**: include target address in tracker's log when enable multiplexing.
+- **core**: avoid putting duplicate target address in tracker's log.
 
 ### Migrating from 3.0.0 to 3.1.0
 
@@ -125,30 +125,30 @@ $ npm install -g blinksocks@3.1.0
 
 ### :boom: Breaking Changes:
 
-- bin/init: remove "workers".
-- bin/init: replace "servers: []" to "server: {}".
-- core: remove balancer.
-- presets: remove `stats` preset.
-- presets: remove `tracker` preset, re-implement in core.
-- presets: remove `access-control` preset, re-implement in core.
+- **bin/init**: remove "workers".
+- **bin/init**: replace "servers: []" to "server: {}".
+- **core**: remove balancer.
+- **presets**: remove `stats` preset.
+- **presets**: remove `tracker` preset, re-implement in core.
+- **presets**: remove `access-control` preset, re-implement in core.
 
 ### :rocket: Features & Improvements
 
-- bin/init: add "acl" and "acl_conf" on server side.
-- src: refactor src/dns-cache.js and move it to utils/.
-- src: move config items from global to local.
-- core: expose Config::getLogFilePath().
-- benchmark: use json output of iperf.
-- presets/mux: discretize cid and other improvements.
-- ci: add scripts to do nightly release automatically.
-- test: add e2e tests.
+- **bin/init**: add "acl" and "acl_conf" on server side.
+- **src**: refactor src/dns-cache.js and move it to utils/.
+- **src**: move config items from global to local.
+- **core**: expose Config::getLogFilePath().
+- **benchmark**: use json output of iperf.
+- **presets/mux**: discretize cid and other improvements.
+- **ci**: add scripts to do nightly release automatically.
+- **test**: add e2e tests.
 
 ### :bug: Bug Fixes:
 
-- src: fix "send() is not a function" when using mux though http proxy.
-- core: fix "cannot read property 'remoteInfo' of null" of mux-relay.js.
-- core: fix sub connection id collision.
-- core: handle listen "error" event.
+- **src**: fix "send() is not a function" when using mux though http proxy.
+- **core**: fix "cannot read property 'remoteInfo' of null" of mux-relay.js.
+- **core**: fix sub connection id collision.
+- **core**: handle listen "error" event.
 
 ### Committers: 2
 
@@ -222,21 +222,21 @@ After v3, blinksocks no longer support multiple servers and cluster mode, so you
 
 ### :rocket: Features & Improvements
 
-- core: add mux-relay.
-- benchmark: archive reports of 2017.
-- package: upgrade pkg to v4.3.0.
-- package: compile before running benchmark.
-- presets: add mux preset.
-- transports: refactor and optimize websocket transport.
-- transports: add this.ctx.
-- transports: add mux transport.
-- utils: add a faster version of crypto.randomBytes().
-
+- **core**: add mux-relay.
+- **benchmark**: archive reports of 2017.
+- **package**: upgrade pkg to v4.3.0.
+- **package**: compile before running benchmark.
+- **presets**: add mux preset.
+- **transports**: refactor and optimize websocket transport.
+- **transports**: add this.ctx.
+- **transports**: add mux transport.
+- **utils**: add a faster version of crypto.randomBytes().
+**
 ### :bug: Bug Fixes:
 
-- proxies: fix crash when client reset the socks connection later.
-- utils: fix getRandomInt().
-- utils: remove generateMutexId().
+- **proxies**: fix crash when client reset the socks connection later.
+- **utils**: fix getRandomInt().
+- **utils**: remove generateMutexId().
 
 ### Upgrade from 2.8.5 to 2.9.0
 
