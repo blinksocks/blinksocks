@@ -1,5 +1,51 @@
 #  Change Log
 
+## 3.3.0 (2018-06-12)
+
+### :exclamation: Notable Changes
+
+- **transports**: add `wss`([WebSocket/TLS](docs/config#blinksocks-over-websocket-tls)).
+
+If you encounter the following warning, and the certificate is `self-signed`, please add `"tls_cert_self_signed": true` to client configuration and provide server certificate in `"tls_cert"` as well:
+
+```
+warn: [xxx:outbound] [x.x.x.x:xxxxx] self signed certificate
+```
+
+```diff
+--- a/blinksocks.client.old.json
++++ b/blinksocks.client.new.json
+ {
+   "service": "socks5://127.0.0.1:1081",
+   "server": {
+     "service": "tls://localhost:1082",
+     "key": "AuM3R$]Pnj^Cqg^9",
+     "presets": [
+@@ -18,11 +17,10 @@
+     "mux": false,
+     "mux_concurrency": 10,
+     "tls_cert": "cert.pem",
++    "tls_cert_self_signed": true
+   },
+   "dns": [],
+   "dns_expire": 3600,
+   "timeout": 300,
+```
+
+### :rocket: Features & Improvements
+
+- **config**: add `tls_cert_self_signed` option.
+
+### :bug: Bug Fixes:
+
+- **transports/tls**: require `"tls_cert_self_signed": true` if use `self-singed` certificate.
+
+### Migrating from 3.2.2 to 3.3.0
+
+```
+$ npm install -g blinksocks@3.3.0
+```
+
 ## 3.2.2 (2018-06-10)
 
 ### :exclamation: Notable Changes
