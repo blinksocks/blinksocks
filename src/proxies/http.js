@@ -16,7 +16,7 @@ function checkBasicAuthorization(credentials, { username, password }) {
 }
 
 export function createServer({ secure, https_key, https_cert, username, password }) {
-  let name = secure ? 'https' : 'http';
+  const name = secure ? 'https' : 'http';
   let server = null;
   if (secure) {
     server = https.createServer({ key: https_key, cert: https_cert });
