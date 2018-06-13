@@ -30,6 +30,9 @@ export class Config {
   is_client = null;
   is_server = null;
 
+  https_key = null;
+  https_cert = null;
+
   timeout = null;
   redirect = null;
 
@@ -66,6 +69,7 @@ export class Config {
   stores = [];
 
   constructor(json) {
+    // service
     const { protocol, hostname, port, pathname, searchParams, username, password } = new URL(json.service);
     this.local_protocol = protocol.slice(0, -1);
     this.local_username = username;
@@ -75,6 +79,7 @@ export class Config {
     this.local_port = +port;
     this.local_pathname = pathname;
 
+    // server
     let server;
     // TODO(remove in next version): make backwards compatibility to "json.servers"
     if (json.servers !== undefined) {
@@ -105,8 +110,15 @@ export class Config {
       this._initServer(server);
     }
 
-    // common
+    // https_cert, https_key
+    if (this.is_client && this.local_protocol === 'https') {
+      logger.info(`[config] loading ${json.https_cert}`);
+      this.https_cert = loadFileSync(json.https_cert);
+      logger.info(`[config] loading ${json.https_key}`);
+      this.https_key = loadFileSync(json.https_key);
+    }
 
+    // common
     this.timeout = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
     this.dns_expire = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
 
@@ -242,18 +254,18 @@ export class Config {
       throw Error('"service" must be provided as "<protocol>://<host>:<port>[?params]"');
     }
 
-    const { protocol: _protocol, hostname, port, searchParams } = new URL(json.service);
+    const { protocol, hostname, port, searchParams } = new URL(json.service);
 
     // service.protocol
-    if (typeof _protocol !== 'string') {
+    if (typeof protocol !== 'string') {
       throw Error('service.protocol is invalid');
     }
 
-    const protocol = _protocol.slice(0, -1);
+    const proto = protocol.slice(0, -1);
     const available_client_protocols = [
-      'tcp', 'http', 'socks', 'socks5', 'socks4', 'socks4a',
+      'tcp', 'http', 'https', 'socks', 'socks5', 'socks4', 'socks4a',
     ];
-    if (!available_client_protocols.includes(protocol)) {
+    if (!available_client_protocols.includes(proto)) {
       throw Error(`service.protocol must be: ${available_client_protocols.join(', ')}`);
     }
 
@@ -268,7 +280,7 @@ export class Config {
     }
 
     // service.query
-    if (protocol === 'tcp') {
+    if (proto === 'tcp') {
       const forward = searchParams.get('forward');
 
       // ?forward
@@ -282,6 +294,16 @@ export class Config {
       }
       if (!isValidPort(+port)) {
         throw Error('service.?forward.port is invalid');
+      }
+    }
+
+    // https_cert, https_key
+    if (proto === 'https') {
+      if (typeof json.https_cert !== 'string' || json.https_cert === '') {
+        throw Error('"https_cert" must be provided');
+      }
+      if (typeof json.https_key !== 'string' || json.https_key === '') {
+        throw Error('"https_key" must be provided');
       }
     }
 

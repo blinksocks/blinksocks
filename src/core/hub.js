@@ -150,6 +150,7 @@ export class Hub {
     return new Promise((resolve, reject) => {
       const { local_protocol, local_search_params, local_host, local_port } = this._config;
       const { local_username: username, local_password: password } = this._config;
+      const { https_key, https_cert } = this._config;
       let server = null;
       switch (local_protocol) {
         case 'tcp': {
@@ -164,10 +165,22 @@ export class Hub {
         case 'socks5':
         case 'socks4':
         case 'socks4a':
-          server = socks.createServer({ bindAddress: local_host, bindPort: local_port, username, password });
+          server = socks.createServer({
+            bindAddress: local_host,
+            bindPort: local_port,
+            username,
+            password,
+          });
           break;
         case 'http':
-          server = httpProxy.createServer({ username, password });
+        case 'https':
+          server = httpProxy.createServer({
+            secure: local_protocol === 'https',
+            https_key,
+            https_cert,
+            username,
+            password,
+          });
           break;
         default:
           return reject(Error(`unsupported protocol: "${local_protocol}"`));

@@ -45,6 +45,8 @@ module.exports = function init({ isMinimal, isOverwrite, isDryRun = false }) {
       'mux': false,
       'mux_concurrency': 10,
     },
+    'https_key': 'https_key.pem',
+    'https_cert': 'https_cert.pem',
     'dns': [],
     'dns_expire': 3600,
     'timeout': timeout,
