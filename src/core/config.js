@@ -8,6 +8,7 @@ import winston from 'winston';
 import WinstonDailyRotateFile from 'winston-daily-rotate-file';
 import isPlainObject from 'lodash.isplainobject';
 import { ACL } from './acl';
+import { PROTOCOL_DEFAULT_PORTS } from '../constants';
 import { getPresetClassByName } from '../presets';
 import { IPresetAddressing } from '../presets/defs';
 import { DNSCache, isValidHostname, isValidPort, logger, DNS_DEFAULT_EXPIRE } from '../utils';
@@ -76,7 +77,7 @@ export class Config {
     this.local_password = password;
     this.local_search_params = searchParams;
     this.local_host = hostname;
-    this.local_port = +port;
+    this.local_port = +port || +PROTOCOL_DEFAULT_PORTS[protocol];
     this.local_pathname = pathname;
 
     // server
@@ -137,7 +138,7 @@ export class Config {
     const { protocol, hostname, port, pathname } = new URL(server.service);
     this.server_protocol = protocol.slice(0, -1);
     this.server_host = hostname;
-    this.server_port = +port;
+    this.server_port = +port || +PROTOCOL_DEFAULT_PORTS[protocol];
     this.server_pathname = pathname;
 
     // preload tls_cert or tls_key
@@ -254,7 +255,7 @@ export class Config {
       throw Error('"service" must be provided as "<protocol>://<host>:<port>[?params]"');
     }
 
-    const { protocol, hostname, port, searchParams } = new URL(json.service);
+    const { protocol, hostname, port: _port, searchParams } = new URL(json.service);
 
     // service.protocol
     if (typeof protocol !== 'string') {
@@ -275,6 +276,7 @@ export class Config {
     }
 
     // service.port
+    const port = _port || PROTOCOL_DEFAULT_PORTS[protocol] || '';
     if (!isValidPort(+port)) {
       throw Error('service.port is invalid');
     }
@@ -359,23 +361,23 @@ export class Config {
       throw Error('"service" must be provided as "<protocol>://<host>:<port>[?params]"');
     }
 
-    const { protocol: _protocol, hostname, port } = new URL(server.service);
+    const { protocol, hostname, port: _port } = new URL(server.service);
 
     // service.protocol
-    if (typeof _protocol !== 'string') {
+    if (typeof protocol !== 'string') {
       throw Error('service.protocol is invalid');
     }
 
-    const protocol = _protocol.slice(0, -1);
+    const proto = protocol.slice(0, -1);
     const available_server_protocols = [
       'tcp', 'ws', 'wss', 'tls',
     ];
-    if (!available_server_protocols.includes(protocol)) {
+    if (!available_server_protocols.includes(proto)) {
       throw Error(`service.protocol must be: ${available_server_protocols.join(', ')}`);
     }
 
     // tls_cert, tls_key
-    if (protocol === 'tls' || protocol === 'wss') {
+    if (proto === 'tls' || proto === 'wss') {
       if (from_client && server.tls_cert_self_signed) {
         if (typeof server.tls_cert !== 'string' || server.tls_cert === '') {
           throw Error('"tls_cert" must be provided when "tls_cert_self_signed" is set');
@@ -398,6 +400,7 @@ export class Config {
     }
 
     // service.port
+    const port = _port || PROTOCOL_DEFAULT_PORTS[protocol] || '';
     if (!isValidPort(+port)) {
       throw Error('service.port is invalid');
     }
