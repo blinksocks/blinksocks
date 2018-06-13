@@ -35,6 +35,8 @@ $ blinksocks init
     "mux": false,
     "mux_concurrency": 10
   },
+  "https_key": "https_key.pem",
+  "https_cert": "https_cert.pem",
   "dns": [],
   "dns_expire": 3600,
   "timeout": 221,
@@ -79,16 +81,18 @@ $ blinksocks init
 
 |         KEY          |                         DESCRIPTION                          |     DEFAULT     |                           REMARKS                           |
 | :------------------- | :----------------------------------------------------------- | :-------------- | :---------------------------------------------------------- |
-| service              | local service address                                        | -               | a [WHATWG URL] e.g, "socks://127.0.0.1:1080"                |
+| service              | local service address                                        | -               | [WHATWG URL] e.g, "socks://127.0.0.1:1080"                  |
 | server               | remote server config                                         | -               | **CLIENT ONLY**                                             |
-| server.service       | remote service address                                       | -               | `<protocol>://<host>:<port>`                                |
+| server.service       | remote service address                                       | -               | [WHATWG URL] e.g, "tls://example.com:443"                   |
 | server.key           | remote server master key                                     | -               | -                                                           |
 | presets              | an ordered list of presets to build a protocol stack         | -               | see [presets]                                               |
 | presets[i].name      | preset name                                                  | -               | -                                                           |
 | presets[i].params    | preset params                                                | -               | -                                                           |
-| tls_key              | private key for TLS                                          | -               | required on server if `<protocol>` is "tls"                 |
-| tls_cert             | certificate for TLS                                          | -               | required on both client and server if `<protocol>` is "tls" |
-| tls_cert_self_signed | whether "tls_cert" is `self-signed` or not                   | false           | -                                                           |
+| tls_key              | private key path for TLS                                     | -               | required on server if `<protocol>` is "tls"                 |
+| tls_cert             | certificate path for TLS                                     | -               | required on both client and server if `<protocol>` is "tls" |
+| tls_cert_self_signed | whether "tls_cert" is `self-signed` or not                   | false           | **CLIENT ONLY**                                             |
+| https_key            | private key path for HTTPS                                   | -               | **CLIENT ONLY**                                             |
+| https_cert           | certificate path for HTTPS                                   | -               | **CLIENT ONLY**                                             |
 | acl                  | enable access control list or not                            | false           | **SERVER ONLY**                                             |
 | acl_conf             | access control list configuration file                       | -               | **SERVER ONLY**, see below                                  |
 | timeout              | timeout for each connection                                  | 600             | in seconds                                                  |
@@ -97,7 +101,7 @@ $ blinksocks init
 | redirect             | target address to redirect when preset fail to process       | ""              | **SERVER ONLY** `<host>:<port>`                             |
 | dns                  | a list of DNS server IPs                                     | []              | -                                                           |
 | dns_expire           | in-memory DNS cache expiration time                          | 3600            | in seconds                                                  |
-| log_path             | log file path                                                | "bs-[type].log" | a relative/absolute directory or a file to put logs in      |
+| log_path             | log file path                                                | "bs-[type].log" | a relative/absolute file path to put logs in                |
 | log_level            | log level                                                    | "info"          | ['error', 'warn', 'info', 'verbose', 'debug', 'silly']      |
 | log_max_days         | the max of days a log file will be saved                     | 30              | remove this option if you want to keep all log files        |
 
