@@ -52,6 +52,23 @@ After init, you should edit `blinksocks.client.json` to tell blinksocks client w
 
 You can also check out [Configuration](../config) for explanation of every option.
 
+## Test Using curl
+
+[curl](https://curl.haxx.se/) is an useful tool which can send requests via a variety of proxy protocols:
+
+```
+# SOCKS
+$ curl -Lx socks5://localhost:1080 www.google.com
+$ curl -Lx socks4://localhost:1080 www.google.com
+$ curl -Lx socks4a://localhost:1080 www.google.com
+
+# HTTP
+$ curl -Lx http://localhost:1080 www.google.com
+
+# HTTPS
+$ curl --proxy-insecure -Lx https://localhost:1080 www.google.com
+```
+
 ## Run in production
 
 ### Using pm2
