@@ -111,12 +111,12 @@ $ blinksocks init
 
 The `<protocol>` should be:
 
-* On client side: `tcp`, `socks`/`socks5`/`socks4`/`socks4a` or `http`.
+* On client side: `tcp`, `socks`/`socks5`/`socks4`/`socks4a`, `http` or `https`.
 * On server side: `tcp`, `tls`, `ws` or `wss`.
 
 #### Service Authentication
 
-* Create a **http** service with [Basic Authentication](https://www.iana.org/go/rfc7617).
+* Create a **http/https** service with [Basic Authentication](https://www.iana.org/go/rfc7617).
 
 ```
 // blinksocks.client.json
