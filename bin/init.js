@@ -38,24 +38,30 @@ module.exports = function init({ isMinimal, isOverwrite, isDryRun = false }) {
       'presets': [
         { 'name': 'ss-base' },
         { 'name': 'obfs-random-padding' },
-        { 'name': 'ss-stream-cipher', 'params': { 'method': 'aes-128-ctr' } }
+        { 'name': 'ss-stream-cipher', 'params': { 'method': 'aes-128-ctr' } },
       ],
       'tls_cert': 'cert.pem',
+      'tls_cert_self_signed': false,
       'mux': false,
-      'mux_concurrency': 10
+      'mux_concurrency': 10,
     },
+    'https_key': 'https_key.pem',
+    'https_cert': 'https_cert.pem',
     'dns': [],
     'dns_expire': 3600,
     'timeout': timeout,
     'log_path': 'bs-client.log',
     'log_level': 'info',
-    'log_max_days': 30
+    'log_max_days': 30,
   };
 
   if (isMinimal) {
     delete clientJson.server.tls_cert;
+    delete clientJson.server.tls_cert_self_signed;
     delete clientJson.server.mux;
     delete clientJson.server.mux_concurrency;
+    delete clientJson.https_key;
+    delete clientJson.https_cert;
     delete clientJson.dns;
     delete clientJson.dns_expire;
     delete clientJson.timeout;
@@ -70,7 +76,7 @@ module.exports = function init({ isMinimal, isOverwrite, isDryRun = false }) {
     'presets': [
       { 'name': 'ss-base' },
       { 'name': 'obfs-random-padding' },
-      { 'name': 'ss-stream-cipher', 'params': { 'method': 'aes-128-ctr' } }
+      { 'name': 'ss-stream-cipher', 'params': { 'method': 'aes-128-ctr' } },
     ],
     'tls_key': 'key.pem',
     'tls_cert': 'cert.pem',
@@ -83,7 +89,7 @@ module.exports = function init({ isMinimal, isOverwrite, isDryRun = false }) {
     'redirect': '',
     'log_path': 'bs-server.log',
     'log_level': 'info',
-    'log_max_days': 30
+    'log_max_days': 30,
   };
 
   if (isMinimal) {

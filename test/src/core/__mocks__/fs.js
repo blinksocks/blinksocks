@@ -1,18 +1,18 @@
 const fs = jest.genMockFromModule('fs');
 
-fs.statSync = function () {
+fs.statSync = function() {
   return {
-    isFile: () => true
+    isFile: () => true,
   };
 };
 
-fs.lstatSync = function () {
+fs.lstatSync = function() {
   const err = new Error();
   err.code = 'ENOENT';
   throw err;
 };
 
-fs.readFileSync = function () {
+fs.readFileSync = function() {
   return Buffer.alloc(0);
 };
 

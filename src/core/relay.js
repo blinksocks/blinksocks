@@ -10,6 +10,7 @@ import {
   TlsInbound, TlsOutbound,
   Http2Inbound, Http2Outbound,
   WsInbound, WsOutbound,
+  WssInbound, WssOutbound,
   MuxInbound, MuxOutbound,
 } from '../transports';
 
@@ -134,6 +135,7 @@ export class Relay extends EventEmitter {
       'tls': [TlsInbound, TlsOutbound],
       'h2': [Http2Inbound, Http2Outbound],
       'ws': [WsInbound, WsOutbound],
+      'wss': [WssInbound, WssOutbound],
       'mux': [MuxInbound, MuxOutbound],
     };
     let Inbound = null, Outbound = null;

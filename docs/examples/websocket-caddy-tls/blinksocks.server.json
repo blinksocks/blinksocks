@@ -1,0 +1,12 @@
+{
+  "service": "ws://0.0.0.0:59463/your-custom-path",
+  "key": "8;:2%]zTbPc[2g-%",
+  "presets": [
+    {
+      "name": "ss-base"
+    },
+    {
+      "name": "obfs-random-padding"
+    }
+  ]
+}

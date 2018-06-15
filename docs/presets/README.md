@@ -326,7 +326,7 @@ all features from **ss-aead-cipher** and prevent server from being detected by p
 
 ## Have trouble in choosing presets?
 
-Here is a [list](./RECOMMENDATIONS.md) of recommended conbinations.
+Here is a [list](../examples) of recommended conbinations.
 
 [base-auth]: ../../src/presets/base-auth.js
 [ss-base]: ../../src/presets/ss-base.js

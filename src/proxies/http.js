@@ -1,5 +1,6 @@
 import { URL } from 'url';
 import http from 'http';
+import https from 'https';
 import { logger, isValidPort } from '../utils';
 
 function checkBasicAuthorization(credentials, { username, password }) {
@@ -14,8 +15,16 @@ function checkBasicAuthorization(credentials, { username, password }) {
   return true;
 }
 
-export function createServer({ username, password }) {
-  const server = http.createServer();
+export function createServer({ secure, https_key, https_cert, username, password }) {
+  const name = secure ? 'https' : 'http';
+  let server = null;
+  if (secure) {
+    server = https.createServer({ key: https_key, cert: https_cert });
+  } else {
+    server = http.createServer();
+  }
+
+  const isAuthRequired = username !== '' && password !== '';
 
   // Simple HTTP Proxy
   server.on('request', (req, res) => {
@@ -27,16 +36,16 @@ export function createServer({ username, password }) {
 
     if (hostname === null || !isValidPort(_port)) {
       const remote = `${socket.remoteAddress}:${socket.remotePort}`;
-      logger.warn(`[http] drop invalid http request sent from ${remote}`);
+      logger.warn(`[${name}] drop invalid http request sent from ${remote}`);
       return res.end();
     }
 
     // Basic Authorization
-    const proxyAuth = headers['proxy-authorization'];
-    if (proxyAuth && username !== '' && password !== '') {
+    if (isAuthRequired) {
+      const proxyAuth = headers['proxy-authorization'] || '';
       const [type, credentials] = proxyAuth.split(' ');
       if (type !== 'Basic' || !checkBasicAuthorization(credentials, { username, password })) {
-        logger.error(`[http] [${appAddress}] authorization failed, type=${type} credentials=${credentials}`);
+        logger.error(`[${name}] [${appAddress}] authorization failed, type=${type} credentials=${credentials}`);
         return res.end('HTTP/1.1 401 Unauthorized\r\n\r\n');
       }
     }
@@ -63,7 +72,7 @@ export function createServer({ username, password }) {
 
         // free to recv from application now
         socket.resume();
-      }
+      },
     });
   });
 
@@ -76,16 +85,16 @@ export function createServer({ username, password }) {
 
     if (hostname === null || !isValidPort(port)) {
       const remote = `${socket.remoteAddress}:${socket.remotePort}`;
-      logger.warn(`[http] [${appAddress}] drop invalid http CONNECT request sent from ${remote}`);
+      logger.warn(`[${name}] [${appAddress}] drop invalid http CONNECT request sent from ${remote}`);
       return socket.destroy();
     }
 
     // Basic Authorization
-    const proxyAuth = req.headers['proxy-authorization'];
-    if (proxyAuth && username !== '' && password !== '') {
+    if (isAuthRequired) {
+      const proxyAuth = req.headers['proxy-authorization'] || '';
       const [type, credentials] = proxyAuth.split(' ');
       if (type !== 'Basic' || !checkBasicAuthorization(credentials, { username, password })) {
-        logger.error(`[http] [${appAddress}] authorization failed, type=${type} credentials=${credentials}`);
+        logger.error(`[${name}] [${appAddress}] authorization failed, type=${type} credentials=${credentials}`);
         return socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
       }
     }
@@ -95,14 +104,14 @@ export function createServer({ username, password }) {
       port: port,
       onConnected: () => {
         socket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
-      }
+      },
     });
   });
 
   // errors
   server.on('clientError', (err, socket) => {
-    const appAddress = `${socket.remoteAddress}:${socket.remotePort}`;
-    logger.error(`[http] [${appAddress}] invalid http request: ${err.message}`);
+    const appAddress = `${socket.remoteAddress || ''}:${socket.remotePort || ''}`;
+    logger.error(`[${name}] [${appAddress}] invalid http request: ${err.message}`);
     socket.destroy();
   });
 

@@ -101,12 +101,8 @@ function main() {
   }
 
   if (hasOption('--list-presets')) {
-    const { presets, legacyPresets } = modules;
-    console.log(chalk.bold.underline('[Built-In]'));
-    console.log(presets.join(os.EOL));
-    console.log('');
-    console.log(chalk.bold.underline('[Deprecated]'));
-    console.log(legacyPresets ? legacyPresets.map((name) => `${chalk.gray(name)}`).join(os.EOL) : '-');
+    const { builtInPresetMap } = modules;
+    console.log(Object.keys(builtInPresetMap).join(os.EOL));
     return;
   }
 

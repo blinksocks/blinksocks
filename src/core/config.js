@@ -8,6 +8,7 @@ import winston from 'winston';
 import WinstonDailyRotateFile from 'winston-daily-rotate-file';
 import isPlainObject from 'lodash.isplainobject';
 import { ACL } from './acl';
+import { PROTOCOL_DEFAULT_PORTS } from '../constants';
 import { getPresetClassByName } from '../presets';
 import { IPresetAddressing } from '../presets/defs';
 import { DNSCache, isValidHostname, isValidPort, logger, DNS_DEFAULT_EXPIRE } from '../utils';
@@ -24,10 +25,14 @@ export class Config {
   local_search_params = null;
   local_host = null;
   local_port = null;
+  local_pathname = null;
 
   server = null;
   is_client = null;
   is_server = null;
+
+  https_key = null;
+  https_cert = null;
 
   timeout = null;
   redirect = null;
@@ -35,10 +40,13 @@ export class Config {
   dns_expire = null;
   dns = null;
 
-  transport = null;
+  server_protocol = null;
   server_host = null;
   server_port = null;
+  server_pathname = null;
+
   tls_cert = null;
+  tls_cert_self_signed = false;
   tls_key = null;
   key = null;
 
@@ -62,14 +70,17 @@ export class Config {
   stores = [];
 
   constructor(json) {
-    const { protocol, hostname, port, searchParams, username, password } = new URL(json.service);
+    // service
+    const { protocol, hostname, port, pathname, searchParams, username, password } = new URL(json.service);
     this.local_protocol = protocol.slice(0, -1);
     this.local_username = username;
     this.local_password = password;
     this.local_search_params = searchParams;
     this.local_host = hostname;
-    this.local_port = +port;
+    this.local_port = +port || +PROTOCOL_DEFAULT_PORTS[protocol];
+    this.local_pathname = pathname;
 
+    // server
     let server;
     // TODO(remove in next version): make backwards compatibility to "json.servers"
     if (json.servers !== undefined) {
@@ -78,7 +89,7 @@ export class Config {
         chalk.bgYellowBright('WARN'),
         '"servers" will be deprecated in the next version,' +
         ' please configure only one server in "server: {...}",' +
-        ' for migration guide please refer to CHANGELOG.md.'
+        ' for migration guide please refer to CHANGELOG.md.',
       );
     } else {
       server = json.server;
@@ -100,8 +111,15 @@ export class Config {
       this._initServer(server);
     }
 
-    // common
+    // https_cert, https_key
+    if (this.is_client && this.local_protocol === 'https') {
+      logger.info(`[config] loading ${json.https_cert}`);
+      this.https_cert = loadFileSync(json.https_cert);
+      logger.info(`[config] loading ${json.https_key}`);
+      this.https_key = loadFileSync(json.https_key);
+    }
 
+    // common
     this.timeout = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
     this.dns_expire = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
 
@@ -117,18 +135,22 @@ export class Config {
 
   _initServer(server) {
     // service
-    const { protocol, hostname, port } = new URL(server.service);
-    this.transport = protocol.slice(0, -1);
+    const { protocol, hostname, port, pathname } = new URL(server.service);
+    this.server_protocol = protocol.slice(0, -1);
     this.server_host = hostname;
-    this.server_port = +port;
+    this.server_port = +port || +PROTOCOL_DEFAULT_PORTS[protocol];
+    this.server_pathname = pathname;
 
-    // preload tls_cert and tls_key
-    if (this.transport === 'tls' || this.transport === 'h2') {
-      if (server.tls_cert) {
+    // preload tls_cert or tls_key
+    if (['tls', 'wss', 'h2'].includes(this.server_protocol)) {
+      if (this.is_client) {
+        this.tls_cert_self_signed = !!server.tls_cert_self_signed;
+      }
+      if (this.tls_cert_self_signed || this.is_server) {
         logger.info(`[config] loading ${server.tls_cert}`);
         this.tls_cert = loadFileSync(server.tls_cert);
       }
-      if (this.is_server && server.tls_key) {
+      if (this.is_server) {
         logger.info(`[config] loading ${server.tls_key}`);
         this.tls_key = loadFileSync(server.tls_key);
       }
@@ -164,7 +186,7 @@ export class Config {
     // remove unnecessary presets
     if (this.mux) {
       this.presets = this.presets.filter(
-        ({ name }) => !IPresetAddressing.isPrototypeOf(getPresetClassByName(name))
+        ({ name }) => !IPresetAddressing.isPrototypeOf(getPresetClassByName(name)),
       );
     }
 
@@ -208,7 +230,7 @@ export class Config {
         // TODO: Enable coloring. Currently we have to prevent dumping color characters in log files.
         // colorize(),
         prettyPrint(),
-        printf((info) => `${info.timestamp} - ${info.level}: ${info.message}`)
+        printf((info) => `${info.timestamp} - ${info.level}: ${info.message}`),
       ),
       transports: trans,
     });
@@ -233,19 +255,18 @@ export class Config {
       throw Error('"service" must be provided as "<protocol>://<host>:<port>[?params]"');
     }
 
-    const { protocol: _protocol, hostname, port, searchParams } = new URL(json.service);
+    const { protocol, hostname, port: _port, searchParams } = new URL(json.service);
 
     // service.protocol
-    if (typeof _protocol !== 'string') {
+    if (typeof protocol !== 'string') {
       throw Error('service.protocol is invalid');
     }
 
-    const protocol = _protocol.slice(0, -1);
+    const proto = protocol.slice(0, -1);
     const available_client_protocols = [
-      'tcp', 'http', 'https',
-      'socks', 'socks5', 'socks4', 'socks4a'
+      'tcp', 'http', 'https', 'socks', 'socks5', 'socks4', 'socks4a',
     ];
-    if (!available_client_protocols.includes(protocol)) {
+    if (!available_client_protocols.includes(proto)) {
       throw Error(`service.protocol must be: ${available_client_protocols.join(', ')}`);
     }
 
@@ -255,12 +276,13 @@ export class Config {
     }
 
     // service.port
+    const port = _port || PROTOCOL_DEFAULT_PORTS[protocol] || '';
     if (!isValidPort(+port)) {
       throw Error('service.port is invalid');
     }
 
     // service.query
-    if (protocol === 'tcp') {
+    if (proto === 'tcp') {
       const forward = searchParams.get('forward');
 
       // ?forward
@@ -274,6 +296,16 @@ export class Config {
       }
       if (!isValidPort(+port)) {
         throw Error('service.?forward.port is invalid');
+      }
+    }
+
+    // https_cert, https_key
+    if (proto === 'https') {
+      if (typeof json.https_cert !== 'string' || json.https_cert === '') {
+        throw Error('"https_cert" must be provided');
+      }
+      if (typeof json.https_key !== 'string' || json.https_key === '') {
+        throw Error('"https_key" must be provided');
       }
     }
 
@@ -329,27 +361,33 @@ export class Config {
       throw Error('"service" must be provided as "<protocol>://<host>:<port>[?params]"');
     }
 
-    const { protocol: _protocol, hostname, port } = new URL(server.service);
+    const { protocol, hostname, port: _port } = new URL(server.service);
 
     // service.protocol
-    if (typeof _protocol !== 'string') {
+    if (typeof protocol !== 'string') {
       throw Error('service.protocol is invalid');
     }
 
-    const protocol = _protocol.slice(0, -1);
+    const proto = protocol.slice(0, -1);
     const available_server_protocols = [
-      'tcp', 'ws', 'tls', 'h2'
+      'tcp', 'ws', 'wss', 'tls', 'h2'
     ];
-    if (!available_server_protocols.includes(protocol)) {
+    if (!available_server_protocols.includes(proto)) {
       throw Error(`service.protocol must be: ${available_server_protocols.join(', ')}`);
     }
 
     // tls_cert, tls_key
-    if (protocol === 'tls' || protocol === 'h2') {
-      if (typeof server.tls_cert !== 'string' || server.tls_cert === '') {
-        throw Error('"tls_cert" must be provided');
+    if (['tls', 'wss', 'h2'].includes(proto)) {
+      if (from_client && server.tls_cert_self_signed) {
+        if (typeof server.tls_cert !== 'string' || server.tls_cert === '') {
+          throw Error('"tls_cert" must be provided when "tls_cert_self_signed" is set');
+        }
       }
+      // on server, both tls_cert and tls_key must be set
       if (!from_client) {
+        if (typeof server.tls_cert !== 'string' || server.tls_cert === '') {
+          throw Error('"tls_cert" must be provided');
+        }
         if (typeof server.tls_key !== 'string' || server.tls_key === '') {
           throw Error('"tls_key" must be provided');
         }
@@ -362,6 +400,7 @@ export class Config {
     }
 
     // service.port
+    const port = _port || PROTOCOL_DEFAULT_PORTS[protocol] || '';
     if (!isValidPort(+port)) {
       throw Error('service.port is invalid');
     }

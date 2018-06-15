@@ -26,7 +26,29 @@ import ObfsTls12TicketPreset from './obfs-tls1.2-ticket';
 // others
 import AeadRandomCipherPreset from './aead-random-cipher';
 
-const presetMap = {
+/**
+ * check if a class is a valid preset class
+ * @param clazz
+ * @returns {boolean}
+ */
+function checkPresetClass(clazz) {
+  if (typeof clazz !== 'function') {
+    return false;
+  }
+  // check require hooks
+  const requiredMethods = [
+    'onDestroy', 'onInit',
+    'beforeOut', 'beforeIn', 'clientOut', 'serverIn', 'serverOut', 'clientIn',
+    'beforeOutUdp', 'beforeInUdp', 'clientOutUdp', 'serverInUdp', 'serverOutUdp', 'clientInUdp'
+  ];
+  if (requiredMethods.some((method) => typeof clazz.prototype[method] !== 'function')) {
+    return false;
+  }
+  const requiredStaticMethods = ['onCheckParams', 'onCache'];
+  return !requiredStaticMethods.some((method) => typeof clazz[method] !== 'function');
+}
+
+export const builtInPresetMap = {
   // functional
   'mux': MuxPreset,
 
@@ -56,35 +78,12 @@ const presetMap = {
   'aead-random-cipher': AeadRandomCipherPreset
 };
 
-/**
- * check if a class is a valid preset class
- * @param clazz
- * @returns {boolean}
- */
-function checkPresetClass(clazz) {
-  if (typeof clazz !== 'function') {
-    return false;
-  }
-  // check require hooks
-  const requiredMethods = [
-    'onDestroy', 'onInit',
-    'beforeOut', 'beforeIn', 'clientOut', 'serverIn', 'serverOut', 'clientIn',
-    'beforeOutUdp', 'beforeInUdp', 'clientOutUdp', 'serverInUdp', 'serverOutUdp', 'clientInUdp'
-  ];
-  if (requiredMethods.some((method) => typeof clazz.prototype[method] !== 'function')) {
-    return false;
-  }
-  const requiredStaticMethods = ['onCheckParams', 'onCache'];
-  if (requiredStaticMethods.some((method) => typeof clazz[method] !== 'function')) {
-    return false;
-  }
-  return true;
-}
-
 export function getPresetClassByName(name, allowPrivate = false) {
-  let clazz = presetMap[name];
+  // load from built-in
+  let clazz = builtInPresetMap[name];
   if (clazz === undefined) {
     try {
+      // load from external
       clazz = require(name);
     } catch (err) {
       throw Error(`cannot load preset "${name}" from built-in modules or external`);
@@ -98,5 +97,3 @@ export function getPresetClassByName(name, allowPrivate = false) {
   }
   return clazz;
 }
-
-export const presets = Object.keys(presetMap);

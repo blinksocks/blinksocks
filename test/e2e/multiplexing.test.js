@@ -6,34 +6,35 @@ const tlsKey = path.resolve(__dirname, 'resources', 'key.pem');
 const tlsCert = path.resolve(__dirname, 'resources', 'cert.pem');
 
 const client = {
-  "service": "socks5://127.0.0.1:1081",
-  "server": {
+  'service': 'socks5://127.0.0.1:1081',
+  'server': {
     // "service": "tcp://127.0.0.1:1082",
-    "key": "9{*2gdBSdCrgnSBD",
-    "presets": [
-      { "name": "ss-base" },
-      { "name": "obfs-random-padding" },
-      { "name": "ss-stream-cipher", "params": { "method": "aes-128-ctr" } }
+    'key': '9{*2gdBSdCrgnSBD',
+    'presets': [
+      { 'name': 'ss-base' },
+      { 'name': 'obfs-random-padding' },
+      { 'name': 'ss-stream-cipher', 'params': { 'method': 'aes-128-ctr' } },
     ],
-    "mux": true,
-    "mux_concurrency": 5,
-    "tls_cert": tlsCert,
+    'mux': true,
+    'mux_concurrency': 5,
+    'tls_cert': tlsCert,
+    'tls_cert_self_signed': true,
   },
-  "log_level": "debug"
+  'log_level': 'debug',
 };
 
 const server = {
   // "service": "tcp://127.0.0.1:1082",
-  "key": "9{*2gdBSdCrgnSBD",
-  "presets": [
-    { "name": "ss-base" },
-    { "name": "obfs-random-padding" },
-    { "name": "ss-stream-cipher", "params": { "method": "aes-128-ctr" } }
+  'key': '9{*2gdBSdCrgnSBD',
+  'presets': [
+    { 'name': 'ss-base' },
+    { 'name': 'obfs-random-padding' },
+    { 'name': 'ss-stream-cipher', 'params': { 'method': 'aes-128-ctr' } },
   ],
-  "mux": true,
-  "tls_cert": tlsCert,
-  "tls_key": tlsKey,
-  "log_level": "debug"
+  'mux': true,
+  'tls_cert': tlsCert,
+  'tls_key': tlsKey,
+  'log_level': 'debug',
 };
 
 test('multiplexing over tcp', async () => {

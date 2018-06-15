@@ -1,6 +1,8 @@
 import _sodium from 'libsodium-wrappers';
 import dgram from 'dgram';
 import net from 'net';
+import http from 'http';
+import https from 'https';
 import { URL } from 'url';
 import http2 from 'http2';
 import tls from 'tls';
@@ -12,7 +14,7 @@ import { Relay } from './relay';
 import { MuxRelay } from './mux-relay';
 import { SpeedTester } from './speed-tester';
 import { dumpHex, getRandomInt, hash, logger } from '../utils';
-import { http, socks, tcp } from '../proxies';
+import { http as httpProxy, socks, tcp } from '../proxies';
 import { APP_ID } from '../constants';
 
 export const MAX_CONNECTIONS = 50;
@@ -149,6 +151,7 @@ export class Hub {
     return new Promise((resolve, reject) => {
       const { local_protocol, local_search_params, local_host, local_port } = this._config;
       const { local_username: username, local_password: password } = this._config;
+      const { https_key, https_cert } = this._config;
       let server = null;
       switch (local_protocol) {
         case 'tcp': {
@@ -163,11 +166,22 @@ export class Hub {
         case 'socks5':
         case 'socks4':
         case 'socks4a':
-          server = socks.createServer({ bindAddress: local_host, bindPort: local_port, username, password });
+          server = socks.createServer({
+            bindAddress: local_host,
+            bindPort: local_port,
+            username,
+            password,
+          });
           break;
         case 'http':
         case 'https':
-          server = http.createServer({ username, password });
+          server = httpProxy.createServer({
+            secure: local_protocol === 'https',
+            https_key,
+            https_cert,
+            username,
+            password,
+          });
           break;
         default:
           return reject(Error(`unsupported protocol: "${local_protocol}"`));
@@ -187,14 +201,14 @@ export class Hub {
   }
 
   async _createServerOnServer() {
-    const { local_protocol, local_host, local_port, tls_key, tls_cert } = this._config;
+    const { local_protocol, local_host, local_port, local_pathname, tls_key, tls_cert } = this._config;
     return new Promise((resolve, reject) => {
       const address = {
         host: local_host,
         port: local_port,
       };
       const onListening = (server) => {
-        const service = `${local_protocol}://${local_host}:${local_port}`;
+        const service = `${local_protocol}://${local_host}:${local_port}` + (local_pathname ? local_pathname : '');
         logger.info(`[hub] blinksocks server is running at ${service}`);
         resolve(server);
       };
@@ -206,9 +220,17 @@ export class Hub {
           server.listen(address, () => onListening(server));
           break;
         }
+        case 'wss':
         case 'ws': {
+          let http_s_server = null;
+          if (local_protocol === 'wss') {
+            http_s_server = https.createServer({ key: tls_key, cert: tls_cert });
+          } else {
+            http_s_server = http.createServer();
+          }
           server = new ws.Server({
-            ...address,
+            server: http_s_server,
+            path: local_pathname,
             perMessageDeflate: false,
           });
           server.getConnections = server._server.getConnections.bind(server._server);
@@ -217,7 +239,7 @@ export class Hub {
             ws.remotePort = req.connection.remotePort;
             this._onConnection(ws);
           });
-          server.on('listening', () => onListening(server));
+          http_s_server.listen(address, () => onListening(http_s_server));
           break;
         }
         case 'tls': {
@@ -423,9 +445,9 @@ export class Hub {
 
   _createRelay(context, isMux = false) {
     const props = {
-      config: this._config,
       context: context,
-      transport: this._config.transport,
+      config: this._config,
+      transport: this._config.server_protocol,
       presets: this._config.presets,
     };
     if (isMux) {

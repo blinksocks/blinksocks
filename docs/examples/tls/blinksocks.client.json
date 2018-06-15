@@ -1,0 +1,17 @@
+{
+  "service": "socks5://127.0.0.1:1080",
+  "server": {
+    "service": "tls://example.com:11902",
+    "key": "NdFCdXFK/TTP2GdU",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "obfs-random-padding"
+      }
+    ],
+    "tls_cert": "cert.pem",
+    "tls_cert_self_signed": true
+  }
+}

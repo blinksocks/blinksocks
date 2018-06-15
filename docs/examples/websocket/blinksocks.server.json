@@ -1,0 +1,18 @@
+{
+  "service": "ws://0.0.0.0:6336",
+  "key": "?B4-y[tsFQCV/zK%",
+  "presets": [
+    {
+      "name": "ss-base"
+    },
+    {
+      "name": "obfs-random-padding"
+    },
+    {
+      "name": "ss-stream-cipher",
+      "params": {
+        "method": "aes-128-ctr"
+      }
+    }
+  ]
+}

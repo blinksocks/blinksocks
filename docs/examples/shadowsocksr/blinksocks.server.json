@@ -1,0 +1,18 @@
+{
+  "service": "tcp://0.0.0.0:24045",
+  "key": "?4H}vrE_[WQj9[>F",
+  "presets": [
+    {
+      "name": "ss-base"
+    },
+    {
+      "name": "ssr-auth-chain-a"
+    },
+    {
+      "name": "ss-stream-cipher",
+      "params": {
+        "method": "none"
+      }
+    }
+  ]
+}

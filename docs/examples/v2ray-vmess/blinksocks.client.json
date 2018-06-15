@@ -1,0 +1,16 @@
+{
+  "service": "socks5://127.0.0.1:1080",
+  "server": {
+    "service": "tcp://example.com:65282",
+    "key": "z{]5AWaxEFCMTKA,",
+    "presets": [
+      {
+        "name": "v2ray-vmess",
+        "params": {
+          "id": "c2485913-4e9e-41eb-8cc5-b2e7db8d3bc7",
+          "security": "aes-128-gcm"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "service": "tcp://0.0.0.0:17720",
+  "key": "#{N-^!6{SExKTQ|b",
+  "presets": [
+    {
+      "name": "ss-base"
+    },
+    {
+      "name": "obfs-random-padding"
+    },
+    {
+      "name": "ss-stream-cipher",
+      "params": {
+        "method": "aes-128-ctr"
+      }
+    }
+  ],
+  "mux": true
+}

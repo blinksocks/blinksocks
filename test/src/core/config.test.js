@@ -30,9 +30,9 @@ describe('Config#test', () => {
       service: 'tcp://127.0.0.1:1082',
       key: 'abc',
       presets: [{
-        name: 'ss-base'
-      }]
-    }
+        name: 'ss-base',
+      }],
+    },
   };
 
   it('should throw when ?forward is invalid', () => {
@@ -96,9 +96,9 @@ describe('Config#testOnClient', () => {
       service: 'tcp://127.0.0.1:1082',
       key: 'abc',
       presets: [{
-        name: 'ss-base'
-      }]
-    }
+        name: 'ss-base',
+      }],
+    },
   };
 
   it('should throw when service is not provided', () => {
@@ -175,13 +175,13 @@ describe('Config#init', () => {
       service: 'tcp://127.0.0.1:1082',
       key: 'abc',
       presets: [{
-        name: 'ss-base'
-      }]
+        name: 'ss-base',
+      }],
     },
     dns: ['8.8.8.8'],
     log_level: 'warn',
     log_path: 'blinksocks.log',
-    log_max_days: 30
+    log_max_days: 30,
   };
 
   it('should config set correctly', () => {
@@ -205,15 +205,15 @@ describe('Config#initServer', () => {
     service: 'tls://127.0.0.1:1082',
     key: 'abc',
     presets: [{
-      name: 'ss-base'
+      name: 'ss-base',
     }],
     tls_cert: 'mock_cert.pem',
-    tls_key: 'mock_key.pem'
+    tls_key: 'mock_key.pem',
   };
 
   it('should config set correctly', () => {
     const config = new Config(serverConf);
-    expect(config.transport).toBe('tls');
+    expect(config.server_protocol).toBe('tls');
     expect(config.tls_cert).toBeDefined();
     expect(config.tls_key).toBeDefined();
   });

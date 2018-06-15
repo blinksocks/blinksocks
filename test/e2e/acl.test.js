@@ -9,10 +9,10 @@ const clientJson = {
     'presets': [
       { 'name': 'ss-base' },
       { 'name': 'obfs-random-padding' },
-      { 'name': 'ss-stream-cipher', 'params': { 'method': 'aes-128-ctr' } }
+      { 'name': 'ss-stream-cipher', 'params': { 'method': 'aes-128-ctr' } },
     ],
   },
-  'log_level': 'debug'
+  'log_level': 'debug',
 };
 
 const serverJson = {
@@ -21,11 +21,11 @@ const serverJson = {
   'presets': [
     { 'name': 'ss-base' },
     { 'name': 'obfs-random-padding' },
-    { 'name': 'ss-stream-cipher', 'params': { 'method': 'aes-128-ctr' } }
+    { 'name': 'ss-stream-cipher', 'params': { 'method': 'aes-128-ctr' } },
   ],
   'acl': true,
   'acl_conf': path.resolve(__dirname, 'resources', 'acl.txt'),
-  'log_level': 'debug'
+  'log_level': 'debug',
 };
 
 test('acl', async () => await run({ clientJson, serverJson, not: true }));

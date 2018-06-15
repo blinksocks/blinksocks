@@ -52,6 +52,23 @@ After init, you should edit `blinksocks.client.json` to tell blinksocks client w
 
 You can also check out [Configuration](../config) for explanation of every option.
 
+## Test Using curl
+
+[curl](https://curl.haxx.se/) is an useful tool which can send requests via a variety of proxy protocols:
+
+```
+# SOCKS
+$ curl -Lx socks5://localhost:1080 www.google.com
+$ curl -Lx socks4://localhost:1080 www.google.com
+$ curl -Lx socks4a://localhost:1080 www.google.com
+
+# HTTP
+$ curl -Lx http://localhost:1080 www.google.com
+
+# HTTPS
+$ curl --proxy-insecure -Lx https://localhost:1080 www.google.com
+```
+
 ## Run in production
 
 ### Using pm2
@@ -115,25 +132,6 @@ WantedBy=multi-user.target
 
 ```
 # journalctl -u blinksocks.service
-```
-
-### Using executables
-
-```
-// download archive from releases page
-$ wget https://github.com/blinksocks/blinksocks/releases/download/v2.5.3/blinksocks-linux-x64-v2.5.3.gz
-
-// you'd better check sha256sum listed in sha256sum.txt
-$ wget https://github.com/blinksocks/blinksocks/releases/download/v2.5.3/sha256sum.txt
-
-// decompress
-$ gunzip blinksocks-linux-x64-v2.5.3.gz
-
-// grant executable permission
-$ chmod +x blinksocks-linux-x64-v2.5.3
-
-// run directly
-$ ./blinksocks-linux-x64-v2.5.3 --help
 ```
 
 ## Work with browsers

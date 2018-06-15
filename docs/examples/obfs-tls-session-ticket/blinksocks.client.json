@@ -1,0 +1,26 @@
+{
+  "service": "socks5://127.0.0.1:1080",
+  "server": {
+    "service": "tcp://example.com:14938",
+    "key": "had2a8#(kVKA2&gx",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "ss-aead-cipher",
+        "params": {
+          "method": "aes-256-gcm"
+        }
+      },
+      {
+        "name": "obfs-tls1.2-ticket",
+        "params": {
+          "sni": [
+            "example.com"
+          ]
+        }
+      }
+    ]
+  }
+}
