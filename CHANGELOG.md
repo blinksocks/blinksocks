@@ -1,5 +1,25 @@
 #  Change Log
 
+## 3.3.1 (2018-06-15)
+
+### :rocket: Features & Improvements
+
+- package: upgrade winston to v3.0.0.
+- proxies: add `https` support.
+- transport: set handshake timeout of ws to 10s.
+- docs: add `Test Using curl`.
+- docs: add a batch of [examples](./docs/examples).
+
+### :bug: Bug Fixes:
+
+- config: fix default port issue.
+
+### Migrating from 3.3.0 to 3.3.1
+
+```
+$ npm install -g blinksocks@3.3.1
+```
+
 ## 3.3.0 (2018-06-12)
 
 ### :exclamation: Notable Changes
