@@ -64,6 +64,7 @@ For configuring blinksocks, please refer to [Configuration](docs/config).
 1. [Usage](docs/usage)
 2. [Configuration](docs/config)
 3. [Presets](docs/presets)
+4. [Examples](docs/examples)
 
 ### For Developers
 
@@ -80,12 +81,12 @@ See [contributors](https://github.com/blinksocks/blinksocks/graphs/contributors)
 
 Apache License 2.0
 
-[TLS]: docs/config#blinksocks-over-tls
-[WebSocket]: docs/config#blinksocks-over-websocket
-[WebSocket/TLS]: docs/config#blinksocks-over-websockettls
-[multiplexing]: docs/config#multiplexing
 [customization]: docs/development/api
 [ACL]: docs/config#access-control-list
-[shadowsocks]: docs/presets/RECOMMENDATIONS.md#work-with-shadowsocks
-[shadowsocksR]: docs/presets/RECOMMENDATIONS.md#work-with-shadowsocksr
-[v2ray vmess]: docs/presets/RECOMMENDATIONS.md#work-with-v2ray-vmess
+[TLS]: docs/examples/tls
+[WebSocket]: docs/examples/websocket
+[WebSocket/TLS]: docs/examples/websocket-tls
+[multiplexing]: docs/examples/multiplexing
+[shadowsocks]: docs/examples/shadowsocks
+[shadowsocksR]: docs/examples/shadowsocksr
+[v2ray vmess]: docs/examples/v2ray-vmess

@@ -1,0 +1,9 @@
+example.com {
+    proxy /<your-custom-path> 127.0.0.1:59463 {
+        websocket
+        header_upstream Host {host}
+        header_upstream X-Real-IP {remote}
+        header_upstream X-Forwarded-For {remote}
+        header_upstream X-Forwarded-Proto {scheme}
+    }
+}

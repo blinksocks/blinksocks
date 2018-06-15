@@ -1,0 +1,21 @@
+{
+  "service": "socks5://127.0.0.1:1080",
+  "server": {
+    "service": "tcp://example.com:24045",
+    "key": "?4H}vrE_[WQj9[>F",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "ssr-auth-chain-a"
+      },
+      {
+        "name": "ss-stream-cipher",
+        "params": {
+          "method": "none"
+        }
+      }
+    ]
+  }
+}

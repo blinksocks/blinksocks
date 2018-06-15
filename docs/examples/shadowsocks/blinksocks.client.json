@@ -1,0 +1,18 @@
+{
+  "service": "socks5://127.0.0.1:1080",
+  "server": {
+    "service": "tcp://example.com:49849",
+    "key": "XyDw&JndtwhV?m<6",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "ss-aead-cipher",
+        "params": {
+          "method": "aes-256-gcm"
+        }
+      }
+    ]
+  }
+}

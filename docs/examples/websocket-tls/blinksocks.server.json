@@ -1,0 +1,14 @@
+{
+  "service": "wss://0.0.0.0:48079",
+  "key": "98{U64+Z4bX#d,Ra",
+  "presets": [
+    {
+      "name": "ss-base"
+    },
+    {
+      "name": "obfs-random-padding"
+    }
+  ],
+  "tls_key": "key.pem",
+  "tls_cert": "cert.pem"
+}

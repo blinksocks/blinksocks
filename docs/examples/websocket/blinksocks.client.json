@@ -1,0 +1,21 @@
+{
+  "service": "socks5://127.0.0.1:1080",
+  "server": {
+    "service": "ws://127.0.0.1:6336",
+    "key": "?B4-y[tsFQCV/zK%",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "obfs-random-padding"
+      },
+      {
+        "name": "ss-stream-cipher",
+        "params": {
+          "method": "aes-128-ctr"
+        }
+      }
+    ]
+  }
+}

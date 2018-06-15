@@ -1,0 +1,14 @@
+{
+  "service": "tls://0.0.0.0:11902",
+  "key": "NdFCdXFK/TTP2GdU",
+  "presets": [
+    {
+      "name": "ss-base"
+    },
+    {
+      "name": "obfs-random-padding"
+    }
+  ],
+  "tls_key": "key.pem",
+  "tls_cert": "cert.pem"
+}

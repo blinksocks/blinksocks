@@ -1,0 +1,23 @@
+{
+  "service": "socks5://127.0.0.1:1080",
+  "server": {
+    "service": "tcp://example.com:17720",
+    "key": "#{N-^!6{SExKTQ|b",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "obfs-random-padding"
+      },
+      {
+        "name": "ss-stream-cipher",
+        "params": {
+          "method": "aes-128-ctr"
+        }
+      }
+    ],
+    "mux": true,
+    "mux_concurrency": 10
+  }
+}

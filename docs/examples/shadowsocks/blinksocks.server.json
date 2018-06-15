@@ -1,0 +1,15 @@
+{
+  "service": "tcp://0.0.0.0:49849",
+  "key": "XyDw&JndtwhV?m<6",
+  "presets": [
+    {
+      "name": "ss-base"
+    },
+    {
+      "name": "ss-stream-cipher",
+      "params": {
+        "method": "aes-256-gcm"
+      }
+    }
+  ]
+}
