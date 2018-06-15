@@ -60,7 +60,10 @@ export class WsOutbound extends TcpOutbound {
   async _connect(target) {
     const address = this.getConnAddress(target);
     logger.info(`[${this.name}] [${this.remote}] connecting to ${address}`);
-    const socket = new WebSocket(address, this.getConnOptions({ perMessageDeflate: false }));
+    const socket = new WebSocket(address, this.getConnOptions({
+      handshakeTimeout: 1e4, // 10s
+      perMessageDeflate: false,
+    }));
     socket.on('message', this.onReceive);
     socket.on('close', () => socket.destroyed = true);
     return patchWebsocket.call(this, socket);
