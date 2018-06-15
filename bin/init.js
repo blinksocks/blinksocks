@@ -57,8 +57,11 @@ module.exports = function init({ isMinimal, isOverwrite, isDryRun = false }) {
 
   if (isMinimal) {
     delete clientJson.server.tls_cert;
+    delete clientJson.server.tls_cert_self_signed;
     delete clientJson.server.mux;
     delete clientJson.server.mux_concurrency;
+    delete clientJson.https_key;
+    delete clientJson.https_cert;
     delete clientJson.dns;
     delete clientJson.dns_expire;
     delete clientJson.timeout;
