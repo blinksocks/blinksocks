@@ -289,7 +289,7 @@ export class Hub {
         if (relay === undefined) {
           const context = {
             socket: server,
-            remoteInfo: { host: address, port: port },
+            sourceAddress: { host: address, port: port },
           };
           relay = this._createUdpRelay(context);
           relay.init({ proxyRequest });
@@ -348,7 +348,7 @@ export class Hub {
     const context = {
       socket: conn,
       proxyRequest,
-      remoteInfo: sourceAddress,
+      sourceAddress,
     };
 
     let muxRelay = null, cid = null;
@@ -411,7 +411,7 @@ export class Hub {
     // create a mux relay if needed
     if (muxRelay === null) {
       const updateConnStatus = (event, extra) => {
-        const sourceAddress = context.remoteInfo;
+        const { sourceAddress } = context;
         this._updateConnStatus(event, sourceAddress, extra);
       };
       muxRelay = this._createRelay(context, true);

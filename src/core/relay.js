@@ -29,7 +29,7 @@ import { PIPE_ENCODE, PIPE_DECODE, CONNECT_TO_REMOTE, PRESET_FAILED } from '../c
 // .on('_connect')
 // .on('_read')
 // .on('_write')
-// .on('_error');
+// .on('_error')
 // .on('close')
 export class Relay extends EventEmitter {
 
@@ -47,7 +47,7 @@ export class Relay extends EventEmitter {
 
   _transport = null;
 
-  _remoteInfo = null;
+  _sourceAddress = null;
 
   _proxyRequest = null;
 
@@ -79,7 +79,7 @@ export class Relay extends EventEmitter {
     this._id = Relay.idcounter++;
     this._config = config;
     this._transport = transport;
-    this._remoteInfo = context.remoteInfo;
+    this._sourceAddress = context.sourceAddress;
     // pipe
     this._presets = this.preparePresets(presets);
     this._pipe = this.createPipe(this._presets);
@@ -107,12 +107,12 @@ export class Relay extends EventEmitter {
     this._inbound.on('close', () => this.onBoundClose(inbound, outbound));
     // acl
     if (config.acl) {
-      this._acl = new ACL({ remoteInfo: this._remoteInfo, rules: config.acl_rules });
+      this._acl = new ACL({ sourceAddress: this._sourceAddress, rules: config.acl_rules });
       this._acl.on('action', this.onBroadcast.bind(this));
     }
     // tracker
     this._tracker = new Tracker({ config, transport });
-    this._tracker.setSourceAddress(this._remoteInfo.host, this._remoteInfo.port);
+    this._tracker.setSourceAddress(this._sourceAddress.host, this._sourceAddress.port);
   }
 
   init({ proxyRequest }) {
@@ -170,7 +170,7 @@ export class Relay extends EventEmitter {
 
   onBroadcast(action) {
     if (action.type === CONNECT_TO_REMOTE) {
-      const { host: sourceHost, port: sourcePort } = this._remoteInfo;
+      const { host: sourceHost, port: sourcePort } = this._sourceAddress;
       const { host: targetHost, port: targetPort } = action.payload;
       const remote = `${sourceHost}:${sourcePort}`;
       const target = `${targetHost}:${targetPort}`;
@@ -305,7 +305,7 @@ export class Relay extends EventEmitter {
         this._acl = null;
       }
       this._ctx = null;
-      this._remoteInfo = null;
+      this._sourceAddress = null;
       this._proxyRequest = null;
     }
   }

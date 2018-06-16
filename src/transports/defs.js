@@ -18,11 +18,11 @@ class Bound extends EventEmitter {
   }
 
   get remoteHost() {
-    return this.ctx.remoteInfo.host;
+    return this.ctx.sourceAddress.host;
   }
 
   get remotePort() {
-    return this.ctx.remoteInfo.port;
+    return this.ctx.sourceAddress.port;
   }
 
   get remote() {
