@@ -293,17 +293,21 @@ export class TcpOutbound extends Outbound {
   async onConnectToRemote(action) {
     const { host, port, keepAlive, onConnected } = action.payload;
     if (!keepAlive || !this._socket) {
+      let targetHost, targetPort;
       try {
         if (this._config.is_server) {
-          await this.connect({ host, port });
+          targetHost = host;
+          targetPort = port;
         }
         if (this._config.is_client) {
-          await this.connect({
-            host: this._config.server_host,
-            port: this._config.server_port,
-            pathname: this._config.server_pathname,
-          });
+          targetHost = this._config.server_host;
+          targetPort = this._config.server_port;
         }
+        await this.connect({
+          host: targetHost,
+          port: targetPort,
+          pathname: this._config.server_pathname,
+        });
         this._socket.on('connect', () => {
           if (typeof onConnected === 'function') {
             try {
@@ -321,7 +325,7 @@ export class TcpOutbound extends Outbound {
           this.broadcast({ type: CONNECTED_TO_REMOTE, payload: { host, port } });
         });
       } catch (err) {
-        logger.warn(`[${this.name}] [${this.remote}] cannot connect to ${host}:${port}, ${err.message}`);
+        logger.warn(`[${this.name}] [${this.remote}] cannot connect to ${targetHost}:${targetPort}, ${err.message}`);
         this.emit('_error', err);
         this.onClose();
       }
