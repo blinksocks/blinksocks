@@ -1,6 +1,5 @@
 import { Inbound, Outbound } from './defs';
-import { logger } from '../utils';
-import { CONNECT_TO_REMOTE, CONNECTED_TO_REMOTE, PRESET_FAILED } from '../constants';
+import { CONNECT_TO_REMOTE, CONNECTED_TO_REMOTE } from '../constants';
 
 export class MuxInbound extends Inbound {
 
@@ -55,19 +54,9 @@ export class MuxInbound extends Inbound {
           socket.resume();
         }
         break;
-      case PRESET_FAILED:
-        this.onPresetFailed(action);
-        break;
       default:
         break;
     }
-  }
-
-  async onPresetFailed(action) {
-    const { name, message } = action.payload;
-    logger.error(`[${this.name}] [${this.remote}] preset "${name}" fail to process: ${message}`);
-    this.emit('_error', new Error(message));
-    // TODO: maybe have more things to do rather than keep silent
   }
 
   onDrain() {

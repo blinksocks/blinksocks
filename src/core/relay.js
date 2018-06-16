@@ -1,8 +1,8 @@
 import EventEmitter from 'events';
-import { ACL } from './acl';
+import { ACL, ACL_CLOSE_CONNECTION } from './acl';
 import { Pipe } from './pipe';
 import { Tracker } from './tracker';
-import { logger } from '../utils';
+import { getRandomInt, logger } from '../utils';
 
 import {
   TcpInbound, TcpOutbound,
@@ -194,6 +194,15 @@ export class Relay extends EventEmitter {
       if (this._acl && this._acl.checkFailTimes(this._config.acl_tries)) {
         return;
       }
+      this.onPresetFailed(action);
+      return;
+    }
+    if (action.type === ACL_CLOSE_CONNECTION) {
+      const transport = this._transport;
+      const remote = `${this._sourceAddress.host}:${this._sourceAddress.port}`;
+      logger.warn(`[relay] [${transport}] [${remote}] acl request to close this connection`);
+      this.destroy();
+      return;
     }
     this._inbound && this._inbound.onBroadcast(action);
     this._outbound && this._outbound.onBroadcast(action);
@@ -234,6 +243,44 @@ export class Relay extends EventEmitter {
       this._outbound.write(buffer);
     }
   };
+
+  async onPresetFailed(action) {
+    const { name, message, orgData } = action.payload;
+    const transport = this._transport;
+    const remote = `${this._sourceAddress.host}:${this._sourceAddress.port}`;
+
+    logger.error(`[relay] [${transport}] [${remote}] preset "${name}" fail to process: ${message}`);
+    this.emit('_error', new Error(message));
+
+    // close connection directly on client side
+    if (this._config.is_client) {
+      logger.warn(`[relay] [${transport}] [${remote}] connection closed`);
+      this.destroy();
+    }
+
+    // for server side, redirect traffic if "redirect" is set, otherwise, close connection after a random timeout
+    if (this._config.is_server && !this._config.mux) {
+      if (this._config.redirect) {
+        const [host, port] = this._config.redirect.split(':');
+
+        logger.warn(`[relay] [${transport}] [${remote}] connection is redirecting to: ${host}:${port}`);
+
+        // clear preset list
+        this._pipe.updatePresets([]);
+
+        // connect to "redirect" remote
+        await this._outbound.connect({ host, port: +port });
+        if (this._outbound.writable) {
+          this._outbound.write(orgData);
+        }
+      } else {
+        this._outbound.pause && this._outbound.pause();
+        const timeout = getRandomInt(5, 30);
+        logger.warn(`[relay] [${transport}] [${remote}] connection will be closed in ${timeout}s...`);
+        setTimeout(this.destroy.bind(this), timeout * 1e3);
+      }
+    }
+  }
 
   // methods
 

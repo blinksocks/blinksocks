@@ -1,6 +1,6 @@
 import dgram from 'dgram';
 import { Inbound, Outbound } from './defs';
-import { PIPE_ENCODE, PIPE_DECODE, CONNECT_TO_REMOTE, PRESET_FAILED } from '../constants';
+import { PIPE_ENCODE, PIPE_DECODE, CONNECT_TO_REMOTE } from '../constants';
 import { logger } from '../utils';
 
 export class UdpInbound extends Inbound {
@@ -12,7 +12,6 @@ export class UdpInbound extends Inbound {
   constructor(props) {
     super(props);
     this.onReceive = this.onReceive.bind(this);
-    this.onPresetFailed = this.onPresetFailed.bind(this);
     this._socket = this.ctx.socket;
   }
 
@@ -20,26 +19,6 @@ export class UdpInbound extends Inbound {
     const type = this._config.is_client ? PIPE_ENCODE : PIPE_DECODE;
     this._rinfo = rinfo;
     this.ctx.pipe.feed(type, buffer);
-  }
-
-  onBroadcast(action) {
-    switch (action.type) {
-      case PRESET_FAILED:
-        this.onPresetFailed(action);
-        break;
-      default:
-        break;
-    }
-  }
-
-  onPresetFailed(action) {
-    const { name, message } = action.payload;
-    logger.error(`[udp:inbound] [${this.remote}] preset "${name}" fail to process: ${message}`);
-    if (this._outbound) {
-      this._outbound.close();
-      this._outbound = null;
-    }
-    this.close();
   }
 
   write(buffer) {
