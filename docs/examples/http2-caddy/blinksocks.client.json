@@ -1,7 +1,7 @@
 {
   "service": "socks5://127.0.0.1:1080",
   "server": {
-    "service": "h2://example.com:64270",
+    "service": "h2://example.com:443/your-custom-path",
     "key": "zAcy9wve53gpm{YC",
     "presets": [
       {

@@ -112,9 +112,9 @@ $ blinksocks init
 The `<protocol>` should be:
 
 * On client side: `tcp`, `socks`/`socks5`/`socks4`/`socks4a`, `http` or `https`.
-* On server side: `tcp`, `tls`, `ws` or `wss`.
+* On server side: `tcp`, `tls`, `ws`, `wss` or `h2`.
 
-#### Service Authentication
+#### Service Authentication (client side only)
 
 * Create a **http/https** service with [Basic Authentication](https://www.iana.org/go/rfc7617).
 
@@ -136,7 +136,7 @@ The `<protocol>` should be:
 }
 ```
 
-#### Service Params
+#### Service Params (client side only)
 
 **?forward=<host>:<port>**
 
@@ -183,7 +183,7 @@ In this case, it uses [iperf](https://en.wikipedia.org/wiki/Iperf) to test netwo
 
 For more information about presets, please check out [presets].
 
-### Access Control List
+### Access Control List  (server side only)
 
 You can enable ACL on **server** by setting **acl: true** and provide a acl configuration file in **acl_conf**:
 

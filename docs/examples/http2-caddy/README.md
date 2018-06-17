@@ -1,6 +1,6 @@
 # http2-caddy
 
-**Minimal Version Required: v3.4.0**
+**Minimal Version Required: v3.3.2**
 
 blinksocks can transfer data through [caddy] proxy server using http2:
 
