@@ -1,6 +1,6 @@
 import net from 'net';
 import { Inbound, Outbound } from './defs';
-import { DNSCache, logger, getRandomInt } from '../utils';
+import { DNSCache, logger } from '../utils';
 
 import {
   MAX_BUFFERED_SIZE,
@@ -8,11 +8,9 @@ import {
   PIPE_DECODE,
   CONNECT_TO_REMOTE,
   CONNECTED_TO_REMOTE,
-  PRESET_FAILED,
 } from '../constants';
 
 import {
-  ACL_CLOSE_CONNECTION,
   ACL_PAUSE_RECV,
   ACL_PAUSE_SEND,
   ACL_RESUME_RECV,
@@ -150,13 +148,6 @@ export class TcpInbound extends Inbound {
       case CONNECTED_TO_REMOTE:
         this.resume();
         break;
-      case PRESET_FAILED:
-        this.onPresetFailed(action);
-        break;
-      case ACL_CLOSE_CONNECTION:
-        logger.info(`[${this.name}] [${this.remote}] acl request to close connection`);
-        this.close();
-        break;
       case ACL_PAUSE_RECV:
         this.pause();
         break;
@@ -165,42 +156,6 @@ export class TcpInbound extends Inbound {
         break;
       default:
         break;
-    }
-  }
-
-  async onPresetFailed(action) {
-    const { name, message } = action.payload;
-    logger.error(`[${this.name}] [${this.remote}] preset "${name}" fail to process: ${message}`);
-    this.emit('_error', new Error(message));
-
-    // close connection directly on client side
-    if (this._config.is_client) {
-      logger.warn(`[${this.name}] [${this.remote}] connection closed`);
-      this.onClose();
-    }
-
-    // for server side, redirect traffic if "redirect" is set, otherwise, close connection after a random timeout
-    if (this._config.is_server && !this._config.mux) {
-      if (this._config.redirect) {
-        const { orgData } = action.payload;
-        const [host, port] = this._config.redirect.split(':');
-
-        logger.warn(`[${this.name}] [${this.remote}] connection is redirecting to: ${host}:${port}`);
-
-        // clear preset list
-        this.ctx.pipe.updatePresets([]);
-
-        // connect to "redirect" remote
-        await this._outbound.connect({ host, port: +port });
-        if (this._outbound.writable) {
-          this._outbound.write(orgData);
-        }
-      } else {
-        this.pause();
-        const timeout = getRandomInt(10, 40);
-        logger.warn(`[${this.name}] [${this.remote}] connection will be closed in ${timeout}s...`);
-        setTimeout(this.onClose, timeout * 1e3);
-      }
     }
   }
 
@@ -338,17 +293,21 @@ export class TcpOutbound extends Outbound {
   async onConnectToRemote(action) {
     const { host, port, keepAlive, onConnected } = action.payload;
     if (!keepAlive || !this._socket) {
+      let targetHost, targetPort;
       try {
         if (this._config.is_server) {
-          await this.connect({ host, port });
+          targetHost = host;
+          targetPort = port;
         }
         if (this._config.is_client) {
-          await this.connect({
-            host: this._config.server_host,
-            port: this._config.server_port,
-            pathname: this._config.server_pathname,
-          });
+          targetHost = this._config.server_host;
+          targetPort = this._config.server_port;
         }
+        await this.connect({
+          host: targetHost,
+          port: targetPort,
+          pathname: this._config.server_pathname,
+        });
         this._socket.on('connect', () => {
           if (typeof onConnected === 'function') {
             try {
@@ -366,7 +325,7 @@ export class TcpOutbound extends Outbound {
           this.broadcast({ type: CONNECTED_TO_REMOTE, payload: { host, port } });
         });
       } catch (err) {
-        logger.warn(`[${this.name}] [${this.remote}] cannot connect to ${host}:${port}, ${err.message}`);
+        logger.warn(`[${this.name}] [${this.remote}] cannot connect to ${targetHost}:${targetPort}, ${err.message}`);
         this.emit('_error', err);
         this.onClose();
       }

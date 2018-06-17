@@ -20,7 +20,7 @@
 
 * Cross-platform: running on Linux, Windows and macOS.
 * Lightweight proxy interfaces: Socks5/Socks4/Socks4a and HTTP.
-* Multiple Transport Layers: TCP, UDP, [TLS], [WebSocket] and [WebSocket/TLS].
+* Transport Layer Support: TCP, UDP, [TLS], [HTTP2], [WebSocket] and [WebSocket/TLS].
 * TLS/TLS/WebSocket [multiplexing].
 * Convenient protocol [customization].
 * Access Control List([ACL]) support.
@@ -84,6 +84,7 @@ Apache License 2.0
 [customization]: docs/development/api
 [ACL]: docs/config#access-control-list
 [TLS]: docs/examples/tls
+[HTTP2]: docs/examples/http2
 [WebSocket]: docs/examples/websocket
 [WebSocket/TLS]: docs/examples/websocket-tls
 [multiplexing]: docs/examples/multiplexing

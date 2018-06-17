@@ -235,10 +235,10 @@ export class ACL extends EventEmitter {
     });
   }
 
-  constructor({ remoteInfo, rules, max_tries = DEFAULT_MAX_TRIES }) {
+  constructor({ sourceAddress, rules, max_tries = DEFAULT_MAX_TRIES }) {
     super();
-    this._sourceHost = remoteInfo.host;
-    this._sourcePort = remoteInfo.port;
+    this._sourceHost = sourceAddress.host;
+    this._sourcePort = sourceAddress.port;
     this._rules = rules;
     this._maxTries = max_tries;
   }

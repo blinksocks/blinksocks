@@ -1,0 +1,12 @@
+{
+  "service": "tcp://0.0.0.0:18732",
+  "key": "TZr[JmZYjNJ3USYq",
+  "presets": [
+    {
+      "name": "ss-base"
+    },
+    {
+      "name": "obfs-random-padding"
+    }
+  ]
+}

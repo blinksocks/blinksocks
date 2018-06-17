@@ -1,13 +1,14 @@
 import EventEmitter from 'events';
-import { ACL } from './acl';
+import { ACL, ACL_CLOSE_CONNECTION } from './acl';
 import { Pipe } from './pipe';
 import { Tracker } from './tracker';
-import { logger } from '../utils';
+import { getRandomInt, logger } from '../utils';
 
 import {
   TcpInbound, TcpOutbound,
   UdpInbound, UdpOutbound,
   TlsInbound, TlsOutbound,
+  Http2Inbound, Http2Outbound,
   WsInbound, WsOutbound,
   WssInbound, WssOutbound,
   MuxInbound, MuxOutbound,
@@ -28,7 +29,7 @@ import { PIPE_ENCODE, PIPE_DECODE, CONNECT_TO_REMOTE, PRESET_FAILED } from '../c
 // .on('_connect')
 // .on('_read')
 // .on('_write')
-// .on('_error');
+// .on('_error')
 // .on('close')
 export class Relay extends EventEmitter {
 
@@ -46,7 +47,7 @@ export class Relay extends EventEmitter {
 
   _transport = null;
 
-  _remoteInfo = null;
+  _sourceAddress = null;
 
   _proxyRequest = null;
 
@@ -78,7 +79,7 @@ export class Relay extends EventEmitter {
     this._id = Relay.idcounter++;
     this._config = config;
     this._transport = transport;
-    this._remoteInfo = context.remoteInfo;
+    this._sourceAddress = context.sourceAddress;
     // pipe
     this._presets = this.preparePresets(presets);
     this._pipe = this.createPipe(this._presets);
@@ -106,12 +107,12 @@ export class Relay extends EventEmitter {
     this._inbound.on('close', () => this.onBoundClose(inbound, outbound));
     // acl
     if (config.acl) {
-      this._acl = new ACL({ remoteInfo: this._remoteInfo, rules: config.acl_rules });
+      this._acl = new ACL({ sourceAddress: this._sourceAddress, rules: config.acl_rules });
       this._acl.on('action', this.onBroadcast.bind(this));
     }
     // tracker
     this._tracker = new Tracker({ config, transport });
-    this._tracker.setSourceAddress(this._remoteInfo.host, this._remoteInfo.port);
+    this._tracker.setSourceAddress(this._sourceAddress.host, this._sourceAddress.port);
   }
 
   init({ proxyRequest }) {
@@ -132,6 +133,7 @@ export class Relay extends EventEmitter {
       'tcp': [TcpInbound, TcpOutbound],
       'udp': [UdpInbound, UdpOutbound],
       'tls': [TlsInbound, TlsOutbound],
+      'h2': [Http2Inbound, Http2Outbound],
       'ws': [WsInbound, WsOutbound],
       'wss': [WssInbound, WssOutbound],
       'mux': [MuxInbound, MuxOutbound],
@@ -168,7 +170,7 @@ export class Relay extends EventEmitter {
 
   onBroadcast(action) {
     if (action.type === CONNECT_TO_REMOTE) {
-      const { host: sourceHost, port: sourcePort } = this._remoteInfo;
+      const { host: sourceHost, port: sourcePort } = this._sourceAddress;
       const { host: targetHost, port: targetPort } = action.payload;
       const remote = `${sourceHost}:${sourcePort}`;
       const target = `${targetHost}:${targetPort}`;
@@ -192,6 +194,15 @@ export class Relay extends EventEmitter {
       if (this._acl && this._acl.checkFailTimes(this._config.acl_tries)) {
         return;
       }
+      this.onPresetFailed(action);
+      return;
+    }
+    if (action.type === ACL_CLOSE_CONNECTION) {
+      const transport = this._transport;
+      const remote = `${this._sourceAddress.host}:${this._sourceAddress.port}`;
+      logger.warn(`[relay] [${transport}] [${remote}] acl request to close this connection`);
+      this.destroy();
+      return;
     }
     this._inbound && this._inbound.onBroadcast(action);
     this._outbound && this._outbound.onBroadcast(action);
@@ -232,6 +243,44 @@ export class Relay extends EventEmitter {
       this._outbound.write(buffer);
     }
   };
+
+  async onPresetFailed(action) {
+    const { name, message, orgData } = action.payload;
+    const transport = this._transport;
+    const remote = `${this._sourceAddress.host}:${this._sourceAddress.port}`;
+
+    logger.error(`[relay] [${transport}] [${remote}] preset "${name}" fail to process: ${message}`);
+    this.emit('_error', new Error(message));
+
+    // close connection directly on client side
+    if (this._config.is_client) {
+      logger.warn(`[relay] [${transport}] [${remote}] connection closed`);
+      this.destroy();
+    }
+
+    // for server side, redirect traffic if "redirect" is set, otherwise, close connection after a random timeout
+    if (this._config.is_server && !this._config.mux) {
+      if (this._config.redirect) {
+        const [host, port] = this._config.redirect.split(':');
+
+        logger.warn(`[relay] [${transport}] [${remote}] connection is redirecting to: ${host}:${port}`);
+
+        // clear preset list
+        this._pipe.updatePresets([]);
+
+        // connect to "redirect" remote
+        await this._outbound.connect({ host, port: +port });
+        if (this._outbound.writable) {
+          this._outbound.write(orgData);
+        }
+      } else {
+        this._outbound.pause && this._outbound.pause();
+        const timeout = getRandomInt(5, 30);
+        logger.warn(`[relay] [${transport}] [${remote}] connection will be closed in ${timeout}s...`);
+        setTimeout(this.destroy.bind(this), timeout * 1e3);
+      }
+    }
+  }
 
   // methods
 
@@ -303,7 +352,7 @@ export class Relay extends EventEmitter {
         this._acl = null;
       }
       this._ctx = null;
-      this._remoteInfo = null;
+      this._sourceAddress = null;
       this._proxyRequest = null;
     }
   }

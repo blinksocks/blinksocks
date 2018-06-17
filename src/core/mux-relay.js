@@ -80,7 +80,7 @@ export class MuxRelay extends Relay {
         transport: 'mux',
         context: {
           socket: this._ctx.socket,
-          remoteInfo: this._ctx.remoteInfo,
+          sourceAddress: this._ctx.sourceAddress,
           cid,
           muxRelay, // NOTE: associate the mux relay here
         }
@@ -165,11 +165,11 @@ export class MuxRelay extends Relay {
   }
 
   _getRandomMuxRelay() {
-    const { muxRelays, remoteInfo } = this._ctx;
+    const { muxRelays, sourceAddress } = this._ctx;
     const relays = [...muxRelays.values()].filter((relay) =>
       relay._ctx &&
-      relay._ctx.remoteInfo.host === remoteInfo.host &&
-      relay._ctx.remoteInfo.port === remoteInfo.port
+      relay._ctx.sourceAddress.host === sourceAddress.host &&
+      relay._ctx.sourceAddress.port === sourceAddress.port
     );
     return relays[getRandomInt(0, relays.length - 1)];
   }

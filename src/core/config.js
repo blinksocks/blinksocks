@@ -142,7 +142,7 @@ export class Config {
     this.server_pathname = pathname;
 
     // preload tls_cert or tls_key
-    if (this.server_protocol === 'tls' || this.server_protocol === 'wss') {
+    if (['tls', 'wss', 'h2'].includes(this.server_protocol)) {
       if (this.is_client) {
         this.tls_cert_self_signed = !!server.tls_cert_self_signed;
       }
@@ -370,14 +370,14 @@ export class Config {
 
     const proto = protocol.slice(0, -1);
     const available_server_protocols = [
-      'tcp', 'ws', 'wss', 'tls',
+      'tcp', 'ws', 'wss', 'tls', 'h2'
     ];
     if (!available_server_protocols.includes(proto)) {
       throw Error(`service.protocol must be: ${available_server_protocols.join(', ')}`);
     }
 
     // tls_cert, tls_key
-    if (proto === 'tls' || proto === 'wss') {
+    if (['tls', 'wss', 'h2'].includes(proto)) {
       if (from_client && server.tls_cert_self_signed) {
         if (typeof server.tls_cert !== 'string' || server.tls_cert === '') {
           throw Error('"tls_cert" must be provided when "tls_cert_self_signed" is set');
