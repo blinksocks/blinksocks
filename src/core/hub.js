@@ -203,61 +203,56 @@ export class Hub {
   async _createServerOnServer() {
     const { local_protocol, local_host, local_port, local_pathname, tls_key, tls_cert } = this._config;
     return new Promise((resolve, reject) => {
-      const address = {
-        host: local_host,
-        port: local_port,
-      };
-      const onListening = (server) => {
-        const service = `${local_protocol}://${local_host}:${local_port}` + (local_pathname ? local_pathname : '');
-        logger.info(`[hub] blinksocks server is running at ${service}`);
-        resolve(server);
-      };
       let server = null;
       switch (local_protocol) {
         case 'tcp': {
           server = net.createServer();
           server.on('connection', this._onConnection);
-          server.listen(address, () => onListening(server));
           break;
         }
         case 'wss':
         case 'ws': {
-          let http_s_server = null;
           if (local_protocol === 'wss') {
-            http_s_server = https.createServer({ key: tls_key, cert: tls_cert });
+            server = https.createServer({ key: tls_key, cert: tls_cert });
           } else {
-            http_s_server = http.createServer();
+            server = http.createServer();
           }
-          server = new ws.Server({
-            server: http_s_server,
+          const wss = new ws.Server({
+            server: server,
             path: local_pathname,
             perMessageDeflate: false,
           });
-          server.getConnections = server._server.getConnections.bind(server._server);
-          server.on('connection', (ws, req) => {
+          wss.getConnections = wss._server.getConnections.bind(wss._server);
+          wss.on('connection', (ws, req) => {
             ws.remoteAddress = req.connection.remoteAddress;
             ws.remotePort = req.connection.remotePort;
             this._onConnection(ws);
           });
-          http_s_server.listen(address, () => onListening(http_s_server));
           break;
         }
         case 'tls': {
           server = tls.createServer({ key: tls_key, cert: tls_cert });
           server.on('secureConnection', this._onConnection);
-          server.listen(address, () => onListening(server));
           break;
         }
         case 'h2': {
           server = http2.createSecureServer({ key: tls_key, cert: tls_cert });
           server.on('stream', (stream) => this._onConnection(stream));
-          server.listen(address, () => onListening(server));
           break;
         }
         default:
           return reject(Error(`unsupported protocol: "${local_protocol}"`));
       }
+      const address = {
+        host: local_host,
+        port: local_port,
+      };
       server.on('error', reject);
+      server.listen(address, () => {
+        const service = `${local_protocol}://${local_host}:${local_port}` + (local_pathname ? local_pathname : '');
+        logger.info(`[hub] blinksocks server is running at ${service}`);
+        resolve(server);
+      });
     });
   }
 
