@@ -50,6 +50,19 @@ test('multiplexing over tcp', async () => {
   await run({ clientJson, serverJson, repeat: 10, isUdp: true });
 });
 
+test('multiplexing over tls', async () => {
+  const service = 'tls://localhost:1082';
+
+  const clientJson = clone(client);
+  const serverJson = clone(server);
+
+  clientJson.server.service = service;
+  serverJson.service = service;
+
+  await run({ clientJson, serverJson, repeat: 10 });
+  await run({ clientJson, serverJson, repeat: 10, isUdp: true });
+});
+
 test('multiplexing over ws', async () => {
   const service = 'ws://127.0.0.1:1082';
 
@@ -63,8 +76,21 @@ test('multiplexing over ws', async () => {
   await run({ clientJson, serverJson, repeat: 10, isUdp: true });
 });
 
-test('multiplexing over tls', async () => {
-  const service = 'tls://localhost:1082';
+test('multiplexing over wss', async () => {
+  const service = 'wss://localhost:1082';
+
+  const clientJson = clone(client);
+  const serverJson = clone(server);
+
+  clientJson.server.service = service;
+  serverJson.service = service;
+
+  await run({ clientJson, serverJson, repeat: 10 });
+  await run({ clientJson, serverJson, repeat: 10, isUdp: true });
+});
+
+test('multiplexing over h2', async () => {
+  const service = 'h2://localhost:1082';
 
   const clientJson = clone(client);
   const serverJson = clone(server);

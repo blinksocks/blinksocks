@@ -5,6 +5,8 @@ import {
   TcpInbound, TcpOutbound,
   TlsInbound, TlsOutbound,
   WsInbound, WsOutbound,
+  WssInbound, WssOutbound,
+  Http2Inbound, Http2Outbound,
   MuxInbound, MuxOutbound,
 } from '../transports';
 
@@ -25,6 +27,8 @@ export class MuxRelay extends Relay {
       'tcp': [TcpInbound, TcpOutbound],
       'tls': [TlsInbound, TlsOutbound],
       'ws': [WsInbound, WsOutbound],
+      'wss': [WssInbound, WssOutbound],
+      'h2': [Http2Inbound, Http2Outbound],
     };
     const [Inbound, Outbound] = this._config.is_client ? [MuxInbound, mapping[transport][1]] : [mapping[transport][0], MuxOutbound];
     return { Inbound, Outbound };
