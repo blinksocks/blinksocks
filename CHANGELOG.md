@@ -1,5 +1,28 @@
 #  Change Log
 
+## 3.3.2 (2018-06-17)
+
+### :exclamation: Notable Changes
+
+`http2` transport is added in version. For usage please refer to [examples/http2](./docs/examples/http2).
+
+### :rocket: Features & Improvements
+
+- src: refactor handling presets failure.
+- docs: add examples of using http2 and http2/caddy.
+
+### :bug: Bug Fixes:
+
+- core: fix wss multiplexing.
+- transports: fix tcp error logging.
+- proxies: fix a vulnerability in log output.
+
+### Migrating from 3.3.1 to 3.3.2
+
+```
+$ npm install -g blinksocks@3.3.2
+```
+
 ## 3.3.1 (2018-06-15)
 
 ### :rocket: Features & Improvements

@@ -19,9 +19,9 @@
 ## Features
 
 * Cross-platform: running on Linux, Windows and macOS.
-* Lightweight proxy interfaces: Socks5/Socks4/Socks4a and HTTP.
+* Lightweight proxy interfaces: Socks5/Socks4/Socks4a and HTTP/HTTPS.
 * Transport Layer Support: TCP, UDP, [TLS], [HTTP2], [WebSocket] and [WebSocket/TLS].
-* TLS/TLS/WebSocket [multiplexing].
+* TCP/TLS/HTTP2/WebSocket [multiplexing].
 * Convenient protocol [customization].
 * Access Control List([ACL]) support.
 * Built-In [shadowsocks], [shadowsocksR], [v2ray vmess] protocols.
@@ -31,7 +31,7 @@
 
 ### Requirements
 
-blinksocks is built on top of [Node.js](https://nodejs.org), if you want to use it in an ordinary way or do some hacking, please install **Node.js(v8.x and above)** on your operating system.
+- [Node.js](https://nodejs.org) `v8.4.x` and above.
 
 ### Install or Upgrade
 
