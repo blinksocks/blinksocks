@@ -191,7 +191,7 @@ export class Http2Outbound extends Outbound {
 
         // stream
         this._stream = this._session.request({
-          [HTTP2_HEADER_METHOD]: ':post',
+          [HTTP2_HEADER_METHOD]: 'POST',
           [HTTP2_HEADER_PATH]: server_pathname || '/',
         }, {
           endStream: false,
