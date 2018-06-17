@@ -1,0 +1,14 @@
+{
+  "service": "h2://0.0.0.0:64270",
+  "key": "zAcy9wve53gpm{YC",
+  "presets": [
+    {
+      "name": "ss-base"
+    },
+    {
+      "name": "obfs-random-padding"
+    }
+  ],
+  "tls_key": "key.pem",
+  "tls_cert": "cert.pem"
+}
