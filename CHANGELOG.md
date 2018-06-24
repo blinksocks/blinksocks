@@ -1,5 +1,23 @@
 #  Change Log
 
+## 3.3.3 (2018-06-24)
+
+### :rocket: Features & Improvements
+
+- src: refactor multiplexing to pass pressure testing.
+- test: add test case for https and redirect.
+- deps: upgrade `ws` to v5.2.1, `winston-daily-rotate-file` to v3.2.3.
+
+### :bug: Bug Fixes:
+
+- **presets**: fail() should return undefined.
+
+### Migrating from 3.3.2 to 3.3.3
+
+```
+$ npm install -g blinksocks@3.3.3
+```
+
 ## 3.3.2 (2018-06-17)
 
 ### :exclamation: Notable Changes
@@ -8,14 +26,14 @@
 
 ### :rocket: Features & Improvements
 
-- src: refactor handling presets failure.
-- docs: add examples of using http2 and http2/caddy.
+- **src**: refactor handling presets failure.
+- **docs**: add examples of using http2 and http2/caddy.
 
 ### :bug: Bug Fixes:
 
-- core: fix wss multiplexing.
-- transports: fix tcp error logging.
-- proxies: fix a vulnerability in log output.
+- **core**: fix wss multiplexing.
+- **transports**: fix tcp error logging.
+- **proxies**: fix a vulnerability in log output.
 
 ### Migrating from 3.3.1 to 3.3.2
 
@@ -27,15 +45,15 @@ $ npm install -g blinksocks@3.3.2
 
 ### :rocket: Features & Improvements
 
-- package: upgrade winston to v3.0.0.
-- proxies: add `https` support.
-- transport: set handshake timeout of ws to 10s.
-- docs: add `Test Using curl`.
-- docs: add a batch of [examples](./docs/examples).
+- **package**: upgrade winston to v3.0.0.
+- **proxies**: add `https` support.
+- **transport**: set handshake timeout of ws to 10s.
+- **docs**: add `Test Using curl`.
+- **docs**: add a batch of [examples](./docs/examples).
 
 ### :bug: Bug Fixes:
 
-- config: fix default port issue.
+- **config**: fix default port issue.
 
 ### Migrating from 3.3.0 to 3.3.1
 
