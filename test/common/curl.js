@@ -15,10 +15,6 @@ export default async function curl(args) {
     'socks5': '--socks5-hostname',
   }[proxyMethod];
 
-  if (typeof proxy === 'undefined') {
-    throw Error(`unsupported proxy method: ${proxyMethod}`);
-  }
-
   try {
     let command = `curl `;
     if (username && password) {
@@ -27,7 +23,11 @@ export default async function curl(args) {
     if (proxy) {
       command += `-L ${proxy} ${proxyHost}:${proxyPort} `;
     }
+    if (proxyMethod === 'https') {
+      command += `--proxy-insecure -Lx https://${proxyHost}:${proxyPort} `;
+    }
     command += `${targetHost}:${targetPort} `;
+    // console.log(command);
     const { stdout } = await exec(command, { encoding: 'utf-8', timeout: 5e3 });
     return stdout;
   } catch (err) {

@@ -1,9 +1,13 @@
+import path from 'path';
 import run from '../common/run-e2e';
+
+const tlsKey = path.resolve(__dirname, 'resources', 'key.pem');
+const tlsCert = path.resolve(__dirname, 'resources', 'cert.pem');
 
 const clientJson = {
   // "service": "",
   'server': {
-    'service': 'tcp://127.0.0.1:1082',
+    'service': 'tcp://localhost:1082',
     'key': '9{*2gdBSdCrgnSBD',
     'presets': [
       { 'name': 'ss-base' },
@@ -11,6 +15,8 @@ const clientJson = {
       { 'name': 'ss-stream-cipher', 'params': { 'method': 'aes-128-ctr' } },
     ],
   },
+  'https_key': tlsKey,
+  'https_cert': tlsCert,
 };
 
 const serverJson = {
@@ -23,12 +29,12 @@ const serverJson = {
   ],
 };
 
-test('http-proxy', async () => await run({
+test('http', async () => await run({
   proxy: 'http',
   clientJson: { ...clientJson, service: 'http://127.0.0.1:1081' },
   serverJson,
 }));
-test('http-proxy with authorization', async () => {
+test('http with authorization', async () => {
   await run({
     proxy: 'http',
     auth: {
@@ -50,12 +56,34 @@ test('http-proxy with authorization', async () => {
   });
 });
 
-test('http-proxy using connect', async () => await run({
+test('https with authorization', async () => {
+  await run({
+    proxy: 'https',
+    auth: {
+      username: 'user',
+      password: 'pass',
+    },
+    clientJson: { ...clientJson, service: 'https://user:pass@127.0.0.1:1081' },
+    serverJson,
+  });
+  await run({
+    proxy: 'https',
+    auth: {
+      username: '_user',
+      password: '_pass',
+    },
+    clientJson: { ...clientJson, service: 'https://user:pass@127.0.0.1:1081' },
+    serverJson,
+    not: true,
+  });
+});
+
+test('http using connect', async () => await run({
   proxy: 'http_connect',
   clientJson: { ...clientJson, service: 'http://127.0.0.1:1081' },
   serverJson,
 }));
-test('http-proxy using connect with authorization', async () => {
+test('http using connect with authorization', async () => {
   await run({
     proxy: 'http_connect',
     auth: {
@@ -77,12 +105,12 @@ test('http-proxy using connect with authorization', async () => {
   });
 });
 
-test('socks-proxy', async () => await run({
+test('socks', async () => await run({
   proxy: 'socks',
   clientJson: { ...clientJson, service: 'socks://127.0.0.1:1081' },
   serverJson,
 }));
-test('socks-proxy with authorization', async () => {
+test('socks with authorization', async () => {
   await run({
     proxy: 'socks',
     auth: {
@@ -104,12 +132,12 @@ test('socks-proxy with authorization', async () => {
   });
 });
 
-test('socks4-proxy', async () => await run({
+test('socks4', async () => await run({
   proxy: 'socks4',
   clientJson: { ...clientJson, service: 'socks4://127.0.0.1:1081' },
   serverJson,
 }));
-test('socks4-proxy with authorization', async () => await run({
+test('socks4 with authorization', async () => await run({
   proxy: 'socks4',
   auth: {
     username: 'user',
@@ -119,12 +147,12 @@ test('socks4-proxy with authorization', async () => await run({
   serverJson,
 }));
 
-test('socks4a-proxy', async () => await run({
+test('socks4a', async () => await run({
   proxy: 'socks4a',
   clientJson: { ...clientJson, service: 'socks4a://127.0.0.1:1081' },
   serverJson,
 }));
-test('socks4a-proxy with authorization', async () => await run({
+test('socks4a with authorization', async () => await run({
   proxy: 'socks4a',
   auth: {
     username: 'user',
@@ -134,12 +162,12 @@ test('socks4a-proxy with authorization', async () => await run({
   serverJson,
 }));
 
-test('socks5-proxy', async () => await run({
+test('socks5', async () => await run({
   proxy: 'socks5',
   clientJson: { ...clientJson, service: 'socks5://127.0.0.1:1081' },
   serverJson,
 }));
-test('socks5-proxy with authorization', async () => await run({
+test('socks5 with authorization', async () => await run({
   proxy: 'socks5',
   auth: {
     username: 'user',

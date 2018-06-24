@@ -1,5 +1,3 @@
-const HTTP_SERVER_PORT = 8080;
-const UDP_SERVER_PORT = 8080;
-const MOCK_RESPONSE = '01234567'.repeat(256);
-
-export { HTTP_SERVER_PORT, UDP_SERVER_PORT, MOCK_RESPONSE };
+export const HTTP_SERVER_PORT = 8080;
+export const UDP_SERVER_PORT = 8080;
+export const MOCK_RESPONSE = '01234567'.repeat(256);

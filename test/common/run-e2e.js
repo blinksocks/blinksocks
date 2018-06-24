@@ -42,7 +42,21 @@ afterAll(() => {
   udpServer.close();
 });
 
-export default async function run({ proxy, auth = {}, clientJson, serverJson, not = false, isUdp = false, repeat = 1 }) {
+export default async function run(args = {}) {
+  const {
+    proxy,
+    auth = {
+      username: '',
+      password: '',
+    },
+    clientJson,
+    serverJson,
+    not = false,
+    isUdp = false,
+    repeat = 1,
+    ...rest
+  } = args;
+
   const props = {
     username: auth.username,
     password: auth.password,
@@ -50,14 +64,19 @@ export default async function run({ proxy, auth = {}, clientJson, serverJson, no
     proxyPort: 1081,
     targetHost: '127.0.0.1',
     targetPort: 8080,
+    ...rest,
   };
-  const client = new Hub(clientJson);
-  const server = new Hub(serverJson);
-  await Promise.all([
-    client.run(),
-    server.run(),
-  ]);
-  while (repeat--) {
+  let client, server;
+  if (clientJson) {
+    client = new Hub(clientJson);
+    await client.run();
+  }
+  if (serverJson) {
+    server = new Hub(serverJson);
+    await server.run();
+  }
+  let _repeat = repeat;
+  while (_repeat--) {
     let response;
     if (isUdp) {
       response = await udp(props);
@@ -70,8 +89,10 @@ export default async function run({ proxy, auth = {}, clientJson, serverJson, no
       expect(response).toBe(MOCK_RESPONSE);
     }
   }
-  await Promise.all([
-    client.terminate(),
-    server.terminate(),
-  ]);
+  if (client) {
+    await client.terminate();
+  }
+  if (server) {
+    await server.terminate();
+  }
 }
