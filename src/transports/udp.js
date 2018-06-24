@@ -1,6 +1,5 @@
 import dgram from 'dgram';
 import { Inbound, Outbound } from './defs';
-import { PIPE_ENCODE, PIPE_DECODE, CONNECT_TO_REMOTE } from '../constants';
 import { logger } from '../utils';
 
 export class UdpInbound extends Inbound {
@@ -12,13 +11,12 @@ export class UdpInbound extends Inbound {
   constructor(props) {
     super(props);
     this.onReceive = this.onReceive.bind(this);
-    this._socket = this.ctx.socket;
+    this._socket = this._conn;
   }
 
   onReceive(buffer, rinfo) {
-    const type = this._config.is_client ? PIPE_ENCODE : PIPE_DECODE;
     this._rinfo = rinfo;
-    this.ctx.pipe.feed(type, buffer);
+    this.emit('data', buffer);
   }
 
   write(buffer) {
@@ -29,7 +27,7 @@ export class UdpInbound extends Inbound {
       }
     };
     if (this._config.is_client) {
-      const isSs = this.ctx.rawPresets.some(({ name }) => 'ss-base' === name);
+      const isSs = this._config.presets.some(({ name }) => 'ss-base' === name);
       this._socket.send(buffer, port, address, isSs, onSendError);
     } else {
       this._socket.send(buffer, port, address, onSendError);
@@ -63,20 +61,7 @@ export class UdpOutbound extends Outbound {
   }
 
   onReceive(buffer) {
-    const type = this._config.is_client ? PIPE_DECODE : PIPE_ENCODE;
-    this.ctx.pipe.feed(type, buffer);
-  }
-
-  onBroadcast(action) {
-    switch (action.type) {
-      case CONNECT_TO_REMOTE:
-        if (this._targetHost === null && this._targetPort === null) {
-          this.onConnectToRemote(action);
-        }
-        break;
-      default:
-        break;
-    }
+    this.emit('data', buffer);
   }
 
   write(buffer) {
@@ -97,18 +82,13 @@ export class UdpOutbound extends Outbound {
     }
   }
 
-  onConnectToRemote(action) {
-    const { host, port, onConnected } = action.payload;
+  connect(host, port) {
     if (this._config.is_client) {
       this._targetHost = this._config.server_host;
       this._targetPort = this._config.server_port;
-    }
-    if (this._config.is_server) {
+    } else {
       this._targetHost = host;
       this._targetPort = port;
-      if (typeof onConnected === 'function') {
-        onConnected();
-      }
     }
   }
 

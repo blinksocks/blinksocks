@@ -2,13 +2,6 @@ import http2 from 'http2';
 import { Inbound, Outbound } from './defs';
 import { logger } from '../utils';
 
-import {
-  CONNECT_TO_REMOTE,
-  CONNECTED_TO_REMOTE,
-  PIPE_DECODE,
-  PIPE_ENCODE,
-} from '../constants';
-
 const { HTTP2_HEADER_PATH, HTTP2_HEADER_METHOD } = http2.constants;
 
 export class Http2Inbound extends Inbound {
@@ -25,15 +18,13 @@ export class Http2Inbound extends Inbound {
     this.onReceive = this.onReceive.bind(this);
     this.onTimeout = this.onTimeout.bind(this);
     this.onClose = this.onClose.bind(this);
-    if (this.ctx.socket) {
-      this._stream = this.ctx.socket;
-      this._session = this._stream.session;
-      this._stream.on('data', this.onReceive);
-      this._session.on('error', this.onError);
-      this._session.on('timeout', this.onTimeout);
-      this._session.on('close', this.onClose);
-      this._session.setTimeout(this._config.timeout);
-    }
+    this._stream = this._conn;
+    this._session = this._stream.session;
+    this._stream.on('data', this.onReceive);
+    this._session.on('error', this.onError);
+    this._session.on('timeout', this.onTimeout);
+    this._session.on('close', this.onClose);
+    this._session.setTimeout(this._config.timeout);
   }
 
   get name() {
@@ -56,8 +47,7 @@ export class Http2Inbound extends Inbound {
   }
 
   onReceive(buffer) {
-    const direction = this._config.is_client ? PIPE_ENCODE : PIPE_DECODE;
-    this.ctx.pipe.feed(direction, buffer);
+    this.emit('data', buffer);
   }
 
   onTimeout() {
@@ -67,9 +57,10 @@ export class Http2Inbound extends Inbound {
 
   onClose() {
     this.close();
-    if (this._outbound) {
-      this._outbound.close();
-      this._outbound = null;
+    const outbound = this.getOutbound();
+    if (outbound) {
+      outbound.close();
+      this.setOutbound(null);
     }
   }
 
@@ -122,8 +113,7 @@ export class Http2Outbound extends Outbound {
   }
 
   onReceive(buffer) {
-    const direction = this._config.is_client ? PIPE_DECODE : PIPE_ENCODE;
-    this.ctx.pipe.feed(direction, buffer);
+    this.emit('data', buffer);
   }
 
   onTimeout() {
@@ -133,9 +123,10 @@ export class Http2Outbound extends Outbound {
 
   onClose() {
     this.close();
-    if (this._inbound) {
-      this._inbound.close();
-      this._inbound = null;
+    const inbound = this.getInbound();
+    if (inbound) {
+      inbound.close();
+      this.setInbound(null);
     }
   }
 
@@ -150,83 +141,47 @@ export class Http2Outbound extends Outbound {
     }
   }
 
-  onBroadcast(action) {
-    switch (action.type) {
-      case CONNECT_TO_REMOTE:
-        this.onConnectToRemote(action);
-        break;
-      default:
-        break;
-    }
-  }
-
-  async onConnectToRemote(action) {
-    const { host, port, keepAlive, onConnected } = action.payload;
-    if (!keepAlive || !this._session) {
-      const { server_host, server_port, server_pathname } = this._config;
-      try {
-        await this.connect({
-          host: server_host,
-          port: server_port,
-          pathname: server_pathname,
-        });
-
-        // session
-        this._session.on('connect', () => {
-          if (typeof onConnected === 'function') {
-            try {
-              onConnected((buffer) => {
-                if (buffer) {
-                  const type = this._config.is_client ? PIPE_ENCODE : PIPE_DECODE;
-                  this.ctx.pipe.feed(type, buffer, { cid: this.ctx.proxyRequest.cid, host, port });
-                }
-              });
-            } catch (err) {
-              logger.error(`[${this.name}] [${this.remote}] onConnected callback error: ${err.message}`);
-              this.emit('_error', err);
-            }
+  async connect() {
+    return new Promise((resolve) => {
+      if (!this._session) {
+        const { server_host, server_port, server_pathname } = this._config;
+        try {
+          const address = `h2://${server_host}:${server_port}` + (server_pathname ? server_pathname : '');
+          logger.info(`[${this.name}] [${this.remote}] connecting to ${address}`);
+          // session
+          // close alive connection before create a new one
+          if (this._session && !this._session.closed) {
+            this._session.destroy();
+            this._session.removeAllListeners();
           }
-          this.broadcast({ type: CONNECTED_TO_REMOTE, payload: { host, port } });
-        });
-
-        // stream
-        this._stream = this._session.request({
-          [HTTP2_HEADER_METHOD]: 'POST',
-          [HTTP2_HEADER_PATH]: server_pathname || '/',
-        }, {
-          endStream: false,
-        });
-        this._stream.on('error', this.onError);
-        this._stream.on('data', this.onReceive);
-
-      } catch (err) {
-        logger.warn(`[${this.name}] [${this.remote}] cannot connect to ${server_host}:${server_port}, ${err.message}`);
-        this.emit('_error', err);
-        this.onClose();
+          const options = {};
+          if (this._config.tls_cert_self_signed) {
+            options.ca = this._config.tls_cert;
+          }
+          this._session = http2.connect(`https://${server_host}:${server_port}`, options);
+          this._session.on('connect', resolve);
+          this._session.on('close', this.onClose);
+          this._session.on('timeout', this.onTimeout);
+          this._session.on('error', this.onError);
+          this._session.setTimeout(this._config.timeout);
+          // stream
+          this._stream = this._session.request({
+            [HTTP2_HEADER_METHOD]: 'POST',
+            [HTTP2_HEADER_PATH]: server_pathname || '/',
+          }, {
+            endStream: false,
+          });
+          this._stream.on('error', this.onError);
+          this._stream.on('data', this.onReceive);
+        } catch (err) {
+          logger.error(`[${this.name}] [${this.remote}] cannot connect to ${server_host}:${server_port}, ${err.message}`);
+          this.emit('_error', err);
+          this.onClose();
+        }
+      } else {
+        resolve();
       }
-    } else {
-      this.broadcast({ type: CONNECTED_TO_REMOTE, payload: { host, port } });
-    }
-  }
-
-  async connect({ host, port, pathname }) {
-    // close alive connection before create a new one
-    if (this._session && !this._session.closed) {
-      this._session.destroy();
-    }
-
-    const address = `h2://${host}:${port}` + (pathname ? pathname : '');
-    logger.info(`[${this.name}] [${this.remote}] connecting to ${address}`);
-
-    const options = {};
-    if (this._config.tls_cert_self_signed) {
-      options.ca = this._config.tls_cert;
-    }
-    this._session = http2.connect(`https://${host}:${port}`, options);
-    this._session.on('close', this.onClose);
-    this._session.on('timeout', this.onTimeout);
-    this._session.on('error', this.onError);
-    this._session.setTimeout(this._config.timeout);
+    });
   }
 
 }

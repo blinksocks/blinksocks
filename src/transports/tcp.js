@@ -1,15 +1,7 @@
 import net from 'net';
 import { Inbound, Outbound } from './defs';
 import { DNSCache, logger } from '../utils';
-
-import {
-  MAX_BUFFERED_SIZE,
-  PIPE_ENCODE,
-  PIPE_DECODE,
-  CONNECT_TO_REMOTE,
-  CONNECTED_TO_REMOTE,
-} from '../constants';
-
+import { MAX_BUFFERED_SIZE } from '../constants';
 import {
   ACL_PAUSE_RECV,
   ACL_PAUSE_SEND,
@@ -31,16 +23,14 @@ export class TcpInbound extends Inbound {
     this.onTimeout = this.onTimeout.bind(this);
     this.onHalfClose = this.onHalfClose.bind(this);
     this.onClose = this.onClose.bind(this);
-    if (this.ctx.socket) {
-      this._socket = this.ctx.socket;
-      this._socket.on('error', this.onError);
-      this._socket.on('data', this.onReceive);
-      this._socket.on('drain', this.onDrain);
-      this._socket.on('timeout', this.onTimeout);
-      this._socket.on('end', this.onHalfClose);
-      this._socket.on('close', this.onClose);
-      this._socket.setTimeout && this._socket.setTimeout(this._config.timeout);
-    }
+    this._socket = this._conn;
+    this._socket.on('error', this.onError);
+    this._socket.on('data', this.onReceive);
+    this._socket.on('drain', this.onDrain);
+    this._socket.on('timeout', this.onTimeout);
+    this._socket.on('end', this.onHalfClose);
+    this._socket.on('close', this.onClose);
+    this._socket.setTimeout && this._socket.setTimeout(this._config.timeout);
   }
 
   get name() {
@@ -67,8 +57,7 @@ export class TcpInbound extends Inbound {
   }
 
   onReceive(buffer) {
-    const direction = this._config.is_client ? PIPE_ENCODE : PIPE_DECODE;
-    this.ctx.pipe.feed(direction, buffer);
+    this.emit('data', buffer);
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
     // https://nodejs.org/dist/latest/docs/api/net.html#net_socket_buffersize
@@ -95,14 +84,16 @@ export class TcpInbound extends Inbound {
   }
 
   onHalfClose() {
-    this._outbound && this._outbound.end();
+    const outbound = this.getOutbound();
+    outbound && outbound.end && outbound.end();
   }
 
   onClose() {
     this.close();
-    if (this._outbound) {
-      this._outbound.close();
-      this._outbound = null;
+    const outbound = this.getOutbound();
+    if (outbound) {
+      outbound.close();
+      this.setOutbound(null);
     }
   }
 
@@ -142,12 +133,6 @@ export class TcpInbound extends Inbound {
 
   onBroadcast(action) {
     switch (action.type) {
-      case CONNECT_TO_REMOTE:
-        this.pause();
-        break;
-      case CONNECTED_TO_REMOTE:
-        this.resume();
-        break;
       case ACL_PAUSE_RECV:
         this.pause();
         break;
@@ -201,8 +186,7 @@ export class TcpOutbound extends Outbound {
   }
 
   onReceive(buffer) {
-    const direction = this._config.is_client ? PIPE_DECODE : PIPE_ENCODE;
-    this.ctx.pipe.feed(direction, buffer);
+    this.emit('data', buffer);
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
     // https://nodejs.org/dist/latest/docs/api/net.html#net_socket_buffersize
@@ -229,14 +213,16 @@ export class TcpOutbound extends Outbound {
   }
 
   onHalfClose() {
-    this._inbound && this._inbound.end();
+    const inbound = this.getInbound();
+    inbound && inbound.end && inbound.end();
   }
 
   onClose() {
     this.close();
-    if (this._inbound) {
-      this._inbound.close();
-      this._inbound = null;
+    const inbound = this.getInbound();
+    if (inbound) {
+      inbound.close();
+      this.setInbound(null);
     }
   }
 
@@ -276,9 +262,6 @@ export class TcpOutbound extends Outbound {
 
   onBroadcast(action) {
     switch (action.type) {
-      case CONNECT_TO_REMOTE:
-        this.onConnectToRemote(action);
-        break;
       case ACL_PAUSE_SEND:
         this.pause();
         break;
@@ -290,68 +273,47 @@ export class TcpOutbound extends Outbound {
     }
   }
 
-  async onConnectToRemote(action) {
-    const { host, port, keepAlive, onConnected } = action.payload;
-    if (!keepAlive || !this._socket) {
-      let targetHost, targetPort;
-      try {
-        if (this._config.is_server) {
-          targetHost = host;
-          targetPort = port;
-        }
-        if (this._config.is_client) {
-          targetHost = this._config.server_host;
-          targetPort = this._config.server_port;
-        }
-        await this.connect({
-          host: targetHost,
-          port: targetPort,
-          pathname: this._config.server_pathname,
-        });
-        this._socket.on('connect', () => {
-          if (typeof onConnected === 'function') {
-            try {
-              onConnected((buffer) => {
-                if (buffer) {
-                  const type = this._config.is_client ? PIPE_ENCODE : PIPE_DECODE;
-                  this.ctx.pipe.feed(type, buffer, { cid: this.ctx.proxyRequest.cid, host, port });
-                }
-              });
-            } catch (err) {
-              logger.error(`[${this.name}] [${this.remote}] onConnected callback error: ${err.message}`);
-              this.emit('_error', err);
-            }
+  async connect(host, port, force = false) {
+    return new Promise(async (resolve) => {
+      if (!this._socket || force) {
+        let targetHost, targetPort;
+        try {
+          const { is_server, server_host, server_port, server_pathname } = this._config;
+          if (is_server) {
+            targetHost = host;
+            targetPort = port;
+          } else {
+            targetHost = server_host;
+            targetPort = server_port;
           }
-          this.broadcast({ type: CONNECTED_TO_REMOTE, payload: { host, port } });
-        });
-      } catch (err) {
-        logger.warn(`[${this.name}] [${this.remote}] cannot connect to ${targetHost}:${targetPort}, ${err.message}`);
-        this.emit('_error', err);
-        this.onClose();
+          // close alive connection before create a new one
+          if (this._socket && !this._socket.destroyed) {
+            this._socket.destroy();
+            this._socket.removeAllListeners();
+          }
+          this._socket = await this._connect({ host: targetHost, port: targetPort, pathname: server_pathname });
+          this._socket.on('connect', resolve);
+          this._socket.on('error', this.onError);
+          this._socket.on('end', this.onHalfClose);
+          this._socket.on('close', this.onClose);
+          this._socket.on('timeout', this.onTimeout);
+          this._socket.on('data', this.onReceive);
+          this._socket.on('drain', this.onDrain);
+          this._socket.setTimeout(this._config.timeout);
+        } catch (err) {
+          logger.error(`[${this.name}] [${this.remote}] cannot connect to ${targetHost}:${targetPort}, ${err.message}`);
+          this.emit('_error', err);
+          this.onClose();
+        }
+      } else {
+        resolve();
       }
-    } else {
-      this.broadcast({ type: CONNECTED_TO_REMOTE, payload: { host, port } });
-    }
-  }
-
-  async connect(target) {
-    // close alive connection before create a new one
-    if (this._socket && !this._socket.destroyed) {
-      this._socket.destroy();
-    }
-    this._socket = await this._connect(target);
-    this._socket.on('error', this.onError);
-    this._socket.on('end', this.onHalfClose);
-    this._socket.on('close', this.onClose);
-    this._socket.on('timeout', this.onTimeout);
-    this._socket.on('data', this.onReceive);
-    this._socket.on('drain', this.onDrain);
-    this._socket.setTimeout(this._config.timeout);
+    });
   }
 
   async _connect({ host, port }) {
     const ip = await DNSCache.get(host);
-    logger.info(`[${this.name}] [${this.remote}] connecting to tcp://${host}:${port} resolved=${ip}`);
+    logger.info(`[${this.name}] [${this.remote}] connecting to tcp://${host}:${port}` + (net.isIP(host) ? '' : ` resolved=${ip}`));
     return net.connect({ host: ip, port });
   }
 

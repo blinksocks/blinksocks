@@ -1,28 +1,30 @@
 /* eslint-disable no-unused-vars */
 import EventEmitter from 'events';
 
+// .on('_error')
+// .on('data')
+// .on('close')
 class Bound extends EventEmitter {
-
-  _ctx = null;
 
   _config = null;
 
-  constructor({ config, context }) {
+  _source = null;
+
+  _conn = null;
+
+  constructor({ config, source, conn }) {
     super();
     this._config = config;
-    this._ctx = context;
-  }
-
-  get ctx() {
-    return this._ctx;
+    this._source = source;
+    this._conn = conn;
   }
 
   get remoteHost() {
-    return this.ctx.sourceAddress.host;
+    return this._source.host;
   }
 
   get remotePort() {
-    return this.ctx.sourceAddress.port;
+    return this._source.port;
   }
 
   get remote() {
@@ -45,19 +47,8 @@ class Bound extends EventEmitter {
 
   }
 
-  end() {
-
-  }
-
   close() {
 
-  }
-
-  broadcast(action) {
-    const { relay } = this.ctx;
-    if (!relay.destroyed) {
-      relay.onBroadcast(action);
-    }
   }
 
 }
@@ -86,6 +77,10 @@ export class Outbound extends Bound {
 
   getInbound() {
     return this._inbound;
+  }
+
+  async connect() {
+
   }
 
 }
