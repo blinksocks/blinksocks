@@ -23,7 +23,7 @@ export class IPreset extends EventEmitter {
     const postfix = (type === PIPE_ENCODE ? 'Out' : 'In') + (isUdp ? 'Udp' : '');
 
     // prepare args
-    const fail = (message) => this.emit('fail', this.name, message);
+    const fail = (message) => void this.emit('fail', this.name, message);
     const next = (processed, isReverse = false) => {
       // oh my nice hack to deal with reverse pipeline if haven't been created
       const hasListener = this.emit(`next_${isReverse ? -type : type}`, processed);
