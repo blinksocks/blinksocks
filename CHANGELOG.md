@@ -4,7 +4,7 @@
 
 ### :rocket: Features & Improvements
 
-- src: refactor multiplexing to pass pressure testing.
+- src: refactor multiplexing to pass pressure test.
 - test: add test case for https and redirect.
 - deps: upgrade `ws` to v5.2.1, `winston-daily-rotate-file` to v3.2.3.
 
