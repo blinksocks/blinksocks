@@ -10,7 +10,6 @@ import isPlainObject from 'lodash.isplainobject';
 import { ACL } from './acl';
 import { PROTOCOL_DEFAULT_PORTS } from '../constants';
 import { getPresetClassByName } from '../presets';
-import { IPresetAddressing } from '../presets/defs';
 import { DNSCache, isValidHostname, isValidPort, logger, DNS_DEFAULT_EXPIRE } from '../utils';
 
 function loadFileSync(file) {
@@ -183,17 +182,10 @@ export class Config {
       this.mux_concurrency = server.mux_concurrency || 10;
     }
 
-    // remove unnecessary presets
-    if (this.mux) {
-      this.presets = this.presets.filter(
-        ({ name }) => !IPresetAddressing.isPrototypeOf(getPresetClassByName(name)),
-      );
-    }
-
     // pre-cache presets
     this.stores = (new Array(this.presets.length)).fill({});
-    for (let i = 0; i < server.presets.length; i++) {
-      const { name, params = {} } = server.presets[i];
+    for (let i = 0; i < this.presets.length; i++) {
+      const { name, params = {} } = this.presets[i];
       const clazz = getPresetClassByName(name);
       const data = clazz.onCache(params, this.stores[i]);
       if (data instanceof Promise) {

@@ -7,7 +7,6 @@ export const MAX_BUFFERED_SIZE = 512 * 1024; // 512KB
 
 export const PRESET_FAILED = 'PRESET_FAILED';
 export const CONNECT_TO_REMOTE = 'CONNECT_TO_REMOTE';
-export const CONNECTED_TO_REMOTE = 'CONNECTED_TO_REMOTE';
 export const MUX_NEW_CONN = 'MUX_NEW_CONN';
 export const MUX_DATA_FRAME = 'MUX_DATA_FRAME';
 export const MUX_CLOSE_CONN = 'MUX_CLOSE_CONN';

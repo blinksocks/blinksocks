@@ -44,11 +44,11 @@ export class Pipe extends EventEmitter {
     this._decode_presets = [].concat(_presets).reverse();
   }
 
-  initTargetAddress({ host, port }) {
+  initTargetAddress(args) {
     const presets = this.getPresets();
     for (const preset of presets) {
       if (preset instanceof IPresetAddressing) {
-        preset.onInitTargetAddress({ host, port });
+        preset.onInitTargetAddress(args);
       }
     }
   }

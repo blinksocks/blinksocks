@@ -16,9 +16,6 @@ const CMD_CLOSE_CONN = 0x02;
  * @description
  *   Multiplexing protocol.
  *
- * @examples
- *   {"name": "mux"}
- *
  * @protocol
  *
  *   # New Connection (client -> server)
@@ -125,12 +122,12 @@ export default class MuxPreset extends IPresetAddressing {
   clientOut({ buffer, fail }, { host, port, cid, isClosing }) {
     if (cid !== undefined) {
       const _cid = Buffer.from(cid, 'hex');
+      if (isClosing) {
+        return this.createCloseConn(_cid);
+      }
       const dataFrames = this.createDataFrames(_cid, buffer);
       if (host && port) {
         return Buffer.concat([this.createNewConn(host, port, _cid), dataFrames]);
-      }
-      if (isClosing) {
-        return this.createCloseConn(_cid);
       }
       return dataFrames;
     } else {

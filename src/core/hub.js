@@ -13,9 +13,8 @@ import { Config } from './config';
 import { Relay } from './relay';
 import { MuxRelay } from './mux-relay';
 import { SpeedTester } from './speed-tester';
-import { dumpHex, getRandomInt, hash, logger } from '../utils';
+import { dumpHex, logger } from '../utils';
 import { http as httpProxy, socks, tcp } from '../proxies';
-import { APP_ID } from '../constants';
 
 export const MAX_CONNECTIONS = 50;
 
@@ -32,7 +31,6 @@ export class Hub {
   _udpServer = null;
 
   _tcpRelays = new Map(/* id: <Relay> */);
-  _muxRelays = new Map(/* id: <MuxRelay> */);
   _udpRelays = null; // LRU cache
 
   // speed testers
@@ -77,11 +75,6 @@ export class Hub {
   async terminate() {
     // udp relays
     this._udpRelays.reset();
-    // mux relays
-    if (this._config.mux) {
-      this._muxRelays.forEach((relay) => relay.destroy());
-      this._muxRelays.clear();
-    }
     // tcp relays
     this._tcpRelays.forEach((relay) => relay.destroy());
     this._tcpRelays.clear();
@@ -136,7 +129,10 @@ export class Hub {
   // private methods
 
   async _createServer() {
-    const { is_client, is_server, local_protocol } = this._config;
+    const { is_client, is_server, local_protocol, mux } = this._config;
+    if (mux) {
+      logger.info('[hub] multiplexing enabled');
+    }
     if (is_client) {
       this._tcpServer = await this._createServerOnClient();
     } else {
@@ -149,7 +145,7 @@ export class Hub {
 
   async _createServerOnClient() {
     return new Promise((resolve, reject) => {
-      const { local_protocol, local_search_params, local_host, local_port } = this._config;
+      const { local_protocol, local_search_params, local_host, local_port, local_pathname } = this._config;
       const { local_username: username, local_password: password } = this._config;
       const { https_key, https_cert } = this._config;
       let server = null;
@@ -190,10 +186,10 @@ export class Hub {
         host: local_host,
         port: local_port,
       };
-      server.on('proxyConnection', this._onConnection);
+      server.on('proxyConnection', this._onClientConnection);
       server.on('error', reject);
       server.listen(address, () => {
-        const service = `${local_protocol}://${local_host}:${local_port}`;
+        const service = `${local_protocol}://${local_host}:${local_port}` + (local_pathname ? local_pathname : '');
         logger.info(`[hub] blinksocks client is running at ${service}`);
         resolve(server);
       });
@@ -207,7 +203,7 @@ export class Hub {
       switch (local_protocol) {
         case 'tcp': {
           server = net.createServer();
-          server.on('connection', this._onConnection);
+          server.on('connection', this._onServerConnection);
           break;
         }
         case 'wss':
@@ -226,18 +222,18 @@ export class Hub {
           wss.on('connection', (ws, req) => {
             ws.remoteAddress = req.connection.remoteAddress;
             ws.remotePort = req.connection.remotePort;
-            this._onConnection(ws);
+            this._onServerConnection(ws);
           });
           break;
         }
         case 'tls': {
           server = tls.createServer({ key: tls_key, cert: tls_cert });
-          server.on('secureConnection', this._onConnection);
+          server.on('secureConnection', this._onServerConnection);
           break;
         }
         case 'h2': {
           server = http2.createSecureServer({ key: tls_key, cert: tls_cert });
-          server.on('stream', (stream) => this._onConnection(stream));
+          server.on('stream', (stream) => this._onServerConnection(stream));
           break;
         }
         default:
@@ -282,15 +278,14 @@ export class Hub {
         const key = `${address}:${port}`;
         let relay = relays.get(key);
         if (relay === undefined) {
-          const context = {
-            socket: server,
-            sourceAddress: { host: address, port: port },
-          };
-          relay = this._createUdpRelay(context);
-          relay.init({ proxyRequest });
-          relay.on('close', function onRelayClose() {
-            // relays.del(key);
-          });
+          const source = { host: address, port: port };
+          const context = { conn: server, source };
+          relay = this._createUdpRelay(source);
+          if (this._config.is_client) {
+            relay.addInboundOnClient(context, proxyRequest);
+          } else {
+            relay.addInboundOnServer(context);
+          }
           relays.set(key, relay);
         }
         if (relay._inbound) {
@@ -332,59 +327,61 @@ export class Hub {
     this._upSpeedTester.feed(size);
   };
 
-  _onConnection = (conn, proxyRequest = null) => {
-    const sourceAddress = this._getSourceAddress(conn);
-    const updateConnStatus = (event, extra) => this._updateConnStatus(event, sourceAddress, extra);
+  _onClientConnection = (conn, proxyRequest) => {
+    const source = this._getSourceAddress(conn);
+    const updateConnStatus = (event, extra) => this._updateConnStatus(event, source, extra);
 
-    logger.verbose(`[hub] [${sourceAddress.host}:${sourceAddress.port}] connected`);
-
+    logger.verbose(`[hub] [${source.host}:${source.port}] connected`);
     updateConnStatus('new');
 
-    const context = {
-      socket: conn,
-      proxyRequest,
-      sourceAddress,
-    };
+    const context = { conn, source };
 
-    let muxRelay = null, cid = null;
-    if (this._config.mux) {
-      if (this._config.is_client) {
-        // create a id for sub relay, this id is unique across applications
-        cid = hash('sha256', uniqueId(APP_ID)).slice(-4).toString('hex');
-        muxRelay = this._getMuxRelayOnClient(context, cid);
-        context.muxRelay = muxRelay;
-      } else {
-        // sync all mux relays to the current mux relay,
-        // so server can select one to handle upstream traffic.
-        context.muxRelays = this._muxRelays;
-      }
+    // keep just one relay in mux mode
+    if (this._config.mux && this._tcpRelays.size > 0) {
+      const { value: relay } = this._tcpRelays.values().next();
+      relay.addInboundOnClient(context, proxyRequest);
+      return;
     }
 
     // create a relay for the current connection
-    const relay = this._createRelay(context);
-
-    // setup association between relay and muxRelay
-    if (this._config.mux) {
-      if (this._config.is_client) {
-        relay.id = cid; // NOTE: this cid will be used in mux preset
-        muxRelay.addSubRelay(cid, relay);
-      } else {
-        // on server side, this relay is a muxRelay
-        this._muxRelays.set(relay.id, relay);
-      }
-    }
-
+    const relay = this._createRelay(source);
+    relay.__id = uniqueId('relay_');
     relay.on('_error', (err) => updateConnStatus('error', err.message));
     relay.on('_connect', (targetAddress) => updateConnStatus('target', targetAddress));
     relay.on('_read', this._onRead);
     relay.on('_write', this._onWrite);
     relay.on('close', () => {
       updateConnStatus('close');
-      this._tcpRelays.delete(relay.id);
+      this._tcpRelays.delete(relay.__id);
     });
-    relay.init({ proxyRequest });
 
-    this._tcpRelays.set(relay.id, relay);
+    relay.addInboundOnClient(context, proxyRequest);
+
+    this._tcpRelays.set(relay.__id, relay);
+  };
+
+  _onServerConnection = (conn) => {
+    const source = this._getSourceAddress(conn);
+    const updateConnStatus = (event, extra) => this._updateConnStatus(event, source, extra);
+
+    logger.verbose(`[hub] [${source.host}:${source.port}] connected`);
+    updateConnStatus('new');
+
+    // create a relay for the current connection
+    const relay = this._createRelay(source);
+    relay.__id = uniqueId('relay_');
+    relay.on('_error', (err) => updateConnStatus('error', err.message));
+    relay.on('_connect', (targetAddress) => updateConnStatus('target', targetAddress));
+    relay.on('_read', this._onRead);
+    relay.on('_write', this._onWrite);
+    relay.on('close', () => {
+      updateConnStatus('close');
+      this._tcpRelays.delete(relay.__id);
+    });
+
+    relay.addInboundOnServer({ source, conn });
+
+    this._tcpRelays.set(relay.__id, relay);
   };
 
   _getSourceAddress(conn) {
@@ -399,86 +396,24 @@ export class Hub {
     return { host: sourceHost, port: sourcePort };
   }
 
-  _getMuxRelayOnClient(context, cid) {
-    // get a mux relay
-    let muxRelay = this._selectMuxRelay();
-
-    // create a mux relay if needed
-    if (muxRelay === null) {
-      const updateConnStatus = (event, extra) => {
-        const { sourceAddress } = context;
-        this._updateConnStatus(event, sourceAddress, extra);
-      };
-      muxRelay = this._createRelay(context, true);
-      muxRelay.on('_error', (err) => updateConnStatus('error', err.message));
-      muxRelay.on('_connect', (targetAddress) => updateConnStatus('target', targetAddress));
-      muxRelay.on('_read', this._onRead);
-      muxRelay.on('_write', this._onWrite);
-      muxRelay.on('close', () => {
-        updateConnStatus('close');
-        this._muxRelays.delete(muxRelay.id);
-      });
-      this._muxRelays.set(muxRelay.id, muxRelay);
-      logger.info(`[mux-${muxRelay.id}] create mux connection, total: ${this._muxRelays.size}`);
-    }
-
-    // determine how to initialize the muxRelay
-    const { proxyRequest } = context;
-    if (muxRelay.isOutboundReady()) {
-      proxyRequest.onConnected((buffer) => {
-        // this callback is used for "http" proxy method on client side
-        if (buffer) {
-          muxRelay.encode(buffer, { ...proxyRequest, cid });
-        }
-      });
-    } else {
-      proxyRequest.cid = cid;
-      muxRelay.init({ proxyRequest });
-    }
-    return muxRelay;
-  }
-
-  _createRelay(context, isMux = false) {
+  _createRelay(source) {
     const props = {
-      context: context,
+      source: source,
       config: this._config,
       transport: this._config.server_protocol,
       presets: this._config.presets,
     };
-    if (isMux) {
-      return new MuxRelay(props);
-    }
-    if (this._config.mux) {
-      if (this._config.is_client) {
-        return new Relay({ ...props, transport: 'mux', presets: [] });
-      } else {
-        return new MuxRelay(props);
-      }
-    } else {
-      return new Relay(props);
-    }
+    return this._config.mux ? new MuxRelay(props) : new Relay(props);
   }
 
-  _createUdpRelay(context) {
-    return new Relay({ config: this._config, transport: 'udp', context, presets: this._config.udp_presets });
+  _createUdpRelay(source) {
+    return new Relay({ source, config: this._config, transport: 'udp', presets: this._config.udp_presets });
   }
 
-  _selectMuxRelay() {
-    const relays = this._muxRelays;
-    const concurrency = relays.size;
-    if (concurrency < 1) {
-      return null;
-    }
-    if (concurrency < this._config.mux_concurrency && getRandomInt(0, 1) === 0) {
-      return null;
-    }
-    return relays.get([...relays.keys()][getRandomInt(0, concurrency - 1)]);
-  }
-
-  _updateConnStatus(event, sourceAddress, extra = null) {
+  _updateConnStatus(event, source, extra = null) {
     const conn = this._connQueue.find(({ sourceHost, sourcePort }) =>
-      sourceAddress.host === sourceHost &&
-      sourceAddress.port === sourcePort,
+      source.host === sourceHost &&
+      source.port === sourcePort,
     );
     switch (event) {
       case 'new':
@@ -490,17 +425,17 @@ export class Hub {
             id: uniqueId('conn_'),
             stage: CONN_STAGE_INIT,
             startTime: Date.now(),
-            sourceHost: sourceAddress.host,
-            sourcePort: sourceAddress.port,
+            sourceHost: source.host,
+            sourcePort: source.port,
           });
         }
         break;
       case 'target':
         if (conn) {
-          const targetAddress = extra;
+          const target = extra;
           conn.stage = CONN_STAGE_TRANSFER;
-          conn.targetHost = targetAddress.host;
-          conn.targetPort = targetAddress.port;
+          conn.targetHost = target.host;
+          conn.targetPort = target.port;
         }
         break;
       case 'close':
