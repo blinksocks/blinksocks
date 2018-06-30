@@ -5,7 +5,7 @@ node_js:
   - "node"
 
 before_deploy:
-  - export NEXT_VERSION=3.3.3
+  - export NEXT_VERSION=3.3.4
   - export COMMIT_HASH=$(git log --format=%h -1)
   - export DIST_PATH=build
   - export PUBLISH_REPO=blinksocks/blinksocks-nightly-releases
