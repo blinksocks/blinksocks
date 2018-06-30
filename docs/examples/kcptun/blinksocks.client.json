@@ -1,0 +1,18 @@
+{
+  "service": "socks5://127.0.0.1:1080",
+  "server": {
+    "service": "tcp://127.0.0.1:12948",
+    "key": "{cKW#F34y_))kMw7",
+    "presets": [
+      {
+        "name": "ss-base"
+      },
+      {
+        "name": "ss-stream-cipher",
+        "params": {
+          "method": "aes-128-ctr"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "localaddr": ":12948",
+  "remoteaddr": "example.com:29900",
+  "key": "",
+  "crypt": "none",
+  "mode": "fast2",
+  "conn": 5,
+  "autoexpire": 200,
+  "mtu": 1350,
+  "sndwnd": 128,
+  "rcvwnd": 512,
+  "datashard": 10,
+  "parityshard": 3,
+  "dscp": 0,
+  "nocomp": true,
+  "log": ""
+}

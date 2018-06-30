@@ -1,0 +1,15 @@
+{
+  "service": "tcp://0.0.0.0:30370",
+  "key": "{cKW#F34y_))kMw7",
+  "presets": [
+    {
+      "name": "ss-base"
+    },
+    {
+      "name": "ss-stream-cipher",
+      "params": {
+        "method": "aes-128-ctr"
+      }
+    }
+  ]
+}
