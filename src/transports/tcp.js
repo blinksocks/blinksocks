@@ -1,13 +1,14 @@
 import net from 'net';
 import { Inbound, Outbound } from './defs';
 import { DNSCache, logger } from '../utils';
-import { MAX_BUFFERED_SIZE } from '../constants';
 import {
   ACL_PAUSE_RECV,
   ACL_PAUSE_SEND,
   ACL_RESUME_RECV,
   ACL_RESUME_SEND,
 } from '../core/acl';
+
+const MAX_BUFFERED_SIZE = 512 * 1024; // 512KB
 
 export class TcpInbound extends Inbound {
 
@@ -198,7 +199,7 @@ export class TcpOutbound extends Outbound {
       this.pause();
       inbound.once('drain', () => {
         if (this._socket && !this._socket.destroyed) {
-          logger.debug(`[${this.name}] [${this.remote}]  resume to recv`);
+          logger.debug(`[${this.name}] [${this.remote}] resume to recv`);
           this.resume();
         }
       });
