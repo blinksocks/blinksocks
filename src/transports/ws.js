@@ -1,72 +1,156 @@
 import WebSocket from 'ws';
-import { TcpInbound, TcpOutbound } from './tcp';
+import { Inbound, Outbound } from './defs';
 import { logger } from '../utils';
 
-function patchWebsocket(ws) {
-  ws.write = (buffer) => ws.send(buffer, {
-    compress: false,
-    mask: false,
-    fin: true, // send data out immediately
-  }, () => this.emit('drain'));
-  ws.end = () => ws.close();
-  ws.destroy = () => ws.close();
-  ws.setTimeout = (/* timeout */) => {
-    // TODO: timeout mechanism for websocket.
-  };
-  ws.on('open', (...args) => ws.emit('connect', ...args));
-  return ws;
-}
+const WS_SEND_ARGS = {
+  compress: false,
+  mask: false,
+  binary: true,
+  fin: true,
+};
 
-export class WsInbound extends TcpInbound {
+export class WsInbound extends Inbound {
+
+  _socket = null;
+
+  _destroyed = false;
 
   constructor(props) {
     super(props);
-    if (this._socket) {
-      const socket = this._socket;
-      socket.on('message', this.onReceive);
-      socket.on('close', () => socket.destroyed = true);
-      patchWebsocket.call(this, socket);
-    }
+    this.onReceive = this.onReceive.bind(this);
+    this.onError = this.onError.bind(this);
+    this.onClose = this.onClose.bind(this);
+    this._socket = this._conn;
+    this._socket.on('message', this.onReceive);
+    this._socket.on('error', this.onError);
+    this._socket.on('close', this.onClose);
   }
 
   get name() {
     return 'ws:inbound';
   }
 
-  get bufferSize() {
-    return this._socket ? this._socket.bufferedAmount : 0;
-  }
-
   get writable() {
     return this._socket && this._socket.readyState === WebSocket.OPEN;
   }
 
+  write(buffer) {
+    if (this.writable) {
+      this._socket.send(buffer, WS_SEND_ARGS);
+    }
+  }
+
+  onReceive(buffer) {
+    this.emit('data', buffer);
+  }
+
+  onError(err) {
+    logger.warn(`[${this.name}] [${this.remote}] ${err.message}`);
+    this.emit('_error', err);
+  }
+
+  onClose() {
+    this.close();
+    const outbound = this.getOutbound();
+    if (outbound) {
+      outbound.close();
+      this.setOutbound(null);
+    }
+  }
+
+  close() {
+    if (this._socket) {
+      this._socket.close();
+      this._socket = null;
+    }
+    if (!this._destroyed) {
+      this._destroyed = true;
+      this.emit('close');
+    }
+  }
+
 }
 
-export class WsOutbound extends TcpOutbound {
+export class WsOutbound extends Outbound {
+
+  _socket = null;
+
+  _destroyed = false;
+
+  constructor(props) {
+    super(props);
+    this.onError = this.onError.bind(this);
+    this.onReceive = this.onReceive.bind(this);
+    this.onClose = this.onClose.bind(this);
+  }
 
   get name() {
     return 'ws:outbound';
   }
 
-  get bufferSize() {
-    return this._socket ? this._socket.bufferedAmount : 0;
-  }
-
   get writable() {
     return this._socket && this._socket.readyState === WebSocket.OPEN;
   }
 
-  async _connect(target) {
-    const address = this.getConnAddress(target);
-    logger.info(`[${this.name}] [${this.remote}] connecting to ${address}`);
-    const socket = new WebSocket(address, this.getConnOptions({
-      handshakeTimeout: 1e4, // 10s
-      perMessageDeflate: false,
-    }));
-    socket.on('message', this.onReceive);
-    socket.on('close', () => socket.destroyed = true);
-    return patchWebsocket.call(this, socket);
+  write(buffer) {
+    if (this.writable) {
+      this._socket.send(buffer, WS_SEND_ARGS);
+    }
+  }
+
+  onReceive(buffer) {
+    this.emit('data', buffer);
+  }
+
+  onError(err) {
+    logger.warn(`[${this.name}] [${this.remote}] ${err.message}`);
+    this.emit('_error', err);
+  }
+
+  onClose() {
+    this.close();
+    const inbound = this.getInbound();
+    if (inbound) {
+      inbound.close();
+      this.setInbound(null);
+    }
+  }
+
+  close() {
+    if (this._socket) {
+      this._socket.close();
+      this._socket = null;
+    }
+    if (!this._destroyed) {
+      this._destroyed = true;
+      this.emit('close');
+    }
+  }
+
+  async connect() {
+    return new Promise((resolve) => {
+      if (!this._socket) {
+        const { server_host, server_port, server_pathname } = this._config;
+        const address = this.getConnAddress({ host: server_host, port: server_port, pathname: server_pathname });
+        logger.info(`[${this.name}] [${this.remote}] connecting to ${address}`);
+        try {
+          this._socket = new WebSocket(address, this.getConnOptions({
+            handshakeTimeout: 1e4, // 10s
+            perMessageDeflate: false,
+          }));
+          this._socket.on('open', resolve);
+          this._socket.on('message', this.onReceive);
+          this._socket.on('error', this.onError);
+          this._socket.on('close', this.onClose);
+        } catch (err) {
+          logger.error(`[${this.name}] [${this.remote}] cannot connect to ${address}, ${err.message}`);
+          this.emit('_error', err);
+          this.onClose();
+        }
+      } else {
+        resolve();
+      }
+    });
   }
 
   getConnAddress({ host, port, pathname }) {
