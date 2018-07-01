@@ -31,7 +31,7 @@ export default async function curl(args) {
     const { stdout } = await exec(command, { encoding: 'utf-8', timeout: 5e3 });
     return stdout;
   } catch (err) {
-    // console.log(err);
+    console.log(err);
     return '';
   }
 }
