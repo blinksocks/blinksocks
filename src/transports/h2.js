@@ -145,15 +145,10 @@ export class Http2Outbound extends Outbound {
     return new Promise((resolve) => {
       if (!this._session) {
         const { server_host, server_port, server_pathname } = this._config;
+        const address = `h2://${server_host}:${server_port}` + (server_pathname ? server_pathname : '');
+        logger.info(`[${this.name}] [${this.remote}] connecting to ${address}`);
         try {
-          const address = `h2://${server_host}:${server_port}` + (server_pathname ? server_pathname : '');
-          logger.info(`[${this.name}] [${this.remote}] connecting to ${address}`);
           // session
-          // close alive connection before create a new one
-          if (this._session && !this._session.closed) {
-            this._session.destroy();
-            this._session.removeAllListeners();
-          }
           const options = {};
           if (this._config.tls_cert_self_signed) {
             options.ca = this._config.tls_cert;
@@ -174,7 +169,7 @@ export class Http2Outbound extends Outbound {
           this._stream.on('error', this.onError);
           this._stream.on('data', this.onReceive);
         } catch (err) {
-          logger.error(`[${this.name}] [${this.remote}] cannot connect to ${server_host}:${server_port}, ${err.message}`);
+          logger.error(`[${this.name}] [${this.remote}] cannot connect to ${address}, ${err.message}`);
           this.emit('_error', err);
           this.onClose();
         }
