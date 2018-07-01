@@ -2,7 +2,7 @@ import EventEmitter from 'events';
 import uniqueId from 'lodash.uniqueid';
 import { Pipe } from './pipe';
 import { Tracker } from './tracker';
-import { hash, logger, getRandomInt } from '../utils';
+import { hash, logger, getRandomInt, dumpHex } from '../utils';
 import { getPresetClassByName } from '../presets';
 import { IPresetAddressing } from '../presets/defs';
 
@@ -242,9 +242,13 @@ export class MuxRelay extends EventEmitter {
   onDataFrame({ cid, data }) {
     if (this._config.is_client) {
       const inbound = this._inbounds.get(cid);
-      inbound.write(data);
-      inbound.__tracker.trace(PIPE_DECODE, data.length);
-      setImmediate(() => this.emit('_read', data.length));
+      if (inbound && inbound.writable) {
+        inbound.write(data);
+        inbound.__tracker.trace(PIPE_DECODE, data.length);
+        setImmediate(() => this.emit('_read', data.length));
+      } else {
+        logger.error(`[mux-relay] couldn't delivery data frame to cid=${cid}, dump=${dumpHex(data)}`);
+      }
     } else {
       const outbound = this._outbounds.get(cid);
       if (outbound && outbound.writable) {
