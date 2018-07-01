@@ -6,29 +6,40 @@ const exec = util.promisify(child_process.exec);
 export default async function curl(args) {
   const { proxyMethod = 'socks5', proxyHost, proxyPort, targetHost, targetPort } = args;
   const { username, password } = args;
-  const proxy = {
-    'http': '-x',
-    'http_connect': '-px',
-    'socks': '--socks5',
-    'socks4': '--socks4',
-    'socks4a': '--socks4a',
-    'socks5': '--socks5-hostname',
-  }[proxyMethod];
-
   try {
-    let command = `curl `;
+    let command = ['curl'];
     if (username && password) {
-      command += `-U ${username}:${password} `;
+      command.push(`-U ${username}:${password}`);
     }
-    if (proxy) {
-      command += `-L ${proxy} ${proxyHost}:${proxyPort} `;
+    switch (proxyMethod) {
+      case 'http':
+        command.push(`-x http://${proxyHost}:${proxyPort}`);
+        break;
+      case 'http_connect':
+        command.push(`-p -x http://${proxyHost}:${proxyPort}`);
+        break;
+      case 'https':
+        command.push(`--proxy-insecure -x https://${proxyHost}:${proxyPort}`);
+        break;
+      default:
+        const proxy = {
+          'socks': '--socks5',
+          'socks4': '--socks4',
+          'socks4a': '--socks4a',
+          'socks5': '--socks5-hostname',
+        }[proxyMethod];
+        if (proxy) {
+          command.push(`${proxy} ${proxyHost}:${proxyPort}`);
+        }
+        break;
     }
-    if (proxyMethod === 'https') {
-      command += `--proxy-insecure -Lx https://${proxyHost}:${proxyPort} `;
+    command.push(`${targetHost}:${targetPort}`);
+    command = command.join(' ');
+    const { stdout, stderr } = await exec(command, { encoding: 'utf-8', timeout: 5e3 });
+    if (stderr) {
+      console.log(command);
+      console.log(stderr);
     }
-    command += `${targetHost}:${targetPort} `;
-    // console.log(command);
-    const { stdout } = await exec(command, { encoding: 'utf-8', timeout: 5e3 });
     return stdout;
   } catch (err) {
     console.log(err);

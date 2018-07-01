@@ -1,8 +1,14 @@
 language: node_js
 
+sudo: required
+
 node_js:
   - "lts/*"
   - "node"
+
+before_install:
+  - ./ci-install-curl.sh
+  - curl --version
 
 before_deploy:
   - export NEXT_VERSION=3.3.4
