@@ -30,6 +30,8 @@ export class TcpInbound extends Inbound {
     this._socket.on('timeout', this.onTimeout);
     this._socket.on('end', this.onHalfClose);
     this._socket.on('close', this.onClose);
+    this._socket.setNoDelay(true);
+    this._socket.setKeepAlive(true);
     this._socket.setTimeout && this._socket.setTimeout(this._config.timeout);
   }
 
@@ -299,6 +301,8 @@ export class TcpOutbound extends Outbound {
           this._socket.on('timeout', this.onTimeout);
           this._socket.on('data', this.onReceive);
           this._socket.on('drain', this.onDrain);
+          this._socket.setNoDelay(true);
+          this._socket.setKeepAlive(true);
           this._socket.setTimeout(this._config.timeout);
         } catch (err) {
           logger.error(`[${this.name}] [${this.remote}] cannot connect to ${targetHost}:${targetPort}, ${err.message}`);
