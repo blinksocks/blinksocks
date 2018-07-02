@@ -69,10 +69,8 @@ export class TcpInbound extends Inbound {
       logger.debug(`[${this.name}] [${this.remote}] recv paused due to outbound.bufferSize=${outbound.bufferSize} >= ${MAX_BUFFERED_SIZE}`);
       this.pause();
       outbound.once('drain', () => {
-        if (this._socket && !this._socket.destroyed) {
-          logger.debug(`[${this.name}] [${this.remote}] resume to recv`);
-          this.resume();
-        }
+        logger.debug(`[${this.name}] [${this.remote}] resume to recv`);
+        this.resume();
       });
     }
   }
@@ -101,13 +99,13 @@ export class TcpInbound extends Inbound {
   }
 
   pause() {
-    if (this._socket && typeof this._socket.pause === 'function') {
+    if (this._socket && !this._socket.destroyed) {
       this._socket.pause();
     }
   }
 
   resume() {
-    if (this._socket && typeof this._socket.resume === 'function') {
+    if (this._socket && !this._socket.destroyed) {
       this._socket.resume();
     }
   }
@@ -198,10 +196,8 @@ export class TcpOutbound extends Outbound {
       logger.debug(`[${this.name}] [${this.remote}] recv paused due to inbound.bufferSize=${inbound.bufferSize} >= ${MAX_BUFFERED_SIZE}`);
       this.pause();
       inbound.once('drain', () => {
-        if (this._socket && !this._socket.destroyed) {
-          logger.debug(`[${this.name}] [${this.remote}] resume to recv`);
-          this.resume();
-        }
+        logger.debug(`[${this.name}] [${this.remote}] resume to recv`);
+        this.resume();
       });
     }
   }
@@ -230,13 +226,13 @@ export class TcpOutbound extends Outbound {
   }
 
   pause() {
-    if (this._socket && typeof this._socket.pause === 'function') {
+    if (this._socket && !this._socket.destroyed) {
       this._socket.pause();
     }
   }
 
   resume() {
-    if (this._socket && typeof this._socket.resume === 'function') {
+    if (this._socket && !this._socket.destroyed) {
       this._socket.resume();
     }
   }

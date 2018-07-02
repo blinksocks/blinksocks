@@ -34,6 +34,10 @@ export class Http2Inbound extends Inbound {
     return 'h2:inbound';
   }
 
+  get bufferSize() {
+    return this._session ? this._session.socket.bufferSize : 0;
+  }
+
   get writable() {
     return this._stream && this._stream.writable;
   }
@@ -102,6 +106,10 @@ export class Http2Outbound extends Outbound {
 
   get name() {
     return 'h2:outbound';
+  }
+
+  get bufferSize() {
+    return this._session ? this._session.socket.bufferSize : 0;
   }
 
   get writable() {

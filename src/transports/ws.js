@@ -30,6 +30,10 @@ export class WsInbound extends Inbound {
     return 'ws:inbound';
   }
 
+  get bufferSize() {
+    return this._socket ? this._socket.bufferedAmount : 0;
+  }
+
   get writable() {
     return this._socket && this._socket.readyState === WebSocket.OPEN;
   }
@@ -86,6 +90,10 @@ export class WsOutbound extends Outbound {
 
   get name() {
     return 'ws:outbound';
+  }
+
+  get bufferSize() {
+    return this._socket ? this._socket.bufferedAmount : 0;
   }
 
   get writable() {
