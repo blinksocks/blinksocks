@@ -18,9 +18,12 @@ export class Http2Inbound extends Inbound {
     this.onReceive = this.onReceive.bind(this);
     this.onTimeout = this.onTimeout.bind(this);
     this.onClose = this.onClose.bind(this);
+    // stream
     this._stream = this._conn;
-    this._session = this._stream.session;
     this._stream.on('data', this.onReceive);
+    this._stream.on('error', this.onError);
+    // session
+    this._session = this._stream.session;
     this._session.on('error', this.onError);
     this._session.on('timeout', this.onTimeout);
     this._session.on('close', this.onClose);
@@ -68,6 +71,10 @@ export class Http2Inbound extends Inbound {
     if (this._session) {
       this._session.destroy();
       this._session = null;
+    }
+    if (this._stream) {
+      this._stream.close();
+      this._stream = null;
     }
     if (!this._destroyed) {
       this._destroyed = true;
@@ -134,6 +141,10 @@ export class Http2Outbound extends Outbound {
     if (this._session) {
       this._session.destroy();
       this._session = null;
+    }
+    if (this._stream) {
+      this._stream.close();
+      this._stream = null;
     }
     if (!this._destroyed) {
       this._destroyed = true;

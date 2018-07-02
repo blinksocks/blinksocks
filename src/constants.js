@@ -19,4 +19,5 @@ export const PROTOCOL_DEFAULT_PORTS = {
   'https:': 443,
   'ws:': 80,
   'wss:': 443,
+  'h2:': 443,
 };
