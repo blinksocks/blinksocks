@@ -1,4 +1,4 @@
-import { SpeedTester } from '../../../src/core/speed-tester';
+import { SpeedTester } from '../../../src/utils';
 
 test('SpeedTester::getSpeed()', () => {
   const st = new SpeedTester();
