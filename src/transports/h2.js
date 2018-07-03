@@ -6,24 +6,18 @@ const { HTTP2_HEADER_PATH, HTTP2_HEADER_METHOD } = http2.constants;
 
 export class Http2Inbound extends Inbound {
 
-  _session = null;
-
   _stream = null;
 
   _destroyed = false;
 
   constructor(props) {
     super(props);
-    // stream
     this._stream = this._conn;
     this._stream.on('data', this.onReceive);
     this._stream.on('error', this.onError);
-    // session
-    this._session = this._stream.session;
-    this._session.on('error', this.onError);
-    this._session.on('timeout', this.onTimeout);
-    this._session.on('close', this.onClose);
-    this._session.setTimeout(this._config.timeout);
+    this._stream.on('close', this.onClose);
+    this._stream.on('timeout', this.onTimeout);
+    this._stream.setTimeout(this._config.timeout);
   }
 
   get name() {
@@ -31,7 +25,7 @@ export class Http2Inbound extends Inbound {
   }
 
   get bufferSize() {
-    return this._session ? this._session.socket.bufferSize : 0;
+    return this._stream ? this._stream.session.socket.bufferSize : 0;
   }
 
   get writable() {
@@ -68,10 +62,6 @@ export class Http2Inbound extends Inbound {
   };
 
   close() {
-    if (this._session) {
-      this._session.destroy();
-      this._session = null;
-    }
     if (this._stream) {
       this._stream.close();
       this._stream = null;
@@ -86,8 +76,6 @@ export class Http2Inbound extends Inbound {
 
 export class Http2Outbound extends Outbound {
 
-  _session = null;
-
   _stream = null;
 
   _destroyed = false;
@@ -97,7 +85,7 @@ export class Http2Outbound extends Outbound {
   }
 
   get bufferSize() {
-    return this._session ? this._session.socket.bufferSize : 0;
+    return this._stream ? this._stream.session.socket.bufferSize : 0;
   }
 
   get writable() {
@@ -134,10 +122,6 @@ export class Http2Outbound extends Outbound {
   };
 
   close() {
-    if (this._session) {
-      this._session.destroy();
-      this._session = null;
-    }
     if (this._stream) {
       this._stream.close();
       this._stream = null;
@@ -150,24 +134,18 @@ export class Http2Outbound extends Outbound {
 
   async connect() {
     return new Promise((resolve) => {
-      if (!this._session) {
+      if (!this._stream) {
         const { server_host, server_port, server_pathname } = this._config;
         const address = `h2://${server_host}:${server_port}` + (server_pathname ? server_pathname : '');
         logger.info(`[${this.name}] [${this.remote}] connecting to ${address}`);
         try {
-          // session
           const options = {};
           if (this._config.tls_cert_self_signed) {
             options.ca = this._config.tls_cert;
           }
-          this._session = http2.connect(`https://${server_host}:${server_port}`, options);
-          this._session.on('connect', resolve);
-          this._session.on('close', this.onClose);
-          this._session.on('timeout', this.onTimeout);
-          this._session.on('error', this.onError);
-          this._session.setTimeout(this._config.timeout);
-          // stream
-          this._stream = this._session.request({
+          const session = http2.connect(`https://${server_host}:${server_port}`, options);
+          session.on('connect', resolve);
+          this._stream = session.request({
             [HTTP2_HEADER_METHOD]: 'POST',
             [HTTP2_HEADER_PATH]: server_pathname || '/',
           }, {
@@ -175,6 +153,9 @@ export class Http2Outbound extends Outbound {
           });
           this._stream.on('error', this.onError);
           this._stream.on('data', this.onReceive);
+          this._stream.on('timeout', this.onTimeout);
+          this._stream.on('close', this.onClose);
+          this._stream.setTimeout(this._config.timeout);
         } catch (err) {
           logger.error(`[${this.name}] [${this.remote}] cannot connect to ${address}, ${err.message}`);
           this.emit('_error', err);
