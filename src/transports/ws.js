@@ -17,9 +17,6 @@ export class WsInbound extends Inbound {
 
   constructor(props) {
     super(props);
-    this.onReceive = this.onReceive.bind(this);
-    this.onError = this.onError.bind(this);
-    this.onClose = this.onClose.bind(this);
     this._socket = this._conn;
     this._socket.on('message', this.onReceive);
     this._socket.on('error', this.onError);
@@ -44,23 +41,23 @@ export class WsInbound extends Inbound {
     }
   }
 
-  onReceive(buffer) {
+  onReceive = (buffer) => {
     this.emit('data', buffer);
-  }
+  };
 
-  onError(err) {
+  onError = (err) => {
     logger.warn(`[${this.name}] [${this.remote}] ${err.message}`);
     this.emit('_error', err);
-  }
+  };
 
-  onClose() {
+  onClose = () => {
     this.close();
     const outbound = this.getOutbound();
     if (outbound) {
       outbound.close();
       this.setOutbound(null);
     }
-  }
+  };
 
   close() {
     if (this._socket) {
@@ -81,13 +78,6 @@ export class WsOutbound extends Outbound {
 
   _destroyed = false;
 
-  constructor(props) {
-    super(props);
-    this.onError = this.onError.bind(this);
-    this.onReceive = this.onReceive.bind(this);
-    this.onClose = this.onClose.bind(this);
-  }
-
   get name() {
     return 'ws:outbound';
   }
@@ -106,23 +96,23 @@ export class WsOutbound extends Outbound {
     }
   }
 
-  onReceive(buffer) {
+  onReceive = (buffer) => {
     this.emit('data', buffer);
-  }
+  };
 
-  onError(err) {
+  onError = (err) => {
     logger.warn(`[${this.name}] [${this.remote}] ${err.message}`);
     this.emit('_error', err);
-  }
+  };
 
-  onClose() {
+  onClose = () => {
     this.close();
     const inbound = this.getInbound();
     if (inbound) {
       inbound.close();
       this.setInbound(null);
     }
-  }
+  };
 
   close() {
     if (this._socket) {

@@ -10,14 +10,13 @@ export class UdpInbound extends Inbound {
 
   constructor(props) {
     super(props);
-    this.onReceive = this.onReceive.bind(this);
     this._socket = this._conn;
   }
 
-  onReceive(buffer, rinfo) {
+  onReceive = (buffer, rinfo) => {
     this._rinfo = rinfo;
     this.emit('data', buffer);
-  }
+  };
 
   write(buffer) {
     const { address, port } = this._rinfo;
@@ -55,14 +54,13 @@ export class UdpOutbound extends Outbound {
 
   constructor(props) {
     super(props);
-    this.onReceive = this.onReceive.bind(this);
     this._socket = dgram.createSocket('udp4');
     this._socket.on('message', this.onReceive);
   }
 
-  onReceive(buffer) {
+  onReceive = (buffer) => {
     this.emit('data', buffer);
-  }
+  };
 
   write(buffer) {
     const host = this._targetHost;

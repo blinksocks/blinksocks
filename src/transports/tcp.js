@@ -18,12 +18,6 @@ export class TcpInbound extends Inbound {
 
   constructor(props) {
     super(props);
-    this.onError = this.onError.bind(this);
-    this.onReceive = this.onReceive.bind(this);
-    this.onDrain = this.onDrain.bind(this);
-    this.onTimeout = this.onTimeout.bind(this);
-    this.onHalfClose = this.onHalfClose.bind(this);
-    this.onClose = this.onClose.bind(this);
     this._socket = this._conn;
     this._socket.on('error', this.onError);
     this._socket.on('data', this.onReceive);
@@ -33,7 +27,7 @@ export class TcpInbound extends Inbound {
     this._socket.on('close', this.onClose);
     this._socket.setNoDelay(true);
     this._socket.setKeepAlive(true);
-    this._socket.setTimeout && this._socket.setTimeout(this._config.timeout);
+    this._socket.setTimeout(this._config.timeout);
   }
 
   get name() {
@@ -54,12 +48,12 @@ export class TcpInbound extends Inbound {
     }
   }
 
-  onError(err) {
+  onError = (err) => {
     logger.warn(`[${this.name}] [${this.remote}] ${err.message}`);
     this.emit('_error', err);
-  }
+  };
 
-  onReceive(buffer) {
+  onReceive = (buffer) => {
     this.emit('data', buffer);
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
@@ -73,30 +67,30 @@ export class TcpInbound extends Inbound {
         this.resume();
       });
     }
-  }
+  };
 
-  onDrain() {
+  onDrain = () => {
     this.emit('drain');
-  }
+  };
 
-  onTimeout() {
+  onTimeout = () => {
     logger.warn(`[${this.name}] [${this.remote}] timeout: no I/O on the connection for ${this._config.timeout / 1e3}s`);
     this.onClose();
-  }
+  };
 
-  onHalfClose() {
+  onHalfClose = () => {
     const outbound = this.getOutbound();
     outbound && outbound.end && outbound.end();
-  }
+  };
 
-  onClose() {
+  onClose = () => {
     this.close();
     const outbound = this.getOutbound();
     if (outbound) {
       outbound.close();
       this.setOutbound(null);
     }
-  }
+  };
 
   pause() {
     if (this._socket && !this._socket.destroyed) {
@@ -153,16 +147,6 @@ export class TcpOutbound extends Outbound {
 
   _destroyed = false;
 
-  constructor(props) {
-    super(props);
-    this.onError = this.onError.bind(this);
-    this.onReceive = this.onReceive.bind(this);
-    this.onDrain = this.onDrain.bind(this);
-    this.onTimeout = this.onTimeout.bind(this);
-    this.onHalfClose = this.onHalfClose.bind(this);
-    this.onClose = this.onClose.bind(this);
-  }
-
   get name() {
     return 'tcp:outbound';
   }
@@ -181,12 +165,12 @@ export class TcpOutbound extends Outbound {
     }
   }
 
-  onError(err) {
+  onError = (err) => {
     logger.warn(`[${this.name}] [${this.remote}] ${err.message}`);
     this.emit('_error', err);
-  }
+  };
 
-  onReceive(buffer) {
+  onReceive = (buffer) => {
     this.emit('data', buffer);
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
@@ -200,30 +184,30 @@ export class TcpOutbound extends Outbound {
         this.resume();
       });
     }
-  }
+  };
 
-  onDrain() {
+  onDrain = () => {
     this.emit('drain');
-  }
+  };
 
-  onTimeout() {
+  onTimeout = () => {
     logger.warn(`[${this.name}] [${this.remote}] timeout: no I/O on the connection for ${this._config.timeout / 1e3}s`);
     this.onClose();
-  }
+  };
 
-  onHalfClose() {
+  onHalfClose = () => {
     const inbound = this.getInbound();
     inbound && inbound.end && inbound.end();
-  }
+  };
 
-  onClose() {
+  onClose = () => {
     this.close();
     const inbound = this.getInbound();
     if (inbound) {
       inbound.close();
       this.setInbound(null);
     }
-  }
+  };
 
   pause() {
     if (this._socket && !this._socket.destroyed) {

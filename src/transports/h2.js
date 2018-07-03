@@ -14,10 +14,6 @@ export class Http2Inbound extends Inbound {
 
   constructor(props) {
     super(props);
-    this.onError = this.onError.bind(this);
-    this.onReceive = this.onReceive.bind(this);
-    this.onTimeout = this.onTimeout.bind(this);
-    this.onClose = this.onClose.bind(this);
     // stream
     this._stream = this._conn;
     this._stream.on('data', this.onReceive);
@@ -48,28 +44,28 @@ export class Http2Inbound extends Inbound {
     }
   }
 
-  onError(err) {
+  onError = (err) => {
     logger.warn(`[${this.name}] [${this.remote}] ${err.message}`);
     this.emit('_error', err);
-  }
+  };
 
-  onReceive(buffer) {
+  onReceive = (buffer) => {
     this.emit('data', buffer);
-  }
+  };
 
-  onTimeout() {
+  onTimeout = () => {
     logger.warn(`[${this.name}] [${this.remote}] timeout: no I/O on the connection for ${this._config.timeout / 1e3}s`);
     this.onClose();
-  }
+  };
 
-  onClose() {
+  onClose = () => {
     this.close();
     const outbound = this.getOutbound();
     if (outbound) {
       outbound.close();
       this.setOutbound(null);
     }
-  }
+  };
 
   close() {
     if (this._session) {
@@ -96,14 +92,6 @@ export class Http2Outbound extends Outbound {
 
   _destroyed = false;
 
-  constructor(props) {
-    super(props);
-    this.onError = this.onError.bind(this);
-    this.onReceive = this.onReceive.bind(this);
-    this.onTimeout = this.onTimeout.bind(this);
-    this.onClose = this.onClose.bind(this);
-  }
-
   get name() {
     return 'h2:outbound';
   }
@@ -122,28 +110,28 @@ export class Http2Outbound extends Outbound {
     }
   }
 
-  onError(err) {
+  onError = (err) => {
     logger.warn(`[${this.name}] [${this.remote}] ${err.message}`);
     this.emit('_error', err);
-  }
+  };
 
-  onReceive(buffer) {
+  onReceive = (buffer) => {
     this.emit('data', buffer);
-  }
+  };
 
-  onTimeout() {
+  onTimeout = () => {
     logger.warn(`[${this.name}] [${this.remote}] timeout: no I/O on the connection for ${this._config.timeout / 1e3}s`);
     this.onClose();
-  }
+  };
 
-  onClose() {
+  onClose = () => {
     this.close();
     const inbound = this.getInbound();
     if (inbound) {
       inbound.close();
       this.setInbound(null);
     }
-  }
+  };
 
   close() {
     if (this._session) {
