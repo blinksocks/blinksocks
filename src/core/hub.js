@@ -12,8 +12,7 @@ import uniqueId from 'lodash.uniqueid';
 import { Config } from './config';
 import { Relay } from './relay';
 import { MuxRelay } from './mux-relay';
-import { SpeedTester } from './speed-tester';
-import { dumpHex, logger } from '../utils';
+import { SpeedTester, dumpHex, logger } from '../utils';
 import { http as httpProxy, socks, tcp } from '../proxies';
 
 export const MAX_CONNECTIONS = 50;

@@ -5,4 +5,5 @@ export * from './dns-cache';
 export * from './string';
 export * from './validator';
 export * from './advanced-buffer';
+export * from './speed-tester';
 export * from './logger';
