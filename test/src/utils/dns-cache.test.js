@@ -1,9 +1,6 @@
 import net from 'net';
+import sleep from '../../common/sleep';
 import { DNSCache } from '../../../src/utils/dns-cache';
-
-async function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 it('should return an ip address', async function() {
   DNSCache.clear();
