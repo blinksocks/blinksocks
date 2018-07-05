@@ -1,11 +1,17 @@
 export class SpeedTester {
 
-  totalBytes = 0;
+  _totalBytes = 0;
 
-  lastTime = Date.now();
+  _lastTime = Date.now();
 
+  _lastSpeed = 0;
+
+  /**
+   * put some bytes to measure later
+   * @param bytes
+   */
   feed(bytes) {
-    this.totalBytes += bytes;
+    this._totalBytes += bytes;
   }
 
   /**
@@ -14,11 +20,16 @@ export class SpeedTester {
    */
   getSpeed() {
     const now = Date.now();
-    const timeDiff = now - this.lastTime;
-    const speed = this.totalBytes / (timeDiff / 1e3);
-    this.lastTime = now;
-    this.totalBytes = 0;
-    return speed;
+    const timeDiff = now - this._lastTime;
+    if (timeDiff > 0) {
+      const speed = this._totalBytes / (timeDiff / 1e3);
+      this._lastTime = now;
+      this._lastSpeed = speed;
+      this._totalBytes = 0;
+      return speed;
+    } else {
+      return this._lastSpeed;
+    }
   }
 
 }
