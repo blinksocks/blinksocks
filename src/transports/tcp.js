@@ -44,10 +44,6 @@ export class TcpInbound extends Inbound {
     return this._socket && !this._socket.destroyed && this._socket.writable;
   }
 
-  get recvSpeed() {
-    return this._speeder.getSpeed();
-  }
-
   write(buffer) {
     if (this.writable) {
       this._socket.write(buffer);
@@ -68,7 +64,12 @@ export class TcpInbound extends Inbound {
     const outbound = this.getOutbound();
     if (outbound && outbound.bufferSize > MAX_BUFFERED_SIZE) {
       const delta = outbound.bufferSize - (MAX_BUFFERED_SIZE >> 1);
-      const sec = (delta / this.recvSpeed).toFixed(3);
+      // this speed is almost equivalent to outbound::write() speed
+      const speed = this._speeder.getSpeed();
+      if (speed < 1) {
+        return;
+      }
+      const sec = (delta / speed).toFixed(3);
       logger.debug(`[${this.name}] [${this.remote}] recv paused for ${sec}s due to inbound.bufferSize=${outbound.bufferSize} >= ${MAX_BUFFERED_SIZE}`);
       this.pause();
       setTimeout(() => {
@@ -170,10 +171,6 @@ export class TcpOutbound extends Outbound {
     return this._socket && !this._socket.destroyed && this._socket.writable;
   }
 
-  get recvSpeed() {
-    return this._speeder.getSpeed();
-  }
-
   write(buffer) {
     if (this.writable) {
       this._socket.write(buffer);
@@ -194,7 +191,12 @@ export class TcpOutbound extends Outbound {
     const inbound = this.getInbound();
     if (inbound && inbound.bufferSize > MAX_BUFFERED_SIZE) {
       const delta = inbound.bufferSize - (MAX_BUFFERED_SIZE >> 1);
-      const sec = (delta / this.recvSpeed).toFixed(3);
+      // this speed is almost equivalent to inbound::write() speed
+      const speed = this._speeder.getSpeed();
+      if (speed < 1) {
+        return;
+      }
+      const sec = (delta / speed).toFixed(3);
       logger.debug(`[${this.name}] [${this.remote}] recv paused for ${sec}s due to inbound.bufferSize=${inbound.bufferSize} >= ${MAX_BUFFERED_SIZE}`);
       this.pause();
       setTimeout(() => {

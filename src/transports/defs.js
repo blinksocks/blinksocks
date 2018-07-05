@@ -57,6 +57,10 @@ export class Inbound extends Bound {
 
   _outbound = null; // set by relay
 
+  get name() {
+    return 'inbound';
+  }
+
   setOutbound(outbound) {
     this._outbound = outbound;
   }
@@ -70,6 +74,10 @@ export class Inbound extends Bound {
 export class Outbound extends Bound {
 
   _inbound = null; // set by relay
+
+  get name() {
+    return 'outbound';
+  }
 
   setInbound(inbound) {
     this._inbound = inbound;
