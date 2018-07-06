@@ -19,7 +19,7 @@ blinksocks supports TCP/TLS/WS multiplexing.
 Multiplexing can:
 
 * Reduce the number of connections between bs-client and bs-server.
-* Eliminate three-way handshake of TCP and reduce connection latency.
+* Eliminate three-way handshake of TCP and reduce connection latency between `bs-client` and `bs-server`.
 * Obfuscating traffic characteristics.
 
 You can enable this feature easily by setting `"mux": true` on both client and server, and set `"mux_concurrency": <number>` on client.
