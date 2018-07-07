@@ -1,12 +1,45 @@
 #  Change Log
 
+## 3.3.4 (2018-07-07)
+
+### :exclamation: Notable Changes
+
+- **presets**:
+  - Add new encryption algorithms(`aes-128-ccm`, `aes-192-ccm` and `aes-256-ccm`) to `ss-aead-cipher`.
+
+### :rocket: Features & Improvements
+
+- **package**: add `semver` to compare versions.
+- **ci**: log curl error message.
+- **core**: remove mux related things from `Pipe`.
+- **core**: move `core/speed-tester.js` to `utils/speed-tester.js`.
+- **docs**: add a [basic example](./docs/examples/basic).
+- **docs**: add an example of [using kcptun with blinksocks](./docs/examples/kcptun).
+- **transports**: refactor `ws` transport.
+- **transports**: remove dependency on `http2session` for `h2` transport.
+- **transports**: decouple `drain` event from other bounds.
+- **transports**: reduce memory usage of `ws` and `wss`.
+- **transports**: disable the Nagle algorithm and enable keep-alive functionality of `tcp`.
+
+### :bug: Bug Fixes:
+
+- **core**: fix connection status record of `Hub`.
+- **core**: check writable of inbound before using it in `MuxRelay`.
+- **transports**: fix crash when error occurred in http2stream. [#105](https://github.com/blinksocks/blinksocks/issues/105)
+
+### Migrating from 3.3.3 to 3.3.4
+
+```
+$ npm install -g blinksocks@3.3.4
+```
+
 ## 3.3.3 (2018-06-24)
 
 ### :rocket: Features & Improvements
 
-- src: refactor multiplexing to pass pressure test.
-- test: add test case for https and redirect.
-- deps: upgrade `ws` to v5.2.1, `winston-daily-rotate-file` to v3.2.3.
+- **src**: refactor multiplexing to pass pressure test.
+- **test**: add test case for https and redirect.
+- **deps**: upgrade `ws` to v5.2.1, `winston-daily-rotate-file` to v3.2.3.
 
 ### :bug: Bug Fixes:
 
