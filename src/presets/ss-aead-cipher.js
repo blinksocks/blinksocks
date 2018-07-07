@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import semver from 'semver';
 import { IPreset } from './defs';
 import {
   AdvancedBuffer,
@@ -17,9 +18,15 @@ const MAX_CHUNK_SPLIT_LEN = 0x3FFF;
 
 // available ciphers and [key size, salt size, nonce size]
 const ciphers = {
+  // from openssl
   'aes-128-gcm': [16, 16, 12],
   'aes-192-gcm': [24, 24, 12],
   'aes-256-gcm': [32, 32, 12],
+  // from openssl, requires Node.js ^10.2.x
+  'aes-128-ccm': [16, 16, 12],
+  'aes-192-ccm': [24, 24, 12],
+  'aes-256-ccm': [32, 32, 12],
+  // from libsodium
   'chacha20-poly1305': [32, 32, 8],
   'chacha20-ietf-poly1305': [32, 32, 12],
   'xchacha20-ietf-poly1305': [32, 32, 24],
@@ -127,7 +134,10 @@ export default class SsAeadCipherPreset extends IPreset {
   static onCheckParams({ method = DEFAULT_METHOD }) {
     const cipherNames = Object.keys(ciphers);
     if (!cipherNames.includes(method)) {
-      throw Error(`'method' must be one of [${cipherNames}]`);
+      throw Error(`"method" must be one of ${cipherNames}, but got "${method}"`);
+    }
+    if (method.endsWith('ccm') && !semver.gte(process.versions.node, '10.2.0')) {
+      throw Error('CCM mode requires Node.js >= v10.2.0');
     }
   }
 
@@ -144,7 +154,7 @@ export default class SsAeadCipherPreset extends IPreset {
     this._cipherNonce = Buffer.alloc(nonceSize);
     this._decipherNonce = Buffer.alloc(nonceSize);
     // TODO: prefer to use openssl in Node.js v10.
-    // if (this._cipherName === 'chacha20-ietf-poly1305' && process.version.startsWith('v10')) {
+    // if (this._cipherName === 'chacha20-ietf-poly1305' && semver.gte(process.versions.node, '10.0.0')) {
     //   this._cipherName = 'chacha20-poly1305';
     //   this._isUseLibSodium = false;
     // }
@@ -239,7 +249,9 @@ export default class SsAeadCipherPreset extends IPreset {
       ciphertext = Buffer.from(result.ciphertext);
       tag = Buffer.from(result.mac);
     } else {
-      const cipher = crypto.createCipheriv(cipherName, cipherKey, nonce);
+      const cipher = crypto.createCipheriv(cipherName, cipherKey, nonce, {
+        authTagLength: TAG_SIZE,
+      });
       ciphertext = Buffer.concat([cipher.update(message), cipher.final()]);
       tag = cipher.getAuthTag();
     }
@@ -264,7 +276,9 @@ export default class SsAeadCipherPreset extends IPreset {
         return null;
       }
     } else {
-      const decipher = crypto.createDecipheriv(cipherName, decipherKey, nonce);
+      const decipher = crypto.createDecipheriv(cipherName, decipherKey, nonce, {
+        authTagLength: TAG_SIZE,
+      });
       decipher.setAuthTag(tag);
       try {
         const plaintext = Buffer.concat([decipher.update(ciphertext), decipher.final()]);

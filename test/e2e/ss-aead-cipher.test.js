@@ -33,6 +33,19 @@ test('ss-aead-cipher, aes-128-gcm', async () => {
   await run({ clientJson, serverJson, isUdp: true });
 });
 
+test('ss-aead-cipher, aes-128-ccm', async () => {
+  const cipher = { 'name': 'ss-aead-cipher', 'params': { 'method': 'aes-128-ccm' } };
+
+  const clientJson = clone(client);
+  const serverJson = clone(server);
+
+  clientJson.server.presets.push(cipher);
+  serverJson.presets.push(cipher);
+
+  await run({ clientJson, serverJson });
+  await run({ clientJson, serverJson, isUdp: true });
+});
+
 test('ss-aead-cipher, chacha20-ietf-poly1305', async () => {
   const cipher = { 'name': 'ss-aead-cipher', 'params': { 'method': 'chacha20-ietf-poly1305' } };
 
