@@ -6,9 +6,6 @@ export const PIPE_DECODE = -1;
 
 export const PRESET_FAILED = 'PRESET_FAILED';
 export const CONNECT_TO_REMOTE = 'CONNECT_TO_REMOTE';
-export const MUX_NEW_CONN = 'MUX_NEW_CONN';
-export const MUX_DATA_FRAME = 'MUX_DATA_FRAME';
-export const MUX_CLOSE_CONN = 'MUX_CLOSE_CONN';
 
 // https://url.spec.whatwg.org/#url-miscellaneous
 export const PROTOCOL_DEFAULT_PORTS = {

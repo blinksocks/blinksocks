@@ -3,17 +3,8 @@ import uniqueId from 'lodash.uniqueid';
 import { Pipe } from './pipe';
 import { Tracker } from './tracker';
 import { hash, logger, getRandomInt, dumpHex } from '../utils';
-import { getPresetClassByName } from '../presets';
-import { IPresetAddressing } from '../presets/defs';
-
-import {
-  MUX_CLOSE_CONN,
-  MUX_DATA_FRAME,
-  MUX_NEW_CONN,
-  PIPE_DECODE,
-  PIPE_ENCODE,
-  APP_ID, PRESET_FAILED,
-} from '../constants';
+import { getPresetClassByName, IPresetAddressing } from '../presets';
+import { PIPE_DECODE, PIPE_ENCODE, APP_ID, PRESET_FAILED } from '../constants';
 
 import {
   TcpInbound, TcpOutbound,
@@ -163,23 +154,14 @@ export class MuxRelay extends EventEmitter {
   // events
 
   onBroadcast = ({ action, source }) => {
-    if (action.type === MUX_NEW_CONN) {
-      return this.onNewSubConn(action.payload);
-    }
-    else if (action.type === MUX_DATA_FRAME) {
-      return this.onDataFrame(action.payload);
-    }
-    else if (action.type === MUX_CLOSE_CONN) {
-      return this.onSubConnCloseByProtocol(action.payload);
-    }
-    else if (action.type === PRESET_FAILED) {
+    if (action.type === PRESET_FAILED) {
       const { name, message } = action.payload;
       const remote = `${source.host}:${source.port}`;
       logger.error(`[mux-relay] [${this._transport}] [${remote}] preset "${name}" fail to process: ${message}`);
     }
   };
 
-  async onNewSubConn({ cid, host, port }) {
+  onNewSubConn = async ({ cid, host, port }) => {
     const { _config: config, _transport: transport } = this;
     const { Outbound } = this._getBounds(transport);
 
@@ -237,9 +219,9 @@ export class MuxRelay extends EventEmitter {
       outbound.__tracker.trace(PIPE_DECODE, buffer.length);
       setImmediate(() => this.emit('_read', buffer.length));
     }
-  }
+  };
 
-  onDataFrame({ cid, data }) {
+  onDataFrame = ({ cid, data }) => {
     if (this._config.is_client) {
       const inbound = this._inbounds.get(cid);
       if (inbound && inbound.writable) {
@@ -264,16 +246,16 @@ export class MuxRelay extends EventEmitter {
         }
       }
     }
-  }
+  };
 
-  onSubConnCloseByProtocol({ cid }) {
+  onSubConnCloseByProtocol = ({ cid }) => {
     const bounds = this._config.is_client ? this._inbounds : this._outbounds;
     const bound = bounds.get(cid);
     if (bound) {
       bound.close();
       bounds.delete(cid);
     }
-  }
+  };
 
   // methods
 
@@ -297,12 +279,12 @@ export class MuxRelay extends EventEmitter {
 
   // client only
   _createMuxOutbound({ source }) {
-    const { _transport: transport, _config: config, _presets: presets } = this;
+    const { _transport: transport, _config: config } = this;
     const { Outbound } = this._getBounds(transport);
     const __id = uniqueId('mux_outbound_');
 
     // pipe
-    const pipe = new Pipe({ config, presets, isUdp: transport === 'udp' });
+    const pipe = new Pipe(this._getPipeProps());
     pipe.on('broadcast', (action) => this.onBroadcast({ action, source }));
     pipe.on(`post_${PIPE_ENCODE}`, (buffer) => outbound.write(buffer));
     this._pipes.set(__id, pipe);
@@ -325,12 +307,12 @@ export class MuxRelay extends EventEmitter {
 
   // server only
   _createMuxInbound({ source, conn }) {
-    const { _transport: transport, _config: config, _presets: presets } = this;
+    const { _transport: transport, _config: config } = this;
     const { Inbound } = this._getBounds(transport);
     const __id = uniqueId('mux_inbound_');
 
     // pipe
-    const pipe = new Pipe({ config, presets, isUdp: transport === 'udp' });
+    const pipe = new Pipe(this._getPipeProps());
     pipe.on('broadcast', (action) => this.onBroadcast({ action, source }));
     pipe.on(`post_${PIPE_ENCODE}`, (buffer) => inbound.write(buffer));
     this._pipes.set(__id, pipe);
@@ -363,6 +345,22 @@ export class MuxRelay extends EventEmitter {
       return null;
     }
     return [...bounds.values()][getRandomInt(0, concurrency - 1)];
+  }
+
+  _getPipeProps() {
+    const { _transport: transport, _config: config, _presets: presets } = this;
+    return {
+      config,
+      presets,
+      isUdp: transport === 'udp',
+      injector: (preset) => {
+        if (preset.name === 'mux') {
+          preset.muxNewConn = this.onNewSubConn;
+          preset.muxDataFrame = this.onDataFrame;
+          preset.muxCloseConn = this.onSubConnCloseByProtocol;
+        }
+      },
+    };
   }
 
   _preparePresets(presets) {

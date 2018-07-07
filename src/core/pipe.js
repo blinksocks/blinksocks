@@ -1,17 +1,7 @@
 import EventEmitter from 'events';
 import { logger } from '../utils';
-
-import {
-  PIPE_ENCODE,
-  CONNECT_TO_REMOTE,
-  MUX_CLOSE_CONN,
-  MUX_DATA_FRAME,
-  MUX_NEW_CONN,
-  PRESET_FAILED
-} from '../constants';
-
-import { getPresetClassByName } from '../presets';
-import { IPresetAddressing } from '../presets/defs';
+import { PIPE_ENCODE, CONNECT_TO_REMOTE, PRESET_FAILED } from '../constants';
+import { getPresetClassByName, IPresetAddressing } from '../presets';
 
 // .on('broadcast')
 // .on(`pre_${type}`)
@@ -21,6 +11,8 @@ export class Pipe extends EventEmitter {
   _config = null;
 
   _isPipingUdp = false;
+
+  _injector = () => void {};
 
   _encode_presets = [];
 
@@ -34,10 +26,11 @@ export class Pipe extends EventEmitter {
     return this._destroyed;
   }
 
-  constructor({ config, presets, isUdp = false }) {
+  constructor({ config, presets, isUdp = false, injector }) {
     super();
     this._config = config;
     this._isPipingUdp = isUdp;
+    this._injector = injector;
     // presets
     const _presets = presets.map(this._createPreset.bind(this));
     this._encode_presets = _presets;
@@ -149,10 +142,8 @@ export class Pipe extends EventEmitter {
       };
     }
     // inject methods for mux
-    if (preset.name === 'mux') {
-      preset.muxNewConn = (payload) => this.broadcast({ type: MUX_NEW_CONN, payload });
-      preset.muxDataFrame = (payload) => this.broadcast({ type: MUX_DATA_FRAME, payload });
-      preset.muxCloseConn = (payload) => this.broadcast({ type: MUX_CLOSE_CONN, payload });
+    if (typeof this._injector === 'function') {
+      this._injector(preset);
     }
     // ::onInit()
     preset.onInit(params);

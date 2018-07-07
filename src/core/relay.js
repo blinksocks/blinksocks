@@ -87,7 +87,7 @@ export class Relay extends EventEmitter {
         });
       }
     } catch (err) {
-      logger.error(`[mux-relay] [${remote}] onConnected callback error: ${err.message}`);
+      logger.error(`[relay] [${remote}] onConnected callback error: ${err.message}`);
       this.emit('_error', err);
     }
   }
