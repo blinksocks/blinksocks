@@ -97,3 +97,5 @@ export function getPresetClassByName(name, allowPrivate = false) {
   }
   return clazz;
 }
+
+export * from './defs';
