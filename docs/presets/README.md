@@ -143,6 +143,8 @@ The shadowsocks's [aead cipher](https://shadowsocks.org/en/spec/AEAD-Ciphers.htm
 
 aes-128-gcm, aes-192-gcm, aes-256-gcm,
 
+aes-128-ccm, aes-192-ccm, aes-256-ccm, (CCM mode require Node.js >= v10.2.0)
+
 chacha20-poly1305, chacha20-ietf-poly1305, xchacha20-ietf-poly1305
 
 ```
