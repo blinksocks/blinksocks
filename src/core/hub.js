@@ -332,6 +332,7 @@ export class Hub {
 
     logger.verbose(`[hub] [${source.host}:${source.port}] connected`);
     updateConnStatus('new');
+    updateConnStatus('target', { host: proxyRequest.host, port: proxyRequest.port });
 
     const context = { conn, source };
 
@@ -346,7 +347,6 @@ export class Hub {
     const relay = this._createRelay(source);
     relay.__id = uniqueId('relay_');
     relay.on('_error', (err) => updateConnStatus('error', err.message));
-    relay.on('_connect', (targetAddress) => updateConnStatus('target', targetAddress));
     relay.on('_read', this._onRead);
     relay.on('_write', this._onWrite);
     relay.on('close', () => {

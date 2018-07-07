@@ -64,13 +64,12 @@ export class MuxRelay extends EventEmitter {
     if (!outbound) {
       outbound = this._createMuxOutbound({ source });
       outbounds.set(outbound.__id, outbound);
-      logger.info(`[mux-relay] [${remote}] create a new mux outbound(id=${outbound.__id}), total=${outbounds.size}`);
+      logger.info(`[mux-relay] [${remote}] create ${outbound.__id}, total=${outbounds.size}`);
     } else {
       isReUse = true;
     }
 
-    this.emit('_connect', { host, port });
-    logger.info(`[mux-relay] [${remote}] request: ${target} via mux outbound(id=${outbound.__id})` + (isReUse ? ' [REUSE]' : ''));
+    logger.info(`[mux-relay] [${remote}] request: ${target} via ${outbound.__id}` + (isReUse ? ' [REUSE]' : ''));
 
     // pipe
     const pipe = this._pipes.get(outbound.__id);
@@ -126,7 +125,7 @@ export class MuxRelay extends EventEmitter {
     const remote = `${source.host}:${source.port}`;
     const inbound = this._createMuxInbound({ source, conn });
     this._inbounds.set(inbound.__id, inbound);
-    logger.info(`[mux-relay] [${remote}] create a new mux inbound(id=${inbound.__id}), total=${this._inbounds.size}`);
+    logger.info(`[mux-relay] [${remote}] create ${inbound.__id}, total=${this._inbounds.size}`);
   }
 
   destroy() {
@@ -294,7 +293,7 @@ export class MuxRelay extends EventEmitter {
     outbound.on('_error', (err) => this.emit('_error', err));
     outbound.on('data', (buffer) => pipe.feed(PIPE_DECODE, buffer));
     outbound.on('close', () => {
-      logger.info(`[mux-relay] mux outbound(id=${outbound.__id}) closed, cleanup ${outbound.__associate_inbounds.size} inbounds`);
+      logger.info(`[mux-relay] ${outbound.__id} closed, cleanup ${outbound.__associate_inbounds.size} inbounds`);
       outbound.__associate_inbounds.forEach((inbound) => inbound.close());
       outbound.__associate_inbounds = null;
       this._outbounds.delete(outbound.__id);
@@ -324,7 +323,7 @@ export class MuxRelay extends EventEmitter {
       pipe.feed(PIPE_DECODE, buffer);
     });
     inbound.on('close', () => {
-      logger.info(`[mux-relay] mux inbound(id=${inbound.__id}) closed, cleanup ${inbound.__associate_outbounds.size} outbounds`);
+      logger.info(`[mux-relay] ${inbound.__id} closed, cleanup ${inbound.__associate_outbounds.size} outbounds`);
       inbound.__associate_outbounds.forEach((outbound) => outbound.close());
       inbound.__associate_outbounds = null;
       this._inbounds.delete(inbound.__id);
