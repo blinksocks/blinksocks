@@ -13,10 +13,10 @@ BLINKSOCKS="node bin/start.js"
 
 export NODE_ENV=production
 
-${BLINKSOCKS} -c ${client_conf} > /dev/null &
+${BLINKSOCKS} -c ${client_conf} > /dev/null 2>&1 &
 bs_client_pid=$!
 
-${BLINKSOCKS} -c ${server_conf} > /dev/null &
+${BLINKSOCKS} -c ${server_conf} > /dev/null 2>&1 &
 bs_server_pid=$!
 
 sleep 2

@@ -1,0 +1,81 @@
+blinksocks:
+version         3.3.4
+
+Operating System:
+cpu             Intel(R) Core(TM) i5-4278U CPU @ 2.60GHz
+cores           4
+memory          8589934592
+type            Darwin
+platform        darwin
+arch            x64
+release         17.6.0
+
+Node.js Versions:
+http_parser     2.8.0
+node            10.5.0
+v8              6.7.288.46-node.8
+uv              1.20.3
+zlib            1.2.11
+ares            1.14.0
+modules         64
+nghttp2         1.32.0
+napi            3
+openssl         1.1.0h
+icu             62.1
+unicode         11.0
+cldr            33.1
+tz              2018e
+
+(ranking):
+
+┌─────────┬───────────────────────────────────────────┬─────────────────────────────────────────┬─────────────────┬─────────────────┬────────────────────┐
+│ (index) │                   file                    │               description               │    interval     │    transfer     │      bitrate       │
+├─────────┼───────────────────────────────────────────┼─────────────────────────────────────────┼─────────────────┼─────────────────┼────────────────────┤
+│    0    │      'blinksocks/base-auth.bench.js'      │                 'sha1'                  │ '0.00-3.01 sec' │  '1.55 GBytes'  │  '4.12 Gbits/sec'  │
+│    1    │   'shadowsocks/stream-cipher.bench.js'    │                 'none'                  │ '0.00-3.02 sec' │  '1.5 GBytes'   │  '3.97 Gbits/sec'  │
+│    2    │      'blinksocks/base-auth.bench.js'      │                  'md5'                  │ '0.00-3.01 sec' │  '1.49 GBytes'  │  '3.96 Gbits/sec'  │
+│    3    │         'transports/all.bench.js'         │                  'tcp'                  │ '0.00-3.03 sec' │  '1.5 GBytes'   │  '3.96 Gbits/sec'  │
+│    4    │      'blinksocks/base-auth.bench.js'      │                'sha256'                 │ '0.00-3.04 sec' │  '1.49 GBytes'  │  '3.93 Gbits/sec'  │
+│    5    │         'transports/all.bench.js'         │                  'ws'                   │ '0.00-3.02 sec' │  '1.18 GBytes'  │  '3.12 Gbits/sec'  │
+│    6    │   'shadowsocks/stream-cipher.bench.js'    │              'aes-128-ctr'              │ '0.00-3.02 sec' │  '1.06 GBytes'  │  '2.8 Gbits/sec'   │
+│    7    │   'shadowsocks/stream-cipher.bench.js'    │              'aes-192-ctr'              │ '0.00-3.03 sec' │  '1.03 GBytes'  │  '2.71 Gbits/sec'  │
+│    8    │   'shadowsocks/stream-cipher.bench.js'    │              'aes-256-ctr'              │ '0.00-3.03 sec' │  '1.01 GBytes'  │  '2.67 Gbits/sec'  │
+│    9    │   'shadowsocks/stream-cipher.bench.js'    │             'chacha20-ietf'             │ '0.00-3.05 sec' │ '985.45 MBytes' │  '2.52 Gbits/sec'  │
+│   10    │   'shadowsocks/stream-cipher.bench.js'    │                'rc4-md5'                │ '0.00-3.03 sec' │ '720.23 MBytes' │  '1.86 Gbits/sec'  │
+│   11    │   'shadowsocks/stream-cipher.bench.js'    │               'rc4-md5-6'               │ '0.00-3.05 sec' │ '712.31 MBytes' │  '1.82 Gbits/sec'  │
+│   12    │          'v2ray/vmess.bench.js'           │                 'none'                  │ '0.00-3.06 sec' │ '682.06 MBytes' │  '1.74 Gbits/sec'  │
+│   13    │ 'shadowsocks/stream-cipher-obfs.bench.js' │   'aes-128-ctr + obfs-random-padding'   │ '0.00-3.03 sec' │ '639.91 MBytes' │  '1.65 Gbits/sec'  │
+│   14    │         'transports/all.bench.js'         │                  'wss'                  │ '0.00-3.01 sec' │ '627.25 MBytes' │  '1.63 Gbits/sec'  │
+│   15    │         'transports/all.bench.js'         │                  'tls'                  │ '0.00-3.06 sec' │ '599.96 MBytes' │  '1.53 Gbits/sec'  │
+│   16    │ 'shadowsocks/stream-cipher-obfs.bench.js' │   'aes-128-ctr + obfs-tls1.2-ticket'    │ '0.00-3.09 sec' │ '432.97 MBytes' │  '1.09 Gbits/sec'  │
+│   17    │          'v2ray/vmess.bench.js'           │              'aes-128-gcm'              │ '0.00-3.15 sec' │ '322.89 MBytes' │ '820.49 Mbits/sec' │
+│   18    │   'shadowsocks/stream-cipher.bench.js'    │           'camellia-128-cfb'            │ '0.00-3.16 sec' │ '319.31 MBytes' │ '809.19 Mbits/sec' │
+│   19    │        'v2ray/vmess-obfs.bench.js'        │   'aes-128-gcm + obfs-random-padding'   │ '0.00-3.03 sec' │ '300.95 MBytes' │ '794.92 Mbits/sec' │
+│   20    │  'shadowsocks/aead-cipher-obfs.bench.js'  │   'aes-128-gcm + obfs-random-padding'   │ '0.00-3.13 sec' │ '277.61 MBytes' │ '710.64 Mbits/sec' │
+│   21    │    'shadowsocks/aead-cipher.bench.js'     │              'aes-192-gcm'              │ '0.00-3.06 sec' │ '270.18 MBytes' │ '705.78 Mbits/sec' │
+│   22    │    'shadowsocks/aead-cipher.bench.js'     │              'aes-256-gcm'              │ '0.00-3.14 sec' │ '271.12 MBytes' │ '689.74 Mbits/sec' │
+│   23    │        'v2ray/vmess-obfs.bench.js'        │   'aes-128-gcm + obfs-tls1.2-ticket'    │ '0.00-3.16 sec' │ '263.41 MBytes' │ '666.55 Mbits/sec' │
+│   24    │   'shadowsocks/stream-cipher.bench.js'    │           'camellia-192-cfb'            │ '0.00-3.01 sec' │ '249.37 MBytes' │ '662.21 Mbits/sec' │
+│   25    │   'shadowsocks/stream-cipher.bench.js'    │           'camellia-256-cfb'            │ '0.00-3.05 sec' │ '252.06 MBytes' │ '660.64 Mbits/sec' │
+│   26    │    'shadowsocks/aead-cipher.bench.js'     │              'aes-128-gcm'              │ '0.00-3.09 sec' │ '253.74 MBytes' │ '657.55 Mbits/sec' │
+│   27    │ 'blinksocks/aead-random-cipher.bench.js'  │              'aes-128-gcm'              │ '0.00-3.11 sec' │ '245.73 MBytes' │ '632.04 Mbits/sec' │
+│   28    │    'shadowsocks/aead-cipher.bench.js'     │              'aes-128-ccm'              │ '0.00-3.11 sec' │ '244.6 MBytes'  │ '629.91 Mbits/sec' │
+│   29    │ 'blinksocks/aead-random-cipher.bench.js'  │              'aes-192-gcm'              │ '0.00-3.09 sec' │ '236.7 MBytes'  │ '612.85 Mbits/sec' │
+│   30    │  'shadowsocks/aead-cipher-obfs.bench.js'  │   'aes-128-gcm + obfs-tls1.2-ticket'    │ '0.00-3.12 sec' │ '235.01 MBytes' │ '602.52 Mbits/sec' │
+│   31    │    'shadowsocks/aead-cipher.bench.js'     │              'aes-256-ccm'              │ '0.00-3.13 sec' │ '232.64 MBytes' │ '595.46 Mbits/sec' │
+│   32    │ 'blinksocks/aead-random-cipher.bench.js'  │              'aes-256-gcm'              │ '0.00-3.09 sec' │ '225.4 MBytes'  │ '582.95 Mbits/sec' │
+│   33    │    'shadowsocks/aead-cipher.bench.js'     │              'aes-192-ccm'              │ '0.00-3.08 sec' │ '217.23 MBytes' │ '563.32 Mbits/sec' │
+│   34    │    'shadowsocksr/auth-aes128.bench.js'    │         'ssr-auth-aes128-sha1'          │ '0.00-3.11 sec' │ '210.67 MBytes' │ '541.7 Mbits/sec'  │
+│   35    │    'shadowsocksr/auth-aes128.bench.js'    │          'ssr-auth-aes128-md5'          │ '0.00-3.17 sec' │ '211.46 MBytes' │ '532.86 Mbits/sec' │
+│   36    │ 'shadowsocksr/auth-aes128-obfs.bench.js'  │ 'auth-aes128-md5 + obfs-random-padding' │ '0.00-3.07 sec' │ '196.98 MBytes' │ '513.66 Mbits/sec' │
+│   37    │ 'shadowsocksr/auth-aes128-obfs.bench.js'  │ 'auth-aes128-md5 + obfs-tls1.2-ticket'  │ '0.00-3.19 sec' │ '161.83 MBytes' │ '406.17 Mbits/sec' │
+│   38    │  'shadowsocksr/auth-chain-obfs.bench.js'  │  'auth-chain-a + obfs-random-padding'   │ '0.00-3.19 sec' │ '142.66 MBytes' │ '357.38 Mbits/sec' │
+│   39    │    'shadowsocksr/auth-chain.bench.js'     │           'ssr-auth-chain-a'            │ '0.00-3.29 sec' │ '126.56 MBytes' │ '307.92 Mbits/sec' │
+│   40    │    'shadowsocksr/auth-chain.bench.js'     │           'ssr-auth-chain-b'            │ '0.00-3.36 sec' │ '128.84 MBytes' │ '307.1 Mbits/sec'  │
+│   41    │    'shadowsocks/aead-cipher.bench.js'     │           'chacha20-poly1305'           │ '0.00-3.20 sec' │ '115.47 MBytes' │ '288.34 Mbits/sec' │
+│   42    │    'shadowsocks/aead-cipher.bench.js'     │        'chacha20-ietf-poly1305'         │ '0.00-3.20 sec' │ '112.45 MBytes' │ '281.3 Mbits/sec'  │
+│   43    │          'v2ray/vmess.bench.js'           │           'chacha20-poly1305'           │ '0.00-3.20 sec' │ '109.04 MBytes' │ '272.26 Mbits/sec' │
+│   44    │    'shadowsocks/aead-cipher.bench.js'     │        'xchacha20-ietf-poly1305'        │ '0.00-3.19 sec' │ '107.46 MBytes' │ '269.82 Mbits/sec' │
+│   45    │  'shadowsocksr/auth-chain-obfs.bench.js'  │   'auth-chain-a + obfs-tls1.2-ticket'   │ '0.00-3.14 sec' │  '86.6 MBytes'  │ '220.57 Mbits/sec' │
+│   46    │         'transports/all.bench.js'         │                  'h2'                   │ '0.00-3.13 sec' │   '38 MBytes'   │ '96.98 Mbits/sec'  │
+└─────────┴───────────────────────────────────────────┴─────────────────────────────────────────┴─────────────────┴─────────────────┴────────────────────┘
