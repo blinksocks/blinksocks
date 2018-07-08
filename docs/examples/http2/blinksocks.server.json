@@ -1,5 +1,5 @@
 {
-  "service": "tcp://0.0.0.0:18732",
+  "service": "h2://0.0.0.0:18732",
   "key": "TZr[JmZYjNJ3USYq",
   "presets": [
     {
@@ -8,5 +8,7 @@
     {
       "name": "obfs-random-padding"
     }
-  ]
+  ],
+  "tls_cert": "cert.pem",
+  "tls_key": "key.pem"
 }

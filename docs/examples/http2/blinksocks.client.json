@@ -11,5 +11,7 @@
         "name": "obfs-random-padding"
       }
     ]
-  }
+  },
+  "tls_cert": "cert.pem",
+  "tls_cert_self_signed": true
 }

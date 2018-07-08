@@ -10,7 +10,7 @@ $ blinksocks init
 
 **blinksocks.client.json**
 
-```
+```json
 {
   "service": "socks5://127.0.0.1:1080",
   "server": {
@@ -48,7 +48,7 @@ $ blinksocks init
 
 **blinksocks.server.json**
 
-```
+```json
 {
   "service": "tcp://0.0.0.0:19997",
   "key": "<=p(^tr;DpEfVe<m",
