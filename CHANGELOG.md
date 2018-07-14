@@ -1,5 +1,19 @@
 #  Change Log
 
+## 3.3.5 (2018-07-14)
+
+### :rocket: Features & Improvements
+
+- **package**: upgrade `ws` to `5.2.2` and `winston-daily-rotate-file` to `3.3.0`.
+- **src**: reduce memory usage when enable `multiplexing`.
+- **src**: weakly dependent on `http2` module.
+
+### Migrating from 3.3.4 to 3.3.5
+
+```
+$ npm install -g blinksocks@3.3.5
+```
+
 ## 3.3.4 (2018-07-07)
 
 ### :exclamation: Notable Changes
