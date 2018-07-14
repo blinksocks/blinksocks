@@ -4,6 +4,7 @@
 
 ### :rocket: Features & Improvements
 
+- **benchmark**: refactor.
 - **package**: upgrade `ws` to `5.2.2` and `winston-daily-rotate-file` to `3.3.0`.
 - **src**: reduce memory usage when enable `multiplexing`.
 - **src**: weakly dependent on `http2` module.
