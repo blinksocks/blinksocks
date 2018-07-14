@@ -26,13 +26,13 @@ function compile(transport, mux = false) {
 module.exports = function main() {
   return {
     'tcp': compile('tcp'),
-    // 'tcp + mux': compile('tcp', true),
+    'tcp + mux': compile('tcp', true),
     'tls': compile('tls'),
-    // 'tls + mux': compile('tls', true),
+    'tls + mux': compile('tls', true),
     'ws': compile('ws'),
-    // 'ws + mux': compile('ws', true),
+    'ws + mux': compile('ws', true),
     'wss': compile('wss'),
-    // 'wss + mux': compile('wss', true),
+    'wss + mux': compile('wss', true),
     'h2': compile('h2'),
     // 'h2 + mux': compile('h2', true),
   };
