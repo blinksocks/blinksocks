@@ -4,7 +4,6 @@ import net from 'net';
 import http from 'http';
 import https from 'https';
 import { URL } from 'url';
-import http2 from 'http2';
 import tls from 'tls';
 import ws from 'ws';
 import LRU from 'lru-cache';
@@ -231,7 +230,7 @@ export class Hub {
           break;
         }
         case 'h2': {
-          server = http2.createSecureServer({ key: tls_key, cert: tls_cert });
+          server = require('http2').createSecureServer({ key: tls_key, cert: tls_cert });
           server.on('stream', (stream) => this._onServerConnection(stream));
           break;
         }

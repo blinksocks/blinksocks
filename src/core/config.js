@@ -368,6 +368,14 @@ export class Config {
       throw Error(`service.protocol must be: ${available_server_protocols.join(', ')}`);
     }
 
+    if (proto === 'h2') {
+      try {
+        require('http2');
+      } catch (e) {
+        throw Error('You must upgrade Node.js to 8.4.0 or above before using HTTP2');
+      }
+    }
+
     // tls_cert, tls_key
     if (['tls', 'wss', 'h2'].includes(proto)) {
       if (from_client && server.tls_cert_self_signed) {

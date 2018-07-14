@@ -1,8 +1,6 @@
-import http2 from 'http2';
+// import http2 from 'http2';
 import { Inbound, Outbound } from './defs';
 import { logger } from '../utils';
-
-const { HTTP2_HEADER_PATH, HTTP2_HEADER_METHOD } = http2.constants;
 
 export class Http2Inbound extends Inbound {
 
@@ -148,6 +146,8 @@ export class Http2Outbound extends Outbound {
         const address = `h2://${server_host}:${server_port}` + (server_pathname ? server_pathname : '');
         logger.info(`[${this.name}] [${this.remote}] connecting to ${address}`);
         try {
+          const http2 = require('http2');
+          const { HTTP2_HEADER_PATH, HTTP2_HEADER_METHOD } = http2.constants;
           const options = {};
           if (this._config.tls_cert_self_signed) {
             options.ca = this._config.tls_cert;
