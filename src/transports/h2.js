@@ -14,6 +14,7 @@ export class Http2Inbound extends Inbound {
     super(props);
     this._stream = this._conn;
     this._stream.on('data', this.onReceive);
+    this._stream.on('drain', this.onDrain);
     this._stream.on('error', this.onError);
     this._stream.on('close', this.onClose);
     this._stream.on('timeout', this.onTimeout);
@@ -45,6 +46,10 @@ export class Http2Inbound extends Inbound {
 
   onReceive = (buffer) => {
     this.emit('data', buffer);
+  };
+
+  onDrain = () => {
+    this.emit('drain');
   };
 
   onTimeout = () => {
@@ -107,6 +112,10 @@ export class Http2Outbound extends Outbound {
     this.emit('data', buffer);
   };
 
+  onDrain = () => {
+    this.emit('drain');
+  };
+
   onTimeout = () => {
     logger.warn(`[${this.name}] [${this.remote}] timeout: no I/O on the connection for ${this._config.timeout / 1e3}s`);
     this.onClose();
@@ -153,6 +162,7 @@ export class Http2Outbound extends Outbound {
           });
           this._stream.on('error', this.onError);
           this._stream.on('data', this.onReceive);
+          this._stream.on('drain', this.onDrain);
           this._stream.on('timeout', this.onTimeout);
           this._stream.on('close', this.onClose);
           this._stream.setTimeout(this._config.timeout);

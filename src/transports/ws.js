@@ -18,6 +18,7 @@ export class WsInbound extends Inbound {
   constructor(props) {
     super(props);
     this._socket = this._conn;
+    this._socket._socket.on('drain', this.onDrain);
     this._socket.on('message', this.onReceive);
     this._socket.on('error', this.onError);
     this._socket.on('close', this.onClose);
@@ -43,6 +44,10 @@ export class WsInbound extends Inbound {
 
   onReceive = (buffer) => {
     this.emit('data', buffer);
+  };
+
+  onDrain = () => {
+    this.emit('drain');
   };
 
   onError = (err) => {
@@ -100,6 +105,10 @@ export class WsOutbound extends Outbound {
     this.emit('data', buffer);
   };
 
+  onDrain = () => {
+    this.emit('drain');
+  };
+
   onError = (err) => {
     logger.warn(`[${this.name}] [${this.remote}] ${err.message}`);
     this.emit('_error', err);
@@ -136,7 +145,10 @@ export class WsOutbound extends Outbound {
             handshakeTimeout: 1e4, // 10s
             perMessageDeflate: false,
           }));
-          this._socket.on('open', resolve);
+          this._socket.on('open', () => {
+            this._socket._socket.on('drain', this.onDrain);
+            resolve();
+          });
           this._socket.on('message', this.onReceive);
           this._socket.on('error', this.onError);
           this._socket.on('close', this.onClose);

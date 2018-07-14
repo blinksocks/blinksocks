@@ -15,6 +15,34 @@ import {
   WssInbound, WssOutbound,
 } from '../transports';
 
+class MuxInbound extends EventEmitter {
+
+  constructor(inbound) {
+    super();
+    this._inbound = inbound;
+    this._inbound.on('drain', () => this.emit('drain'));
+  }
+
+  get bufferSize() {
+    return this._inbound.bufferSize;
+  }
+
+}
+
+class MuxOutbound extends EventEmitter {
+
+  constructor(outbound) {
+    super();
+    this._outbound = outbound;
+    this._outbound.on('drain', () => this.emit('drain'));
+  }
+
+  get bufferSize() {
+    return this._outbound.bufferSize;
+  }
+
+}
+
 // .on('_connect')
 // .on('_read')
 // .on('_write')
@@ -82,6 +110,7 @@ export class MuxRelay extends EventEmitter {
 
     const { Inbound } = this._getBounds(transport);
     const inbound = new Inbound({ config, source, conn });
+    inbound.setOutbound(new MuxOutbound(outbound));
     inbound.on('_error', (err) => this.emit('_error', err));
     inbound.on('data', (buffer) => {
       if (!isFirstFrameOut) {
@@ -189,6 +218,7 @@ export class MuxRelay extends EventEmitter {
 
     // outbound
     const outbound = new Outbound({ config, source });
+    outbound.setInbound(new MuxInbound(inbound));
     outbound.on('_error', (err) => this.emit('_error', err));
     outbound.on('data', (buffer) => {
       pipe.feed(PIPE_ENCODE, buffer, { cid });
@@ -228,7 +258,7 @@ export class MuxRelay extends EventEmitter {
         inbound.__tracker.trace(PIPE_DECODE, data.length);
         setImmediate(() => this.emit('_read', data.length));
       } else {
-        logger.error(`[mux-relay] couldn't delivery data frame to cid=${cid}, dump=${dumpHex(data)}`);
+        logger.debug(`[mux-relay] couldn't delivery data frame to cid=${cid}, dump=${dumpHex(data)}`);
       }
     } else {
       const outbound = this._outbounds.get(cid);

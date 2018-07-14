@@ -1,6 +1,6 @@
 import net from 'net';
 import { Inbound, Outbound } from './defs';
-import { DNSCache, SpeedTester, logger } from '../utils';
+import { DNSCache, logger } from '../utils';
 import {
   ACL_PAUSE_RECV,
   ACL_PAUSE_SEND,
@@ -13,8 +13,6 @@ const MAX_BUFFERED_SIZE = 512 * 1024; // 512KB
 export class TcpInbound extends Inbound {
 
   _socket = null;
-
-  _speeder = new SpeedTester();
 
   _destroyed = false;
 
@@ -57,25 +55,17 @@ export class TcpInbound extends Inbound {
 
   onReceive = (buffer) => {
     this.emit('data', buffer);
-    this._speeder.feed(buffer.length);
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
     // https://nodejs.org/dist/latest/docs/api/net.html#net_socket_buffersize
     const outbound = this.getOutbound();
     if (outbound && outbound.bufferSize > MAX_BUFFERED_SIZE) {
-      const delta = outbound.bufferSize - (MAX_BUFFERED_SIZE >> 1);
-      // this speed is almost equivalent to outbound::write() speed
-      const speed = this._speeder.getSpeed();
-      if (speed < 1) {
-        return;
-      }
-      const sec = (delta / speed).toFixed(3);
-      logger.debug(`[${this.name}] [${this.remote}] recv paused for ${sec}s due to inbound.bufferSize=${outbound.bufferSize} >= ${MAX_BUFFERED_SIZE}`);
+      logger.debug(`[${this.name}] [${this.remote}] recv paused due to inbound.bufferSize=${outbound.bufferSize} >= ${MAX_BUFFERED_SIZE}`);
       this.pause();
-      setTimeout(() => {
+      outbound.once('drain', () => {
         logger.debug(`[${this.name}] [${this.remote}] resume to recv`);
         this.resume();
-      }, sec * 1e3);
+      });
     }
   };
 
@@ -90,13 +80,15 @@ export class TcpInbound extends Inbound {
 
   onHalfClose = () => {
     const outbound = this.getOutbound();
-    outbound && outbound.end && outbound.end();
+    if (outbound && outbound.end) {
+      outbound.end();
+    }
   };
 
   onClose = () => {
     this.close();
     const outbound = this.getOutbound();
-    if (outbound) {
+    if (outbound && outbound.close) {
       outbound.close();
       this.setOutbound(null);
     }
@@ -155,8 +147,6 @@ export class TcpOutbound extends Outbound {
 
   _socket = null;
 
-  _speeder = new SpeedTester();
-
   _destroyed = false;
 
   get name() {
@@ -184,25 +174,17 @@ export class TcpOutbound extends Outbound {
 
   onReceive = (buffer) => {
     this.emit('data', buffer);
-    this._speeder.feed(buffer.length);
     // throttle receiving data to reduce memory grow:
     // https://github.com/blinksocks/blinksocks/issues/60
     // https://nodejs.org/dist/latest/docs/api/net.html#net_socket_buffersize
     const inbound = this.getInbound();
     if (inbound && inbound.bufferSize > MAX_BUFFERED_SIZE) {
-      const delta = inbound.bufferSize - (MAX_BUFFERED_SIZE >> 1);
-      // this speed is almost equivalent to inbound::write() speed
-      const speed = this._speeder.getSpeed();
-      if (speed < 1) {
-        return;
-      }
-      const sec = (delta / speed).toFixed(3);
-      logger.debug(`[${this.name}] [${this.remote}] recv paused for ${sec}s due to inbound.bufferSize=${inbound.bufferSize} >= ${MAX_BUFFERED_SIZE}`);
+      logger.debug(`[${this.name}] [${this.remote}] recv paused due to inbound.bufferSize=${inbound.bufferSize} >= ${MAX_BUFFERED_SIZE}`);
       this.pause();
-      setTimeout(() => {
+      inbound.once('drain', () => {
         logger.debug(`[${this.name}] [${this.remote}] resume to recv`);
         this.resume();
-      }, sec * 1e3);
+      });
     }
   };
 
@@ -217,13 +199,15 @@ export class TcpOutbound extends Outbound {
 
   onHalfClose = () => {
     const inbound = this.getInbound();
-    inbound && inbound.end && inbound.end();
+    if (inbound && inbound.end) {
+      inbound.end();
+    }
   };
 
   onClose = () => {
     this.close();
     const inbound = this.getInbound();
-    if (inbound) {
+    if (inbound && inbound.close) {
       inbound.close();
       this.setInbound(null);
     }
