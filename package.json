@@ -36,7 +36,7 @@
     "semver": "^5.5.0",
     "winston": "^3.0.0",
     "winston-daily-rotate-file": "^3.3.0",
-    "ws": "^5.2.2"
+    "ws": "^6.0.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
@@ -48,7 +48,7 @@
     "babel-preset-env": "^1.7.0",
     "babel-register": "^6.26.0",
     "cross-env": "^5.2.0",
-    "eslint": "^5.1.0",
+    "eslint": "^5.2.0",
     "eslint-config-babel": "^7.0.2",
     "eslint-plugin-babel": "^5.1.0",
     "eslint-plugin-flowtype": "^2.50.0",
