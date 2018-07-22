@@ -15,30 +15,46 @@ import {
   WssInbound, WssOutbound,
 } from '../transports';
 
-class MuxInbound extends EventEmitter {
+class FakeMuxInbound extends EventEmitter {
 
   constructor(inbound) {
     super();
     this._inbound = inbound;
-    this._inbound.on('drain', () => this.emit('drain'));
+    this._inbound.on('drain', this.onDrain);
   }
+
+  onDrain = () => {
+    this.emit('drain');
+  };
 
   get bufferSize() {
     return this._inbound.bufferSize;
   }
 
+  destroy() {
+    this._inbound.removeListener('drain', this.onDrain);
+  }
+
 }
 
-class MuxOutbound extends EventEmitter {
+class FakeMuxOutbound extends EventEmitter {
 
   constructor(outbound) {
     super();
     this._outbound = outbound;
-    this._outbound.on('drain', () => this.emit('drain'));
+    this._outbound.on('drain', this.onDrain);
   }
+
+  onDrain = () => {
+    this.emit('drain');
+  };
 
   get bufferSize() {
     return this._outbound.bufferSize;
+  }
+
+  destroy() {
+    this._outbound.removeListener('drain', this.onDrain);
   }
 
 }
@@ -110,7 +126,8 @@ export class MuxRelay extends EventEmitter {
 
     const { Inbound } = this._getBounds(transport);
     const inbound = new Inbound({ config, source, conn });
-    inbound.setOutbound(new MuxOutbound(outbound));
+    const fakeOutbound = new FakeMuxOutbound(outbound);
+    inbound.setOutbound(fakeOutbound);
     inbound.on('_error', (err) => this.emit('_error', err));
     inbound.on('data', (buffer) => {
       if (!isFirstFrameOut) {
@@ -126,8 +143,9 @@ export class MuxRelay extends EventEmitter {
       // inform remote to close associate outbound
       pipe.feed(PIPE_ENCODE, Buffer.alloc(0), { cid, isClosing: true });
       outbound.__associate_inbounds.delete(cid);
-      this._inbounds.delete(cid);
+      fakeOutbound.destroy();
       tracker.destroy();
+      this._inbounds.delete(cid);
     });
     inbound.__tracker = tracker;
     this._inbounds.set(cid, inbound);
@@ -218,7 +236,8 @@ export class MuxRelay extends EventEmitter {
 
     // outbound
     const outbound = new Outbound({ config, source });
-    outbound.setInbound(new MuxInbound(inbound));
+    const fakeMuxInbound = new FakeMuxInbound(inbound);
+    outbound.setInbound(fakeMuxInbound);
     outbound.on('_error', (err) => this.emit('_error', err));
     outbound.on('data', (buffer) => {
       pipe.feed(PIPE_ENCODE, buffer, { cid });
@@ -229,8 +248,9 @@ export class MuxRelay extends EventEmitter {
       // inform remote to close associate inbound
       pipe.feed(PIPE_ENCODE, Buffer.alloc(0), { cid, isClosing: true });
       inbound.__associate_outbounds.delete(cid);
-      this._outbounds.delete(cid);
+      fakeMuxInbound.destroy();
       tracker.destroy();
+      this._outbounds.delete(cid);
     });
     outbound.__tracker = tracker;
     this._outbounds.set(cid, outbound);
