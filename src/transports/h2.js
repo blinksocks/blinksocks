@@ -6,8 +6,6 @@ export class Http2Inbound extends Inbound {
 
   _stream = null;
 
-  _destroyed = false;
-
   constructor(props) {
     super(props);
     this._stream = this._conn;
@@ -80,8 +78,6 @@ export class Http2Inbound extends Inbound {
 export class Http2Outbound extends Outbound {
 
   _stream = null;
-
-  _destroyed = false;
 
   get name() {
     return 'h2:outbound';

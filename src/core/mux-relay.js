@@ -241,13 +241,13 @@ export class MuxRelay extends EventEmitter {
 
     // once connect, flush all pending frames
     const frames = this._pendingFrames.get(cid);
-    if (frames) {
+    if (frames && !outbound.destroyed) {
       const buffer = Buffer.concat(frames);
-      this._pendingFrames.delete(cid);
       outbound.write(buffer);
       outbound.__tracker.trace(PIPE_DECODE, buffer.length);
       setImmediate(() => this.emit('_read', buffer.length));
     }
+    this._pendingFrames.delete(cid);
   };
 
   onDataFrame = ({ cid, data }) => {

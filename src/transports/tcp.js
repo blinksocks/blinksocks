@@ -14,8 +14,6 @@ export class TcpInbound extends Inbound {
 
   _socket = null;
 
-  _destroyed = false;
-
   constructor(props) {
     super(props);
     this._socket = this._conn;
@@ -146,8 +144,6 @@ export class TcpInbound extends Inbound {
 export class TcpOutbound extends Outbound {
 
   _socket = null;
-
-  _destroyed = false;
 
   get name() {
     return 'tcp:outbound';

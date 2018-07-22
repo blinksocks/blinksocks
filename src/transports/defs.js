@@ -12,6 +12,8 @@ class Bound extends EventEmitter {
 
   _conn = null;
 
+  _destroyed = false;
+
   constructor({ config, source, conn }) {
     super();
     this._config = config;
@@ -37,6 +39,10 @@ class Bound extends EventEmitter {
 
   get writable() {
     return true;
+  }
+
+  get destroyed() {
+    return this._destroyed;
   }
 
   onBroadcast() {

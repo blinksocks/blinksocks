@@ -13,8 +13,6 @@ export class WsInbound extends Inbound {
 
   _socket = null;
 
-  _destroyed = false;
-
   constructor(props) {
     super(props);
     this._socket = this._conn;
@@ -80,8 +78,6 @@ export class WsInbound extends Inbound {
 export class WsOutbound extends Outbound {
 
   _socket = null;
-
-  _destroyed = false;
 
   get name() {
     return 'ws:outbound';
