@@ -1,5 +1,24 @@
 #  Change Log
 
+## 3.3.6 (2018-07-28)
+
+### :rocket: Features & Improvements
+
+- **package**: upgrade `ws` to `6.0.0`.
+- **package**: upgrade `jest` and fix test environment.
+- **src**: reduce `MaxListenersExceededWarning`s.
+- **src**: load `libsodium-wrappers` on demand.
+
+### :bug: Bug Fixes:
+
+- **core**: fix `TypeError: Cannot read property 'push' of null`.
+
+### Migrating from 3.3.5 to 3.3.6
+
+```
+$ npm install -g blinksocks@3.3.6
+```
+
 ## 3.3.5 (2018-07-14)
 
 ### :rocket: Features & Improvements
