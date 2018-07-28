@@ -18,6 +18,8 @@ function loadFileSync(file) {
 
 export class Config {
 
+  _ready = null; // <Promise>
+
   local_protocol = null;
   local_username = null;
   local_password = null;
@@ -104,12 +106,6 @@ export class Config {
 
     this._initLogger(json);
 
-    if (this.is_server) {
-      this._initServer(json);
-    } else {
-      this._initServer(server);
-    }
-
     // https_cert, https_key
     if (this.is_client && this.local_protocol === 'https') {
       logger.info(`[config] loading ${json.https_cert}`);
@@ -130,9 +126,11 @@ export class Config {
 
     // dns-cache
     DNSCache.init(this.dns_expire);
+
+    this._ready = this._initServer(this.is_server ? json : server);
   }
 
-  _initServer(server) {
+  async _initServer(server) {
     // service
     const { protocol, hostname, port, pathname } = new URL(server.service);
     this.server_protocol = protocol.slice(0, -1);
@@ -167,8 +165,7 @@ export class Config {
     // acl_conf, acl_rules
     if (server.acl_conf !== undefined && server.acl) {
       this.acl_conf = server.acl_conf;
-      ACL.loadRules(path.resolve(process.cwd(), server.acl_conf))
-        .then((rules) => this.acl_rules = rules);
+      this.acl_rules = await ACL.loadRules(path.resolve(process.cwd(), server.acl_conf));
     }
 
     // redirect
@@ -187,10 +184,8 @@ export class Config {
     for (let i = 0; i < this.presets.length; i++) {
       const { name, params = {} } = this.presets[i];
       const clazz = getPresetClassByName(name);
-      const data = clazz.onCache(params, this.stores[i]);
-      if (data instanceof Promise) {
-        data.then((d) => this.stores[i] = d);
-      } else if (typeof data !== 'undefined') {
+      const data = await clazz.onCache(params, this.stores[i]);
+      if (typeof data !== 'undefined') {
         this.stores[i] = data;
       }
     }

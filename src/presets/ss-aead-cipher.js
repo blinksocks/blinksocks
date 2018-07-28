@@ -51,6 +51,8 @@ const DEFAULT_METHOD = 'aes-256-gcm';
 const HKDF_HASH_ALGORITHM = 'sha1';
 const HKDF_INFO = 'ss-subkey';
 
+let libsodium = null;
+
 /**
  * @description
  *   AEAD ciphers simultaneously provide confidentiality, integrity, and authenticity.
@@ -138,6 +140,17 @@ export default class SsAeadCipherPreset extends IPreset {
     }
     if (method.endsWith('ccm') && !semver.gte(process.versions.node, '10.2.0')) {
       throw Error('CCM mode requires Node.js >= v10.2.0');
+    }
+  }
+
+  static async onCache() {
+    // libsodium-wrappers need to be loaded asynchronously
+    // so we must wait for it ready before run our service.
+    // Ref: https://github.com/jedisct1/libsodium.js#usage-as-a-module
+    const _sodium = require('libsodium-wrappers');
+    await _sodium.ready;
+    if (!libsodium) {
+      libsodium = _sodium;
     }
   }
 

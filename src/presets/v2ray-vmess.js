@@ -41,6 +41,8 @@ const securityTypes = {
   'none': SECURITY_TYPE_NONE,
 };
 
+let libsodium = null;
+
 function createChacha20Poly1305Key(key) {
   const md5Key = hash('md5', key);
   return Buffer.concat([md5Key, hash('md5', md5Key)]);
@@ -209,7 +211,15 @@ export default class V2rayVmessPreset extends IPresetAddressing {
     }
   }
 
-  static onCache({ id }, store) {
+  static async onCache({ id }, store) {
+    // libsodium-wrappers need to be loaded asynchronously
+    // so we must wait for it ready before run our service.
+    // Ref: https://github.com/jedisct1/libsodium.js#usage-as-a-module
+    const _sodium = require('libsodium-wrappers');
+    await _sodium.ready;
+    if (!libsodium) {
+      libsodium = _sodium;
+    }
     const uuid = getUUIDBuffer(id);
     setInterval(() => V2rayVmessPreset.updateAuthCache(uuid, store), 1e3);
     V2rayVmessPreset.updateAuthCache(uuid, store);

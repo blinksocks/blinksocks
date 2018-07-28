@@ -69,7 +69,7 @@ export class IPreset extends EventEmitter {
    * @param params
    * @param store
    */
-  static onCache(params, store) {
+  static async onCache(params, store) {
     // or return something
   }
 

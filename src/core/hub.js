@@ -1,4 +1,3 @@
-import _sodium from 'libsodium-wrappers';
 import dgram from 'dgram';
 import net from 'net';
 import http from 'http';
@@ -55,13 +54,7 @@ export class Hub {
   // public interfaces
 
   async run() {
-    // libsodium-wrappers need to be loaded asynchronously
-    // so we must wait for it ready before run our service.
-    // Ref: https://github.com/jedisct1/libsodium.js#usage-as-a-module
-    await _sodium.ready;
-    if (!global.libsodium) {
-      global.libsodium = _sodium;
-    }
+    await this._config._ready;
     // terminate if it already started
     if (this._tcpServer !== null) {
       await this.terminate();
