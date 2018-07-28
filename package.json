@@ -12,7 +12,7 @@
   },
   "scripts": {
     "test": "npm run lint && npm run test:coverage",
-    "test:coverage": "jest --runInBand --silent --coverage --bail",
+    "test:coverage": "jest --runInBand --silent --coverage --bail --forceExit",
     "lint": "eslint bin src test",
     "compile": "cross-env NODE_ENV=production babel src --out-dir lib --ignore __tests__,__mocks__",
     "debug:client": "cross-env NODE_ENV=development node --inspect --inspect-port=9200 bin/cli.js blinksocks.client.json",
@@ -42,7 +42,7 @@
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
     "babel-eslint": "^8.2.6",
-    "babel-jest": "^23.4.0",
+    "babel-jest": "^23.4.2",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-env": "^1.7.0",
@@ -53,11 +53,11 @@
     "eslint-plugin-babel": "^5.1.0",
     "eslint-plugin-flowtype": "^2.50.0",
     "fast-glob": "^2.2.2",
-    "jest": "^23.4.1",
+    "jest": "^23.4.2",
     "lodash.clonedeep": "^4.5.0",
     "lodash.set": "^4.3.2",
     "mkdirp": "^0.5.1",
-    "socks": "2.2.0"
+    "socks": "^2.2.1"
   },
   "repository": {
     "url": "https://github.com/blinksocks/blinksocks",
@@ -96,6 +96,7 @@
   },
   "jest": {
     "coverageDirectory": "./coverage/",
-    "collectCoverage": true
+    "collectCoverage": true,
+    "testEnvironment": "./jest-environment-node-patch"
   }
 }
