@@ -28,7 +28,14 @@ export function createServer({ secure, https_key, https_cert, username, password
 
   // Simple HTTP Proxy
   server.on('request', (req, res) => {
-    const { hostname, port, pathname } = new URL(req.url);
+    let parseResult;
+    try {
+      parseResult = new URL(req.url);
+    } catch (err) {
+      res.writeHead(400);
+      return res.end();
+    }
+    const { hostname, port, pathname } = parseResult;
     const { socket, method, httpVersion, headers } = req;
     const appAddress = `${socket.remoteAddress}:${socket.remotePort}`;
 
@@ -46,7 +53,8 @@ export function createServer({ secure, https_key, https_cert, username, password
       const [type, credentials] = proxyAuth.split(' ');
       if (type !== 'Basic' || !checkBasicAuthorization(credentials, { username, password })) {
         logger.error(`[${name}] [${appAddress}] authorization failed, type=${type} credentials=${credentials}`);
-        return res.end('HTTP/1.1 401 Unauthorized\r\n\r\n');
+        res.writeHead(401);
+        return res.end();
       }
     }
 
