@@ -11,7 +11,7 @@ before_install:
   - curl --version
 
 before_deploy:
-  - export NEXT_VERSION=3.4.0
+  - export NEXT_VERSION=3.3.7
   - export COMMIT_HASH=$(git log --format=%h -1)
   - export DIST_PATH=build
   - export PUBLISH_REPO=blinksocks/blinksocks-nightly-releases

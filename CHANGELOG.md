@@ -1,5 +1,18 @@
 #  Change Log
 
+## 3.3.7 (2018-11-03)
+
+### :rocket: Features & Improvements
+
+- **package**: upgrade `js-sha3` to `0.8.0`.
+- **package**: upgrade `winston` to `3.1.0`, `winston-daily-rotate-file` to `3.4.1`.
+- **package**: upgrade `ws` to `6.1.0`.
+
+### :bug: Bug Fixes:
+
+- **package**: fix a potential security vulnerability in `merge` dependency.
+- **proxies**: fix http parsing error and 401 status code.
+
 ## 3.3.6 (2018-07-28)
 
 ### :rocket: Features & Improvements
