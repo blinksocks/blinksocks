@@ -3,11 +3,10 @@ import fs from 'fs';
 import path from 'path';
 import net from 'net';
 import { URL } from 'url';
-import chalk from 'chalk';
 import winston from 'winston';
 import WinstonDailyRotateFile from 'winston-daily-rotate-file';
 import isPlainObject from 'lodash.isplainobject';
-import { ACL } from './acl';
+import { Tracert } from './tracert';
 import { PROTOCOL_DEFAULT_PORTS } from '../constants';
 import { getPresetClassByName } from '../presets';
 import { DNSCache, isValidHostname, isValidPort, logger, DNS_DEFAULT_EXPIRE } from '../utils';
@@ -16,7 +15,7 @@ function loadFileSync(file) {
   return fs.readFileSync(path.resolve(process.cwd(), file));
 }
 
-export class Config {
+export default class Config {
 
   _ready = null; // <Promise>
 
@@ -51,11 +50,6 @@ export class Config {
   tls_key = null;
   key = null;
 
-  acl = false;
-  acl_conf = '';
-  acl_rules = [];
-  acl_tries = {};
-
   presets = null;
   udp_presets = null;
 
@@ -82,28 +76,17 @@ export class Config {
     this.local_pathname = pathname;
 
     // server
-    let server;
-    // TODO(remove in next version): make backwards compatibility to "json.servers"
-    if (json.servers !== undefined) {
-      server = json.servers.find((server) => !!server.enabled);
-      console.log(
-        chalk.bgYellowBright('WARN'),
-        '"servers" will be deprecated in the next version,' +
-        ' please configure only one server in "server: {...}",' +
-        ' for migration guide please refer to CHANGELOG.md.',
-      );
-    } else {
-      server = json.server;
-    }
-
-    if (server) {
+    if (json.server) {
       this.is_client = true;
       this.is_server = false;
+      Tracert.configure({});
     } else {
       this.is_client = false;
       this.is_server = true;
+      Tracert.configure({});
     }
 
+    // logger
     this._initLogger(json);
 
     // https_cert, https_key
@@ -114,20 +97,23 @@ export class Config {
       this.https_key = loadFileSync(json.https_key);
     }
 
-    // common
-    this.timeout = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
-    this.dns_expire = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
+    this._initCommon(json);
 
+    this._ready = this._initServer(this.is_server ? json : json.server);
+  }
+
+  _initCommon(json) {
+    // timeout
+    this.timeout = (json.timeout !== undefined) ? json.timeout * 1e3 : 600 * 1e3;
     // dns
     if (json.dns !== undefined && json.dns.length > 0) {
       this.dns = json.dns;
       dns.setServers(json.dns);
     }
-
+    // dns_expire
+    this.dns_expire = (json.dns_expire !== undefined) ? json.dns_expire * 1e3 : DNS_DEFAULT_EXPIRE;
     // dns-cache
     DNSCache.init(this.dns_expire);
-
-    this._ready = this._initServer(this.is_server ? json : server);
   }
 
   async _initServer(server) {
@@ -156,17 +142,6 @@ export class Config {
     this.key = server.key;
     this.presets = server.presets;
     this.udp_presets = server.presets;
-
-    // acl
-    if (server.acl !== undefined) {
-      this.acl = server.acl;
-    }
-
-    // acl_conf, acl_rules
-    if (server.acl_conf !== undefined && server.acl) {
-      this.acl_conf = server.acl_conf;
-      this.acl_rules = await ACL.loadRules(path.resolve(process.cwd(), server.acl_conf));
-    }
 
     // redirect
     if (server.redirect !== undefined) {
@@ -227,8 +202,7 @@ export class Config {
     if (!isPlainObject(json)) {
       throw Error('invalid configuration file');
     }
-    // TODO(remove in next version): json.servers
-    const is_client = !!json.servers || !!json.server;
+    const is_client = !!json.server;
     if (is_client) {
       Config.testOnClient(json);
     } else {
@@ -297,20 +271,7 @@ export class Config {
     }
 
     // server
-    let server;
-    // TODO(remove in next version): make backwards compatibility to "json.servers"
-    if (json.servers) {
-      if (!Array.isArray(json.servers)) {
-        throw Error('"servers" must be provided as an array');
-      }
-      server = json.servers.find((server) => !!server.enabled);
-      if (!server) {
-        throw Error('"servers" must have at least one enabled item');
-      }
-    } else {
-      server = json.server;
-    }
-    Config._testServer(server, true);
+    Config._testServer(json.server, true);
 
     // common
     Config._testCommon(json);
@@ -403,22 +364,6 @@ export class Config {
     // key
     if (typeof server.key !== 'string' || server.key === '') {
       throw Error('"server.key" must be a non-empty string');
-    }
-
-    // acl, acl_conf
-    if (!from_client && server.acl !== undefined) {
-      if (typeof server.acl !== 'boolean') {
-        throw Error('"server.acl" must be true or false');
-      }
-      if (server.acl) {
-        if (typeof server.acl_conf !== 'string' || server.acl_conf === '') {
-          throw Error('"server.acl_conf" must be a non-empty string');
-        }
-        const conf = path.resolve(process.cwd(), server.acl_conf);
-        if (!fs.existsSync(conf)) {
-          throw Error(`"server.acl_conf" "${conf}" not exist`);
-        }
-      }
     }
 
     // mux

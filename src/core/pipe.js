@@ -4,7 +4,6 @@ import { PIPE_ENCODE, CONNECT_TO_REMOTE, PRESET_FAILED } from '../constants';
 import { getPresetClassByName, IPresetAddressing } from '../presets';
 
 // .on('broadcast')
-// .on(`pre_${type}`)
 // .on(`post_${type}`)
 export class Pipe extends EventEmitter {
 
@@ -102,13 +101,27 @@ export class Pipe extends EventEmitter {
     try {
       // cache the current buffer for PRESET_FAILED action
       this._cacheBuffer = buffer;
-      // pre-feed hook
-      const preEventName = `pre_${type}`;
-      if (this.listenerCount(preEventName) > 0) {
-        this.emit(preEventName, buffer, (buf) => this._feed(type, buf, extraArgs));
-      } else {
-        this._feed(type, buffer, extraArgs);
+      const presets = this.getPresets(type);
+      // args to be injected
+      const isUdp = this._isPipingUdp;
+      const direct = (buf, isReverse = false) => this.emit(isReverse ? `post_${-type}` : `post_${type}`, buf);
+      // check if it's necessary to pipe
+      if (presets.length < 1) {
+        return direct(buffer);
       }
+      // create event chain among presets
+      const event = `next_${type}`;
+      const first = presets[0];
+      if (!first.listenerCount(event) > 0) {
+        const last = presets.reduce((prev, next) => {
+          prev.on(event, (buf) => next._write({ type, buffer: buf, direct, isUdp }, extraArgs));
+          return next;
+        });
+        // the last preset send data out via direct(buf, false)
+        last.on(event, direct);
+      }
+      // begin pipe
+      first._write({ type, buffer, direct, isUdp }, extraArgs);
     } catch (err) {
       logger.error('[pipe] error occurred while piping: %s', err.stack);
     }
@@ -161,30 +174,6 @@ export class Pipe extends EventEmitter {
         orgData: this._cacheBuffer,
       },
     }));
-  }
-
-  _feed(type, buffer, extraArgs) {
-    const presets = this.getPresets(type);
-    // args to be injected
-    const isUdp = this._isPipingUdp;
-    const direct = (buf, isReverse = false) => this.emit(isReverse ? `post_${-type}` : `post_${type}`, buf);
-    // check if it's necessary to pipe
-    if (presets.length < 1) {
-      return direct(buffer);
-    }
-    // create event chain among presets
-    const event = `next_${type}`;
-    const first = presets[0];
-    if (!first.listenerCount(event) > 0) {
-      const last = presets.reduce((prev, next) => {
-        prev.on(event, (buf) => next._write({ type, buffer: buf, direct, isUdp }, extraArgs));
-        return next;
-      });
-      // the last preset send data out via direct(buf, false)
-      last.on(event, direct);
-    }
-    // begin pipe
-    first._write({ type, buffer, direct, isUdp }, extraArgs);
   }
 
 }

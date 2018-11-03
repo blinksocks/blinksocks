@@ -25,12 +25,20 @@ function onError(err) {
   process.exit(-1);
 }
 
-module.exports = function bootstrap(configPath, { Hub, Config }) {
+module.exports = async function bootstrap(configPath, { Hub, Config, Manager }) {
   try {
-    const config = obtainConfig(configPath);
-    Config.test(config);
+    const json = obtainConfig(configPath);
+    Config.test(json);
+
+    const config = new Config(json);
     const hub = new Hub(config);
-    hub.run().catch(onError);
+
+    await hub.run();
+
+    // if (config.manager_host && config.manager_port) {
+    //   const manager = new Manager({ config, hub });
+    //   await manager.run();
+    // }
   } catch (err) {
     onError(err);
   }

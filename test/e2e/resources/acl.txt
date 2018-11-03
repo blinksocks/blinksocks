@@ -1,3 +1,0 @@
-# [addr[/mask][:port]] [ban] [max_upload_speed(/s)] [max_download_speed(/s)]
-
-127.0.0.1:8080 1 10k 10k

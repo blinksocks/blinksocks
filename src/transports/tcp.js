@@ -1,12 +1,6 @@
 import net from 'net';
 import { Inbound, Outbound } from './defs';
 import { DNSCache, logger } from '../utils';
-import {
-  ACL_PAUSE_RECV,
-  ACL_PAUSE_SEND,
-  ACL_RESUME_RECV,
-  ACL_RESUME_SEND,
-} from '../core/acl';
 
 const MAX_BUFFERED_SIZE = 512 * 1024; // 512KB
 
@@ -126,19 +120,6 @@ export class TcpInbound extends Inbound {
     }
   }
 
-  onBroadcast(action) {
-    switch (action.type) {
-      case ACL_PAUSE_RECV:
-        this.pause();
-        break;
-      case ACL_RESUME_RECV:
-        this.resume();
-        break;
-      default:
-        break;
-    }
-  }
-
 }
 
 export class TcpOutbound extends Outbound {
@@ -240,19 +221,6 @@ export class TcpOutbound extends Outbound {
       this.once('drain', doClose);
     } else {
       doClose();
-    }
-  }
-
-  onBroadcast(action) {
-    switch (action.type) {
-      case ACL_PAUSE_SEND:
-        this.pause();
-        break;
-      case ACL_RESUME_SEND:
-        this.resume();
-        break;
-      default:
-        break;
     }
   }
 

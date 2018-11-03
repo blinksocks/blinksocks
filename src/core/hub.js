@@ -7,20 +7,14 @@ import tls from 'tls';
 import ws from 'ws';
 import LRU from 'lru-cache';
 import uniqueId from 'lodash.uniqueid';
-import { Config } from './config';
+import isPlainObject from 'lodash.isplainobject';
+import Config from './config';
 import { Relay } from './relay';
 import { MuxRelay } from './mux-relay';
-import { SpeedTester, dumpHex, logger } from '../utils';
+import { dumpHex, logger } from '../utils';
 import { http as httpProxy, socks, tcp } from '../proxies';
 
-export const MAX_CONNECTIONS = 50;
-
-export const CONN_STAGE_INIT = 0;
-export const CONN_STAGE_TRANSFER = 1;
-export const CONN_STAGE_FINISH = 2;
-export const CONN_STAGE_ERROR = 3;
-
-export class Hub {
+export default class Hub {
 
   _config = null;
 
@@ -30,25 +24,11 @@ export class Hub {
   _tcpRelays = new Map(/* id: <Relay> */);
   _udpRelays = null; // LRU cache
 
-  // speed testers
-
-  _upSpeedTester = null;
-  _dlSpeedTester = null;
-
-  // instant variables
-
-  _totalRead = 0;
-  _totalWritten = 0;
-
-  _connQueue = [];
-
   _udpCleanerTimer = null;
 
   constructor(config) {
-    this._config = new Config(config);
+    this._config = isPlainObject(config) ? new Config(config) : config;
     this._udpRelays = LRU({ max: 500, maxAge: 1e5, dispose: (_, relay) => relay.destroy() });
-    this._upSpeedTester = new SpeedTester();
-    this._dlSpeedTester = new SpeedTester();
   }
 
   // public interfaces
@@ -74,47 +54,8 @@ export class Hub {
     // server
     this._tcpServer.close();
     // others
-    this._connQueue = [];
     clearInterval(this._udpCleanerTimer);
     logger.info('[hub] shutdown');
-  }
-
-  // performance parameters
-
-  async getConnections() {
-    return new Promise((resolve, reject) => {
-      if (this._tcpServer) {
-        this._tcpServer.getConnections((err, count) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(count);
-          }
-        });
-      } else {
-        resolve(0);
-      }
-    });
-  }
-
-  getTotalRead() {
-    return this._totalRead;
-  }
-
-  getTotalWritten() {
-    return this._totalWritten;
-  }
-
-  getUploadSpeed() {
-    return this._upSpeedTester.getSpeed();
-  }
-
-  getDownloadSpeed() {
-    return this._dlSpeedTester.getSpeed();
-  }
-
-  getConnStatuses() {
-    return this._connQueue;
   }
 
   // private methods
@@ -308,23 +249,10 @@ export class Hub {
     });
   }
 
-  _onRead = (size) => {
-    this._totalRead += size;
-    this._dlSpeedTester.feed(size);
-  };
-
-  _onWrite = (size) => {
-    this._totalWritten += size;
-    this._upSpeedTester.feed(size);
-  };
-
   _onClientConnection = (conn, proxyRequest) => {
     const source = this._getSourceAddress(conn);
-    const updateConnStatus = (event, extra) => this._updateConnStatus(event, source, extra);
 
     logger.verbose(`[hub] [${source.host}:${source.port}] connected`);
-    updateConnStatus('new');
-    updateConnStatus('target', { host: proxyRequest.host, port: proxyRequest.port });
 
     const context = { conn, source };
 
@@ -338,14 +266,7 @@ export class Hub {
     // create a relay for the current connection
     const relay = this._createRelay(source);
     relay.__id = uniqueId('relay_');
-    relay.on('_error', (err) => updateConnStatus('error', err.message));
-    relay.on('_read', this._onRead);
-    relay.on('_write', this._onWrite);
-    relay.on('close', () => {
-      updateConnStatus('close');
-      this._tcpRelays.delete(relay.__id);
-    });
-
+    relay.on('close', () => this._onConnectionClose(relay.__id));
     relay.addInboundOnClient(context, proxyRequest);
 
     this._tcpRelays.set(relay.__id, relay);
@@ -353,27 +274,21 @@ export class Hub {
 
   _onServerConnection = (conn) => {
     const source = this._getSourceAddress(conn);
-    const updateConnStatus = (event, extra) => this._updateConnStatus(event, source, extra);
 
     logger.verbose(`[hub] [${source.host}:${source.port}] connected`);
-    updateConnStatus('new');
 
     // create a relay for the current connection
     const relay = this._createRelay(source);
     relay.__id = uniqueId('relay_');
-    relay.on('_error', (err) => updateConnStatus('error', err.message));
-    relay.on('_connect', (targetAddress) => updateConnStatus('target', targetAddress));
-    relay.on('_read', this._onRead);
-    relay.on('_write', this._onWrite);
-    relay.on('close', () => {
-      updateConnStatus('close');
-      this._tcpRelays.delete(relay.__id);
-    });
-
+    relay.on('close', () => this._onConnectionClose(relay.__id));
     relay.addInboundOnServer({ source, conn });
 
     this._tcpRelays.set(relay.__id, relay);
   };
+
+  _onConnectionClose(id) {
+    this._tcpRelays.delete(id);
+  }
 
   _getSourceAddress(conn) {
     let sourceHost, sourcePort;
@@ -399,50 +314,6 @@ export class Hub {
 
   _createUdpRelay(source) {
     return new Relay({ source, config: this._config, transport: 'udp', presets: this._config.udp_presets });
-  }
-
-  _updateConnStatus(event, source, extra = null) {
-    const conn = this._connQueue.find(({ sourceHost, sourcePort }) =>
-      source.host === sourceHost &&
-      source.port === sourcePort,
-    );
-    switch (event) {
-      case 'new':
-        if (this._connQueue.length > MAX_CONNECTIONS) {
-          this._connQueue.shift();
-        }
-        if (!conn) {
-          this._connQueue.push({
-            id: uniqueId('conn_'),
-            stage: CONN_STAGE_INIT,
-            startTime: Date.now(),
-            sourceHost: source.host,
-            sourcePort: source.port,
-          });
-        }
-        break;
-      case 'target':
-        if (conn) {
-          const target = extra;
-          conn.stage = CONN_STAGE_TRANSFER;
-          conn.targetHost = target.host;
-          conn.targetPort = target.port;
-        }
-        break;
-      case 'close':
-        if (conn && conn.stage !== CONN_STAGE_ERROR) {
-          conn.stage = CONN_STAGE_FINISH;
-          conn.endTime = Date.now();
-        }
-        break;
-      case 'error':
-        if (conn && conn.stage !== CONN_STAGE_FINISH) {
-          conn.stage = CONN_STAGE_ERROR;
-          conn.endTime = Date.now();
-          conn.message = extra;
-        }
-        break;
-    }
   }
 
 }

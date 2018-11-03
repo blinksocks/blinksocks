@@ -93,8 +93,6 @@ $ blinksocks init
 | tls_cert_self_signed | whether "tls_cert" is `self-signed` or not                   | false           | **CLIENT ONLY**                                             |
 | https_key            | private key path for HTTPS                                   | -               | **CLIENT ONLY**                                             |
 | https_cert           | certificate path for HTTPS                                   | -               | **CLIENT ONLY**                                             |
-| acl                  | enable access control list or not                            | false           | **SERVER ONLY**                                             |
-| acl_conf             | access control list configuration file                       | -               | **SERVER ONLY**, see below                                  |
 | timeout              | timeout for each connection                                  | 600             | in seconds                                                  |
 | mux                  | enable multiplexing or not                                   | false           | -                                                           |
 | mux_concurrency      | the max mux connection established between client and server | 10              | **CLIENT ONLY**                                             |
@@ -182,39 +180,6 @@ In this case, it uses [iperf](https://en.wikipedia.org/wiki/Iperf) to test netwo
 `presets` process data stream from the first to the last. You can add/remove/modify them freely.
 
 For more information about presets, please check out [presets].
-
-### Access Control List  (server side only)
-
-You can enable ACL on **server** by setting **acl: true** and provide a acl configuration file in **acl_conf**:
-
-```
-{
-  "acl": true,
-  "acl_conf": "acl.txt",
-  ...
-}
-```
-
-**acl.txt** for example:
-
-```
-# [addr[/mask][:port]] [ban] [max_upload_speed(/s)] [max_download_speed(/s)]
-
-example.com     1            # prevent access to example.com
-example.com:*   1            # prevent access to example.com:*, equal to above
-example.com:443 1            # prevent access to example.com:443 only
-*:25            1            # prevent access to SMTP servers
-*:*             1            # prevent all access from/to all endpoints
-127.0.0.1       1            # ban localhost
-192.168.0.0/16  1            # ban hosts in 192.168.*.*
-172.27.1.100    0 120K       # limit upload speed to 120KB/s
-172.27.1.100    0 -    120K  # limit download speed to 120KB/s
-172.27.1.100    0 120K 120K  # limit upload and download speed to 120KB/s
-```
-
-Rules in **acl.txt** has a priority from lower to higher.
-
-> NOTE: acl requires a restart each time you updated **acl_conf**.
 
 ### Log Path
 

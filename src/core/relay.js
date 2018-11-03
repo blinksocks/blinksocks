@@ -1,7 +1,19 @@
 import EventEmitter from 'events';
-import { ACL, ACL_CLOSE_CONNECTION } from './acl';
 import { Pipe } from './pipe';
 import { Tracker } from './tracker';
+import {
+  Tracert,
+  TRACERT_INBOUND_IN,
+  TRACERT_INBOUND_OUT,
+  TRACERT_OUTBOUND_IN,
+  TRACERT_OUTBOUND_OUT,
+  TRACERT_PRESET_FAILED,
+  TRACERT_PRESET_CALLBACK_ERROR,
+  TRACERT_INBOUND_ERROR,
+  TRACERT_OUTBOUND_ERROR,
+  TRACERT_INBOUND_CONNECTIONS,
+  TRACERT_OUTBOUND_CONNECTIONS,
+} from './tracert';
 import { getRandomInt, logger } from '../utils';
 
 import {
@@ -15,16 +27,14 @@ import {
 
 import { PIPE_ENCODE, PIPE_DECODE, CONNECT_TO_REMOTE, PRESET_FAILED } from '../constants';
 
-// .on('_connect')
-// .on('_read')
-// .on('_write')
-// .on('_error')
 // .on('close')
 export class Relay extends EventEmitter {
 
-  _config = null;
+  static inboundCounter = 0;
 
-  _acl = null;
+  static outboundCounter = 0;
+
+  _config = null;
 
   _tracker = null;
 
@@ -52,14 +62,8 @@ export class Relay extends EventEmitter {
     // pipe
     this._pipe = new Pipe({ config, presets, isUdp: transport === 'udp' });
     this._pipe.on('broadcast', this.onBroadcast);
-    this._pipe.on(`pre_${PIPE_DECODE}`, this.onPreDecode);
     this._pipe.on(`post_${PIPE_ENCODE}`, this.onEncoded);
     this._pipe.on(`post_${PIPE_DECODE}`, this.onDecoded);
-    // acl
-    if (config.is_server && config.acl) {
-      this._acl = new ACL({ sourceAddress: this._source, rules: config.acl_rules });
-      this._acl.on('action', this.onBroadcast);
-    }
     // tracker
     this._tracker = new Tracker({ config, transport });
     this._tracker.setSourceAddress(this._source.host, this._source.port);
@@ -77,7 +81,9 @@ export class Relay extends EventEmitter {
 
     logger.info(`[relay] [${remote}] request: ${target}`);
 
+    Tracert.put(TRACERT_INBOUND_CONNECTIONS, ++Relay.inboundCounter);
     await this._outbound.connect();
+    Tracert.put(TRACERT_OUTBOUND_CONNECTIONS, ++Relay.outboundCounter);
     try {
       if (typeof onConnected === 'function') {
         onConnected((buffer) => {
@@ -87,12 +93,13 @@ export class Relay extends EventEmitter {
         });
       }
     } catch (err) {
+      Tracert.put(TRACERT_PRESET_CALLBACK_ERROR, { message: err.message });
       logger.error(`[relay] [${remote}] onConnected callback error: ${err.message}`);
-      this.emit('_error', err);
     }
   }
 
   addInboundOnServer(context) {
+    Tracert.put(TRACERT_INBOUND_CONNECTIONS, ++Relay.inboundCounter);
     this._init(context);
   }
 
@@ -105,14 +112,20 @@ export class Relay extends EventEmitter {
     this._outbound = outbound;
     // outbound
     this._outbound.setInbound(this._inbound);
-    this._outbound.on('_error', (err) => this.emit('_error', err));
+    this._outbound.on('_error', (err) => Tracert.put(TRACERT_OUTBOUND_ERROR, { message: err.message }));
     this._outbound.on('data', this.onOutboundReceive);
-    this._outbound.on('close', () => this.onBoundClose(outbound, inbound));
+    this._outbound.on('close', () => {
+      Tracert.put(TRACERT_OUTBOUND_CONNECTIONS, --Relay.outboundCounter);
+      this.onBoundClose(outbound, inbound);
+    });
     // inbound
     this._inbound.setOutbound(this._outbound);
-    this._inbound.on('_error', (err) => this.emit('_error', err));
+    this._inbound.on('_error', (err) => Tracert.put(TRACERT_INBOUND_ERROR, { message: err.message }));
     this._inbound.on('data', this.onInboundReceive);
-    this._inbound.on('close', () => this.onBoundClose(inbound, outbound));
+    this._inbound.on('close', () => {
+      Tracert.put(TRACERT_INBOUND_CONNECTIONS, --Relay.inboundCounter);
+      this.onBoundClose(inbound, outbound);
+    });
   }
 
   _getBounds(transport) {
@@ -136,11 +149,13 @@ export class Relay extends EventEmitter {
   // inbound & outbound events
 
   onInboundReceive = (buffer) => {
+    Tracert.put(TRACERT_INBOUND_IN, buffer.length);
     const direction = this._config.is_client ? PIPE_ENCODE : PIPE_DECODE;
     this._pipe.feed(direction, buffer);
   };
 
   onOutboundReceive = (buffer) => {
+    Tracert.put(TRACERT_OUTBOUND_IN, buffer.length);
     const direction = this._config.is_client ? PIPE_DECODE : PIPE_ENCODE;
     this._pipe.feed(direction, buffer);
   };
@@ -161,18 +176,7 @@ export class Relay extends EventEmitter {
       return this.onConnectToRemove(action);
     }
     if (action.type === PRESET_FAILED) {
-      if (this._acl && this._acl.checkFailTimes(this._config.acl_tries)) {
-        return;
-      }
       return this.onPresetFailed(action);
-    }
-    if (action.type === ACL_CLOSE_CONNECTION) {
-      const source = this._source;
-      const transport = this._transport;
-      const remote = `${source.host}:${source.port}`;
-      logger.warn(`[relay] [${transport}] [${remote}] acl request to close this connection`);
-      this.destroy();
-      return;
     }
     this._inbound && this._inbound.onBroadcast(action);
     this._outbound && this._outbound.onBroadcast(action);
@@ -180,19 +184,16 @@ export class Relay extends EventEmitter {
 
   async onConnectToRemove(action) {
     const { host: sourceHost, port: sourcePort } = this._source;
-    const { host, port, onConnected } = action.payload;
+    const { host: targetHost, port: targetPort, onConnected } = action.payload;
+
     const remote = `${sourceHost}:${sourcePort}`;
-    const target = `${host}:${port}`;
-    this.emit('_connect', action.payload);
-    // tracker
-    this._tracker.setTargetAddress(host, port);
-    // acl
-    if (this._acl && this._acl.setTargetAddress(host, port)) {
-      return;
-    }
+    const target = `${targetHost}:${targetPort}`;
     logger.info(`[relay] [${remote}] request: ${target}`);
+
+    this._tracker.setTargetAddress(targetHost, targetPort);
     if (this._config.is_server) {
-      await this._outbound.connect(host, port);
+      await this._outbound.connect(targetHost, targetPort);
+      Tracert.put(TRACERT_OUTBOUND_CONNECTIONS, ++Relay.outboundCounter);
       if (typeof onConnected === 'function') {
         onConnected();
       }
@@ -205,8 +206,9 @@ export class Relay extends EventEmitter {
     const transport = this._transport;
     const remote = `${source.host}:${source.port}`;
 
+    Tracert.put(TRACERT_PRESET_FAILED, { name, message });
+
     logger.error(`[relay] [${transport}] [${remote}] preset "${name}" fail to process: ${message}`);
-    this.emit('_error', new Error(message));
 
     // close connection directly on client side
     if (this._config.is_client) {
@@ -240,32 +242,23 @@ export class Relay extends EventEmitter {
 
   // hooks of pipe
 
-  onPreDecode = (buffer, cb) => {
-    this._tracker.trace(PIPE_DECODE, buffer.length);
-    if (this._acl) {
-      this._acl.collect(PIPE_DECODE, buffer.length);
-    }
-    cb(buffer);
-    setImmediate(() => this.emit('_read', buffer.length));
-  };
-
   onEncoded = (buffer) => {
     this._tracker.trace(PIPE_ENCODE, buffer.length);
     if (this._config.is_client) {
+      Tracert.put(TRACERT_OUTBOUND_OUT, buffer.length);
       this._outbound.write(buffer);
     } else {
-      if (this._acl) {
-        this._acl.collect(PIPE_ENCODE, buffer.length);
-      }
+      Tracert.put(TRACERT_INBOUND_OUT, buffer.length);
       this._inbound.write(buffer);
     }
-    setImmediate(() => this.emit('_write', buffer.length));
   };
 
   onDecoded = (buffer) => {
     if (this._config.is_client) {
+      Tracert.put(TRACERT_INBOUND_OUT, buffer.length);
       this._inbound.write(buffer);
     } else {
+      Tracert.put(TRACERT_OUTBOUND_OUT, buffer.length);
       this._outbound.write(buffer);
     }
   };
@@ -291,10 +284,6 @@ export class Relay extends EventEmitter {
       if (this._tracker) {
         this._tracker.destroy();
         this._tracker = null;
-      }
-      if (this._acl) {
-        this._acl.destroy();
-        this._acl = null;
       }
     }
   }

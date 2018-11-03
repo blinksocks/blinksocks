@@ -149,6 +149,7 @@ export class Http2Outbound extends Outbound {
             options.ca = this._config.tls_cert;
           }
           const session = http2.connect(`https://${server_host}:${server_port}`, options);
+          session.on('error', this.onError);
           session.on('connect', resolve);
           this._stream = session.request({
             [HTTP2_HEADER_METHOD]: 'POST',

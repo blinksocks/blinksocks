@@ -23,7 +23,6 @@
 * Transport Layer Support: TCP, UDP, [TLS], [HTTP2], [WebSocket] and [WebSocket/TLS].
 * TCP/TLS/HTTP2/WebSocket [multiplexing].
 * Convenient protocol [customization].
-* Access Control List([ACL]) support.
 * Built-In [shadowsocks], [shadowsocksR], [v2ray vmess] protocols.
 * Out of the box distribution and deployment.
 
@@ -82,7 +81,6 @@ See [contributors](https://github.com/blinksocks/blinksocks/graphs/contributors)
 Apache License 2.0
 
 [customization]: docs/development/api
-[ACL]: docs/config#access-control-list
 [TLS]: docs/examples/tls
 [HTTP2]: docs/examples/http2
 [WebSocket]: docs/examples/websocket

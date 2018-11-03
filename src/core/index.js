@@ -1,2 +1,2 @@
-export * from './config';
-export * from './hub';
+exports.Config = require('./config').default;
+exports.Hub = require('./hub').default;
