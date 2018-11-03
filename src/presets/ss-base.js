@@ -125,7 +125,7 @@ export default class SsBasePreset extends IPresetAddressing {
         port = buffer.slice(17, 19).readUInt16BE(0);
         offset += 16;
         break;
-      case ATYP_DOMAIN:
+      case ATYP_DOMAIN: {
         const domainLen = buffer[1];
         if (buffer.length < domainLen + 4) {
           return fail(`invalid length: ${buffer.length}`);
@@ -137,6 +137,7 @@ export default class SsBasePreset extends IPresetAddressing {
         port = buffer.slice(2 + domainLen, 4 + domainLen).readUInt16BE(0);
         offset += (domainLen + 1);
         break;
+      }
       default:
         return fail(`invalid atyp: ${atyp}`);
     }

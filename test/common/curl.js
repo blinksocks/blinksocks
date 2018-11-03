@@ -21,7 +21,7 @@ export default async function curl(args) {
       case 'https':
         command.push(`--proxy-insecure -x https://${proxyHost}:${proxyPort}`);
         break;
-      default:
+      default: {
         const proxy = {
           'socks': '--socks5',
           'socks4': '--socks4',
@@ -32,6 +32,7 @@ export default async function curl(args) {
           command.push(`${proxy} ${proxyHost}:${proxyPort}`);
         }
         break;
+      }
     }
     command.push(`${targetHost}:${targetPort}`);
     command = command.join(' ');
