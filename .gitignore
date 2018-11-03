@@ -25,7 +25,7 @@ test/tmp/
 /*.pem
 /acl.txt
 *.map
-.audit.json
+*audit.json
 
 # benchmark
 benchmark/jsons/
