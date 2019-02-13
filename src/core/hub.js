@@ -46,7 +46,7 @@ export class Hub {
 
   constructor(config) {
     this._config = new Config(config);
-    this._udpRelays = LRU({ max: 500, maxAge: 1e5, dispose: (_, relay) => relay.destroy() });
+    this._udpRelays = new LRU({ max: 500, maxAge: 1e5, dispose: (_, relay) => relay.destroy() });
     this._upSpeedTester = new SpeedTester();
     this._dlSpeedTester = new SpeedTester();
   }

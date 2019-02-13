@@ -1,7 +1,7 @@
 {
   "presets": [
     [
-      "env",
+      "@babel/env",
       {
         "targets": {
           "node": 8
@@ -10,8 +10,8 @@
     ]
   ],
   "plugins": [
-    "babel-plugin-transform-class-properties",
-    "babel-plugin-transform-object-rest-spread"
+    "@babel/plugin-proposal-class-properties",
+    "@babel/plugin-proposal-object-rest-spread"
   ],
   "comments": false
 }
