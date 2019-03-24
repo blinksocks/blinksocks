@@ -7,10 +7,10 @@ node_js:
   - "lts/*"
   - "node"
 
-#before_install:
-#  - ./ci-install-curl.sh
-#  - curl --version
-#
+before_install:
+  - ./ci-install-curl.sh
+  - curl --version
+
 #before_deploy:
 #  - export NEXT_VERSION=3.3.7
 #  - export COMMIT_HASH=$(git log --format=%h -1)
