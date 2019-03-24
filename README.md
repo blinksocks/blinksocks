@@ -39,15 +39,9 @@ You can get the latest blinksocks via package manager **yarn** or **npm**.
 
 > NOTE: Node.js comes with npm installed so you don't have to install npm individually.
 
-**latest stable version**
-
 ```
 $ npm install -g blinksocks
 ```
-
-**nightly releases**
-
-Please check out [blinksocks-nightly-releases](https://github.com/blinksocks/blinksocks-nightly-releases).
 
 ## Run blinksocks
 

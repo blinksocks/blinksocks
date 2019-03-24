@@ -1,33 +1,33 @@
 language: node_js
 
-sudo: required
+#sudo: required
 
 node_js:
   - "lts/*"
   - "node"
 
-before_install:
-  - ./ci-install-curl.sh
-  - curl --version
-
-before_deploy:
-  - export NEXT_VERSION=3.3.7
-  - export COMMIT_HASH=$(git log --format=%h -1)
-  - export DIST_PATH=build
-  - export PUBLISH_REPO=blinksocks/blinksocks-nightly-releases
-  - git clone https://github.com/${PUBLISH_REPO}.git ${DIST_PATH}
-  - yarn version --new-version "${NEXT_VERSION}-${COMMIT_HASH}" --no-git-tag-version
-  - yarn compile
-  - yarn pack --filename "${DIST_PATH}/v${NEXT_VERSION}-$(date +'%Y%m%d%H%M%S')-${COMMIT_HASH}.tgz"
-
-deploy:
-  provider: pages
-  local-dir: ${DIST_PATH}
-  skip_cleanup: true
-  keep-history: false
-  github-token: ${GITHUB_TOKEN}
-  repo: ${PUBLISH_REPO}
-  target-branch: master
+#before_install:
+#  - ./ci-install-curl.sh
+#  - curl --version
+#
+#before_deploy:
+#  - export NEXT_VERSION=3.3.7
+#  - export COMMIT_HASH=$(git log --format=%h -1)
+#  - export DIST_PATH=build
+#  - export PUBLISH_REPO=blinksocks/blinksocks-nightly-releases
+#  - git clone https://github.com/${PUBLISH_REPO}.git ${DIST_PATH}
+#  - yarn version --new-version "${NEXT_VERSION}-${COMMIT_HASH}" --no-git-tag-version
+#  - yarn compile
+#  - yarn pack --filename "${DIST_PATH}/v${NEXT_VERSION}-$(date +'%Y%m%d%H%M%S')-${COMMIT_HASH}.tgz"
+#
+#deploy:
+#  provider: pages
+#  local-dir: ${DIST_PATH}
+#  skip_cleanup: true
+#  keep-history: false
+#  github-token: ${GITHUB_TOKEN}
+#  repo: ${PUBLISH_REPO}
+#  target-branch: master
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
