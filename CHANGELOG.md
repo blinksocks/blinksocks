@@ -1,5 +1,21 @@
 #  Change Log
 
+## 3.3.8 (2019-03-24)
+
+### :rocket: Features & Improvements
+
+- **ci**: cancel nightly release when ci done.
+
+### :bug: Bug Fixes:
+
+- **package**: update package.lock to fix potential security vulnerability in dependencies.
+
+### Migrating from 3.3.7 to 3.3.8
+
+```
+$ npm install -g blinksocks@3.3.8
+```
+
 ## 3.3.7 (2018-11-03)
 
 ### :rocket: Features & Improvements
@@ -12,6 +28,12 @@
 
 - **package**: fix a potential security vulnerability in `merge` dependency.
 - **proxies**: fix http parsing error and 401 status code.
+
+### Migrating from 3.3.6 to 3.3.7
+
+```
+$ npm install -g blinksocks@3.3.7
+```
 
 ## 3.3.6 (2018-07-28)
 
